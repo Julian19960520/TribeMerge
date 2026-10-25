@@ -20,9 +20,9 @@ func _ready() -> void:
 		add_child(p)
 		_players.append(p)
 	_music = AudioStreamPlayer.new()
-	_music.volume_db = -14.0
+	_music.volume_db = -8.0
 	add_child(_music)
-	_music.stream = _make_music()
+	_music.stream = _load_music()
 	call_deferred("refresh_music")
 
 func play(name: String, pitch: float = 1.0) -> void:
@@ -101,42 +101,8 @@ func _fanfare(t: float) -> float:
 		v += _kalimba(t - float(i) * 0.12, notes[i]) * 0.35
 	return v + _drum(t) * 0.4
 
-func _make_music() -> AudioStreamWAV:
-	var bpm := 96.0
-	var beat := 60.0 / bpm
-	var bars := 4
-	var dur := beat * 4.0 * float(bars)
-	var n := int(dur * RATE)
-	var data := PackedByteArray()
-	data.resize(n * 2)
-	var penta := [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33]
-	var melody := [0, 2, 4, 2, 5, 4, 2, 1, 0, 2, 4, 5, 6, 5, 4, 2, 3, 4, 2, 0, 1, 2, 4, 2, 5, 4, 2, 4, 3, 2, 1, 0]
-	var r := RandomNumberGenerator.new()
-	r.seed = 7
-	for i in n:
-		var t := float(i) / RATE
-		var b := t / beat
-		var bi := int(b)
-		var bt := (b - float(bi)) * beat
-		var v := 0.0
-		if bi % 2 == 0:
-			v += _drum(bt) * 0.7
-		else:
-			v += sin(TAU * 220.0 * bt) * _env(bt, 0.002, 0.05) * 0.35
-		var half := t / (beat * 0.5)
-		var hi := int(half)
-		var ht := (half - float(hi)) * beat * 0.5
-		v += (r.randf() * 2.0 - 1.0) * _env(ht, 0.003, 0.02) * 0.06
-		var note: int = melody[hi % melody.size()]
-		if hi % 4 != 3:
-			v += _kalimba(ht, penta[note]) * 0.28
-		data.encode_s16(i * 2, int(clampf(v, -1.0, 1.0) * 26000.0))
-	var s := AudioStreamWAV.new()
-	s.format = AudioStreamWAV.FORMAT_16_BITS
-	s.mix_rate = RATE
-	s.stereo = false
-	s.data = data
-	s.loop_mode = AudioStreamWAV.LOOP_FORWARD
-	s.loop_begin = 0
-	s.loop_end = n
+func _load_music() -> AudioStream:
+	var s := load("res://assets/audio/bgm.mp3") as AudioStreamMP3
+	if s:
+		s.loop = true
 	return s

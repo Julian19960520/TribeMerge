@@ -88,10 +88,9 @@ static func _energy_art(ci: CanvasItem, sz: Vector2) -> void:
 
 static func howto() -> PopupBase:
 	var p := PopupBase.new()
-	p.dim_alpha = 0.78
+	p.dim_alpha = 0.85
+	p.set_meta("fullscreen", true)
 	UI.title(p.box, "玩法说明", Rect2(0, 150, 720, 100), 64)
-	var x := UI.hit(p.box, Rect2(636, 70, 70, 70), p.close)
-	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
 		var card := Art.rrect(Rect2(90, 330, 200, 100), 20, 111, 0.8)
 		Art.dilate(ci, card, 3.0, Art.INK)
@@ -141,35 +140,89 @@ static func _arrow(ci: CanvasItem, a: Vector2, b: Vector2, bend: float) -> void:
 
 # ---------------------------------------------------------------- 集市
 
+## 全屏页面：内容放进竖向滚动区（从顶栏下方开始），返回一个使用绝对坐标的根节点
+static func fullscreen(p: PopupBase, top: float = 128.0) -> Array:
+	p.set_meta("fullscreen", true)
+	var sc := Scroller.new()
+	sc.position = Vector2(0, top)
+	sc.size = Vector2(720, 1480 - top)
+	p.box.add_child(sc)
+	var root := Control.new()
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.position = Vector2(0, -top)
+	sc.content.add_child(root)
+	return [sc, root]
+
+## 连接全局信号，弹窗销毁时自动断开
+static func live(p: Node, sig: Signal, cb: Callable) -> void:
+	sig.connect(cb)
+	p.tree_exiting.connect(func(): sig.disconnect(cb))
+
 static func store() -> PopupBase:
 	var p := PopupBase.new()
-	p.dim_alpha = 0.82
-	var tb := TopBar.new()
-	tb.close_mode = true
-	tb.on_close = p.close
-	p.box.add_child(tb)
-	UI.title(p.box, "交易集市", Rect2(0, 140, 720, 80), 46)
-	UI.box(p.box, Rect2(0, 0, 720, 1480), _paint_store)
-	UI.title(p.box, "篝火祭通行证", Rect2(50, 400, 360, 60), 34, Color.WHITE)
-	UI.lbl(p.box, "×10", Rect2(440, 300, 80, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(p.box, "订单额外 +1 声望", Rect2(500, 304, 200, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(p.box, "¥ 30", Rect2(470, 344, 160, 44), 28, Color("5a3d24"), HORIZONTAL_ALIGNMENT_CENTER)
-	UI.btn(p.box, Rect2(430, 396, 240, 80), "激活", "green", func(): G.main.toast("演示版本，暂未开放购买。"), 38)
-	section(p.box, "每日特惠", 516, Color("ffd23f"))
+	p.dim_alpha = 0.9
+	p.set_meta("store", true)
+	var fs := fullscreen(p)
+	var sc: Scroller = fs[0]
+	var root: Control = fs[1]
+	UI.title(root, "交易集市", Rect2(0, 140, 720, 80), 46)
+	UI.box(root, Rect2(0, 0, 720, 520), _paint_store)
+	UI.title(root, "篝火祭通行证", Rect2(50, 400, 360, 60), 34, Color.WHITE)
+	UI.lbl(root, "×10", Rect2(440, 300, 80, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(root, "订单额外 +1 贝币", Rect2(500, 304, 200, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(root, "¥ 30", Rect2(470, 344, 160, 44), 28, Color("5a3d24"), HORIZONTAL_ALIGNMENT_CENTER)
+	UI.btn(root, Rect2(430, 396, 240, 80), "激活", "green", func(): G.main.toast("演示版本，暂未开放购买。"), 38)
+	section(root, "每日特惠", 516, Color("ffd23f"))
 	var deals := [{"id": "chest_1", "price": 10, "stock": 1}, {"id": "pack_1", "price": 15, "stock": 1}]
 	for k in deals.size():
 		var d: Dictionary = deals[k]
 		var x := 110.0 + k * 270.0
-		_store_card(p, Rect2(x, 560, 230, 250), d, "deal_%d" % k, true)
-	var tl := UI.lbl(p.box, "", Rect2(160, 826, 400, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+		_store_card(root, Rect2(x, 560, 230, 250), d, "deal_%d" % k, true)
+	var tl := UI.lbl(root, "", Rect2(160, 826, 400, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	tl.text = "刷新倒计时：%s" % G.fmt_time(G.secs_to_midnight())
-	section(p.box, "热卖", 880, Color("ffd23f"))
+	section(root, "热卖", 880, Color("ffd23f"))
+	var y := 924.0
 	for k in Data.STORE_HOT.size():
 		var d: Dictionary = Data.STORE_HOT[k]
 		var x := 30.0 + (k % 3) * 226.0
-		var y := 924.0 + (k / 3) * 270.0
-		_store_card(p, Rect2(x, y, 208, 250), d, "hot_%d" % k, false)
+		y = 924.0 + (k / 3) * 270.0
+		_store_card(root, Rect2(x, y, 208, 250), d, "hot_%d" % k, false)
+	y += 290.0
+	section(root, "琥珀", y, Color("ffd23f"))
+	y += 48.0
+	for k in Data.AMBER_PACKS.size():
+		var a: Dictionary = Data.AMBER_PACKS[k]
+		_amber_card(root, Rect2(30.0 + (k % 3) * 226.0, y + (k / 3) * 280.0, 208, 260), a, k)
+	y += 2 * 280.0 + 40.0
+	sc.set_length(y - 128.0)
 	return p
+
+static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> void:
+	var piles := [["amber_1", 1], ["amber_2", 1], ["amber_2", 3], ["amber_3", 2], ["amber_3", 4], ["amber_3", 6]]
+	UI.box(parent, r, func(ci, sz):
+		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 20, 300 + k, 1.0)
+		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 20, 3, 0.0), Color(0, 0, 0, 0.3))
+		Art.dilate(ci, b, 3.0, Art.INK)
+		ci.draw_colored_polygon(b, Color("c9894a") if k < 5 else Color("d9a54a"))
+		var ir := Rect2(10, 10, sz.x - 20, sz.y - 96)
+		ci.draw_colored_polygon(Art.rrect(ir, 14, 310 + k, 0.6), Color("fff3d6"))
+		var pid: String = piles[k][0]
+		var n: int = piles[k][1]
+		for j in n:
+			var off := Vector2((float(j % 3) - float(mini(n, 3) - 1) * 0.5) * 40.0, -float(j / 3) * 24.0 + 10.0)
+			Art.item(ci, pid, Vector2(sz.x * 0.5, 84) + off, 92.0 - n * 4.0)
+		if k >= 4:
+			var seal := Art.star_pts(Vector2(30, 26), 36, 30, 12, 5)
+			Art.fill(ci, seal, Art.CLAY, 3.0))
+	if k >= 4:
+		var hl := UI.lbl(parent, "超值", Rect2(r.position.x - 6, r.position.y + 8, 72, 36), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+		hl.rotation = -0.2
+	UI.lbl(parent, "×%d" % a["n"], Rect2(r.position.x, r.position.y + 128, r.size.x, 40), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 184, r.size.x - 44, 64), a["price"], "orange", Callable(), 30)
+	b.title_font = false
+	b.pressed.connect(func():
+		G.main.fly("amber_2", b.get_global_rect().get_center() + Vector2(0, -100), G.main.topbar.target("amber"), func(): G.add_currency("amber", a["n"]), 80)
+		G.main.toast("演示版本：琥珀 ×%d 已到账" % a["n"]))
 
 static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
 	var r := Rect2(30, 236, 660, 262)
@@ -190,10 +243,9 @@ static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
 	ci.draw_colored_polygon(tag, Color("e9d8ff"))
 	Art.item(ci, "pack_1", Vector2(480, 286), 60)
 
-static func _store_card(p: PopupBase, r: Rect2, d: Dictionary, key: String, hot: bool) -> void:
-	var bought := int(G.deals_bought.get(key, 0)) if hot else int(G.hot_bought.get(key, 0))
-	var left: int = d["stock"] - bought
-	UI.box(p.box, r, func(ci, sz):
+static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, hot: bool) -> void:
+	var book_of: Dictionary = G.deals_bought if hot else G.hot_bought
+	UI.box(parent, r, func(ci, sz):
 		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 20, int(r.position.x), 1.0)
 		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 20, 3, 0.0), Color(0, 0, 0, 0.3))
 		Art.dilate(ci, b, 3.0, Art.INK)
@@ -206,32 +258,29 @@ static func _store_card(p: PopupBase, r: Rect2, d: Dictionary, key: String, hot:
 			Art.fill(ci, seal, Art.CLAY, 3.0)
 		Paint.glyph(ci, "info", Vector2(sz.x - 18, 18), 1.1))
 	if hot:
-		var hl := UI.lbl(p.box, "HOT", Rect2(r.position.x - 6, r.position.y + 6, 72, 36), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+		var hl := UI.lbl(parent, "HOT", Rect2(r.position.x - 6, r.position.y + 6, 72, 36), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 		hl.rotation = -0.2
-	UI.lbl(p.box, "剩余 %d" % left, Rect2(r.position.x, r.position.y + 128, r.size.x, 34), 22, Color("6b4a2a"))
-	var b := UI.btn(p.box, Rect2(r.position.x + 22, r.position.y + 178, r.size.x - 44, 64), str(d["price"]) if left > 0 else "售罄", "green" if left > 0 else "grey", Callable(), 30)
-	if left > 0:
-		b.res = "amber_2"
-	b.enabled = left > 0
+	var left_lbl := UI.lbl(parent, "", Rect2(r.position.x, r.position.y + 128, r.size.x, 34), 22, Color("6b4a2a"))
+	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 178, r.size.x - 44, 64), "", "green", Callable(), 30)
+	var refresh := func():
+		var left: int = int(d["stock"]) - int(book_of.get(key, 0))
+		left_lbl.text = "剩余 %d" % left
+		b.text = str(d["price"]) if left > 0 else "售罄"
+		b.res = "amber_2" if left > 0 else ""
+		b.style = "green" if left > 0 else "grey"
+		b.enabled = left > 0
+		b.queue_redraw()
+	refresh.call()
 	b.pressed.connect(func():
-		var to := G.find_empty_near(G.idx(3, 0))
-		if to < 0:
-			G.main.toast("棋盘满了，先腾出空位吧！")
-			return
 		if not G.spend("amber", d["price"]):
 			G.main.toast("琥珀不够了！")
 			return
-		if hot:
-			G.deals_bought[key] = bought + 1
-		else:
-			G.hot_bought[key] = bought + 1
-		G.board[to]["id"] = d["id"]
+		book_of[key] = int(book_of.get(key, 0)) + 1
 		G.discover(d["id"])
-		G.dirty()
-		G.board_changed.emit()
-		G.main.toast("已放到棋盘上：%s" % Data.name_of(d["id"]))
-		p.close()
-		G.main.open("store"))
+		G.stash_push(d["id"])
+		G.main.fly(d["id"], b.get_global_rect().get_center() + Vector2(0, -110), Vector2(64, 260), Callable(), 90)
+		G.main.toast("已放入暂存区：%s" % Data.name_of(d["id"]))
+		refresh.call())
 
 # ---------------------------------------------------------------- 设置
 
@@ -252,17 +301,15 @@ static func settings() -> PopupBase:
 			G.dirty()
 			if key == "music":
 				Sfx.refresh_music())
-	var labels := [["联系我们", "chat"], ["常见问题", "faq"], ["语言：简体中文", "globe"]]
-	for k in 3:
-		var b := UI.btn(p.box, Rect2(106, r.position.y + 230 + k * 110, 508, 88), labels[k][0], "orange", Callable(), 34)
+	var labels := [["联系我们", "chat"], ["语言：简体中文", "globe"]]
+	for k in 2:
+		var b := UI.btn(p.box, Rect2(106, r.position.y + 250 + k * 130, 508, 88), labels[k][0], "orange", Callable(), 34)
 		var g: String = labels[k][1]
 		b.extra = func(ci, sz): Paint.glyph(ci, g, Vector2(56, sz.y * 0.5 - 3), 1.6)
-		match k:
-			0: b.pressed.connect(func(): G.main.toast("对着篝火喊三声，酋长就会来找你。"))
-			1: b.pressed.connect(func():
-				p.close()
-				G.main.open("howto"))
-			2: b.pressed.connect(func(): G.main.toast("目前仅支持简体中文。"))
+		if k == 0:
+			b.pressed.connect(func(): G.main.toast("对着篝火喊三声，酋长就会来找你。"))
+		else:
+			b.pressed.connect(func(): G.main.toast("目前仅支持简体中文。"))
 	var terms := UI.lbl(p.box, "条款与隐私", Rect2(260, r.position.y + 590, 200, 40), 24, Color("2f7f8a"))
 	UI.box(p.box, Rect2(290, r.position.y + 626, 140, 6), func(ci, sz): ci.draw_line(Vector2(0, 2), Vector2(sz.x, 2), Color("2f7f8a"), 2.0))
 	UI.lbl(p.box, "玩家ID：%s" % G.player_id, Rect2(r.position.x, r.position.y + 650, r.size.x, 34), 20, Color("8a7a66"))
@@ -344,8 +391,34 @@ static func book(tab: int = 0) -> PopupBase:
 		ci.draw_colored_polygon(tagp, Art.LEATHER_D)
 		Art.ln(ci, Vector2(26, 26), Vector2(50, 50), 6.0, Art.BONE, 1)
 		Art.ln(ci, Vector2(50, 26), Vector2(26, 50), 6.0, Art.BONE, 2)
-	var groups := [["berry", "stone", "meat", "fish"], ["basket", "hunt"], ["fire", "shell", "amber", "chest", "pack"]]
-	var tabs := ["物品", "生产器", "资源"]
+	var holder := Control.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.box.add_child(holder)
+	var tabs := ["物品", "生产器"]
+	var tab_btns: Array[TButton] = []
+	var state := {"tab": clampi(tab, 0, 1)}
+	for k in 2:
+		var b := UI.btn(p.box, Rect2(130 + k * 250, r.end.y - 30, 210, 74), tabs[k], "wood", Callable(), 30)
+		tab_btns.append(b)
+		b.pressed.connect(func():
+			if k == state["tab"]:
+				return
+			state["tab"] = k
+			_book_tabs(tab_btns, k)
+			_book_page(holder, r, k))
+	_book_tabs(tab_btns, state["tab"])
+	_book_page(holder, r, state["tab"])
+	return p
+
+static func _book_tabs(btns: Array[TButton], tab: int) -> void:
+	for k in btns.size():
+		btns[k].style = "orange" if k == tab else "wood"
+		btns[k].queue_redraw()
+
+static func _book_page(holder: Control, r: Rect2, tab: int) -> void:
+	for c in holder.get_children():
+		c.queue_free()
+	var groups := [["berry", "stone", "meat", "fish"], ["basket", "hunt"]]
 	var y := r.position.y + 40
 	for ch in groups[tab]:
 		var c: Dictionary = Data.CHAINS[ch]
@@ -353,13 +426,13 @@ static func book(tab: int = 0) -> PopupBase:
 		for l in c["items"].size():
 			if G.discovered.has("%s_%d" % [ch, l + 1]):
 				n += 1
-		section(p.box, "%s（%d/%d）" % [c["name"], n, c["items"].size()], y)
+		section(holder, "%s（%d/%d）" % [c["name"], n, c["items"].size()], y)
 		y += 52
 		for l in c["items"].size():
 			var id := "%s_%d" % [ch, l + 1]
 			var cx: float = r.position.x + 90 + (l % 5) * 120
 			var known := G.discovered.has(id)
-			UI.box(p.box, Rect2(cx - 52, y, 104, 104), func(ci, sz):
+			UI.box(holder, Rect2(cx - 52, y, 104, 104), func(ci, sz):
 				var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, l + 150, 0.6)
 				ci.draw_colored_polygon(b, Color("ecd9b3"))
 				Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.35))
@@ -369,17 +442,12 @@ static func book(tab: int = 0) -> PopupBase:
 					var f: Font = G.font_title
 					ci.draw_string(f, Vector2(sz.x * 0.5 - 18, sz.y * 0.5 + 20), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 60, Color(0.7, 0.55, 0.35, 0.6)))
 			if known:
-				UI.hit(p.box, Rect2(cx - 52, y, 104, 104), func(): G.main.open("item_info", id))
+				UI.hit(holder, Rect2(cx - 52, y, 104, 104), func(): G.main.open("item_info", id))
 			if l % 5 == 4 and l < c["items"].size() - 1:
 				y += 116
 		y += 126
-	for k in 3:
-		var b := UI.btn(p.box, Rect2(60 + k * 206, r.end.y - 30, 190, 74), tabs[k], "orange" if k == tab else "wood", Callable(), 30)
-		b.pressed.connect(func():
-			if k != tab:
-				p.close()
-				G.main.open("book", k))
-	return p
+	holder.modulate.a = 0.0
+	holder.create_tween().tween_property(holder, "modulate:a", 1.0, 0.15)
 
 # ---------------------------------------------------------------- 储物洞
 
@@ -420,52 +488,65 @@ static func inventory() -> PopupBase:
 			ci.draw_colored_polygon(b, Color(0, 0, 0, 0.3))
 		Art.item(ci, "amber_2", Vector2(30, 28), 50)
 		Art.item(ci, "shell_1", Vector2(260, 28), 50))
-	UI.lbl(p.box, str(G.amber), Rect2(180, 406, 140, 44), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(p.box, str(G.shells), Rect2(410, 406, 140, 44), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	var am_lbl := UI.lbl(p.box, "", Rect2(180, 406, 140, 44), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	var sh_lbl := UI.lbl(p.box, "", Rect2(410, 406, 140, 44), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	var slots: Array[DrawBox] = []
+	var centers: Array[Vector2] = []
 	for k in G.INV_MAX:
-		var row := k / 5
-		var col := k % 5
-		var c := Vector2(r.position.x + 90 + col * 120, 580 + row * 250)
+		var c := Vector2(r.position.x + 90 + (k % 5) * 120, 580 + (k / 5) * 250)
+		centers.append(c)
 		var slot := Rect2(c - Vector2(52, 60), Vector2(104, 110))
-		var has := k < G.inv.size()
-		var locked := k >= G.inv_cap
-		UI.box(p.box, slot, func(ci, sz):
+		var box := UI.box(p.box, slot, func(ci, sz):
 			var b := Art.rrect(Rect2(Vector2(2, 8), sz - Vector2(4, 8)), 18, 180 + k, 0.8)
 			Art.dilate(ci, b, 2.5, Art.INK)
-			if locked:
+			if k >= G.inv_cap:
 				Art.shade(ci, b, Color("8a8378"), 1)
 				Paint.glyph(ci, "lock", Vector2(sz.x - 18, 22), 1.0)
 			else:
 				ci.draw_colored_polygon(b, Color("6a5444"))
 				ci.draw_colored_polygon(Art.ell(Vector2(sz.x * 0.5, sz.y - 20), Vector2(36, 9), k, 0.0, 14), Color(0, 0, 0, 0.25))
-				if has:
+				if k < G.inv.size():
 					Art.item(ci, G.inv[k], Vector2(sz.x * 0.5, sz.y * 0.5), 90))
-		if has:
-			UI.hit(p.box, slot, func():
-				var to := G.find_empty_near(G.idx(3, 4))
-				if to < 0:
-					G.main.toast("棋盘满了！")
-					return
-				var id: String = G.inv[k]
-				G.inv.remove_at(k)
-				G.board[to]["id"] = id
-				G.dirty()
-				G.board_changed.emit()
-				Sfx.play("pop")
-				p.close()
-				G.main.open("inventory"))
-		elif locked and k == G.inv_cap:
-			var b := UI.btn(p.box, Rect2(c.x - 54, c.y + 30, 108, 54), "50", "green", Callable(), 26)
-			b.res = "amber_2"
-			b.pressed.connect(func():
-				if G.spend("amber", 50):
-					G.inv_cap += 1
-					G.dirty()
-					G.board_changed.emit()
-					p.close()
-					G.main.open("inventory")
-				else:
-					G.main.toast("琥珀不够了！"))
+		box.pivot_offset = slot.size * 0.5
+		slots.append(box)
+		UI.hit(p.box, slot, func():
+			if k >= G.inv.size():
+				return
+			var to := G.find_empty_near(G.idx(3, 4))
+			if to < 0:
+				G.main.toast("棋盘满了！")
+				return
+			var id: String = G.inv[k]
+			G.inv.remove_at(k)
+			G.board[to]["id"] = id
+			G.dirty()
+			G.board_changed.emit()
+			Sfx.play("pop"))
+	var unlock := UI.btn(p.box, Rect2(0, 0, 108, 54), "50", "green", Callable(), 26)
+	unlock.res = "amber_2"
+	var refresh := func():
+		am_lbl.text = str(G.amber)
+		sh_lbl.text = str(G.shells)
+		for s in slots:
+			s.queue_redraw()
+		unlock.visible = G.inv_cap < G.INV_MAX
+		if unlock.visible:
+			unlock.position = centers[G.inv_cap] + Vector2(-54, 30)
+	refresh.call()
+	unlock.pressed.connect(func():
+		if G.spend("amber", 50):
+			var k := G.inv_cap
+			G.inv_cap += 1
+			G.dirty()
+			G.board_changed.emit()
+			Sfx.play("merge", 1.2)
+			var tw := slots[k].create_tween()
+			tw.tween_property(slots[k], "scale", Vector2(1.15, 1.15), 0.1)
+			tw.tween_property(slots[k], "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		else:
+			G.main.toast("琥珀不够了！"))
+	live(p, G.changed, refresh)
+	live(p, G.board_changed, refresh)
 	return p
 
 # ---------------------------------------------------------------- 物品详情
@@ -531,7 +612,7 @@ static func item_info(id: String) -> PopupBase:
 static func levelup() -> PopupBase:
 	var p := PopupBase.new()
 	p.dim_alpha = 0.8
-	var rewards := [["fire_2", 60], ["chest_1", 1], ["pack_1", 1], ["amber_2", 5]]
+	var rewards := Data.level_rewards(G.level)
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
 		var c := Vector2(360, 470)
 		var rot := float(Time.get_ticks_msec()) / 3000.0
@@ -553,13 +634,7 @@ static func levelup() -> PopupBase:
 	tw.tween_property(hint, "modulate:a", 1.0, 0.6)
 	Sfx.play("fanfare")
 	p.on_tap = func():
-		G.main.fly("fire_2", Vector2(105, 700), G.main.topbar.target("energy"), func(): G.add_currency("energy", 60), 100)
-		G.main.fly("amber_2", Vector2(615, 700), G.main.topbar.target("amber"), func(): G.add_currency("amber", 5), 100)
-		G.reward_box.append("chest_1")
-		G.reward_box.append("pack_1")
-		G.dirty()
-		G.changed.emit()
-		G.board_changed.emit()
+		grant_rewards(rewards, func(k): return Vector2(105.0 + k * 170.0, 700))
 		p.on_tap = Callable()
 		p.close()
 	var redraw := Timer.new()
@@ -573,24 +648,101 @@ static func levelup() -> PopupBase:
 				break)
 	return p
 
+## 发放奖励：体力/贝币/琥珀飞向顶栏，其他物品进暂存区
+static func grant_rewards(rewards: Array, from: Callable) -> void:
+	for k in rewards.size():
+		var id: String = rewards[k][0]
+		var n: int = rewards[k][1]
+		var t := Data.type_of(id)
+		var pos: Vector2 = from.call(k)
+		if t in ["energy", "shell", "amber"]:
+			G.main.fly(id, pos, G.main.topbar.target(t), func(): G.add_currency(t, n), 100)
+		else:
+			for j in n:
+				G.stash.append(id)
+			G.main.fly(id, pos, Vector2(64, 260), Callable(), 90)
+	G.dirty()
+	G.changed.emit()
+
+static func level_info() -> PopupBase:
+	var p := PopupBase.new()
+	var r := Rect2(40, 250, 640, 1010)
+	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
+		Paint.panel(ci, r)
+		var br := Rect2(r.get_center().x - 220, r.position.y + 30, 440, 80)
+		Paint.banner(ci, br, Art.TEAL)
+		Paint.level_badge(ci, Vector2(r.get_center().x, r.position.y - 6), 130)
+		var art := Rect2(r.position.x + 40, r.position.y + 130, r.size.x - 80, 300)
+		var ab := Art.rrect(art, 22, 401, 0.8)
+		Art.dilate(ci, ab, 3.0, Art.INK)
+		Paint.vgrad(ci, art.grow(-3), Color("8fd0d4"), Color("f0deb0"))
+		var ground := []
+		for k in 13:
+			ground.append(Vector2(lerpf(art.position.x + 4, art.end.x - 4, float(k) / 12.0), art.position.y + 200 + sin(float(k) * 0.9) * 10.0))
+		ground.append(art.end - Vector2(4, 4))
+		ground.append(Vector2(art.position.x + 4, art.end.y - 4))
+		ci.draw_colored_polygon(Art.poly(ground, 404, 0.5), Color("8bb39a"))
+		Paint._spot_hut(ci, Vector2(art.position.x + 120, art.position.y + 250), 6)
+		Paint.palm(ci, Vector2(art.end.x - 40, art.end.y - 6), 170, 3, Color("4a8a4a"))
+		Paint.heroine(ci, Vector2(art.get_center().x + 50, art.position.y + 160), 120)
+		Paint.book(ci, Vector2(art.get_center().x + 50, art.position.y + 236), 1.1)
+		Art.outline(ci, ab, 3.0, Art.LEATHER_D)
+		var bar := Rect2(r.position.x + 70, r.position.y + 560, 400, 44)
+		Paint.bar(ci, bar, float(G.xp) / float(G.xp_need()), Art.MOSS)
+		Art.item(ci, "xp_1", bar.position + Vector2(0, 22), 64)
+		Paint.level_badge(ci, Vector2(bar.end.x + 70, bar.get_center().y), 92)
+		var arr := Art.poly([Vector2(bar.end.x + 100, bar.position.y + 4), Vector2(bar.end.x + 122, bar.position.y - 20), Vector2(bar.end.x + 144, bar.position.y + 4), Vector2(bar.end.x + 130, bar.position.y + 4), Vector2(bar.end.x + 130, bar.position.y + 24), Vector2(bar.end.x + 114, bar.position.y + 24), Vector2(bar.end.x + 114, bar.position.y + 4)], 402)
+		Art.fill(ci, arr, Art.MOSS, 3.0)
+		var rb := Art.rrect(Rect2(r.position.x + 40, r.position.y + 680, r.size.x - 80, 280), 22, 403, 0.8)
+		ci.draw_colored_polygon(rb, Color("ecd9b3"))
+		Art.outline(ci, rb, 2.0, Color(0.6, 0.4, 0.2, 0.4)))
+	UI.title(p.box, "部落等级", Rect2(r.get_center().x - 200, r.position.y + 50, 400, 60), 38, Color.WHITE)
+	UI.lbl(p.box, str(G.level), Rect2(r.get_center().x - 60, r.position.y - 44, 120, 80), 50, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+	var tip := UI.lbl(p.box, "完成带 ★ 的部落订单，提升部落等级并领取奖励！", Rect2(r.position.x + 40, r.position.y + 446, r.size.x - 80, 90), 25, Color("6b4a2a"))
+	tip.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	UI.lbl(p.box, "%d/%d" % [G.xp, G.xp_need()], Rect2(r.position.x + 70, r.position.y + 560, 400, 44), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(p.box, str(G.level + 1), Rect2(r.position.x + 480, r.position.y + 548, 80, 60), 34, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	section(p.box, "下一级奖励", r.position.y + 640, Color("8a5a30"))
+	var rw := Data.level_rewards(G.level + 1)
+	for k in rw.size():
+		var cx := r.get_center().x + (float(k) - (rw.size() - 1) * 0.5) * 136.0
+		var cy := r.position.y + 790
+		UI.icon(p.box, rw[k][0], Vector2(cx, cy), 110)
+		UI.lbl(p.box, "×%d" % rw[k][1], Rect2(cx - 60, cy + 54, 120, 40), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
+		var id: String = rw[k][0]
+		var ib := UI.hit(p.box, Rect2(cx + 22, cy - 72, 44, 44), func(): G.main.open("item_info", id))
+		ib.extra = func(ci, sz): Paint.glyph(ci, "info", sz * 0.5, 1.0)
+	var x := UI.hit(p.box, Rect2(r.end.x - 52, r.position.y - 24, 70, 70), p.close)
+	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
+	return p
+
 # ---------------------------------------------------------------- 丰收祭活动
 
 static func event() -> PopupBase:
 	var p := PopupBase.new()
 	p.dim_alpha = 1.0
-	UI.box(p.box, Rect2(0, 0, 720, 1480), _paint_event)
-	UI.title(p.box, "丰收祭", Rect2(0, 250, 720, 100), 72)
-	UI.lbl(p.box, G.fmt_time(G.event_left()), Rect2(300, 350, 160, 44), 22, Art.INK)
+	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, sz): Paint.vgrad(ci, Rect2(Vector2.ZERO, sz), Color("4a4a8a"), Color("2f3a6a")), false)
+	var fs := fullscreen(p)
+	var sc: Scroller = fs[0]
+	var root: Control = fs[1]
+	UI.box(root, Rect2(0, 0, 720, 720), _paint_event)
+	UI.title(root, "丰收祭", Rect2(0, 250, 720, 100), 72)
+	UI.lbl(root, G.fmt_time(G.event_left()), Rect2(300, 350, 160, 44), 22, Art.INK)
+	var info := UI.hit(root, Rect2(474, 342, 60, 60), func(): G.main.toast("开启兽皮卡包收集岩画卡牌，集齐卡册赢取大奖！"))
+	info.extra = func(ci, sz): Paint.glyph(ci, "info", sz * 0.5, 1.2)
 	var rw := [["fire_3", 800], ["amber_3", 250], ["chest_1", 1]]
 	for k in 3:
 		var x := 200.0 + k * 160.0
-		UI.icon(p.box, rw[k][0], Vector2(x, 450), 90)
-		UI.lbl(p.box, "×%d" % rw[k][1], Rect2(x - 70, 488, 140, 40), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
-	UI.lbl(p.box, "%d/%d" % [G.cards_total(), Data.ALBUMS.size() * 9], Rect2(200, 548, 380, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+		UI.icon(root, rw[k][0], Vector2(x, 450), 90)
+		UI.lbl(root, "×%d" % rw[k][1], Rect2(x - 70, 488, 140, 40), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	UI.lbl(root, "%d/%d" % [G.cards_total(), Data.ALBUMS.size() * 9], Rect2(200, 548, 380, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	var got := G.tokens - G.token_claimed
+	UI.lbl(root, "祭典鼓 %d/%d" % [got, G.TOKEN_STEP], Rect2(170, 616, 420, 36), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(root, "完成订单收集祭典鼓，攒满换兽皮卡包", Rect2(60, 656, 600, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	for a in Data.ALBUMS.size():
 		var cx := 128.0 + (a % 3) * 232.0
-		var cy := 740.0 + (a / 3) * 330.0
-		var hit := UI.hit(p.box, Rect2(cx - 110, cy - 120, 220, 300), func():
+		var cy := 840.0 + (a / 3) * 330.0
+		var hit := UI.hit(root, Rect2(cx - 110, cy - 120, 220, 300), func():
 			G.main.open("album", a))
 		hit.extra = func(ci, sz):
 			var c := Vector2(sz.x * 0.5, 110)
@@ -603,14 +755,11 @@ static func event() -> PopupBase:
 			var rr := Rect2(-6, 168, sz.x + 12, 56)
 			var rb := Art.poly([rr.position, Vector2(rr.end.x, rr.position.y), Vector2(rr.end.x - 14, rr.get_center().y), rr.end, Vector2(rr.position.x, rr.end.y), Vector2(rr.position.x + 14, rr.get_center().y)], a)
 			Art.dilate(ci, rb, 3.0, Art.INK)
-			ci.draw_colored_polygon(rb, ribbon_cols[a])
+			ci.draw_colored_polygon(rb, ribbon_cols[a % ribbon_cols.size()])
 			Paint.bar(ci, Rect2(20, 240, sz.x - 40, 32), float(G.album_count(a)) / 9.0, Art.MOSS)
 		UI.lbl(hit, Data.ALBUMS[a]["name"], Rect2(0, 168, 220, 56), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 		UI.lbl(hit, "%d/9" % G.album_count(a), Rect2(0, 240, 220, 32), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	var x := UI.hit(p.box, Rect2(636, 40, 70, 70), p.close)
-	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
-	var info := UI.hit(p.box, Rect2(18, 44, 60, 60), func(): G.main.toast("开启兽皮卡包收集岩画卡牌，集齐卡册赢取大奖！"))
-	info.extra = func(ci, sz): Paint.glyph(ci, "info", sz * 0.5, 1.6)
+	sc.set_length(840.0 + 3 * 330.0 + 330.0 - 128.0)
 	var shop := UI.hit(p.box, Rect2(590, 1340, 120, 130), func(): G.main.open("pack"))
 	shop.extra = func(ci, sz):
 		Art.item(ci, "pack_1", Vector2(sz.x * 0.5, 56), 100)
@@ -619,11 +768,11 @@ static func event() -> PopupBase:
 
 static func _paint_event(ci: CanvasItem, sz: Vector2) -> void:
 	Paint.vgrad(ci, Rect2(0, 0, sz.x, 600), Color("1f2a5a"), Color("5a4f9a"))
-	Paint.vgrad(ci, Rect2(0, 600, sz.x, sz.y - 600), Color("4a4a8a"), Color("2f3a6a"))
+	Paint.vgrad(ci, Rect2(0, 600, sz.x, 120), Color("5a4f9a"), Color("4a4a8a"))
 	for i in 40:
-		ci.draw_circle(Vector2(Art.srnd(i) * sz.x, Art.srnd(i + 50) * 260), 1.2 + Art.srnd(i + 7) * 2.0, Color(1, 1, 0.85, 0.5 + 0.5 * Art.srnd(i + 3)))
-	ci.draw_circle(Vector2(560, 110), 60, Color(1, 0.95, 0.75, 0.25))
-	ci.draw_circle(Vector2(560, 110), 44, Color("fff1c4"))
+		ci.draw_circle(Vector2(Art.srnd(i) * sz.x, 130 + Art.srnd(i + 50) * 140), 1.2 + Art.srnd(i + 7) * 2.0, Color(1, 1, 0.85, 0.5 + 0.5 * Art.srnd(i + 3)))
+	ci.draw_circle(Vector2(600, 180), 50, Color(1, 0.95, 0.75, 0.25))
+	ci.draw_circle(Vector2(600, 180), 36, Color("fff1c4"))
 	Paint.hills(ci, 240, sz.x, 40, Color("2a2f5a"), 4, 300)
 	var string := []
 	for k in 9:
@@ -640,7 +789,7 @@ static func _paint_event(ci: CanvasItem, sz: Vector2) -> void:
 		if k == 1 or k == 2:
 			x += (1 if k == 2 else -1) * 60.0
 		Paint._hunter(ci, Vector2(x, 210), 1.6, Color("1a1430"), k)
-	Paint.mascot(ci, Vector2(110, 140), 90)
+	Paint.mascot(ci, Vector2(90, 200), 80)
 	var tp := Art.rrect(Rect2(296, 350, 168, 44), 22, 220, 0.6)
 	Art.dilate(ci, tp, 2.5, Art.INK)
 	ci.draw_colored_polygon(tp, Art.BONE)
@@ -650,6 +799,10 @@ static func _paint_event(ci: CanvasItem, sz: Vector2) -> void:
 	Art.outline(ci, rb, 2.0, Color(1, 1, 1, 0.2))
 	Paint.bar(ci, Rect2(170, 552, 420, 34), float(G.cards_total()) / float(Data.ALBUMS.size() * 9), Art.MOSS)
 	Paint.cards_icon(ci, Vector2(160, 568), 0.6)
+	var got := G.tokens - G.token_claimed
+	Paint.bar(ci, Rect2(170, 616, 420, 36), float(got) / float(G.TOKEN_STEP), Art.OCHRE)
+	Art.item(ci, "token_1", Vector2(160, 630), 64)
+	Art.item(ci, "pack_1", Vector2(610, 630), 64)
 
 static func album(a: int) -> PopupBase:
 	var p := PopupBase.new()

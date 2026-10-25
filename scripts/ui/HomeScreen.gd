@@ -36,8 +36,6 @@ func _ready() -> void:
 		Art.item(ci, "chest_1", Vector2(sz.x * 0.5, 62), 90)
 	UI.lbl(deal, "每日特惠", Rect2(0, 92, 124, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 
-	var help := UI.btn(self, Rect2(30, 494, 84, 84), "?", "orange", func(): G.main.open("howto"), 44)
-	help.is_round = true
 	var gear := UI.btn(self, Rect2(626, 150, 80, 80), "", "teal", func(): G.main.open("settings"))
 	gear.is_round = true
 	gear.glyph = "gear"

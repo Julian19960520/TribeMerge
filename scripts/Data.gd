@@ -16,19 +16,32 @@ const CHAINS := {
 	"amber": {"name": "琥珀", "type": "amber", "items": ["琥珀粒", "琥珀块", "虫珀"], "value": [1, 3, 10]},
 	"chest": {"name": "藤编宝箱", "type": "chest", "items": ["藤编宝箱"]},
 	"pack": {"name": "兽皮卡包", "type": "pack", "items": ["兽皮卡包"]},
+	"token": {"name": "祭典鼓", "type": "token", "items": ["祭典鼓"]},
+	"xp": {"name": "声望星", "type": "xp", "items": ["声望星"]},
 }
 
 const ORDER_CHAINS := ["berry", "stone", "meat", "fish"]
 
 const PEOPLE := ["老酋长 巴图", "巫医 月禾", "猎手 阿石", "小不点 果果"]
 
-const BUILDS := [
-	{"id": "fire", "name": "篝火广场", "stages": 7},
-	{"id": "hut", "name": "酋长大屋", "stages": 6},
-	{"id": "totem", "name": "部落图腾", "stages": 5},
-	{"id": "rack", "name": "晾肉架", "stages": 5},
-	{"id": "tower", "name": "瞭望塔", "stages": 6},
-]
+## 剧情订单：只有它们给声望（经验），每级的声望需求 = 该级剧情订单声望之和，严格控制升级节奏。
+const STORY := {
+	1: [{"who": 0, "items": ["berry_2"], "xp": 1, "shell": 8},
+		{"who": 2, "items": ["stone_2"], "xp": 1, "shell": 8},
+		{"who": 1, "items": ["berry_2", "meat_2"], "xp": 2, "shell": 16, "pack": 1}],
+	2: [{"who": 3, "items": ["berry_3"], "xp": 2, "shell": 14},
+		{"who": 2, "items": ["meat_2", "stone_2"], "xp": 2, "shell": 18},
+		{"who": 0, "items": ["fish_2"], "xp": 2, "shell": 12, "token": 2}],
+	3: [{"who": 1, "items": ["berry_3", "stone_3"], "xp": 3, "shell": 30},
+		{"who": 2, "items": ["meat_3"], "xp": 2, "shell": 20, "pack": 1},
+		{"who": 0, "items": ["fish_3", "berry_2"], "xp": 3, "shell": 26}],
+	4: [{"who": 3, "items": ["berry_4"], "xp": 3, "shell": 36},
+		{"who": 2, "items": ["stone_3", "meat_3", "fish_2"], "xp": 4, "shell": 48, "token": 3},
+		{"who": 1, "items": ["fish_3"], "xp": 3, "shell": 30, "pack": 1}],
+	5: [{"who": 0, "items": ["stone_4", "meat_3"], "xp": 4, "shell": 56},
+		{"who": 1, "items": ["berry_4", "fish_3"], "xp": 4, "shell": 56, "pack": 1},
+		{"who": 2, "items": ["meat_4"], "xp": 4, "shell": 50, "token": 4}],
+}
 
 const ALBUMS := [
 	{"name": "猛犸迁徙", "cards": ["雪原足迹", "长牙首领", "幼崽", "河边饮水", "围猎", "风雪夜", "长鼻嬉戏", "迁徙路", "猛犸之歌"]},
@@ -37,6 +50,64 @@ const ALBUMS := [
 	{"name": "洞穴壁画", "cards": ["赭石手印", "红色野牛", "画师", "炭笔", "火把照壁", "群手", "神秘符号", "壁上星辰", "传承"]},
 	{"name": "丰收祭典", "cards": ["太阳鼓", "面具", "祭舞", "贝壳项链", "丰收果", "图腾柱", "长老祝福", "欢宴", "月下歌"]},
 	{"name": "河畔渔猎", "cards": ["鱼叉", "浅滩", "编网", "跳跃的鲈鱼", "独木舟", "晒鱼", "水鸟", "河神", "满网"]},
+	{"name": "采集时节", "cards": ["第一颗莓", "藤篮", "蜂巢", "野蘑菇", "坚果林", "晨露", "满篮", "分享", "种子"]},
+	{"name": "石器工坊", "cards": ["燧石", "敲击", "石片飞溅", "磨刃", "绑柄", "石斧", "石矛", "老匠人", "传艺"]},
+	{"name": "部落人物", "cards": ["老酋长", "巫医", "猎手", "小不点", "阿焰", "小牙", "长老", "画师", "守夜人"]},
+	{"name": "四季轮转", "cards": ["春雨", "夏雷", "秋实", "冬雪", "候鸟", "冰河", "花开", "落叶", "新月"]},
+	{"name": "远古巨兽", "cards": ["剑齿虎", "巨鹿", "洞熊", "披毛犀", "恐鸟", "巨狼", "大地懒", "古象", "巨鳄"]},
+	{"name": "星空传说", "cards": ["北斗", "银河", "流星", "月神", "日神", "风神", "雷神", "星图", "启明"]},
+]
+
+const AMBER_PACKS := [
+	{"n": 80, "price": "¥6"}, {"n": 500, "price": "¥30"}, {"n": 1200, "price": "¥68"},
+	{"n": 2500, "price": "¥128"}, {"n": 6500, "price": "¥328"}, {"n": 14000, "price": "¥648"},
+]
+
+static func story_orders(level: int) -> Array:
+	if STORY.has(level):
+		return STORY[level]
+	var r := RandomNumberGenerator.new()
+	r.seed = level * 7919
+	var out := []
+	var top: int = mini(5, 2 + level / 2)
+	for i in 3:
+		var items := []
+		var n := 1 + r.randi() % 3
+		var shell := 0
+		for k in n:
+			var ch: String = ORDER_CHAINS[r.randi() % ORDER_CHAINS.size()]
+			var l := r.randi_range(3, mini(top, max_lv(ch)))
+			items.append("%s_%d" % [ch, l])
+			shell += 4 * int(pow(2, l - 1))
+		var o := {"who": r.randi() % PEOPLE.size(), "items": items, "xp": 2 + n + level / 3, "shell": shell}
+		if i == 1:
+			o["pack"] = 1
+		if i == 2:
+			o["token"] = 2 + level / 2
+		out.append(o)
+	return out
+
+static func xp_need(level: int) -> int:
+	var n := 0
+	for o in story_orders(level):
+		n += int(o["xp"])
+	return n
+
+## 升到 level 时获得的奖励
+static func level_rewards(level: int) -> Array:
+	var out := [["fire_2", 30 + level * 10], ["chest_1", 1], ["pack_1", 1]]
+	if level % 3 == 0:
+		out.append(["basket_3" if level % 6 == 0 else "hunt_3", 1])
+	else:
+		out.append(["amber_2", 5])
+	return out
+
+const BUILDS := [
+	{"id": "fire", "name": "篝火广场", "stages": 7},
+	{"id": "hut", "name": "酋长大屋", "stages": 6},
+	{"id": "totem", "name": "部落图腾", "stages": 5},
+	{"id": "rack", "name": "晾肉架", "stages": 5},
+	{"id": "tower", "name": "瞭望塔", "stages": 6},
 ]
 
 const STORE_HOT := [
@@ -114,6 +185,10 @@ static func describe(id: String) -> String:
 			return "点击打开，获得随机物品。"
 		"pack":
 			return "点击打开，获得丰收祭卡牌。"
+		"token":
+			return "丰收祭的活动积分，每攒 %d 个换一个兽皮卡包。" % 10
+		"xp":
+			return "部落声望，只有带星标的剧情订单才会给，攒满即可升级。"
 	return tail
 
 static func build_def(id: String) -> Dictionary:

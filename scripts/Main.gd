@@ -17,9 +17,9 @@ func _ready() -> void:
 	board_screen = BoardScreen.new()
 	board_screen.visible = false
 	add_child(board_screen)
+	popup_layer = _layer()
 	topbar = TopBar.new()
 	add_child(topbar)
-	popup_layer = _layer()
 	fx_layer = _layer()
 	_curtain = ColorRect.new()
 	_curtain.size = size
@@ -77,8 +77,13 @@ func open(name: String, arg = null) -> PopupBase:
 		"event": p = Popups.event()
 		"album": p = Popups.album(arg)
 		"pack": p = Popups.pack()
+		"level": p = Popups.level_info()
 		_: return null
 	popup_layer.add_child(p)
+	if p.has_meta("fullscreen"):
+		var cb := p.close
+		topbar.push_close(cb)
+		p.tree_exiting.connect(func(): topbar.pop_close(cb))
 	p.open()
 	return p
 
@@ -163,13 +168,57 @@ func _run_shots(names: PackedStringArray) -> void:
 				show_screen("board", true)
 				board_screen._on_deliver(0)
 				await get_tree().create_timer(0.5).timeout
+			"store_bottom", "event_bottom":
+				show_screen("home", true)
+				var sp := open(what.get_slice("_", 0))
+				await get_tree().create_timer(0.4).timeout
+				for c in sp.box.get_children():
+					if c is Scroller:
+						c.offset = c._max()
+			"drag":
+				show_screen("board", true)
+				var bd := board_screen.board
+				var src := -1
+				for k in G.board.size():
+					if G.board[k]["id"] != "" and G.board[k]["lock"] == 0 and Data.type_of(G.board[k]["id"]) == "item":
+						src = k
+						break
+				bd.drag_from = src
+				bd.dragging = true
+				bd.drag_vis = bd.cell_center(src) + Vector2(150, 120)
+				bd._drop(bd.cell_center(G.find_empty_near(src)) + Vector2(30, 30))
+				bd.dragging = false
+				bd.drag_from = -1
+				await get_tree().create_timer(0.08).timeout
+			"story":
+				show_screen("board", true)
+				for r in 3:
+					var o: Dictionary = G.orders[0]
+					for id in o["items"]:
+						G.board[G.find_empty_near(0)]["id"] = id
+					G.board_changed.emit()
+					board_screen._on_deliver(0)
+					await get_tree().create_timer(1.6).timeout
+				board_screen._on_stash()
+				await get_tree().create_timer(0.5).timeout
+			"inv_unlock":
+				show_screen("board", true)
+				var ip := open("inventory")
+				await get_tree().create_timer(0.4).timeout
+				for c in ip.box.get_children():
+					if c is TButton and c.text == "50":
+						c.pressed.emit()
+			"orders_end":
+				show_screen("board", true)
+				var osc: Scroller = board_screen._orders
+				osc.offset = osc._max()
 			"pack_open":
 				show_screen("board", true)
 				var pp := open("pack")
 				await get_tree().create_timer(0.5).timeout
 				pp.on_tap.call()
 			_:
-				show_screen("board" if what in ["item_info", "inventory", "levelup", "pack"] else "home", true)
+				show_screen("board" if what in ["item_info", "inventory", "levelup", "pack", "level"] else "home", true)
 				var arg = null
 				if parts.size() > 1:
 					arg = parts[1]

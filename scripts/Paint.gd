@@ -142,14 +142,30 @@ static func bar(ci: CanvasItem, r: Rect2, t: float, col: Color = Art.MOSS, seed:
 		ci.draw_colored_polygon(Art.rrect(Rect2(fr.position + Vector2(6, 2), Vector2(max(4, fr.size.x - 12), fr.size.y * 0.3)), 4, seed + 2, 0.0), Color(1, 1, 1, 0.35))
 
 static func cell_bracket(ci: CanvasItem, r: Rect2, col: Color = Color("ffd23f")) -> void:
-	var L := r.size.x * 0.28
+	var L := r.size.x * 0.3
+	var rad := r.size.x * 0.16
+	r = r.grow(-5.0)
 	for corner in 4:
 		var p := r.position + Vector2(r.size.x if corner % 2 == 1 else 0.0, r.size.y if corner >= 2 else 0.0)
 		var sx := -1.0 if corner % 2 == 1 else 1.0
 		var sy := -1.0 if corner >= 2 else 1.0
-		var arr := PackedVector2Array([p + Vector2(0, L * sy), p, p + Vector2(L * sx, 0)])
-		ci.draw_polyline(arr, Art.INK, 10.0, true)
-		ci.draw_polyline(arr, col, 6.0, true)
+		var cc := p + Vector2(rad * sx, rad * sy)
+		var arr := PackedVector2Array([p + Vector2(0, L * sy)])
+		var a0 := atan2(0.0, -sx)
+		var a1 := atan2(-sy, 0.0)
+		if a1 - a0 > PI:
+			a1 -= TAU
+		elif a0 - a1 > PI:
+			a1 += TAU
+		for k in 9:
+			var a := lerpf(a0, a1, float(k) / 8.0)
+			arr.append(cc + Vector2(cos(a), sin(a)) * rad)
+		arr.append(p + Vector2(L * sx, 0))
+		for w in [11.0, 6.0]:
+			var cl: Color = Art.INK if w > 7.0 else col
+			ci.draw_polyline(arr, cl, w, true)
+			ci.draw_circle(arr[0], w * 0.5, cl)
+			ci.draw_circle(arr[arr.size() - 1], w * 0.5, cl)
 
 static func check_mark(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	var b := Art.ell(c, Vector2(13, 13) * s, 3, 0.02, 16)
@@ -417,7 +433,8 @@ static func heroine(ci: CanvasItem, c: Vector2, s: float) -> void:
 
 # ---------------------------------------------------------------- 岩画卡牌
 
-const ALBUM_COL := [Color("c98a55"), Color("b8a27a"), Color("6b4a3a"), Color("a07858"), Color("c4a06a"), Color("8a9a8a")]
+const ALBUM_COL := [Color("c98a55"), Color("b8a27a"), Color("6b4a3a"), Color("a07858"), Color("c4a06a"), Color("8a9a8a"),
+	Color("b9894a"), Color("8f8478"), Color("a86a4a"), Color("7f9a7a"), Color("94705a"), Color("5f6a8a")]
 
 static func card_art(ci: CanvasItem, album: int, idx: int, r: Rect2) -> void:
 	var bg: Color = ALBUM_COL[album % ALBUM_COL.size()]

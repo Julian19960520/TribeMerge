@@ -243,9 +243,36 @@ static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool 
 		"amber": _amber(ci, lv, s, rim)
 		"chest": _chest(ci, s, rim)
 		"pack": _pack(ci, s, rim)
+		"token": _token(ci, s, rim)
+		"xp": _xp(ci, s, rim)
 		_:
 			sil(ci, [P(ell(Vector2.ZERO, Vector2(30, 30), s), STONE)], rim)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+## 祭典鼓：活动积分
+static func _token(ci: CanvasItem, s: int, rim: bool) -> void:
+	var body := poly([Vector2(-30, -16), Vector2(30, -16), Vector2(24, 30), Vector2(-24, 30)], s, 0.6)
+	var head := ell(Vector2(0, -16), Vector2(31, 11), s + 1, 0.03, 18)
+	sil(ci, [P(body, CLAY, 1), P(head, BONE, 0),
+		P(capsule(Vector2(16, -50), Vector2(4, -24), 3.0, s + 2), WOOD, 1),
+		P(ell(Vector2(17, -52), Vector2(7, 7), s + 3, 0.04, 10), OCHRE)], rim)
+	for k in 5:
+		var x := -22.0 + k * 11.0
+		ln(ci, Vector2(x, -6), Vector2(x * 0.82 + (3.0 if k % 2 == 0 else -3.0), 28), 2.0, ROPE, s + k)
+	pl(ci, [Vector2(-28, 4), Vector2(0, 8), Vector2(27, 4)], 3.0, OCHRE, s + 6)
+	for k in 3:
+		ci.draw_colored_polygon(poly([Vector2(-16 + k * 16, 12), Vector2(-10 + k * 16, 12), Vector2(-13 + k * 16, 20)], s + k), TEAL)
+	ci.draw_colored_polygon(ell(Vector2(-8, -19), Vector2(10, 3), s + 9, 0.0, 10), Color(1, 1, 1, 0.5))
+
+## 声望星：部落经验
+static func _xp(ci: CanvasItem, s: int, rim: bool) -> void:
+	var st := star_pts(Vector2(0, 2), 40, 19, 5, s)
+	sil(ci, [P(st, OCHRE, 1)], rim)
+	ci.draw_colored_polygon(star_pts(Vector2(0, 2), 22, 11, 5, s + 1), Color("ffe27a"))
+	ci.draw_circle(Vector2(-7, -6), 3.0, INK)
+	ci.draw_circle(Vector2(7, -6), 3.0, INK)
+	ci.draw_arc(Vector2(0, 2), 6.0, 0.3, PI - 0.3, 8, INK, 2.4, true)
+	ci.draw_colored_polygon(ell(Vector2(-14, -16), Vector2(6, 3), s + 2, 0.0, 8, -0.6), Color(1, 1, 1, 0.6))
 
 static func _bry(c: Vector2, r: float, s: int) -> Array:
 	return P(ell(c, Vector2(r, r * 0.96), s, 0.04, 16), BERRY)

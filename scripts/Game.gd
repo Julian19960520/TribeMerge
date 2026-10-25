@@ -10,7 +10,9 @@ const COLS := 7
 const ROWS := 9
 const MAX_ENERGY := 100
 const REGEN_SEC := 120
-const SAVE_PATH := "user://tribe_save.json"
+const SAVE_PATH := "user://tribe_save_v2.json"
+const RANDOM_ORDERS := 3
+const TOKEN_STEP := 10
 const INV_MAX := 10
 
 var main: Node = null
@@ -30,7 +32,10 @@ var discovered := {}
 var orders: Array = []
 var builds := {}
 var cards := {}
-var reward_box: Array = []
+var stash: Array = []
+var tokens := 0
+var token_claimed := 0
+var scroll_drag := false
 var settings := {"music": true, "sound": true, "vibrate": true, "hint": true}
 var hot_bought := {}
 var deals_bought := {}
@@ -50,6 +55,9 @@ func _ready() -> void:
 	if not load_game():
 		new_game()
 	_check_day()
+
+func clear_scroll_drag() -> void:
+	scroll_drag = false
 
 func _sysfont(names: Array, weight: int) -> SystemFont:
 	var f := SystemFont.new()
@@ -137,12 +145,15 @@ func new_game() -> void:
 	discovered = {}
 	builds = {"fire": 1}
 	cards = {}
-	reward_box = ["pack_1"]
+	stash = ["pack_1", "chest_1"]
+	tokens = 0
+	token_claimed = 0
 	player_id = "TRB" + str(rng.randi_range(10000000, 99999999))
 	seen_tutorial = false
 	_init_board()
 	orders = []
-	for i in 3:
+	_add_story_orders()
+	for i in RANDOM_ORDERS:
 		orders.append(_make_order())
 	dirty()
 
@@ -177,7 +188,7 @@ func save_game() -> void:
 		"level": level, "xp": xp, "energy": energy, "shells": shells, "amber": amber,
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
 		"discovered": discovered, "orders": orders, "builds": builds, "cards": cards,
-		"reward_box": reward_box, "settings": settings, "hot_bought": hot_bought,
+		"stash": stash, "tokens": tokens, "token_claimed": token_claimed, "settings": settings, "hot_bought": hot_bought,
 		"deals_bought": deals_bought, "deals_day": deals_day, "player_id": player_id,
 		"seen_tutorial": seen_tutorial,
 	}
@@ -209,13 +220,15 @@ func load_game() -> bool:
 	orders = d["orders"]
 	for o in orders:
 		o["who"] = int(o["who"])
-		o["reward"] = int(o["reward"])
-		o["xp"] = int(o["xp"])
+		for k in o["rw"]:
+			o["rw"][k] = int(o["rw"][k])
 	builds = d["builds"]
 	for k in builds:
 		builds[k] = int(builds[k])
 	cards = d["cards"]
-	reward_box = d["reward_box"]
+	stash = d["stash"]
+	tokens = int(d.get("tokens", 0))
+	token_claimed = int(d.get("token_claimed", 0))
 	settings = d["settings"]
 	hot_bought = d.get("hot_bought", {})
 	deals_bought = d.get("deals_bought", {})
@@ -264,7 +277,7 @@ func spend(kind: String, n: int) -> bool:
 	return true
 
 func xp_need() -> int:
-	return 6 + level * 3
+	return Data.xp_need(level)
 
 func add_xp(n: int) -> bool:
 	xp += n
@@ -273,9 +286,28 @@ func add_xp(n: int) -> bool:
 		xp -= xp_need()
 		level += 1
 		up = true
+		_add_story_orders()
+		orders_changed.emit()
 	dirty()
 	changed.emit()
 	return up
+
+## 暂存区：奖励、购买、溢出的物品都先放这里
+func stash_push(id: String) -> void:
+	stash.append(id)
+	dirty()
+	changed.emit()
+
+func add_tokens(n: int) -> int:
+	tokens += n
+	var packs := 0
+	while tokens - token_claimed >= TOKEN_STEP:
+		token_claimed += TOKEN_STEP
+		stash.append("pack_1")
+		packs += 1
+	dirty()
+	changed.emit()
+	return packs
 
 # ---------------------------------------------------------------- 棋盘
 
@@ -389,17 +421,37 @@ func roll_chest() -> Array:
 
 # ---------------------------------------------------------------- 订单
 
+## 随机订单：不给声望，奖励贝币，偶尔有卡包 / 祭典鼓
 func _make_order() -> Dictionary:
-	var n := 1 if level < 3 or rng.randf() < 0.5 else 2
+	var r := rng.randf()
+	var n := 1 if level < 2 or r < 0.45 else (2 if r < 0.85 else 3)
 	var items := []
-	var reward := 0
-	var top: int = min(5, 2 + level / 2)
+	var shell := 0
+	var top: int = mini(5, 2 + level / 2)
 	for i in n:
 		var ch: String = Data.ORDER_CHAINS[rng.randi() % Data.ORDER_CHAINS.size()]
-		var lv := rng.randi_range(2, mini(top, Data.max_lv(ch)))
-		items.append("%s_%d" % [ch, lv])
-		reward += 4 * int(pow(2, lv - 1)) + rng.randi_range(0, 6)
-	return {"who": rng.randi() % Data.PEOPLE.size(), "items": items, "reward": reward, "xp": n + (1 if reward > 30 else 0)}
+		var l := rng.randi_range(1 if level < 2 else 2, mini(top, Data.max_lv(ch)))
+		items.append("%s_%d" % [ch, l])
+		shell += 3 * int(pow(2, l - 1)) + rng.randi_range(0, 4)
+	var rw := {"shell": shell}
+	if rng.randf() < 0.25:
+		rw["pack"] = 1
+	if rng.randf() < 0.5:
+		rw["token"] = rng.randi_range(1, 3) * n
+	return {"who": rng.randi() % Data.PEOPLE.size(), "items": items, "rw": rw, "story": false}
+
+func _add_story_orders() -> void:
+	var at := 0
+	for o in orders:
+		if o["story"]:
+			at += 1
+	for s in Data.story_orders(level):
+		var rw := {"xp": int(s["xp"]), "shell": int(s["shell"])}
+		for k in ["pack", "token"]:
+			if s.has(k):
+				rw[k] = int(s[k])
+		orders.insert(at, {"who": int(s["who"]), "items": s["items"].duplicate(), "rw": rw, "story": true})
+		at += 1
 
 func board_has(id: String, exclude: Array = []) -> int:
 	for k in board.size():
@@ -435,7 +487,8 @@ func complete_order(oi: int) -> Array:
 	for k in cells:
 		board[k]["id"] = ""
 	orders.remove_at(oi)
-	orders.append(_make_order())
+	if not o["story"]:
+		orders.append(_make_order())
 	dirty()
 	board_changed.emit()
 	orders_changed.emit()

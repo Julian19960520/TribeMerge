@@ -34,7 +34,7 @@ func _gui_input(e: InputEvent) -> void:
 			tw.tween_property(self, "scale", Vector2(1.06, 1.04), 0.08)
 			tw.tween_property(self, "scale", Vector2.ONE, 0.1)
 			accept_event()
-			if Rect2(Vector2.ZERO, size).has_point(e.position):
+			if Rect2(Vector2.ZERO, size).has_point(e.position) and not G.scroll_drag:
 				if enabled:
 					Sfx.play(sound)
 					pressed.emit()
