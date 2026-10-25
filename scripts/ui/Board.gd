@@ -26,6 +26,8 @@ var _t := 0.0
 
 const DRAG_LIFT := Vector2(0, -14)
 const MOVE_DUR := 0.26
+## 越大越跟手
+const DRAG_FOLLOW := 32.0
 
 func _ready() -> void:
 	size = Vector2(G.COLS * CELL, G.ROWS * CELL)
@@ -37,7 +39,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	if dragging:
-		drag_vis = drag_vis.lerp(drag_pos, 1.0 - exp(-delta * 16.0))
+		drag_vis = drag_vis.lerp(drag_pos, 1.0 - exp(-delta * DRAG_FOLLOW))
 	for m in moves:
 		m["t"] += delta / float(m["dur"])
 	for m in moves.duplicate():
