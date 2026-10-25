@@ -2,10 +2,12 @@ class_name BoardScreen
 extends Control
 
 const BOARD_POS := Vector2(24, 432)
-const ORDER_RECT := Rect2(272, 140, 448, 236)
+## 暂存区、基地和订单在同一个横向滚动列表里
+const ROW_RECT := Rect2(0, 140, 720, 236)
+const ORDER_X := 272.0
 const ORDER_H := 232.0
-const STASH_RECT := Rect2(6, 146, 118, 226)
-const BASE_RECT := Rect2(126, 146, 142, 226)
+const STASH_RECT := Rect2(6, 6, 118, 226)
+const BASE_RECT := Rect2(126, 6, 142, 226)
 const CHIP_ICON := {"xp": "xp_1", "shell": "shell_1", "pack": "pack_1", "token": "token_1"}
 const CHIP_ORDER := ["xp", "shell", "pack", "token"]
 
@@ -22,6 +24,10 @@ var _stash_btn: TButton
 var _base_btn: TButton
 var _pouch: TButton
 var _cards: Array[Control] = []
+var _cards_root: Control
+
+func stash_pos() -> Vector2:
+	return _stash_btn.get_global_rect().get_center()
 
 func _ready() -> void:
 	size = Vector2(720, 1480)
@@ -35,18 +41,21 @@ func _ready() -> void:
 	board.activated.connect(_on_activate)
 	board.dropped_outside.connect(_on_drop_outside)
 
-	_stash_btn = UI.hit(self, STASH_RECT, _on_stash)
+	_orders = Scroller.new()
+	_orders.horizontal = true
+	_orders.position = ROW_RECT.position
+	_orders.size = ROW_RECT.size
+	add_child(_orders)
+
+	_stash_btn = UI.hit(_orders.content, STASH_RECT, _on_stash)
 	_stash_btn.extra = _paint_stash
-	_base_btn = UI.hit(self, BASE_RECT, func(): G.main.open("level"))
+	_base_btn = UI.hit(_orders.content, BASE_RECT, func(): G.main.open("level"))
 	_base_btn.extra = _paint_base
 	_lv_lbl = UI.lbl(_base_btn, "", Rect2(0, 150, BASE_RECT.size.x, 32), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 	_xp_lbl = UI.lbl(_base_btn, "", Rect2(14, 184, BASE_RECT.size.x - 20, 30), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
-
-	_orders = Scroller.new()
-	_orders.horizontal = true
-	_orders.position = ORDER_RECT.position
-	_orders.size = ORDER_RECT.size
-	add_child(_orders)
+	_cards_root = Control.new()
+	_cards_root.mouse_filter = MOUSE_FILTER_IGNORE
+	_orders.content.add_child(_cards_root)
 
 	_pouch = UI.hit(self, Rect2(10, 1312, 124, 150), func(): G.main.open("inventory"))
 	_pouch.extra = func(ci, sz): Paint.pouch(ci, Vector2(sz.x * 0.5, 58), 1.2)
@@ -180,14 +189,14 @@ static func _order_w(o: Dictionary) -> float:
 	return maxf(maxf(items_w, chips_w), 160.0)
 
 func _build_orders() -> void:
-	for c in _orders.content.get_children():
+	for c in _cards_root.get_children():
 		c.queue_free()
 	_cards.clear()
-	var x := 2.0
+	var x := ORDER_X
 	for oi in G.orders.size():
 		var o: Dictionary = G.orders[oi]
 		var w := _order_w(o)
-		var card := UI.box(_orders.content, Rect2(x, 0, w, ORDER_H), _paint_order.bind(oi))
+		var card := UI.box(_cards_root, Rect2(x, 0, w, ORDER_H), _paint_order.bind(oi))
 		_cards.append(card)
 		UI.lbl(card, Data.PEOPLE[o["who"]].get_slice(" ", 1), Rect2(80, 4, w - 84, 40), 20, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
 		if G.order_ready(o):

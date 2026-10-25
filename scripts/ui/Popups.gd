@@ -278,7 +278,7 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 		book_of[key] = int(book_of.get(key, 0)) + 1
 		G.discover(d["id"])
 		G.stash_push(d["id"])
-		G.main.fly(d["id"], b.get_global_rect().get_center() + Vector2(0, -110), Vector2(64, 260), Callable(), 90)
+		G.main.fly(d["id"], b.get_global_rect().get_center() + Vector2(0, -110), G.main.board_screen.stash_pos(), Callable(), 90)
 		G.main.toast("已放入暂存区：%s" % Data.name_of(d["id"]))
 		refresh.call())
 
@@ -660,7 +660,7 @@ static func grant_rewards(rewards: Array, from: Callable) -> void:
 		else:
 			for j in n:
 				G.stash.append(id)
-			G.main.fly(id, pos, Vector2(64, 260), Callable(), 90)
+			G.main.fly(id, pos, G.main.board_screen.stash_pos(), Callable(), 90)
 	G.dirty()
 	G.changed.emit()
 
