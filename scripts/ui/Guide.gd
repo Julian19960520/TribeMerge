@@ -695,6 +695,25 @@ func _union() -> Rect2:
 		u = u.merge(_holes[i])
 	return u
 
+## 初始棋盘（data/board.json）是否还对得上写死的教学路线。返回问题列表，空数组表示没问题。
+## 配置页保存棋盘时会调用，提醒策划：路线对不上时新玩家会跳过整段引导。
+static func layout_problems(cells: Array, locks: Array) -> Array:
+	var need := {
+		SRC: ["basket_1", 0], DST: ["basket_1", 0], VINE2: ["basket_2", 2], PROD: ["basket_3", 2],
+		SPAWN: ["", 2], VINE3: ["basket_3", 2], 22: ["", 2],
+	}
+	for k in LADDER.size():
+		need[LADDER[k]] = ["fruit_%d" % (k + 1), 2]
+	var out: Array = []
+	for i in need:
+		var id := str(cells[i]) if i < cells.size() else ""
+		var lk := int(locks[i]) if i < locks.size() else 2
+		var want: Array = need[i]
+		if id != str(want[0]) or lk != int(want[1]):
+			var name := "空格" if str(want[0]) == "" else Data.name_of(str(want[0]))
+			out.append("第 %d 行第 %d 列应是%s%s" % [i / 7 + 1, i % 7 + 1, name, "（开放）" if int(want[1]) == 0 else "（巨石下）"])
+	return out
+
 func _layout_ok() -> bool:
 	if _id(SRC) == "basket_1" and _id(DST) == "basket_1" and _lock(SRC) == 0 and _lock(DST) == 0:
 		return true
@@ -835,13 +854,12 @@ func _seed_order_alive() -> bool:
 			return true
 	return false
 
+## 引导最后一步的副产物订单。它是教学的一部分，不看速查表开没开草籽；声望算进 1 级要的 3 点里。
 func _ensure_seed_order() -> void:
-	if not Data.product_open(G.level, "seed"):
-		return
 	_gave_seed_order = true
 	if _seed_order_alive():
 		return
-	G.orders.insert(0, {"who": 1, "items": ["seed_1"], "rw": {"xp": 1, "shell": 12}, "story": true})
+	G.orders.insert(0, {"who": 1, "items": ["seed_1"], "rw": {"xp": 1, "shell": 50}, "story": true, "say": "草籽能种出新的果树，你学得真快！"})
 	G.orders_changed.emit()
 	G.dirty()
 

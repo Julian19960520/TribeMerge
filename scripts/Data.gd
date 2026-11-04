@@ -75,6 +75,8 @@ static func _load() -> void:
 				d["rewards"] = rewards
 			if int(o.get("token", 0)) > 0:
 				d["token"] = int(o["token"])
+			if str(o.get("say", "")) != "":
+				d["say"] = str(o["say"])
 			orders.append(d)
 		STORY[int(lv["level"])] = orders
 	ALBUMS = _take(ConfigFiles.ALBUMS, [])
@@ -275,6 +277,28 @@ static func default_level_rewards(level: int) -> Array:
 			out.append(["%s_1" % open[(level / 3) % open.size()]["gen"], 1])
 	else:
 		out.append(["amber_3", 5])
+	return out
+
+## 升到这一级时新开放的东西，给升级弹窗用。每条一句。
+static func level_unlocks(level: int) -> Array:
+	var out: Array = []
+	for l in LINES:
+		if int(l.get("unlock", 0)) == level and level > 1:
+			out.append("新产线：%s" % str(l.get("name", "")))
+		var sub := str(l.get("sub", ""))
+		if sub != "" and level > 1 and product_open(level, sub) and not product_open(level - 1, sub):
+			out.append("订单开始要%s" % str(CHAINS.get(str(l["sub"]), {}).get("name", "")))
+	if level == int(RULES.get("craft_level", 3)):
+		out.append("新玩法：制作订单")
+	for id in DISHES:
+		var d: Dictionary = DISHES[id]
+		if int(d["unlock"]) == level and level > int(RULES.get("craft_level", 3)):
+			out.append("新菜谱：%s" % str(d["name"]))
+	var slots := int(RULES.get("random_orders", 4))
+	if level > 1 and level <= slots:
+		out.append("订单栏 +1，现在 %d 张" % level)
+	if level == CARD_LEVEL:
+		out.append("丰收祭卡册开放")
 	return out
 
 static func is_dish(id: String) -> bool:

@@ -5,30 +5,23 @@
 			"orders": [
 				{
 					"items": [
-						"fruit_4"
-					],
-					"rewards": [],
-					"shell": 32,
-					"who": 1,
-					"xp": 1
-				},
-				{
-					"items": [
 						"fruit_5"
 					],
 					"rewards": [],
+					"say": "篝火边有吃的了，大家都很高兴！",
 					"shell": 64,
-					"who": 2,
+					"who": 0,
 					"xp": 1
 				},
 				{
 					"items": [
-						"fruit_4",
+						"fruit_5",
 						"fruit_4"
 					],
 					"rewards": [],
-					"shell": 64,
-					"who": 3,
+					"say": "这果子晒干能存一冬。",
+					"shell": 96,
+					"who": 1,
 					"xp": 1
 				}
 			]
@@ -41,8 +34,9 @@
 						"fruit_5"
 					],
 					"rewards": [],
+					"say": "我一口气吃了三个！",
 					"shell": 64,
-					"who": 0,
+					"who": 3,
 					"xp": 1
 				},
 				{
@@ -51,8 +45,9 @@
 						"fruit_4"
 					],
 					"rewards": [],
+					"say": "果子熟得正好。",
 					"shell": 64,
-					"who": 3,
+					"who": 1,
 					"xp": 1
 				},
 				{
@@ -60,6 +55,7 @@
 						"fruit_6"
 					],
 					"rewards": [],
+					"say": "大家今晚有果子吃了。",
 					"shell": 128,
 					"who": 0,
 					"xp": 1,
@@ -75,18 +71,19 @@
 						"fruit_5"
 					],
 					"rewards": [],
+					"say": "丰收的季节到了。",
 					"shell": 64,
-					"who": 3,
+					"who": 0,
 					"xp": 1
 				},
 				{
 					"items": [
-						"fruit_5",
-						"fruit_4"
+						"fruit_6"
 					],
 					"rewards": [],
-					"shell": 96,
-					"who": 3,
+					"say": "带上果子，打猎不饿肚子。",
+					"shell": 128,
+					"who": 2,
 					"xp": 1
 				},
 				{
@@ -95,8 +92,9 @@
 						"fruit_5"
 					],
 					"rewards": [],
+					"say": "这果子晒干能存一冬。",
 					"shell": 128,
-					"who": 3,
+					"who": 1,
 					"xp": 2,
 					"token": 3
 				}
@@ -110,8 +108,9 @@
 						"fruit_5"
 					],
 					"rewards": [],
+					"say": "甜甜的，还想要！",
 					"shell": 64,
-					"who": 0,
+					"who": 3,
 					"xp": 1
 				},
 				{
@@ -120,16 +119,17 @@
 						"fruit_4"
 					],
 					"rewards": [],
+					"say": "果子熟得正好。",
 					"shell": 96,
-					"who": 0,
+					"who": 1,
 					"xp": 1
 				},
 				{
 					"items": [
-						"fruit_5",
-						"fruit_5"
+						"fruit_6"
 					],
 					"rewards": [],
+					"say": "我一口气吃了三个！",
 					"shell": 128,
 					"who": 3,
 					"xp": 2,
@@ -145,27 +145,30 @@
 						"fruit_5"
 					],
 					"rewards": [],
+					"say": "这果子晒干能存一冬。",
 					"shell": 64,
-					"who": 3,
-					"xp": 1
-				},
-				{
-					"items": [
-						"fruit_5",
-						"fruit_4"
-					],
-					"rewards": [],
-					"shell": 96,
 					"who": 1,
-					"xp": 2
+					"xp": 1
 				},
 				{
 					"items": [
 						"fruit_6"
 					],
 					"rewards": [],
+					"say": "丰收的季节到了。",
 					"shell": 128,
 					"who": 0,
+					"xp": 2
+				},
+				{
+					"items": [
+						"fruit_6",
+						"fruit_2"
+					],
+					"rewards": [],
+					"say": "带上果子，打猎不饿肚子。",
+					"shell": 136,
+					"who": 2,
 					"xp": 2,
 					"token": 4
 				}
@@ -180,8 +183,9 @@
 						"tool_5"
 					],
 					"rewards": [],
+					"say": "石匠台的第一把石器，真顺手！",
 					"shell": 128,
-					"who": 3,
+					"who": 2,
 					"xp": 1
 				},
 				{
@@ -190,16 +194,18 @@
 						"tool_4"
 					],
 					"rewards": [],
+					"say": "果子熟得正好。",
 					"shell": 160,
-					"who": 2,
+					"who": 1,
 					"xp": 2
 				},
 				{
 					"items": [
-						"tool_6",
+						"fruit_6",
 						"tool_5"
 					],
 					"rewards": [],
+					"say": "甜甜的，还想要！",
 					"shell": 192,
 					"who": 3,
 					"xp": 2,
@@ -212,21 +218,24 @@
 			"orders": [
 				{
 					"items": [
-						"tool_6"
+						"fruit_6",
+						"tool_2"
 					],
 					"rewards": [],
-					"shell": 128,
-					"who": 1,
+					"say": "大家今晚有果子吃了。",
+					"shell": 136,
+					"who": 0,
 					"xp": 2
 				},
 				{
 					"items": [
-						"fruit_6",
+						"tool_6",
 						"tool_5"
 					],
 					"rewards": [],
+					"say": "磨得真快，能削木头了。",
 					"shell": 192,
-					"who": 3,
+					"who": 2,
 					"xp": 2
 				},
 				{
@@ -235,8 +244,9 @@
 						"fruit_6"
 					],
 					"rewards": [],
+					"say": "好工具才有好猎手。",
 					"shell": 256,
-					"who": 2,
+					"who": 0,
 					"xp": 2,
 					"token": 5
 				}
@@ -251,8 +261,9 @@
 						"tool_3"
 					],
 					"rewards": [],
+					"say": "这把石器真顺手！",
 					"shell": 144,
-					"who": 0,
+					"who": 2,
 					"xp": 2
 				},
 				{
@@ -262,6 +273,7 @@
 					"rewards": [
 						"pack_1"
 					],
+					"say": "好工具才有好猎手。",
 					"shell": 128,
 					"who": 0,
 					"xp": 2
@@ -269,11 +281,12 @@
 				{
 					"items": [
 						"tool_6",
-						"tool_6"
+						"fruit_6"
 					],
 					"rewards": [],
+					"say": "磨得真快，能削木头了。",
 					"shell": 256,
-					"who": 1,
+					"who": 2,
 					"xp": 2,
 					"token": 6
 				}
@@ -288,29 +301,32 @@
 						"fruit_3"
 					],
 					"rewards": [],
+					"say": "磨得真快，能削木头了。",
 					"shell": 144,
 					"who": 2,
 					"xp": 2
 				},
 				{
 					"items": [
-						"fruit_6"
+						"fruit_6",
+						"fruit_5"
 					],
 					"rewards": [
 						"pack_1"
 					],
-					"shell": 128,
-					"who": 0,
+					"say": "带上果子，打猎不饿肚子。",
+					"shell": 192,
+					"who": 2,
 					"xp": 2
 				},
 				{
 					"items": [
-						"tool_6",
-						"tool_6"
+						"tool_7"
 					],
 					"rewards": [],
+					"say": "好工具才有好猎手。",
 					"shell": 256,
-					"who": 3,
+					"who": 0,
 					"xp": 3,
 					"token": 6
 				}
@@ -321,32 +337,35 @@
 			"orders": [
 				{
 					"items": [
-						"tool_6"
+						"fruit_6"
 					],
 					"rewards": [],
+					"say": "这果子晒干能存一冬。",
 					"shell": 128,
 					"who": 1,
 					"xp": 2
 				},
 				{
 					"items": [
-						"fruit_6"
+						"fruit_6",
+						"tool_5"
 					],
 					"rewards": [
 						"pack_1"
 					],
-					"shell": 128,
-					"who": 2,
+					"say": "大家今晚有果子吃了。",
+					"shell": 192,
+					"who": 0,
 					"xp": 2
 				},
 				{
 					"items": [
-						"fruit_6",
-						"tool_6"
+						"tool_7"
 					],
 					"rewards": [],
+					"say": "这把石器真顺手！",
 					"shell": 256,
-					"who": 0,
+					"who": 2,
 					"xp": 3,
 					"token": 7
 				}
@@ -358,33 +377,35 @@
 				{
 					"items": [
 						"cloth_6",
-						"cloth_6"
+						"tool_6"
 					],
 					"rewards": [],
+					"say": "编织架织出的第一件衣服，真暖和。",
 					"shell": 256,
-					"who": 0,
+					"who": 1,
 					"xp": 2
 				},
 				{
 					"items": [
-						"cloth_7",
-						"cloth_5"
+						"cloth_7"
 					],
 					"rewards": [
 						"pack_1"
 					],
-					"shell": 320,
+					"say": "新衣服好软！",
+					"shell": 256,
 					"who": 3,
 					"xp": 3
 				},
 				{
 					"items": [
-						"cloth_7",
+						"fruit_7",
 						"cloth_6"
 					],
 					"rewards": [],
+					"say": "甜甜的，还想要！",
 					"shell": 384,
-					"who": 2,
+					"who": 3,
 					"xp": 3,
 					"token": 7
 				}
@@ -395,24 +416,27 @@
 			"orders": [
 				{
 					"items": [
-						"cloth_7"
+						"cloth_6",
+						"cloth_6"
 					],
 					"rewards": [],
+					"say": "冬天不怕冷了。",
 					"shell": 256,
-					"who": 3,
+					"who": 1,
 					"xp": 2
 				},
 				{
 					"items": [
-						"cloth_7",
+						"fruit_7",
 						"cloth_4",
-						"fruit_4"
+						"tool_4"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "果子熟得正好。",
 					"shell": 320,
-					"who": 2,
+					"who": 1,
 					"xp": 3
 				},
 				{
@@ -422,8 +446,9 @@
 						"cloth_4"
 					],
 					"rewards": [],
+					"say": "老骨头总算暖和了。",
 					"shell": 416,
-					"who": 1,
+					"who": 0,
 					"xp": 3,
 					"token": 8
 				}
@@ -438,32 +463,33 @@
 						"cloth_6"
 					],
 					"rewards": [],
+					"say": "新衣服好软！",
 					"shell": 256,
-					"who": 1,
-					"xp": 3
-				},
-				{
-					"items": [
-						"cloth_7",
-						"cloth_4",
-						"tool_4"
-					],
-					"rewards": [
-						"pack_1"
-					],
-					"shell": 320,
 					"who": 3,
 					"xp": 3
 				},
 				{
 					"items": [
-						"fruit_7",
-						"cloth_6",
-						"cloth_4"
+						"cloth_7",
+						"cloth_5"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"say": "老骨头总算暖和了。",
+					"shell": 320,
+					"who": 0,
+					"xp": 3
+				},
+				{
+					"items": [
+						"tool_7",
+						"cloth_6"
 					],
 					"rewards": [],
-					"shell": 416,
-					"who": 0,
+					"say": "磨得真快，能削木头了。",
+					"shell": 384,
+					"who": 2,
 					"xp": 3,
 					"token": 8
 				}
@@ -474,34 +500,38 @@
 			"orders": [
 				{
 					"items": [
-						"fruit_7",
-						"fruit_2"
+						"cloth_7"
 					],
 					"rewards": [],
-					"shell": 264,
-					"who": 2,
+					"say": "冬天不怕冷了。",
+					"shell": 256,
+					"who": 1,
 					"xp": 3
 				},
 				{
 					"items": [
 						"fruit_7",
-						"tool_5"
+						"cloth_5",
+						"cloth_3"
 					],
 					"rewards": [
 						"pack_1"
 					],
-					"shell": 320,
-					"who": 0,
+					"say": "这果子晒干能存一冬。",
+					"shell": 336,
+					"who": 1,
 					"xp": 3
 				},
 				{
 					"items": [
 						"cloth_7",
-						"tool_6"
+						"fruit_6",
+						"cloth_5"
 					],
 					"rewards": [],
-					"shell": 384,
-					"who": 2,
+					"say": "老骨头总算暖和了。",
+					"shell": 448,
+					"who": 0,
 					"xp": 3,
 					"token": 9
 				}
@@ -512,33 +542,37 @@
 			"orders": [
 				{
 					"items": [
-						"fruit_7"
+						"tool_7",
+						"cloth_2"
 					],
 					"rewards": [],
-					"shell": 256,
-					"who": 1,
-					"xp": 3
-				},
-				{
-					"items": [
-						"fruit_7",
-						"fruit_5"
-					],
-					"rewards": [
-						"pack_1"
-					],
-					"shell": 320,
+					"say": "磨得真快，能削木头了。",
+					"shell": 264,
 					"who": 2,
 					"xp": 3
 				},
 				{
 					"items": [
-						"tool_7",
-						"tool_6",
-						"tool_5"
+						"fruit_7",
+						"cloth_5",
+						"fruit_4"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"say": "果子熟得正好。",
+					"shell": 352,
+					"who": 1,
+					"xp": 3
+				},
+				{
+					"items": [
+						"cloth_7",
+						"fruit_6"
 					],
 					"rewards": [],
-					"shell": 448,
+					"say": "新衣服好软！",
+					"shell": 384,
 					"who": 3,
 					"xp": 4,
 					"token": 9
@@ -553,18 +587,20 @@
 						"beast_7"
 					],
 					"rewards": [],
+					"say": "第一次下陷阱就有收获！",
 					"shell": 256,
-					"who": 0,
+					"who": 2,
 					"xp": 3
 				},
 				{
 					"items": [
-						"beast_7",
+						"tool_7",
 						"beast_5"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "这把石器真顺手！",
 					"shell": 320,
 					"who": 2,
 					"xp": 3
@@ -575,8 +611,9 @@
 						"beast_6"
 					],
 					"rewards": [],
+					"say": "老骨头总算暖和了。",
 					"shell": 384,
-					"who": 3,
+					"who": 0,
 					"xp": 4,
 					"token": 10
 				}
@@ -590,20 +627,22 @@
 						"beast_7"
 					],
 					"rewards": [],
+					"say": "今天收获不错！",
 					"shell": 256,
-					"who": 0,
+					"who": 2,
 					"xp": 3
 				},
 				{
 					"items": [
-						"tool_7",
+						"cloth_7",
 						"beast_5"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "冬天不怕冷了。",
 					"shell": 320,
-					"who": 2,
+					"who": 1,
 					"xp": 4
 				},
 				{
@@ -612,6 +651,7 @@
 						"beast_6"
 					],
 					"rewards": [],
+					"say": "新衣服好软！",
 					"shell": 384,
 					"who": 3,
 					"xp": 4,
@@ -625,11 +665,12 @@
 				{
 					"items": [
 						"beast_6",
-						"tool_6"
+						"cloth_6"
 					],
 					"rewards": [],
+					"say": "阿石叔叔好厉害！",
 					"shell": 256,
-					"who": 1,
+					"who": 3,
 					"xp": 3
 				},
 				{
@@ -640,8 +681,9 @@
 					"rewards": [
 						"pack_1"
 					],
+					"say": "我一口气吃了三个！",
 					"shell": 320,
-					"who": 2,
+					"who": 3,
 					"xp": 4
 				},
 				{
@@ -650,6 +692,7 @@
 						"beast_6"
 					],
 					"rewards": [],
+					"say": "老骨头总算暖和了。",
 					"shell": 384,
 					"who": 0,
 					"xp": 4,
@@ -662,31 +705,35 @@
 			"orders": [
 				{
 					"items": [
-						"tool_7"
+						"beast_6",
+						"fruit_6"
 					],
 					"rewards": [],
+					"say": "今天收获不错！",
 					"shell": 256,
-					"who": 0,
+					"who": 2,
 					"xp": 4
 				},
 				{
 					"items": [
 						"cloth_7",
-						"cloth_5"
+						"tool_5"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "冬天不怕冷了。",
 					"shell": 320,
-					"who": 3,
+					"who": 1,
 					"xp": 4
 				},
 				{
 					"items": [
-						"fruit_7",
-						"tool_6"
+						"cloth_7",
+						"beast_6"
 					],
 					"rewards": [],
+					"say": "新衣服好软！",
 					"shell": 384,
 					"who": 3,
 					"xp": 4,
@@ -699,23 +746,26 @@
 			"orders": [
 				{
 					"items": [
-						"cloth_7"
+						"fruit_7",
+						"tool_3"
 					],
 					"rewards": [],
-					"shell": 256,
+					"say": "甜甜的，还想要！",
+					"shell": 272,
 					"who": 3,
 					"xp": 4
 				},
 				{
 					"items": [
 						"cloth_7",
-						"fruit_6"
+						"cloth_6"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "老骨头总算暖和了。",
 					"shell": 384,
-					"who": 1,
+					"who": 0,
 					"xp": 4
 				},
 				{
@@ -724,8 +774,9 @@
 						"fruit_7"
 					],
 					"rewards": [],
+					"say": "这把石器真顺手！",
 					"shell": 512,
-					"who": 1,
+					"who": 2,
 					"xp": 4,
 					"token": 12
 				}
@@ -736,36 +787,38 @@
 			"orders": [
 				{
 					"items": [
-						"veg_7",
-						"tool_5",
-						"veg_4"
+						"cloth_7",
+						"veg_6"
 					],
 					"rewards": [],
-					"shell": 352,
-					"who": 1,
-					"xp": 4
-				},
-				{
-					"items": [
-						"beast_7",
-						"veg_6",
-						"fruit_6"
-					],
-					"rewards": [
-						"pack_1"
-					],
-					"shell": 512,
+					"say": "火塘生起来了，烤得真香！",
+					"shell": 384,
 					"who": 0,
 					"xp": 4
 				},
 				{
 					"items": [
+						"veg_7",
+						"tool_7"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"say": "热乎的吃了不生病。",
+					"shell": 512,
+					"who": 1,
+					"xp": 4
+				},
+				{
+					"items": [
 						"fruit_8",
-						"veg_6"
+						"tool_5",
+						"veg_4"
 					],
 					"rewards": [],
-					"shell": 640,
-					"who": 1,
+					"say": "带上果子，打猎不饿肚子。",
+					"shell": 608,
+					"who": 2,
 					"xp": 5,
 					"token": 12
 				}
@@ -780,8 +833,9 @@
 						"veg_6"
 					],
 					"rewards": [],
+					"say": "新衣服好软！",
 					"shell": 384,
-					"who": 2,
+					"who": 3,
 					"xp": 4
 				},
 				{
@@ -792,18 +846,20 @@
 					"rewards": [
 						"pack_1"
 					],
+					"say": "烤得真香！",
 					"shell": 512,
-					"who": 2,
+					"who": 3,
 					"xp": 4
 				},
 				{
 					"items": [
-						"fruit_8",
+						"beast_8",
 						"veg_6"
 					],
 					"rewards": [],
+					"say": "今天收获不错！",
 					"shell": 640,
-					"who": 1,
+					"who": 2,
 					"xp": 5,
 					"token": 13
 				}
@@ -814,36 +870,40 @@
 			"orders": [
 				{
 					"items": [
-						"tool_7",
+						"fruit_7",
 						"veg_5",
-						"fruit_5"
+						"veg_5"
 					],
 					"rewards": [],
+					"say": "大家今晚有果子吃了。",
 					"shell": 384,
-					"who": 2,
+					"who": 0,
 					"xp": 4
 				},
 				{
 					"items": [
-						"beast_7",
+						"veg_7",
 						"veg_6",
-						"cloth_6"
+						"tool_6"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "火塘边香喷喷的。",
 					"shell": 512,
 					"who": 0,
 					"xp": 5
 				},
 				{
 					"items": [
-						"tool_8",
-						"veg_6"
+						"beast_8",
+						"fruit_6",
+						"veg_2"
 					],
 					"rewards": [],
-					"shell": 640,
-					"who": 1,
+					"say": "够全部落吃三天。",
+					"shell": 648,
+					"who": 0,
 					"xp": 5,
 					"token": 13
 				}
@@ -854,34 +914,37 @@
 			"orders": [
 				{
 					"items": [
-						"fruit_7",
-						"beast_6"
+						"tool_7",
+						"fruit_6"
 					],
 					"rewards": [],
+					"say": "好工具才有好猎手。",
 					"shell": 384,
-					"who": 2,
+					"who": 0,
 					"xp": 4
 				},
 				{
 					"items": [
-						"fruit_8",
-						"fruit_4"
+						"beast_8",
+						"cloth_4"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "今天收获不错！",
 					"shell": 544,
-					"who": 1,
+					"who": 2,
 					"xp": 5
 				},
 				{
 					"items": [
-						"cloth_8",
+						"fruit_8",
 						"tool_6"
 					],
 					"rewards": [],
+					"say": "丰收的季节到了。",
 					"shell": 640,
-					"who": 3,
+					"who": 0,
 					"xp": 5,
 					"token": 14
 				}
@@ -892,32 +955,36 @@
 			"orders": [
 				{
 					"items": [
-						"cloth_7",
-						"beast_6"
+						"tool_7",
+						"fruit_6"
 					],
 					"rewards": [],
+					"say": "磨得真快，能削木头了。",
 					"shell": 384,
 					"who": 2,
 					"xp": 5
 				},
 				{
 					"items": [
-						"cloth_8",
-						"veg_4"
+						"fruit_8",
+						"beast_3",
+						"cloth_2"
 					],
 					"rewards": [
 						"pack_1"
 					],
-					"shell": 544,
+					"say": "甜甜的，还想要！",
+					"shell": 536,
 					"who": 3,
 					"xp": 5
 				},
 				{
 					"items": [
-						"fruit_8",
-						"beast_6"
+						"tool_8",
+						"tool_6"
 					],
 					"rewards": [],
+					"say": "这把石器真顺手！",
 					"shell": 640,
 					"who": 2,
 					"xp": 5,
@@ -930,25 +997,27 @@
 			"orders": [
 				{
 					"items": [
-						"tool_7",
-						"furn_6"
+						"veg_7",
+						"fruit_6",
+						"furn_2"
 					],
 					"rewards": [],
-					"shell": 384,
+					"say": "木工场开工了，部落要盖大屋了！",
+					"shell": 392,
 					"who": 0,
 					"xp": 5
 				},
 				{
 					"items": [
-						"fruit_7",
-						"tool_7",
+						"beast_8",
 						"furn_2"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "今天收获不错！",
 					"shell": 520,
-					"who": 0,
+					"who": 2,
 					"xp": 5
 				},
 				{
@@ -957,6 +1026,7 @@
 						"furn_6"
 					],
 					"rewards": [],
+					"say": "好工具才有好猎手。",
 					"shell": 640,
 					"who": 0,
 					"xp": 5,
@@ -969,35 +1039,37 @@
 			"orders": [
 				{
 					"items": [
-						"beast_7",
+						"cloth_7",
 						"furn_6"
 					],
 					"rewards": [],
+					"say": "老骨头总算暖和了。",
 					"shell": 384,
 					"who": 0,
 					"xp": 5
 				},
 				{
 					"items": [
-						"tool_7",
-						"fruit_7",
+						"fruit_8",
 						"furn_2"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "丰收的季节到了。",
 					"shell": 520,
-					"who": 3,
+					"who": 0,
 					"xp": 5
 				},
 				{
 					"items": [
-						"furn_8",
+						"cloth_8",
 						"furn_6"
 					],
 					"rewards": [],
+					"say": "新衣服好软！",
 					"shell": 640,
-					"who": 0,
+					"who": 3,
 					"xp": 6,
 					"token": 15
 				}
@@ -1008,33 +1080,36 @@
 			"orders": [
 				{
 					"items": [
-						"fruit_7",
-						"tool_6",
-						"furn_3"
+						"veg_7",
+						"furn_6"
 					],
 					"rewards": [],
-					"shell": 400,
-					"who": 1,
+					"say": "烤得真香！",
+					"shell": 384,
+					"who": 3,
 					"xp": 5
 				},
 				{
 					"items": [
 						"beast_8",
-						"furn_3"
+						"furn_2",
+						"beast_2"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "够全部落吃三天。",
 					"shell": 528,
-					"who": 1,
+					"who": 0,
 					"xp": 5
 				},
 				{
 					"items": [
-						"beast_8",
+						"cloth_8",
 						"furn_6"
 					],
 					"rewards": [],
+					"say": "冬天不怕冷了。",
 					"shell": 640,
 					"who": 1,
 					"xp": 6,
@@ -1047,35 +1122,37 @@
 			"orders": [
 				{
 					"items": [
-						"tool_7",
-						"tool_6",
-						"cloth_4"
+						"furn_7",
+						"fruit_6"
 					],
 					"rewards": [],
-					"shell": 416,
+					"say": "大屋里终于有凳子坐了。",
+					"shell": 384,
 					"who": 0,
 					"xp": 5
 				},
 				{
 					"items": [
-						"beast_8",
+						"fruit_8",
 						"fruit_4"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "果子熟得正好。",
 					"shell": 544,
-					"who": 3,
+					"who": 1,
 					"xp": 6
 				},
 				{
 					"items": [
-						"furn_8",
-						"cloth_6"
+						"beast_8",
+						"fruit_6"
 					],
 					"rewards": [],
+					"say": "阿石叔叔好厉害！",
 					"shell": 640,
-					"who": 2,
+					"who": 3,
 					"xp": 6,
 					"token": 16
 				}
@@ -1086,24 +1163,24 @@
 			"orders": [
 				{
 					"items": [
-						"furn_7",
-						"beast_6",
-						"cloth_4"
+						"tool_7",
+						"veg_6"
 					],
 					"rewards": [],
-					"shell": 416,
-					"who": 1,
+					"say": "这把石器真顺手！",
+					"shell": 384,
+					"who": 2,
 					"xp": 5
 				},
 				{
 					"items": [
 						"furn_8",
-						"tool_3",
-						"veg_3"
+						"cloth_4"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "这木头纹路真好看。",
 					"shell": 544,
 					"who": 1,
 					"xp": 6
@@ -1111,11 +1188,13 @@
 				{
 					"items": [
 						"furn_8",
-						"cloth_6"
+						"fruit_6",
+						"tool_5"
 					],
 					"rewards": [],
-					"shell": 640,
-					"who": 1,
+					"say": "大屋里终于有凳子坐了。",
+					"shell": 704,
+					"who": 0,
 					"xp": 6,
 					"token": 17
 				}
@@ -1126,34 +1205,36 @@
 			"orders": [
 				{
 					"items": [
-						"veg_7",
-						"pot_6",
-						"fruit_6"
+						"pot_7",
+						"beast_7"
 					],
 					"rewards": [],
+					"say": "第一只陶罐烧好了，真结实。",
 					"shell": 512,
-					"who": 3,
+					"who": 1,
 					"xp": 6
 				},
 				{
 					"items": [
-						"furn_8",
+						"cloth_8",
 						"pot_6"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "新衣服好软！",
 					"shell": 640,
-					"who": 2,
+					"who": 3,
 					"xp": 6
 				},
 				{
 					"items": [
-						"pot_8",
-						"beast_7",
+						"tool_8",
+						"furn_7",
 						"pot_5"
 					],
 					"rewards": [],
+					"say": "磨得真快，能削木头了。",
 					"shell": 832,
 					"who": 2,
 					"xp": 6,
@@ -1166,35 +1247,37 @@
 			"orders": [
 				{
 					"items": [
-						"cloth_7",
-						"fruit_7",
+						"tool_8",
 						"pot_2"
 					],
 					"rewards": [],
+					"say": "这把石器真顺手！",
 					"shell": 520,
-					"who": 1,
-					"xp": 6
-				},
-				{
-					"items": [
-						"cloth_8",
-						"pot_6"
-					],
-					"rewards": [
-						"pack_1"
-					],
-					"shell": 640,
-					"who": 1,
+					"who": 2,
 					"xp": 6
 				},
 				{
 					"items": [
 						"fruit_8",
+						"pot_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"say": "我一口气吃了三个！",
+					"shell": 640,
+					"who": 3,
+					"xp": 6
+				},
+				{
+					"items": [
+						"tool_8",
 						"pot_7"
 					],
 					"rewards": [],
+					"say": "好工具才有好猎手。",
 					"shell": 768,
-					"who": 3,
+					"who": 0,
 					"xp": 6,
 					"token": 18
 				}
@@ -1205,34 +1288,39 @@
 			"orders": [
 				{
 					"items": [
-						"pot_8",
-						"pot_3"
+						"veg_8",
+						"pot_2",
+						"pot_2"
 					],
 					"rewards": [],
+					"say": "烤得真香！",
 					"shell": 528,
-					"who": 0,
+					"who": 3,
 					"xp": 6
 				},
 				{
 					"items": [
 						"beast_8",
-						"pot_6"
+						"cloth_6",
+						"pot_5"
 					],
 					"rewards": [
 						"pack_1"
 					],
-					"shell": 640,
-					"who": 0,
+					"say": "阿石叔叔好厉害！",
+					"shell": 704,
+					"who": 3,
 					"xp": 6
 				},
 				{
 					"items": [
-						"fruit_8",
+						"veg_8",
 						"pot_7"
 					],
 					"rewards": [],
+					"say": "火塘边香喷喷的。",
 					"shell": 768,
-					"who": 2,
+					"who": 0,
 					"xp": 7,
 					"token": 18
 				}
@@ -1243,34 +1331,38 @@
 			"orders": [
 				{
 					"items": [
-						"beast_8",
-						"beast_4",
-						"veg_2"
+						"tool_8",
+						"veg_4",
+						"furn_2"
 					],
 					"rewards": [],
+					"say": "这把石器真顺手！",
 					"shell": 552,
-					"who": 1,
+					"who": 2,
 					"xp": 6
 				},
 				{
 					"items": [
 						"furn_8",
-						"fruit_7"
+						"furn_7"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "大屋里终于有凳子坐了。",
 					"shell": 768,
-					"who": 3,
+					"who": 0,
 					"xp": 6
 				},
 				{
 					"items": [
-						"tool_8",
-						"furn_8"
+						"beast_8",
+						"veg_7",
+						"fruit_6"
 					],
 					"rewards": [],
-					"shell": 1024,
+					"say": "今天收获不错！",
+					"shell": 896,
 					"who": 2,
 					"xp": 7,
 					"token": 19
@@ -1282,37 +1374,39 @@
 			"orders": [
 				{
 					"items": [
-						"pot_8",
+						"beast_8",
 						"cloth_4",
-						"pot_4"
+						"veg_4"
 					],
 					"rewards": [],
+					"say": "阿石叔叔好厉害！",
 					"shell": 576,
-					"who": 2,
+					"who": 3,
 					"xp": 6
 				},
 				{
 					"items": [
-						"fruit_8",
-						"tool_6",
-						"cloth_6"
+						"tool_8",
+						"cloth_6",
+						"fruit_6"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "好工具才有好猎手。",
 					"shell": 768,
-					"who": 1,
+					"who": 0,
 					"xp": 7
 				},
 				{
 					"items": [
 						"tool_8",
-						"pot_7",
-						"cloth_6"
+						"cloth_8"
 					],
 					"rewards": [],
-					"shell": 896,
-					"who": 0,
+					"say": "磨得真快，能削木头了。",
+					"shell": 1024,
+					"who": 2,
 					"xp": 7,
 					"token": 19
 				}
@@ -1323,32 +1417,35 @@
 			"orders": [
 				{
 					"items": [
-						"fruit_8",
-						"tool_5"
+						"pot_8",
+						"fruit_5"
 					],
 					"rewards": [],
+					"say": "陶罐能装好多水。",
 					"shell": 576,
-					"who": 2,
+					"who": 1,
 					"xp": 6
 				},
 				{
 					"items": [
-						"veg_8",
-						"furn_7"
+						"pot_8",
+						"beast_7"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "有了陶罐，粮食不怕潮了。",
 					"shell": 768,
-					"who": 2,
+					"who": 0,
 					"xp": 7
 				},
 				{
 					"items": [
 						"fruit_8",
-						"furn_8"
+						"pot_8"
 					],
 					"rewards": [],
+					"say": "果子熟得正好。",
 					"shell": 1024,
 					"who": 1,
 					"xp": 7,
@@ -1361,35 +1458,38 @@
 			"orders": [
 				{
 					"items": [
-						"furn_8",
-						"cloth_5",
-						"cloth_4"
+						"veg_8",
+						"veg_5"
 					],
 					"rewards": [],
-					"shell": 608,
-					"who": 1,
+					"say": "烤得真香！",
+					"shell": 576,
+					"who": 3,
 					"xp": 7
 				},
 				{
 					"items": [
-						"cloth_8",
-						"beast_7"
+						"fruit_8",
+						"tool_7"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "甜甜的，还想要！",
 					"shell": 768,
-					"who": 2,
+					"who": 3,
 					"xp": 7
 				},
 				{
 					"items": [
-						"cloth_8",
-						"pot_8"
+						"tool_8",
+						"beast_7",
+						"tool_7"
 					],
 					"rewards": [],
+					"say": "磨得真快，能削木头了。",
 					"shell": 1024,
-					"who": 1,
+					"who": 2,
 					"xp": 7,
 					"token": 20
 				}
@@ -1400,36 +1500,39 @@
 			"orders": [
 				{
 					"items": [
-						"pot_8",
-						"fruit_5",
-						"cloth_4"
+						"furn_8",
+						"cloth_5",
+						"pot_4"
 					],
 					"rewards": [],
+					"say": "这木头纹路真好看。",
 					"shell": 608,
+					"who": 1,
+					"xp": 7
+				},
+				{
+					"items": [
+						"veg_8",
+						"cloth_7",
+						"veg_4"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"say": "火塘边香喷喷的。",
+					"shell": 800,
 					"who": 0,
 					"xp": 7
 				},
 				{
 					"items": [
 						"fruit_8",
-						"veg_7"
-					],
-					"rewards": [
-						"pack_1"
-					],
-					"shell": 768,
-					"who": 0,
-					"xp": 7
-				},
-				{
-					"items": [
-						"veg_8",
-						"beast_7",
-						"tool_7"
+						"veg_8"
 					],
 					"rewards": [],
+					"say": "果子熟得正好。",
 					"shell": 1024,
-					"who": 0,
+					"who": 1,
 					"xp": 7,
 					"token": 21
 				}
@@ -1440,22 +1543,24 @@
 			"orders": [
 				{
 					"items": [
-						"pot_8",
-						"fruit_5"
+						"cloth_8",
+						"furn_5"
 					],
 					"rewards": [],
+					"say": "冬天不怕冷了。",
 					"shell": 576,
-					"who": 0,
+					"who": 1,
 					"xp": 7
 				},
 				{
 					"items": [
-						"fruit_8",
-						"pot_7"
+						"tool_8",
+						"beast_7"
 					],
 					"rewards": [
 						"pack_1"
 					],
+					"say": "这把石器真顺手！",
 					"shell": 768,
 					"who": 2,
 					"xp": 7
@@ -1463,11 +1568,12 @@
 				{
 					"items": [
 						"cloth_8",
-						"beast_8"
+						"furn_8"
 					],
 					"rewards": [],
+					"say": "老骨头总算暖和了。",
 					"shell": 1024,
-					"who": 1,
+					"who": 0,
 					"xp": 8,
 					"token": 21
 				}
@@ -1478,35 +1584,38 @@
 			"orders": [
 				{
 					"items": [
-						"tool_8",
-						"pot_5",
-						"tool_4"
+						"furn_8",
+						"fruit_5"
 					],
 					"rewards": [],
-					"shell": 608,
+					"say": "大屋里终于有凳子坐了。",
+					"shell": 576,
 					"who": 0,
 					"xp": 7
 				},
 				{
 					"items": [
-						"tool_8",
-						"cloth_7"
+						"furn_8",
+						"cloth_7",
+						"cloth_4"
 					],
 					"rewards": [
 						"pack_1"
 					],
-					"shell": 768,
+					"say": "这木头纹路真好看。",
+					"shell": 800,
 					"who": 1,
 					"xp": 7
 				},
 				{
 					"items": [
 						"beast_8",
-						"beast_8"
+						"cloth_8"
 					],
 					"rewards": [],
+					"say": "够全部落吃三天。",
 					"shell": 1024,
-					"who": 3,
+					"who": 0,
 					"xp": 8,
 					"token": 22
 				}

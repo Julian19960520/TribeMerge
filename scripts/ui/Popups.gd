@@ -933,7 +933,12 @@ static func levelup() -> PopupBase:
 	for k in rewards.size():
 		UI.icon(p.box, rewards[k][0], spots[k], 120)
 		UI.lbl(p.box, "×%d" % rewards[k][1], Rect2(spots[k].x - 70, spots[k].y + 58, 140, 50), 34, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
-	var hint := UI.lbl(p.box, "点击任意处领取", Rect2(0, 850, 720, 50), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
+	var news := Data.level_unlocks(G.level)
+	var hint_y := 850.0
+	if not news.is_empty():
+		UI.lbl(p.box, String.chr(10).join(news.slice(0, 3)), Rect2(60, 820, 600, 44 * mini(news.size(), 3)), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+		hint_y = 836.0 + 44.0 * float(mini(news.size(), 3))
+	var hint := UI.lbl(p.box, "点击任意处领取", Rect2(0, hint_y, 720, 50), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
 	var tw := hint.create_tween().set_loops()
 	tw.tween_property(hint, "modulate:a", 0.3, 0.6)
 	tw.tween_property(hint, "modulate:a", 1.0, 0.6)

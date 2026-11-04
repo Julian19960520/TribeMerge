@@ -403,6 +403,9 @@ func add_xp(n: int) -> bool:
 		level += 1
 		up = true
 		_add_story_orders()
+		if not tutorial_on:
+			_add_random_batch()
+			_ensure_craft_order(false)
 		orders_changed.emit()
 	if not up and not tutorial_on and _ensure_story():
 		orders_changed.emit()
@@ -701,13 +704,21 @@ func _random_slots_taken() -> Dictionary:
 			taken[int(o["slot"])] = true
 	return taken
 
+## 当前等级场上最多几张随机单：1 级 1 张，之后每级多 1 张，直到 RANDOM_ORDERS。新手不会一下看到一整排订单。
+func random_cap() -> int:
+	return clampi(level, 0, maxi(0, RANDOM_ORDERS))
+
+## 制作订单从这一级开放（rules.json 的 craft_level）。
+func craft_level() -> int:
+	return maxi(1, int(Data.RULES.get("craft_level", 3)))
+
 ## 这一张常驻单的目标火苗。
 func _slot_target(slot: int) -> int:
 	return Data.random_slot_target(level, slot)
 
 ## 把缺的难度位补齐。at 大于等于 0 时，第一张补的单插在这个位置（交单的原位）。
 func _add_random_batch(at: int = -1) -> void:
-	var n := maxi(0, RANDOM_ORDERS)
+	var n := random_cap()
 	if n == 0:
 		return
 	var taken := _random_slots_taken()
@@ -857,7 +868,7 @@ func _craft_order(d: Dictionary) -> Dictionary:
 
 ## 场上始终留着一单制作。新局替换最后一张随机单，读档则补一张。
 func _ensure_craft_order(replace: bool, avoid: String = "") -> void:
-	if _has_craft_order():
+	if _has_craft_order() or level < craft_level():
 		return
 	var made := _craft_order(_pick_dish(avoid))
 	if made.is_empty():
@@ -891,7 +902,10 @@ func _add_story_orders(skip: Array = []) -> void:
 			for _i in int(s["pack"]):
 				packs.append("pack_1")
 			rw["rewards"] = packs
-		orders.insert(at, {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true})
+		var row := {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true}
+		if str(s.get("say", "")) != "":
+			row["say"] = str(s["say"])
+		orders.insert(at, row)
 		at += 1
 
 func _story_listed(items: Array, rows: Array) -> bool:

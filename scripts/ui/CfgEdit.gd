@@ -1670,6 +1670,7 @@ func _rules() -> float:
 	y = _rule(d, y, "max_energy", "火种上限", 1, 9999)
 	y = _rule(d, y, "regen_sec", "恢复秒数", 1, 9999)
 	y = _rule(d, y, "random_orders", "随机订单张数", 0, 12)
+	y = _rule(d, y, "craft_level", "制作单开放等级", 1, 40)
 	y = _rule(d, y, "xp_base", "升级声望起点", 1, 99)
 	y = _rule(d, y, "xp_div", "每几级声望+1", 1, 20)
 	y = _rule(d, y, "energy_price", "火种首次价格", 1, 999)
@@ -2329,6 +2330,11 @@ func _save() -> void:
 	var toast := "已写入%s" % "、".join(wrote)
 	if board_saved:
 		toast += "。新棋盘要重新开始才换上。"
+		var bp: Dictionary = _pages[Files.BOARD]
+		var probs: Array = Guide.layout_problems(bp.get("cells", []), bp.get("locks", []))
+		if not probs.is_empty():
+			toast = "已保存。注意：引导路线对不上，新玩家会跳过引导"
+			push_warning("新手引导路线对不上：" + "；".join(probs))
 	G.main.toast(toast)
 
 func _validate(path: String) -> String:

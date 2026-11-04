@@ -581,7 +581,8 @@ func _on_deliver(oi: int) -> void:
 	board.select(-1)
 	Sfx.play("coin")
 	await get_tree().create_timer(0.35).timeout
-	G.main.toast("%s：谢谢你！" % Data.PEOPLE[who].get_slice(" ", 1))
+	var say := str(o.get("say", ""))
+	G.main.toast("%s：%s" % [Data.PEOPLE[who].get_slice(" ", 1), say if say != "" else "谢谢你！"])
 	var stash_c := stash_pos()
 	if rw.has("shell"):
 		var shell_n: int = rw["shell"]

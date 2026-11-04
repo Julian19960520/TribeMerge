@@ -10,5 +10,6 @@
 	"xp_div": 2,
 	"energy_price": 20,
 	"energy_price_step": 10,
-	"energy_price_max": 60
+	"energy_price_max": 60,
+	"craft_level": 3
 }

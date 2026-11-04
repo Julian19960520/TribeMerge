@@ -338,17 +338,55 @@ def make_costs(rows):
 # ---------------------------------------------------------------- 剧情订单
 
 
+# 人物：0 老酋长 巴图、1 巫医 月禾、2 猎手 阿石、3 小不点 果果
+# 每条主产物链由谁来要、说什么。交单时弹出「名字：台词」。
+SAYS = {
+    "fruit": [(3, "甜甜的，还想要！"), (0, "大家今晚有果子吃了。"), (1, "这果子晒干能存一冬。"), (3, "我一口气吃了三个！"),
+              (2, "带上果子，打猎不饿肚子。"), (0, "丰收的季节到了。"), (1, "果子熟得正好。")],
+    "seed": [(1, "种下去，明年就有收成。"), (0, "种子是部落的未来。")],
+    "tool": [(2, "这把石器真顺手！"), (0, "好工具才有好猎手。"), (2, "磨得真快，能削木头了。")],
+    "gem": [(1, "这块石头会发光呢。"), (3, "亮晶晶的，送给我吧！")],
+    "cloth": [(1, "冬天不怕冷了。"), (3, "新衣服好软！"), (0, "老骨头总算暖和了。")],
+    "armor": [(2, "穿上它去打猎。")],
+    "beast": [(2, "今天收获不错！"), (0, "够全部落吃三天。"), (3, "阿石叔叔好厉害！")],
+    "bird": [(3, "羽毛真漂亮！"), (2, "这些鸟可不好抓。")],
+    "veg": [(0, "火塘边香喷喷的。"), (3, "烤得真香！"), (1, "热乎的吃了不生病。")],
+    "roast": [(2, "烤肉配篝火，最棒了。")],
+    "furn": [(0, "大屋里终于有凳子坐了。"), (1, "这木头纹路真好看。")],
+    "craft": [(1, "雕得真好看。")],
+    "pot": [(1, "陶罐能装好多水。"), (0, "有了陶罐，粮食不怕潮了。"), (3, "我也想捏一个！")],
+    "ware": [(0, "这彩陶要传下去。")],
+}
+# 产线开放那一级的第一张剧情单，用这句把新产线引出来
+INTRO = {
+    "food": (0, "篝火边有吃的了，大家都很高兴！"),
+    "tool": (2, "石匠台的第一把石器，真顺手！"),
+    "cloth": (1, "编织架织出的第一件衣服，真暖和。"),
+    "hunt": (2, "第一次下陷阱就有收获！"),
+    "fire": (0, "火塘生起来了，烤得真香！"),
+    "wood": (0, "木工场开工了，部落要盖大屋了！"),
+    "pot": (1, "第一只陶罐烧好了，真结实。"),
+}
+
+
+LAST_SAYS = set()
+
+
 def story_for(L, rows_by_level, rng):
     r = rows_by_level[L]
     total_f = r["story_f"]
     need = xp_need(L)
-    shares = [0.25, 0.33, 0.42]
+    # 1 级只有 2 张：新手引导最后那张草籽单的 1 点声望也算在 1 级里
+    shares = [0.45, 0.55] if L == 1 else [0.25, 0.33, 0.42]
+    if L == 1:
+        need -= 1
     fresh = [l for l in LINES if l["unlock"] <= L <= l["unlock"] + 2]
     chains = [l["main"] for l in open_lines(L) if product_open(L, l["main"])]
     out = []
-    xps = [need // 3] * 3
-    for i in range(need % 3):
-        xps[2 - i] += 1
+    k_n = len(shares)
+    xps = [need // k_n] * k_n
+    for i in range(need % k_n):
+        xps[k_n - 1 - i] += 1
     for i, s in enumerate(shares):
         f = total_f * s
         if f <= 24:
@@ -384,13 +422,24 @@ def story_for(L, rows_by_level, rng):
                 items[k] = f"{rng.choice(alt) if alt else ch}_{lv + (0 if alt else 1)}"
             items.sort(key=lambda x: -int(x.rsplit("_", 1)[1]))
         flames = sum(2 ** (int(x.rsplit("_", 1)[1]) - 1) for x in items)
-        o = {"items": items, "rewards": [], "shell": STORY_PAY * flames,
-             "who": rng.randrange(len(PEOPLE)), "xp": xps[i]}
+        lead = items[0].rsplit("_", 1)[0]
+        opened = [l for l in LINES if l["unlock"] == L]
+        if i == 0 and opened:
+            who, say = INTRO[opened[0]["id"]]
+        else:
+            pool = SAYS.get(lead, [(0, "谢谢你！")])
+            used = {o["say"] for o in out} | LAST_SAYS
+            fresh_pool = [x for x in pool if x[1] not in used] or [x for x in pool if x[1] not in {o["say"] for o in out}] or pool
+            who, say = rng.choice(fresh_pool)
+        o = {"items": items, "rewards": [], "say": say, "shell": STORY_PAY * flames,
+             "who": who, "xp": xps[i]}
         if i == 1 and L >= 8:
             o["rewards"] = ["pack_1"]
-        if i == 2 and L >= 2:
+        if i == k_n - 1 and L >= 2:
             o["token"] = 2 + L // 2
         out.append(o)
+    LAST_SAYS.clear()
+    LAST_SAYS.update(o["say"] for o in out)
     return out
 
 
@@ -505,7 +554,8 @@ def write_back(out):
         f.write("[" + NL + ("," + NL).join(lines) + NL + "]" + NL)
     rules = load("rules.json")
     rules.update({"random_orders": len(KNOBS["slots"]), "xp_base": KNOBS["xp_base"], "xp_div": KNOBS["xp_div"],
-                  "energy_price": 20, "energy_price_step": 10, "energy_price_max": 60})
+                  "energy_price": 20, "energy_price_step": 10, "energy_price_max": 60,
+                  "craft_level": 3})
     with open(os.path.join(DATA, "rules.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(rules, f, ensure_ascii=False, indent="\t")
         f.write("\n")
