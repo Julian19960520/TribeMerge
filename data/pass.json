@@ -1,0 +1,12 @@
+{
+	"levels": [
+		{"need": 8, "free": [["fire_1", 20]], "prem": [["fire_1", 50]]},
+		{"need": 10, "free": [["shell_2", 15]], "prem": [["shell_3", 1]]},
+		{"need": 13, "free": [["fruit_3", 1]], "prem": [["pack_1", 1]]},
+		{"need": 17, "free": [["tool_3", 1]], "prem": [["chest_1", 1]]},
+		{"need": 22, "free": [["fire_1", 40]], "prem": [["fire_1", 80]]},
+		{"need": 28, "free": [["shell_2", 30]], "prem": [["amber_2", 3], ["pack_1", 1]]},
+		{"need": 35, "free": [["cloth_2", 1]], "prem": [["basket_2", 1]]},
+		{"need": 43, "free": [["chest_1", 1]], "prem": [["amber_3", 2], ["fire_1", 40]]}
+	]
+}

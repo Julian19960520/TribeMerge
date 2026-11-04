@@ -1,0 +1,37 @@
+[
+	{
+		"id": "salad",
+		"name": "水果沙拉",
+		"mats": ["fruit_1", "fruit_2", "fruit_3"],
+		"secs": 14,
+		"unlock": 1
+	},
+	{
+		"id": "berrybowl",
+		"name": "野果籽碗",
+		"mats": ["fruit_2", "fruit_4", "seed_2"],
+		"secs": 18,
+		"unlock": 4
+	},
+	{
+		"id": "platter",
+		"name": "果肉烤盘",
+		"mats": ["fruit_4", "veg_3", "roast_2"],
+		"secs": 24,
+		"unlock": 21
+	},
+	{
+		"id": "grill",
+		"name": "海陆双拼烤肉",
+		"mats": ["beast_4", "roast_3", "veg_2"],
+		"secs": 30,
+		"unlock": 21
+	},
+	{
+		"id": "feast",
+		"name": "部落大拼盘",
+		"mats": ["beast_4", "bird_4", "veg_2", "fruit_2"],
+		"secs": 42,
+		"unlock": 21
+	}
+]

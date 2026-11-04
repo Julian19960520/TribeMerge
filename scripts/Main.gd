@@ -1,38 +1,89 @@
 extends Control
 
+const BakeItemsScript := preload("res://scripts/BakeItems.gd")
+const PassPopupScript := preload("res://scripts/ui/PassPopup.gd")
+const CfgEditScript := preload("res://scripts/ui/CfgEdit.gd")
+const GuideScript := preload("res://scripts/ui/Guide.gd")
+
 var home: HomeScreen
 var board_screen: BoardScreen
+var cfg_screen: Control
 var topbar: TopBar
 var popup_layer: Control
+var pin: Control
 var fx_layer: Control
 var screen := "home"
 var _curtain: ColorRect
+var _guide
+var _fps_lbl: Label
+## 全屏领奖一次只开一张，后面的排队
+var _rw_q: Array = []
+var _rw_showing := false
+var _fps_shown := -1
 
 func _ready() -> void:
 	G.main = self
 	size = Vector2(720, 1480)
 	clip_contents = true
+	for a in OS.get_cmdline_user_args():
+		if a == "--bake-items":
+			BakeItemsScript.new().start(self)
+			return
 	home = HomeScreen.new()
 	add_child(home)
 	board_screen = BoardScreen.new()
 	board_screen.visible = false
 	add_child(board_screen)
+	cfg_screen = CfgEditScript.new()
+	cfg_screen.visible = false
+	add_child(cfg_screen)
 	popup_layer = _layer()
 	topbar = TopBar.new()
 	add_child(topbar)
+	pin = _layer()
 	fx_layer = _layer()
 	_curtain = ColorRect.new()
 	_curtain.size = size
 	_curtain.color = Color(0.23, 0.14, 0.08, 0.0)
 	_curtain.mouse_filter = MOUSE_FILTER_IGNORE
 	add_child(_curtain)
+	_add_fps()
+	_guide = GuideScript.new()
+	board_screen.add_child(_guide)
 	var args := OS.get_cmdline_user_args()
 	for a in args:
 		if a.begins_with("--shots="):
+			_fps_lbl.get_parent().visible = false
 			_run_shots(a.get_slice("=", 1).split(","))
 			return
 	if not G.seen_tutorial:
-		open.call_deferred("howto")
+		begin_guide()
+
+func begin_guide() -> void:
+	if G.seen_tutorial or not G.tutorial_on or _guide == null:
+		return
+	for c in popup_layer.get_children():
+		c.visible = false
+		c.queue_free()
+	show_screen("board", true)
+	_guide.present()
+
+func _add_fps() -> void:
+	var host := Control.new()
+	host.mouse_filter = MOUSE_FILTER_IGNORE
+	host.size = size
+	add_child(host)
+	var box := Rect2(548, 2, 164, 34)
+	_fps_lbl = UI.lbl(host, "-- FPS", Rect2(box.position.x + 3, box.position.y + 3, box.size.x - 6, box.size.y - 6), 20, Color(1, 1, 1, 0.55))
+
+func _process(_dt: float) -> void:
+	if _fps_lbl == null or not _fps_lbl.visible:
+		return
+	var fps := Engine.get_frames_per_second()
+	if fps == _fps_shown:
+		return
+	_fps_shown = fps
+	_fps_lbl.text = "%d FPS" % fps
 
 func _layer() -> Control:
 	var c := Control.new()
@@ -42,6 +93,7 @@ func _layer() -> Control:
 	return c
 
 func show_screen(name: String, instant: bool = false) -> void:
+	if home != null: home.recall_go()
 	if name == screen:
 		return
 	screen = name
@@ -59,8 +111,11 @@ func show_screen(name: String, instant: bool = false) -> void:
 func _apply_screen() -> void:
 	home.visible = screen == "home"
 	board_screen.visible = screen == "board"
+	cfg_screen.visible = screen == "cfg"
+	topbar.visible = screen != "cfg"
 	if screen == "board":
 		board_screen.board.select(-1)
+	topbar.set_sand_context(false)
 
 func open(name: String, arg = null) -> PopupBase:
 	var p: PopupBase
@@ -74,18 +129,78 @@ func open(name: String, arg = null) -> PopupBase:
 		"inventory": p = Popups.inventory()
 		"item_info": p = Popups.item_info(arg)
 		"levelup": p = Popups.levelup()
-		"event": p = Popups.event()
+		"board_reward": p = Popups.board_reward(arg if arg is Array else [])
+		"event":
+			if G.level < Data.CARD_LEVEL:
+				toast("典藏卡册 %d 级开放" % Data.CARD_LEVEL)
+				return null
+			p = Popups.event()
+		"pass": p = PassPopupScript.screen()
+		"pass_buy": p = PassPopupScript.buy()
 		"album": p = Popups.album(arg)
 		"pack": p = Popups.pack()
 		"level": p = Popups.level_info()
 		_: return null
+	if p == null:
+		return null
+	_attach_popup(p)
+	return p
+
+## 全屏领奖。rewards 是 [[物品 id, 数量], ...]。apply 为假时物品已经入账，面板只负责飞行动画。
+func present_rewards(rewards: Array, apply := true) -> void:
+	var snap: Array = []
+	for rw in rewards:
+		if rw is Array and rw.size() >= 2 and str(rw[0]) != "" and int(rw[1]) > 0:
+			snap.append([str(rw[0]), int(rw[1])])
+	if snap.is_empty():
+		return
+	var do_apply := apply
+	_rw_q.append(func(): return Popups.reward_screen(snap, do_apply))
+	_pump_rewards()
+
+## 棋盘石头上的奖励。entries 是 [{i, id, n}, ...]，领取前还挂在格子上。
+func present_board_reward(entries: Array) -> void:
+	if entries.is_empty():
+		return
+	var snap := entries.duplicate(true)
+	_rw_q.append(func(): return Popups.board_reward(snap))
+	_pump_rewards()
+
+func _pump_rewards() -> void:
+	if _rw_showing or _rw_q.is_empty():
+		return
+	var make: Callable = _rw_q.pop_front()
+	var p: PopupBase = make.call()
+	if p == null:
+		_pump_rewards()
+		return
+	_rw_showing = true
+	_attach_popup(p)
+	if _guide != null:
+		_guide.cover_for_reward()
+	var claim := func():
+		if not is_instance_valid(p):
+			return
+		if p.on_tap.is_valid():
+			p.on_tap.call()
+		else:
+			p.close()
+	topbar.push_close(claim)
+	p.tree_exiting.connect(func(): topbar.pop_close(claim))
+	p.tree_exited.connect(func():
+		_rw_showing = false
+		_pump_rewards())
+
+func _attach_popup(p: PopupBase) -> void:
 	popup_layer.add_child(p)
+	popup_layer.move_child(p, popup_layer.get_child_count() - 1)
+	topbar.on_popup_opened()
+	p.tree_exited.connect(topbar.on_popup_exited, CONNECT_ONE_SHOT)
 	if p.has_meta("fullscreen"):
 		var cb := p.close
 		topbar.push_close(cb)
 		p.tree_exiting.connect(func(): topbar.pop_close(cb))
 	p.open()
-	return p
 
 func close_all() -> void:
 	for c in popup_layer.get_children():
@@ -134,6 +249,8 @@ func toast(text: String) -> void:
 
 func on_merged(i: int) -> void:
 	board_screen.on_merged(i)
+	if _guide != null:
+		_guide.note_merge()
 
 # ---------------------------------------------------------------- 截图自检
 
@@ -148,6 +265,29 @@ func _run_shots(names: PackedStringArray) -> void:
 		match what:
 			"home":
 				show_screen("home", true)
+			"cfg":
+				show_screen("cfg", true)
+				if parts.size() > 1:
+					cfg_screen.call("_go", parts[1])
+					if parts.size() > 2:
+						await get_tree().process_frame
+						await get_tree().process_frame
+						if parts[2] == "edit":
+							cfg_screen.call("_open_chain", 0)
+						elif parts[2] == "item":
+							cfg_screen.call("_open_item", 21, 0)
+						elif parts[2] == "gen":
+							cfg_screen.call("_open_item", 0, 2)
+						elif parts[2] == "idle":
+							cfg_screen.call("_open_item", 0, 0)
+						elif parts[2] == "fruit":
+							cfg_screen.call("_open_item", 1, 0)
+						elif parts[2] == "pick":
+							cfg_screen.call("_shot_pick")
+							if parts.size() > 3:
+								cfg_screen.get("_chooser").call_deferred("_pick_tab", parts[3])
+						elif parts[2] == "cell":
+							cfg_screen.call("_shot_cell", parts.size() > 3 and parts[3] == "empty")
 			"board":
 				show_screen("board", true)
 			"board_sel":
@@ -161,7 +301,7 @@ func _run_shots(names: PackedStringArray) -> void:
 				for k in 6:
 					bd.select(8)
 					board_screen._on_activate(8)
-				G.orders[0]["items"] = ["berry_2"]
+				G.orders[0]["items"] = ["fruit_2"]
 				G.orders_changed.emit()
 				bd.select(0)
 			"deliver":

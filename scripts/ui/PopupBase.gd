@@ -8,6 +8,7 @@ var box: Control
 var dim_alpha := 0.62
 var tap_to_close := false
 var on_tap: Callable
+var on_close: Callable
 var _closing := false
 
 func _init() -> void:
@@ -37,6 +38,8 @@ func close() -> void:
 	if _closing:
 		return
 	_closing = true
+	if on_close.is_valid():
+		on_close.call()
 	mouse_filter = MOUSE_FILTER_IGNORE
 	var tw := create_tween().set_parallel(true)
 	tw.tween_property(dim, "color:a", 0.0, 0.18)

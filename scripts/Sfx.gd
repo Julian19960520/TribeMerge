@@ -15,6 +15,7 @@ func _ready() -> void:
 	_streams["drum"] = _make(_drum, 0.35)
 	_streams["fanfare"] = _make(_fanfare, 1.2)
 	_streams["deny"] = _make(_deny, 0.25)
+	_streams["crumble"] = _make(_crumble, 0.32)
 	for i in 8:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
@@ -88,6 +89,13 @@ func _drum(t: float) -> float:
 
 func _deny(t: float) -> float:
 	return sin(TAU * 180.0 * t) * _env(t, 0.003, 0.08) * 0.6
+
+func _crumble(t: float) -> float:
+	var f := 70.0 * exp(-t * 16.0) + 36.0
+	var thud := sin(TAU * f * t) * _env(t, 0.002, 0.08)
+	var grit := (randf() * 2.0 - 1.0) * _env(t, 0.001, 0.09) * 0.65
+	var crack := sin(TAU * 960.0 * t) * _env(t, 0.001, 0.015) * 0.4
+	return thud * 0.75 + grit + crack
 
 func _kalimba(t: float, f: float) -> float:
 	if t < 0.0:

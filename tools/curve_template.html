@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>石器部落 · 合成 —— 难度曲线</title>
+<style>
+.viz-root {
+  color-scheme: light;
+  --surface-0: #f3f2ee;
+  --surface-1: #fcfcfb;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #7a7974;
+  --grid: #e4e3de;
+  --axis: #b9b8b1;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --critical: #c62f2f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .viz-root {
+    color-scheme: dark;
+    --surface-0: #121211;
+    --surface-1: #1a1a19;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #96958c;
+    --grid: #2c2c2a;
+    --axis: #4a4a46;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --critical: #e66767;
+  }
+}
+:root[data-theme="dark"] .viz-root {
+  color-scheme: dark;
+  --surface-0: #121211;
+  --surface-1: #1a1a19;
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #96958c;
+  --grid: #2c2c2a;
+  --axis: #4a4a46;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --critical: #e66767;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+.viz-root {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font: 14px/1.55 "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+  min-height: 100vh;
+  padding: 28px 20px 60px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+h1 { font-size: 24px; margin: 0 0 6px; }
+.lede { color: var(--text-secondary); margin: 0 0 22px; max-width: 760px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.tile { background: var(--surface-1); border-radius: 10px; padding: 14px 16px; }
+.tile .k { color: var(--text-secondary); font-size: 13px; }
+.tile .v { font-size: 26px; font-weight: 700; margin-top: 2px; }
+.tile .s { color: var(--text-muted); font-size: 12px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 14px; }
+.card { background: var(--surface-1); border-radius: 10px; padding: 16px 16px 10px; position: relative; }
+.card h2 { font-size: 16px; margin: 0 0 2px; }
+.card .sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-secondary); margin: 0 0 4px; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.legend i.dash { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 7px) !important; height: 2px; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { fill: var(--text-muted); font-size: 11px; }
+svg .lbl { fill: var(--text-secondary); font-size: 11px; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--surface-1); color: var(--text-primary);
+  border: 1px solid var(--axis); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.12); opacity: 0; transition: opacity .08s; white-space: nowrap; z-index: 5;
+}
+.tip b { display: block; margin-bottom: 3px; }
+.tip .row { display: flex; gap: 8px; align-items: center; color: var(--text-secondary); }
+.tip .row span:last-child { margin-left: auto; color: var(--text-primary); font-variant-numeric: tabular-nums; padding-left: 12px; }
+.tip .sw { width: 10px; height: 3px; border-radius: 2px; }
+details { background: var(--surface-1); border-radius: 10px; padding: 12px 16px; margin-top: 14px; }
+summary { cursor: pointer; font-weight: 600; }
+table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 10px; font-variant-numeric: tabular-nums; }
+th, td { padding: 4px 6px; text-align: right; border-bottom: 1px solid var(--grid); }
+th { color: var(--text-secondary); font-weight: 600; position: sticky; top: 0; background: var(--surface-1); }
+td:first-child, th:first-child { text-align: left; }
+.notes { margin-top: 14px; color: var(--text-secondary); font-size: 13px; }
+.notes code { background: var(--surface-1); padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<div class="wrap">
+  <h1>难度曲线 · 新旧对比</h1>
+  <p class="lede">所有难度都换算成<b>「要点几下生产器」</b>，这是玩家真正感受到的成本。新数值由 <code>tools/balance.py</code> 从节奏目标反推：每天约 <span id="dayTaps"></span> 下，Lv1–5 每级 0.25 天，越往后每级越久。</p>
+  <div class="tiles" id="tiles"></div>
+  <div class="grid2">
+    <div class="card" id="c-orders"></div>
+    <div class="card" id="c-story"></div>
+    <div class="card" id="c-xp"></div>
+    <div class="card" id="c-days"></div>
+    <div class="card" id="c-eff"></div>
+    <div class="card" id="c-coins"></div>
+  </div>
+  <details>
+    <summary>逐级数据表</summary>
+    <div style="max-height:480px;overflow:auto"><table id="tbl"></table></div>
+  </details>
+  <p class="notes">改节奏：编辑 <code>tools/balance.py</code> 顶部的 KNOBS，运行 <code>python tools/balance.py --write</code>，会重写 data/ 下的随机订单曲线、剧情订单、升级奖励、建造价格、生产器掉落表，并刷新本页。</p>
+</div>
+</div>
+<script>
+const D = /*DATA*/null;
+const R = D.rows;
+const css = n => getComputedStyle(document.querySelector('.viz-root')).getPropertyValue(n).trim();
+const fmt = v => (Math.abs(v) >= 1000 ? Math.round(v).toLocaleString('zh-CN') : (Math.round(v * 10) / 10).toString());
+document.getElementById('dayTaps').textContent = D.knobs.day_taps;
+
+// ---------- 指标卡
+const last = R[R.length - 1];
+const tiles = [
+  ['旧设计声望断供', 'Lv.' + D.old_stuck_level, '剧情声望不够升级，之后再也升不上去'],
+  ['Lv40 难单', fmt(last.hard_taps) + ' 下', '旧设计平均单要 ' + fmt(last.old_avg_taps) + ' 下'],
+  ['到 Lv40 预计', fmt(last.cum_days) + ' 天', '按每天 ' + D.knobs.day_taps + ' 下估算'],
+  ['生产器效率', R[0].eff.toFixed(2) + ' → ' + last.eff.toFixed(2), '每次点击平均产出的火苗'],
+];
+document.getElementById('tiles').innerHTML = tiles.map(t =>
+  `<div class="tile"><div class="k">${t[0]}</div><div class="v">${t[1]}</div><div class="s">${t[2]}</div></div>`).join('');
+
+// ---------- 折线图
+function lineChart(id, o) {
+  const host = document.getElementById(id);
+  const W = 520, H = 250, m = {l: 46, r: 64, t: 10, b: 28};
+  const xs = R.map(r => r.level);
+  const all = o.series.flatMap(s => s.values);
+  const ymax = niceMax(Math.max(...all) * 1.05);
+  const x = l => m.l + (l - xs[0]) / (xs[xs.length - 1] - xs[0]) * (W - m.l - m.r);
+  const y = v => H - m.b - v / ymax * (H - m.t - m.b);
+  let g = '';
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const v = ymax / ticks * i;
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>`;
+    g += `<text x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${fmt(v)}</text>`;
+  }
+  for (const l of [1, 5, 10, 15, 20, 25, 30, 35, 40]) {
+    g += `<text x="${x(l)}" y="${H - m.b + 16}" text-anchor="middle">Lv${l}</text>`;
+  }
+  g += `<line x1="${m.l}" x2="${W - m.r}" y1="${H - m.b}" y2="${H - m.b}" stroke="var(--axis)"/>`;
+  for (const mk of (o.marks || [])) {
+    g += `<line x1="${x(mk.level)}" x2="${x(mk.level)}" y1="${m.t}" y2="${H - m.b}" stroke="var(--critical)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+    g += `<text class="lbl" x="${x(mk.level) + 4}" y="${m.t + 12}" style="fill:var(--critical)">${mk.text}</text>`;
+  }
+  for (const s of o.series) {
+    const path = s.values.map((v, i) => (i ? 'L' : 'M') + x(xs[i]).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+    if (s.area) {
+      g += `<path d="${path} L${x(xs[xs.length - 1])} ${y(0)} L${x(xs[0])} ${y(0)} Z" fill="${s.color}" opacity=".12"/>`;
+    }
+    g += `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" ${s.dash ? 'stroke-dasharray="5 4"' : ''}/>`;
+    const lv = s.values[s.values.length - 1];
+    g += `<text class="lbl" x="${W - m.r + 6}" y="${y(lv) + 4 + (s.nudge || 0)}">${s.short || s.name}</text>`;
+  }
+  g += `<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="var(--axis)" stroke-width="1" opacity="0"/>`;
+  g += `<g class="dots"></g>`;
+  g += `<rect class="hit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent"/>`;
+  const legend = o.series.length > 1 ? `<div class="legend">${o.series.map(s =>
+    `<span><i class="${s.dash ? 'dash' : ''}" style="background:${s.color};color:${s.color}"></i>${s.name}</span>`).join('')}</div>` : '';
+  host.innerHTML = `<h2>${o.title}</h2><p class="sub">${o.sub}</p>${legend}<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.title}">${g}</svg><div class="tip"></div>`;
+  const svg = host.querySelector('svg'), tip = host.querySelector('.tip'), xh = svg.querySelector('.xh'), dots = svg.querySelector('.dots');
+  const move = ev => {
+    const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    let i = Math.round((p.x - m.l) / (W - m.l - m.r) * (xs.length - 1));
+    i = Math.max(0, Math.min(xs.length - 1, i));
+    const cx = x(xs[i]);
+    xh.setAttribute('x1', cx); xh.setAttribute('x2', cx); xh.setAttribute('opacity', 1);
+    dots.innerHTML = o.series.map(s => `<circle cx="${cx}" cy="${y(s.values[i])}" r="4" fill="${s.color}" stroke="var(--surface-1)" stroke-width="2"/>`).join('');
+    const extra = o.extra ? o.extra(R[i]) : '';
+    tip.innerHTML = `<b>Lv.${xs[i]}</b>` + o.series.map(s =>
+      `<div class="row"><span class="sw" style="background:${s.color}"></span><span>${s.name}</span><span>${fmt(s.values[i])}${o.unit || ''}</span></div>`).join('') + extra;
+    const hb = host.getBoundingClientRect();
+    let left = ev.clientX - hb.left + 14;
+    if (left + tip.offsetWidth > hb.width - 4) left = ev.clientX - hb.left - tip.offsetWidth - 14;
+    tip.style.left = left + 'px';
+    tip.style.top = (ev.clientY - hb.top - 10) + 'px';
+    tip.style.opacity = 1;
+  };
+  svg.querySelector('.hit').addEventListener('pointermove', move);
+  svg.querySelector('.hit').addEventListener('pointerleave', () => { tip.style.opacity = 0; xh.setAttribute('opacity', 0); dots.innerHTML = ''; });
+}
+function niceMax(v) {
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const k of [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (k * p >= v) return k * p;
+  return 10 * p;
+}
+const row = (k, v) => `<div class="row"><span class="sw"></span><span>${k}</span><span>${v}</span></div>`;
+
+function draw() {
+  const c1 = css('--series-1'), c2 = css('--series-2'), c3 = css('--series-3');
+  lineChart('c-orders', {
+    title: '随机订单：每张要点几下',
+    sub: '旧：一批 5 张做完才刷新，难度增长快过产能。新：常驻 4 张（1 简单 · 2 中等 · 1 难），交一张补一张。',
+    unit: ' 下',
+    series: [
+      {name: '旧·平均单', short: '旧平均', color: c2, values: R.map(r => r.old_avg_taps), dash: true},
+      {name: '新·难单', short: '新难单', color: c1, values: R.map(r => r.hard_taps)},
+      {name: '新·简单单', short: '新简单', color: c3, values: R.map(r => r.easy_taps)},
+    ],
+    extra: r => row('新·中等单', r.slot_taps.slice(1, 3).map(fmt).join(' / ') + ' 下'),
+  });
+  lineChart('c-story', {
+    title: '剧情订单：每级 3 张，每张要点几下',
+    sub: '剧情单是升级的唯一来源，占每级约 ' + Math.round(D.knobs.story_share * 100) + '% 的点击；其余点击花在随机单上换贝币。',
+    unit: ' 下',
+    series: [{name: '剧情单平均', color: c1, values: R.map(r => r.story_order_taps.reduce((a, b) => a + b, 0) / 3), area: true}],
+    extra: r => row('三张分别', r.story_order_taps.join(' / ') + ' 下') + row('升级要声望', r.xp_need),
+  });
+  lineChart('c-xp', {
+    title: '声望：累计能拿到的 vs 累计需要的',
+    sub: '旧设计每级剧情只给约 5 点，需要却是等级 + 1，Lv' + D.old_stuck_level + ' 起供给落后，玩家卡死。新设计每级剧情正好给满。',
+    marks: [{level: D.old_stuck_level, text: '旧设计在这里卡住'}],
+    series: [
+      {name: '旧·累计需要', short: '旧需要', color: c2, values: R.map(r => r.old_xp_need), dash: true},
+      {name: '旧·累计能拿到', short: '旧供给', color: c2, values: R.map(r => r.old_xp_supply), nudge: 8},
+      {name: '新·供给 = 需要', short: '新', color: c1, values: R.map(r => r.new_xp_supply)},
+    ],
+  });
+  lineChart('c-days', {
+    title: '累计游戏天数',
+    sub: '节奏目标：第一天到 Lv' + R.filter(r => r.cum_days <= 1.01).pop().level + '，第一周到 Lv' + R.filter(r => r.cum_days <= 7.01).pop().level + '，约 ' + Math.round(last.cum_days / 7) + ' 周到 Lv40。',
+    unit: ' 天',
+    series: [{name: '累计天数', color: c1, values: R.map(r => r.cum_days), area: true}],
+    extra: r => row('这一级', r.days + ' 天 · ' + r.taps + ' 下'),
+  });
+  lineChart('c-eff', {
+    title: '生产器效率：每次点击平均产出多少火苗',
+    sub: '新掉落表让每升一级产能 +15~25%；新产线开放时从 4 级起步，会把平均值暂时拉低。',
+    series: [{name: '平均效率', color: c3, values: R.map(r => r.eff)}],
+    extra: r => row('生产器等级', Object.entries(r.gens).map(([k, v]) => k + v).join(' ')),
+  });
+  lineChart('c-coins', {
+    title: '贝币：累计收入 vs 累计建造花费',
+    sub: '建造价格按每级收入反推，总价 ≈ 收入的 ' + Math.round(D.knobs.build_share * 100) + '%，留一点余量给玩家选。',
+    unit: ' 贝',
+    series: [
+      {name: '累计收入', short: '收入', color: c1, values: R.map(r => r.cum_coins)},
+      {name: '累计建造', short: '建造', color: c2, values: R.map(r => r.cum_cost), nudge: 10},
+    ],
+    extra: r => r.built.length ? row('这一级建好', r.built.join('、')) : '',
+  });
+}
+draw();
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+
+// ---------- 表格
+const cols = [
+  ['等级', r => r.level], ['天', r => r.days], ['点击/级', r => r.taps], ['效率', r => r.eff.toFixed(2)],
+  ['简单单', r => fmt(r.easy_taps)], ['难单', r => fmt(r.hard_taps)], ['旧平均', r => fmt(r.old_avg_taps)],
+  ['剧情单', r => r.story_order_taps.join('/')], ['声望', r => r.xp_need],
+  ['收入', r => r.income], ['累计收', r => r.cum_coins], ['累计建', r => r.cum_cost],
+];
+document.getElementById('tbl').innerHTML = '<tr>' + cols.map(c => `<th>${c[0]}</th>`).join('') + '</tr>' +
+  R.map(r => '<tr>' + cols.map(c => `<td>${c[1](r)}</td>`).join('') + '</tr>').join('');
+</script>
+</body>
+</html>

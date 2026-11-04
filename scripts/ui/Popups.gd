@@ -2,6 +2,8 @@ class_name Popups
 extends RefCounted
 ## 所有弹窗的构建函数。每个函数返回一个 PopupBase，由 Main.open() 打开。
 
+const Layout := preload("res://scripts/config/board_layout.gd")
+
 static func frame(p: PopupBase, r: Rect2, title: String, col: Color = Art.TEAL, mascot: String = "") -> void:
 	var br := Rect2(r.get_center().x - 180, r.position.y - 34, 360, 78)
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
@@ -17,12 +19,21 @@ static func frame(p: PopupBase, r: Rect2, title: String, col: Color = Art.TEAL, 
 	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
 
 static func section(parent: Control, text: String, y: float, col: Color = Color("8a5a30"), cx: float = 360.0) -> void:
-	UI.lbl(parent, text, Rect2(cx - 160, y, 320, 40), 26, col)
+	var fs := 26
+	var tw := float(text.length()) * float(fs)
+	if G.font_body:
+		tw = G.font_body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var half := tw * 0.5 + 14.0
+	var edge := 26.0
+	UI.lbl(parent, text, Rect2(cx - 240, y, 480, 40), fs, col)
 	UI.box(parent, Rect2(cx - 260, y, 520, 40), func(ci, sz):
-		Art.ln(ci, Vector2(30, 20), Vector2(150, 20), 2.0, Color(col, 0.5), 1)
-		Art.ln(ci, Vector2(sz.x - 150, 20), Vector2(sz.x - 30, 20), 2.0, Color(col, 0.5), 2)
-		ci.draw_colored_polygon(Art.star_pts(Vector2(156, 20), 6, 2.5, 4, 3), Color(col, 0.6))
-		ci.draw_colored_polygon(Art.star_pts(Vector2(sz.x - 156, 20), 6, 2.5, 4, 4), Color(col, 0.6)))
+		var mid: float = sz.x * 0.5
+		var left_star := clampf(mid - half, edge + 18.0, mid - 36.0)
+		var right_star := clampf(mid + half, mid + 36.0, sz.x - edge - 18.0)
+		Art.ln(ci, Vector2(edge, 20), Vector2(left_star - 10.0, 20), 2.0, Color(col, 0.5), 1)
+		Art.ln(ci, Vector2(right_star + 10.0, 20), Vector2(sz.x - edge, 20), 2.0, Color(col, 0.5), 2)
+		ci.draw_colored_polygon(Art.star_pts(Vector2(left_star, 20), 6, 2.5, 4, 3), Color(col, 0.6))
+		ci.draw_colored_polygon(Art.star_pts(Vector2(right_star, 20), 6, 2.5, 4, 4), Color(col, 0.6)))
 
 # ---------------------------------------------------------------- 体力
 
@@ -36,10 +47,12 @@ static func energy() -> PopupBase:
 	UI.box(p.box, Rect2(r.position.x + 44, r.position.y + 120, r.size.x - 88, 400), _energy_art)
 	var tag := UI.lbl(p.box, "×100", Rect2(r.position.x + 92, r.position.y + 436, 150, 60), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	tag.rotation = -0.06
-	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.position.y + 560, 300, 100), "20", "green", Callable(), 44)
-	b.res = "amber_2"
+	var price := G.energy_price()
+	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.position.y + 560, 300, 100), str(price), "green", Callable(), 44)
+	b.res = "amber_3"
+	UI.lbl(p.box, "今天第 %d 次购买，每次涨价，零点恢复。" % (G.energy_buys + 1), Rect2(r.position.x + 30, r.position.y + 676, r.size.x - 60, 40), 22, Color("8a6a4a"))
 	b.pressed.connect(func():
-		if G.spend("amber", 20):
+		if G.buy_energy():
 			G.main.fly("fire_2", Vector2(360, 760), G.main.topbar.target("energy"), func(): G.add_currency("energy", 100), 90)
 			p.close()
 		else:
@@ -95,15 +108,15 @@ static func howto() -> PopupBase:
 		var card := Art.rrect(Rect2(90, 330, 200, 100), 20, 111, 0.8)
 		Art.dilate(ci, card, 3.0, Art.INK)
 		ci.draw_colored_polygon(card, Art.BONE)
-		Art.item(ci, "meat_4", Vector2(160, 300), 110)
+		Art.item(ci, "roast_7", Vector2(160, 300), 110)
 		Paint.button(ci, Rect2(120, 360, 140, 56), "green")
 		ci.draw_polyline(PackedVector2Array([Vector2(170, 384), Vector2(186, 398), Vector2(212, 372)]), Color.WHITE, 7.0, true)
 		_arrow(ci, Vector2(330, 360), Vector2(500, 450), 0.4)
-		Art.item(ci, "shell_3", Vector2(560, 540), 170)
+		Art.item(ci, "shell_4", Vector2(560, 540), 170)
 		_arrow(ci, Vector2(520, 660), Vector2(380, 760), 0.4)
 		Art.item(ci, "chest_1", Vector2(220, 830), 200)
-		Art.item(ci, "berry_2", Vector2(150, 720), 70)
-		Art.item(ci, "amber_3", Vector2(290, 700), 70)
+		Art.item(ci, "fruit_2", Vector2(150, 720), 70)
+		Art.item(ci, "amber_4", Vector2(290, 700), 70)
 		var hand := Art.ell(Vector2(310, 880), Vector2(26, 34), 112, 0.08, 16, -0.6)
 		Art.fill(ci, hand, Color("f1c49a"), 3.0)
 		Art.fill(ci, Art.capsule(Vector2(296, 862), Vector2(270, 830), 8.0, 113), Color("f1c49a"), 3.0)
@@ -173,7 +186,9 @@ static func store() -> PopupBase:
 	UI.lbl(root, "¥ 30", Rect2(470, 344, 160, 44), 28, Color("5a3d24"), HORIZONTAL_ALIGNMENT_CENTER)
 	UI.btn(root, Rect2(430, 396, 240, 80), "激活", "green", func(): G.main.toast("演示版本，暂未开放购买。"), 38)
 	section(root, "每日特惠", 516, Color("ffd23f"))
-	var deals := [{"id": "chest_1", "price": 10, "stock": 1}, {"id": "pack_1", "price": 15, "stock": 1}]
+	var deals := [{"id": "chest_1", "price": 10, "stock": 1}]
+	if G.level >= Data.CARD_LEVEL:
+		deals.append({"id": "pack_1", "price": 15, "stock": 1})
 	for k in deals.size():
 		var d: Dictionary = deals[k]
 		var x := 110.0 + k * 270.0
@@ -198,7 +213,7 @@ static func store() -> PopupBase:
 	return p
 
 static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> void:
-	var piles := [["amber_1", 1], ["amber_2", 1], ["amber_2", 3], ["amber_3", 2], ["amber_3", 4], ["amber_3", 6]]
+	var piles := [["amber_2", 1], ["amber_3", 1], ["amber_3", 3], ["amber_4", 2], ["amber_4", 4], ["amber_4", 6]]
 	UI.box(parent, r, func(ci, sz):
 		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 20, 300 + k, 1.0)
 		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 20, 3, 0.0), Color(0, 0, 0, 0.3))
@@ -221,7 +236,7 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 184, r.size.x - 44, 64), a["price"], "orange", Callable(), 30)
 	b.title_font = false
 	b.pressed.connect(func():
-		G.main.fly("amber_2", b.get_global_rect().get_center() + Vector2(0, -100), G.main.topbar.target("amber"), func(): G.add_currency("amber", a["n"]), 80)
+		G.main.fly("amber_3", b.get_global_rect().get_center() + Vector2(0, -100), G.main.topbar.target("amber"), func(): G.add_currency("amber", a["n"]), 80)
 		G.main.toast("演示版本：琥珀 ×%d 已到账" % a["n"]))
 
 static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
@@ -236,8 +251,8 @@ static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
 		ci.draw_circle(ir.position + Vector2(Art.srnd(i) * ir.size.x, Art.srnd(i + 40) * ir.size.y), 1.5 + Art.srnd(i + 9) * 1.5, Color(1, 1, 0.8, 0.7))
 	Art.item(ci, "chest_1", Vector2(150, 316), 180)
 	for k in 6:
-		Art.item(ci, "amber_2", Vector2(70 + k * 34, 380 - (k % 2) * 10), 54)
-	Art.item(ci, "fire_3", Vector2(270, 330), 80)
+		Art.item(ci, "amber_3", Vector2(70 + k * 34, 380 - (k % 2) * 10), 54)
+	Art.item(ci, "fire_4", Vector2(270, 330), 80)
 	var tag := Art.rrect(Rect2(470, 344, 160, 44), 10, 122, 0.6)
 	Art.dilate(ci, tag, 2.5, Art.INK)
 	ci.draw_colored_polygon(tag, Color("e9d8ff"))
@@ -266,21 +281,15 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 		var left: int = int(d["stock"]) - int(book_of.get(key, 0))
 		left_lbl.text = "剩余 %d" % left
 		b.text = str(d["price"]) if left > 0 else "售罄"
-		b.res = "amber_2" if left > 0 else ""
+		b.res = "amber_3" if left > 0 else ""
 		b.style = "green" if left > 0 else "grey"
 		b.enabled = left > 0
 		b.queue_redraw()
 	refresh.call()
 	b.pressed.connect(func():
-		if not G.spend("amber", d["price"]):
-			G.main.toast("琥珀不够了！")
-			return
-		book_of[key] = int(book_of.get(key, 0)) + 1
-		G.discover(d["id"])
-		G.stash_push(d["id"])
-		G.main.fly(d["id"], b.get_global_rect().get_center() + Vector2(0, -110), G.main.board_screen.stash_pos(), Callable(), 90)
-		G.main.toast("已放入暂存区：%s" % Data.name_of(d["id"]))
-		refresh.call())
+		var origin: Vector2 = b.get_global_rect().get_center() + Vector2(0, -110)
+		if _buy_from_shop(str(d["id"]), origin):
+			refresh.call())
 
 # ---------------------------------------------------------------- 设置
 
@@ -314,140 +323,278 @@ static func settings() -> PopupBase:
 	UI.box(p.box, Rect2(290, r.position.y + 626, 140, 6), func(ci, sz): ci.draw_line(Vector2(0, 2), Vector2(sz.x, 2), Color("2f7f8a"), 2.0))
 	UI.lbl(p.box, "玩家ID：%s" % G.player_id, Rect2(r.position.x, r.position.y + 650, r.size.x, 34), 20, Color("8a7a66"))
 	UI.lbl(p.box, "V0.1.0", Rect2(r.position.x, r.position.y + 688, r.size.x, 34), 22, Color("8a7a66"))
+	var cfg := UI.btn(p.box, Rect2(r.position.x + 36, r.position.y + 690, 180, 50), "数据配置", "teal", Callable(), 22)
+	cfg.title_font = false
+	cfg.pressed.connect(func():
+		p.close()
+		G.main.show_screen("cfg"))
 	var reset := UI.btn(p.box, Rect2(r.end.x - 170, r.position.y + 690, 130, 50), "重新开始", "grey", Callable(), 20)
 	reset.title_font = false
 	reset.pressed.connect(func():
 		G.reset_game()
-		p.close()
-		G.main.toast("新的部落诞生了！"))
+		G.main.call_deferred("begin_guide"))
 	return p
 
 # ---------------------------------------------------------------- 建造
 
+## 部落建造：一个区域的全部部件。已建好的亮着、下一件高亮、之后的是剪影。花贝币建下一件 → 主页播建造动画 → 领奖。
 static func build(id: String) -> PopupBase:
 	var p := PopupBase.new()
 	var d := Data.build_def(id)
-	var st: int = G.builds.get(id, 0)
-	var done: bool = st >= int(d["stages"])
-	var r := Rect2(46, 470, 628, 600)
-	frame(p, r, d["name"], Color("4f8fc0"), "hammer")
-	UI.box(p.box, Rect2(260, r.position.y + 60, 200, 40), func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 20, 131, 0.6)
-		ci.draw_colored_polygon(b, Color(0.6, 0.45, 0.25, 0.25)))
-	UI.lbl(p.box, "阶段 %d/%d" % [min(st + 1, d["stages"]), d["stages"]], Rect2(260, r.position.y + 60, 200, 40), 22, Color("7a5a3a"))
-	section(p.box, "奖励", r.position.y + 116)
-	var reward := G.build_reward(id)
-	UI.box(p.box, Rect2(r.position.x + 60, r.position.y + 166, r.size.x - 120, 200), func(ci, sz):
+	if d.is_empty():
+		return null
+	var parts := Data.build_parts(d)
+	var total := parts.size()
+	var st := clampi(int(G.builds.get(id, 0)), 0, total)
+	var done := st >= total
+	var open := G.build_open(id)
+	var r := Rect2(40, 390, 640, 780)
+	frame(p, r, str(d.get("name", id)), Color("4f8fc0"), "hammer")
+	var line_name := ""
+	for l in Data.LINES:
+		if str(l.get("id", "")) == str(d.get("line", "")):
+			line_name = str(l.get("name", ""))
+	var sub := "已建 %d/%d" % [st, total]
+	if line_name != "":
+		sub = "%s产线 · %s" % [line_name, sub]
+	UI.box(p.box, Rect2(200, r.position.y + 54, 320, 40), func(ci, sz):
+		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2.ZERO, sz), 20, 131, 0.6), Color(0.6, 0.45, 0.25, 0.25)))
+	UI.lbl(p.box, sub, Rect2(200, r.position.y + 54, 320, 40), 22, Color("7a5a3a"))
+	# 部件卡片 3 列
+	var cw := 180.0
+	var chh := 168.0
+	var gap := 14.0
+	var cols := 3
+	var x0 := 360.0 - (cw * cols + gap * (cols - 1)) * 0.5
+	var y0 := r.position.y + 108
+	var rows := int(ceil(float(total) / float(cols)))
+	if rows > 2:
+		chh = 150.0
+	for k in total:
+		var part: Dictionary = parts[k] if parts[k] is Dictionary else {}
+		var cr := Rect2(x0 + (k % cols) * (cw + gap), y0 + int(k / cols) * (chh + gap), cw, chh)
+		var kind := str(part.get("id", ""))
+		var state := 0 if k < st else (1 if k == st else 2)
+		UI.box(p.box, cr, func(ci, sz): _build_card(ci, sz, kind, state, open, k))
+		var nm := str(part.get("name", kind))
+		UI.lbl(p.box, nm, Rect2(cr.position.x, cr.end.y - 40, cw, 34), 22, Color.WHITE if state == 1 else Color("6b4a2a"),
+			HORIZONTAL_ALIGNMENT_CENTER, 6 if state == 1 else 0, Art.INK)
+	var by := y0 + rows * (chh + gap) + 4
+	# 下一件的奖励
+	var box := Rect2(r.position.x + 36, by, r.size.x - 72, 150)
+	UI.box(p.box, box, func(ci, sz):
 		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, 132, 0.8)
 		ci.draw_colored_polygon(b, Color("ecd9b3"))
-		Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.3))
-		Art.item(ci, "fire_2", Vector2(sz.x * 0.5 - 70, 86), 110)
-		Art.item(ci, "amber_1", Vector2(sz.x * 0.5 + 70, 86), 90))
-	UI.lbl(p.box, "×%d" % reward, Rect2(r.position.x + 160, r.position.y + 300, 140, 40), 28, Color("6b4a2a"))
-	UI.lbl(p.box, "×1", Rect2(r.position.x + 310, r.position.y + 300, 140, 40), 28, Color("6b4a2a"))
+		Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.3)))
+	var rewards := G.build_rewards(id) if open and not done else []
 	var cost := G.build_cost(id)
-	var b := UI.btn(p.box, Rect2(r.get_center().x - 160, r.position.y + 410, 320, 104), "已完工" if done else str(cost), "green", Callable(), 44)
-	if not done:
-		b.res = "shell_1"
-	b.enabled = not done
+	if done:
+		UI.lbl(p.box, "这里已经全部建好啦！", Rect2(box.position.x, box.position.y + 50, box.size.x, 50), 28, Color("6b4a2a"))
+	elif not open:
+		UI.lbl(p.box, "主角 %d 级开放「%s」" % [Data.build_unlock(d), str(d.get("name", id))], Rect2(box.position.x, box.position.y + 30, box.size.x, 50), 28, Color("6b4a2a"))
+		UI.lbl(p.box, "开放后这里的部件会送%s产线的物品" % line_name if line_name != "" else "", Rect2(box.position.x, box.position.y + 80, box.size.x, 40), 20, Color("8a6a4a"))
+	else:
+		var nxt: Dictionary = parts[st]
+		UI.lbl(p.box, "建好「%s」获得" % str(nxt.get("name", "")), Rect2(box.position.x, box.position.y + 6, box.size.x, 36), 22, Color("7a5a3a"))
+		if rewards.is_empty():
+			UI.lbl(p.box, "这次没有奖励", Rect2(box.position.x, box.position.y + 60, box.size.x, 50), 26, Color("6b4a2a"))
+		var icon_s := 84.0 if rewards.size() <= 3 else 70.0
+		for k in rewards.size():
+			var c := Vector2(_spread_x(k, rewards.size(), box.get_center().x, 140.0), box.position.y + 84)
+			UI.icon(p.box, str(rewards[k][0]), c, icon_s)
+			UI.lbl(p.box, "×%d" % int(rewards[k][1]), Rect2(c.x - 10, c.y + 14, 90, 36), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 6, Art.INK)
+	var label := "已完工" if done else (("Lv.%d 开放" % Data.build_unlock(d)) if not open else str(cost))
+	var b := UI.btn(p.box, Rect2(r.get_center().x - 160, box.end.y + 18, 320, 100), label, "green" if open and not done else "grey", Callable(), 44)
+	if open and not done:
+		b.res = "shell_2"
+	b.enabled = open and not done
+	p.set_meta("build_rects", [box, Rect2(b.position, b.size)])
 	b.pressed.connect(func():
-		if not G.spend("shell", cost):
+		if G.shells < cost:
+			Sfx.play("deny")
 			G.main.toast("贝币不够，去完成订单吧！")
 			return
-		G.builds[id] = st + 1
-		G.dirty()
-		G.changed.emit()
-		Sfx.play("fanfare")
-		G.main.fly("fire_2", Vector2(360, 740), G.main.topbar.target("energy"), func(): G.add_currency("energy", reward), 90)
-		G.main.fly("amber_1", Vector2(420, 740), G.main.topbar.target("amber"), func(): G.add_currency("amber", 1), 70)
-		G.main.toast("%s 建好了新阶段！" % d["name"])
-		p.close())
+		var res := G.do_build(id)
+		if res.is_empty():
+			return
+		var idx := int(res["idx"])
+		var part: Dictionary = parts[idx] if idx < parts.size() and parts[idx] is Dictionary else {}
+		var got: Array = res["rewards"]
+		p.close()
+		if G.main.screen == "home" and G.main.home != null:
+			G.main.home.play_build(id, idx, str(part.get("id", "")), str(part.get("name", "")), got)
+		elif got.is_empty():
+			G.main.toast("%s 建好了！" % str(part.get("name", "")))
+		else:
+			G.main.present_rewards(got))
 	return p
+
+## 部件卡片。state：0 已建 1 下一件 2 之后
+static func _build_card(ci: CanvasItem, sz: Vector2, kind: String, state: int, open: bool, seed: int) -> void:
+	var r := Rect2(4, 4, sz.x - 8, sz.y - 8)
+	var b := Art.rrect(r, 16, 140 + seed, 0.7)
+	if state == 1 and open:
+		Art.dilate(ci, b, 4.0, Color("ffd23f"))
+		Art.dilate(ci, b, 2.0, Art.INK)
+		ci.draw_colored_polygon(b, Color("8cc6a0"))
+	else:
+		ci.draw_colored_polygon(b, Color("ecd9b3") if state == 0 else Color("dcc9a2"))
+		Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.35))
+	var art := Rect2(r.position + Vector2(12, 8), Vector2(r.size.x - 24, r.size.y - 58))
+	TribeArt.icon(ci, kind, art, state == 2 or not open)
+	if state == 0:
+		Paint.check_mark(ci, Vector2(sz.x - 24, 24), 0.8)
+	elif state == 2 or not open:
+		Paint.glyph(ci, "lock", Vector2(sz.x - 24, 24), 0.8)
 
 # ---------------------------------------------------------------- 图鉴
 
 static func book(tab: int = 0) -> PopupBase:
 	var p := PopupBase.new()
 	var r := Rect2(24, 240, 672, 1040)
+	var br := Rect2(r.get_center().x - 130, r.position.y - 34, 260, 78)
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
-		var cover := Art.rrect(r.grow(8), 26, 141, 1.0)
-		ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 16), r.size), 26, 141, 0.0), Color(0, 0, 0, 0.35))
-		Art.dilate(ci, cover, 3.0, Art.INK)
-		ci.draw_colored_polygon(cover, Art.LEATHER)
-		var page := Art.rrect(Rect2(r.position + Vector2(10, 6), r.size - Vector2(24, 18)), 18, 142, 0.8)
-		ci.draw_colored_polygon(page, Art.HIDE)
-		Art.outline(ci, page, 2.5, Art.LEATHER_D)
-		for i in 4:
-			Art.ln(ci, Vector2(r.position.x + 18 + i * 3, r.position.y + 20), Vector2(r.position.x + 18 + i * 3, r.end.y - 20), 1.5, Color(0.5, 0.3, 0.1, 0.25), i)
-		var strap := Art.rrect(Rect2(r.end.x - 20, r.position.y + 300, 48, 90), 14, 143, 0.8)
-		Art.dilate(ci, strap, 3.0, Art.INK)
-		ci.draw_colored_polygon(strap, Art.LEATHER_D)
-		ci.draw_circle(Vector2(r.end.x + 4, r.position.y + 345), 10, Art.OCHRE)
-		ci.draw_circle(Vector2(r.end.x + 4, r.position.y + 345), 10, Art.INK, false, 2.5, true))
-	var x := UI.hit(p.box, Rect2(r.end.x - 110, r.position.y - 40, 76, 84), p.close)
-	x.extra = func(ci, sz):
-		var tagp := Art.rrect(Rect2(8, 0, sz.x - 16, sz.y - 6), 12, 144, 0.8)
-		Art.dilate(ci, tagp, 3.0, Art.INK)
-		ci.draw_colored_polygon(tagp, Art.LEATHER_D)
-		Art.ln(ci, Vector2(26, 26), Vector2(50, 50), 6.0, Art.BONE, 1)
-		Art.ln(ci, Vector2(50, 26), Vector2(26, 50), 6.0, Art.BONE, 2)
+		Paint.panel(ci, r)
+		Paint.banner(ci, br, Color("a85a30"), 8))
 	var holder := Control.new()
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.box.add_child(holder)
-	var tabs := ["物品", "生产器"]
+	var lines: Array = Data.LINES
+	var state := {"line": clampi(tab, 0, maxi(lines.size() - 1, 0))}
 	var tab_btns: Array[TButton] = []
-	var state := {"tab": clampi(tab, 0, 1)}
-	for k in 2:
-		var b := UI.btn(p.box, Rect2(130 + k * 250, r.end.y - 30, 210, 74), tabs[k], "wood", Callable(), 30)
-		tab_btns.append(b)
-		b.pressed.connect(func():
-			if k == state["tab"]:
+	for i in lines.size():
+		var idx := i
+		var line: Dictionary = lines[i]
+		var icon := _book_icon(line)
+		var b := UI.hit(p.box, _book_tab_rect(i, lines.size(), i == int(state["line"])), func():
+			if idx == int(state["line"]):
 				return
-			state["tab"] = k
-			_book_tabs(tab_btns, k)
-			_book_page(holder, r, k))
-	_book_tabs(tab_btns, state["tab"])
-	_book_page(holder, r, state["tab"])
+			state["line"] = idx
+			_book_place_tabs(tab_btns, idx)
+			_book_page(holder, r, idx))
+		b.z_index = 2
+		b.extra = func(ci, sz): _book_tab_draw(ci, sz, idx == int(state["line"]), icon, idx)
+		tab_btns.append(b)
+	_book_page(holder, r, int(state["line"]))
+	var heading := UI.title(p.box, "图鉴", Rect2(br.position.x + 16, br.position.y + 2, br.size.x - 32, br.size.y - 6), 40, Color.WHITE)
+	heading.z_index = 3
+	var x := UI.hit(p.box, Rect2(r.end.x - 52, r.position.y - 24, 70, 70), p.close)
+	x.z_index = 4
+	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
 	return p
 
-static func _book_tabs(btns: Array[TButton], tab: int) -> void:
-	for k in btns.size():
-		btns[k].style = "orange" if k == tab else "wood"
-		btns[k].queue_redraw()
+## 右边缘的产线页签。选中的一页往左探出来。
+static func _book_tab_rect(i: int, n: int, on: bool) -> Rect2:
+	var w := 84.0
+	var h := 88.0
+	var gap := 14.0
+	var stack := float(n) * h + float(maxi(n - 1, 0)) * gap
+	var y0 := 240.0 + (1040.0 - stack) * 0.5
+	var x := 720.0 - w + (0.0 if on else 16.0)
+	return Rect2(x, y0 + float(i) * (h + gap), w, h)
 
-static func _book_page(holder: Control, r: Rect2, tab: int) -> void:
+static func _book_place_tabs(btns: Array[TButton], line: int) -> void:
+	for i in btns.size():
+		var rect := _book_tab_rect(i, btns.size(), i == line)
+		btns[i].position = rect.position
+		btns[i].size = rect.size
+		btns[i].pivot_offset = rect.size * 0.5
+		btns[i].queue_redraw()
+
+static func _book_tab_draw(ci: CanvasItem, sz: Vector2, on: bool, icon: String, seed: int) -> void:
+	var tag := Art.rrect(Rect2(0, 3, sz.x + 18, sz.y - 6), 14, 180 + seed, 0.7)
+	Art.dilate(ci, tag, 3.0, Art.INK)
+	ci.draw_colored_polygon(tag, Color("c47a3a") if on else Art.LEATHER_D)
+	var plate := Art.rrect(Rect2(7, 9, sz.x - 20, sz.y - 18), 12, 190 + seed, 0.5)
+	ci.draw_colored_polygon(plate, Color("f0d7b0") if on else Color("8a5a32"))
+	Art.item(ci, icon, Vector2(sz.x * 0.5 - 6.0, sz.y * 0.52), 58.0)
+
+## 每条产线右缘页签上的图。
+static func _book_icon(line: Dictionary) -> String:
+	var known := {
+		"food": "fruit_6",
+		"tool": "tool_5",
+		"cloth": "cloth_7",
+		"hunt": "beast_10",
+		"fire": "hearth_5",
+		"wood": "furn_10",
+		"pot": "pot_6",
+	}
+	var id := str(line.get("id", ""))
+	if known.has(id):
+		return str(known[id])
+	return "%s_1" % str(line.get("gen", "fruit"))
+
+static func _book_cell_x(r: Rect2, col: int) -> float:
+	return r.position.x + 122.0 + float(col) * 126.0
+
+static func _book_page(holder: Control, r: Rect2, line_i: int) -> void:
 	for c in holder.get_children():
 		c.queue_free()
-	var groups := [["berry", "stone", "meat", "fish"], ["basket", "hunt"]]
-	var y := r.position.y + 40
-	for ch in groups[tab]:
-		var c: Dictionary = Data.CHAINS[ch]
-		var n := 0
-		for l in c["items"].size():
-			if G.discovered.has("%s_%d" % [ch, l + 1]):
-				n += 1
-		section(holder, "%s（%d/%d）" % [c["name"], n, c["items"].size()], y)
-		y += 52
-		for l in c["items"].size():
-			var id := "%s_%d" % [ch, l + 1]
-			var cx: float = r.position.x + 90 + (l % 5) * 120
-			var known := G.discovered.has(id)
-			UI.box(holder, Rect2(cx - 52, y, 104, 104), func(ci, sz):
-				var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, l + 150, 0.6)
-				ci.draw_colored_polygon(b, Color("ecd9b3"))
-				Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.35))
-				if known:
-					Art.item(ci, id, sz * 0.5, 86)
-				else:
-					var f: Font = G.font_title
-					ci.draw_string(f, Vector2(sz.x * 0.5 - 18, sz.y * 0.5 + 20), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 60, Color(0.7, 0.55, 0.35, 0.6)))
-			if known:
-				UI.hit(holder, Rect2(cx - 52, y, 104, 104), func(): G.main.open("item_info", id))
-			if l % 5 == 4 and l < c["items"].size() - 1:
-				y += 116
-		y += 126
+	if Data.LINES.is_empty():
+		return
+	var line: Dictionary = Data.LINES[clampi(line_i, 0, Data.LINES.size() - 1)]
+	var top := r.position.y + 58
+	var sc := Scroller.new()
+	sc.position = Vector2(0, top)
+	sc.size = Vector2(630, r.end.y - 20 - top)
+	holder.add_child(sc)
+	var page := sc.content
+	var y := 16.0
+	y = _book_chain(page, r, str(line["gen"]), y)
+	y = _book_chain(page, r, str(line["main"]), y)
+	y = _book_chain(page, r, str(line["sub"]), y)
+	sc.set_length(y + 8.0)
 	holder.modulate.a = 0.0
 	holder.create_tween().tween_property(holder, "modulate:a", 1.0, 0.15)
+
+## 一页里的一条链。格子每行 4 个。
+static func _book_chain(page: Control, r: Rect2, chain_id: String, y: float) -> float:
+	var c: Dictionary = Data.CHAINS[chain_id]
+	var items: Array = c["items"]
+	var n := 0
+	for l in items.size():
+		if G.discovered.has("%s_%d" % [chain_id, l + 1]):
+			n += 1
+	var mid := _book_cell_x(r, 0) + 126.0 * 1.5
+	section(page, "%s（%d/%d）" % [str(c["name"]), n, items.size()], y, Color("8a5a30"), mid)
+	y += 52
+	for l in items.size():
+		var lv := l
+		var id := "%s_%d" % [chain_id, lv + 1]
+		var found := G.discovered.has(id)
+		var cx := _book_cell_x(r, lv % 4)
+		var cell := Rect2(cx - 52, y, 104, 104)
+		var box := UI.box(page, cell, func(ci, sz):
+			var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, lv + 150, 0.6)
+			ci.draw_colored_polygon(b, Color("ecd9b3"))
+			Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.35))
+			if not found:
+				var f: Font = G.font_title
+				ci.draw_string(f, Vector2(sz.x * 0.5 - 18, sz.y * 0.5 + 20), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 60, Color(0.7, 0.55, 0.35, 0.6))
+			elif G.book_prize(id):
+				Paint.gift(ci, sz * 0.5, 86)
+			else:
+				Art.item(ci, id, sz * 0.5, 86))
+		if found:
+			var slot := {"b": null}
+			var btn := UI.hit(page, cell, func():
+				var b: Control = slot["b"]
+				if not G.book_prize(id):
+					G.main.open("item_info", id)
+					return
+				var shells := G.claim_book(id)
+				if shells <= 0:
+					return
+				box.queue_redraw()
+				Sfx.play("coin")
+				if b != null:
+					var from := b.global_position + b.size * 0.5
+					G.main.fly("shell_2", from, G.main.topbar.target("shell"), func(): G.add_currency("shell", shells), 64))
+			slot["b"] = btn
+		if lv % 4 == 3 and lv < items.size() - 1:
+			y += 116
+	return y + 126.0
 
 # ---------------------------------------------------------------- 储物洞
 
@@ -474,7 +621,7 @@ static func inventory() -> PopupBase:
 		var tab := Art.rrect(Rect2(r.position + Vector2(40, 724), Vector2(280, 84)), 18, 166, 0.8)
 		Art.dilate(ci, tab, 3.0, Art.INK)
 		ci.draw_colored_polygon(tab, Art.HIDE)
-		Art.item(ci, "berry_4", r.position + Vector2(90, 766), 64)
+		Art.item(ci, "fruit_6", r.position + Vector2(90, 766), 64)
 		Paint.pouch(ci, Vector2(360, 290), 1.0))
 	UI.title(p.box, "储物洞", Rect2(200, 330, 320, 70), 44, Color.WHITE)
 	UI.lbl(p.box, "物品", Rect2(130, 1024, 180, 84), 30, Art.INK)
@@ -486,8 +633,8 @@ static func inventory() -> PopupBase:
 			var pr := Rect2(10 + k * 230, 6, 200, 44)
 			var b := Art.rrect(pr, 22, 170 + k, 0.6)
 			ci.draw_colored_polygon(b, Color(0, 0, 0, 0.3))
-		Art.item(ci, "amber_2", Vector2(30, 28), 50)
-		Art.item(ci, "shell_1", Vector2(260, 28), 50))
+		Art.item(ci, "amber_3", Vector2(30, 28), 50)
+		Art.item(ci, "shell_2", Vector2(260, 28), 50))
 	var am_lbl := UI.lbl(p.box, "", Rect2(180, 406, 140, 44), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	var sh_lbl := UI.lbl(p.box, "", Rect2(410, 406, 140, 44), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	var slots: Array[DrawBox] = []
@@ -523,7 +670,7 @@ static func inventory() -> PopupBase:
 			G.board_changed.emit()
 			Sfx.play("pop"))
 	var unlock := UI.btn(p.box, Rect2(0, 0, 108, 54), "50", "green", Callable(), 26)
-	unlock.res = "amber_2"
+	unlock.res = "amber_3"
 	var refresh := func():
 		am_lbl.text = str(G.amber)
 		sh_lbl.text = str(G.shells)
@@ -551,68 +698,227 @@ static func inventory() -> PopupBase:
 
 # ---------------------------------------------------------------- 物品详情
 
+static func _dish_info(id: String) -> PopupBase:
+	var p := PopupBase.new()
+	var r := Rect2(70, 460, 580, 460)
+	frame(p, r, Data.name_of(id), Art.OCHRE)
+	UI.icon(p.box, id, Vector2(360, r.position.y + 170), 160)
+	var desc := UI.lbl(p.box, Data.describe(id), Rect2(r.position.x + 36, r.position.y + 280, r.size.x - 72, 130), 26, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_CENTER)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	return p
+
 static func item_info(id: String) -> PopupBase:
+	if Data.is_dish(id):
+		return _dish_info(id)
 	var p := PopupBase.new()
 	var ch := Data.chain(id)
 	var c: Dictionary = Data.CHAINS[ch]
-	var r := Rect2(40, 280, 640, 880)
+	var r := Rect2(80, 340, 560, 780)
 	frame(p, r, c["name"], Art.TEAL)
-	UI.lbl(p.box, "%s · 第 %d 级" % [Data.name_of(id), Data.lv(id)], Rect2(r.position.x, r.position.y + 54, r.size.x, 40), 26, Color("7a5a3a"))
+	var state := {"id": id}
+	var shown: String = state["id"]
+	var name_lbl := UI.lbl(p.box, "%s · 第 %d 级" % [Data.name_of(shown), Data.lv(shown)], Rect2(r.position.x, r.position.y + 48, r.size.x, 36), 24, Color("7a5a3a"))
 	var items: Array = c["items"]
-	var y0 := r.position.y + 110
+	var cols := 4
+	var step := 112.0
+	var cell_w := 96.0
+	var half := cell_w * 0.5
+	var pitch := 110.0
+	var x0 := r.position.x + (r.size.x - (step * float(cols - 1) + cell_w)) * 0.5 + half
+	var y0 := r.position.y + 100.0
+	var lower_y := y0 + float(int((maxi(items.size(), 1) - 1) / cols) + 1) * pitch + 4.0
+	var lower := Control.new()
+	lower.position = Vector2(0, lower_y)
+	lower.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cells: Array[DrawBox] = []
+	var rebuild := func():
+		for child in lower.get_children():
+			lower.remove_child(child)
+			child.queue_free()
+		var cur_id: String = state["id"]
+		var t := c["type"] as String
+		var y := 0.0
+		if t == "gen":
+			var st := Data.gen_stats(cur_id)
+			if st.is_empty():
+				section(lower, "还不能生产", y)
+				var nxt := Data.first_prod_lv(Data.chain(cur_id))
+				if nxt <= 0:
+					UI.lbl(lower, "这一级没有配置产物", Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
+				else:
+					UI.lbl(lower, "合成到 %d 级后才能点击生产" % nxt, Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
+					UI.icon(lower, "%s_%d" % [Data.chain(cur_id), nxt], Vector2(r.get_center().x, y + 160), 100)
+			else:
+				section(lower, "产出", y)
+				var drops: Array = st["drops"]
+				for k in drops.size():
+					var d: Dictionary = drops[k]
+					var col := k % cols
+					var row := int(k / cols)
+					var cx := x0 + float(col) * step
+					var cy := y + 72.0 + float(row) * pitch
+					UI.icon(lower, str(d["id"]), Vector2(cx, cy), 62)
+					UI.lbl(lower, str(d["p"]), Rect2(cx - 36, cy + 32, 72, 26), 18, Color("7a5a3a"))
+				y += float(int((drops.size() + cols - 1) / cols)) * pitch + 12.0
+				var cost := "每次生产消耗 1 火种"
+				if st.has("charges"):
+					cost = "满储 %d 次，用完 %d 分钟后回满" % [st["charges"], st["refill"]]
+				UI.lbl(lower, cost, Rect2(r.position.x, y, r.size.x, 36), 22, Color("7a5a3a"))
+		elif t == "item":
+			section(lower, "获取途径：", y)
+			var prods := Data.producers_of(ch)
+			for k in prods.size():
+				UI.icon(lower, prods[k], Vector2(r.get_center().x + (float(k) - (prods.size() - 1) * 0.5) * 120, y + 100), 96)
+		else:
+			section(lower, "获取途径：", y)
+			UI.lbl(lower, "生产器随机掉落、开启宝箱、升级奖励", Rect2(r.position.x, y + 60, r.size.x, 60), 24, Color("7a5a3a"))
+	var buys: Array = []
+	var refresh_buys := func() -> void:
+		for b in buys:
+			if not is_instance_valid(b):
+				continue
+			b.visible = not _shop_offer(str(b.get_meta("iid"))).is_empty()
 	for l in items.size():
-		var iid := "%s_%d" % [ch, l + 1]
-		var cx := r.position.x + 92 + (l % 4) * 152
-		var cy := y0 + (l / 4) * 124
-		var known := G.discovered.has(iid)
-		var cur := iid == id
-		UI.box(p.box, Rect2(cx - 56, cy, 112, 112), func(ci, sz):
-			var b := Art.rrect(Rect2(4, 4, sz.x - 8, sz.y - 8), 18, 190 + l, 0.6)
+		var lv := l
+		var slot_id := "%s_%d" % [ch, lv + 1]
+		var cx := x0 + float(lv % cols) * step
+		var cy := y0 + float(lv / cols) * pitch
+		var cell := UI.box(p.box, Rect2(cx - half, cy, cell_w, cell_w), func(ci, sz):
+			var b := Art.rrect(Rect2(4, 4, sz.x - 8, sz.y - 8), 16, 190 + lv, 0.6)
+			var cur: bool = slot_id == str(state["id"])
+			var owned := _board_count(slot_id)
+			var seen := G.discovered.has(slot_id) or owned > 0
 			ci.draw_colored_polygon(b, Color("a8d86a") if cur else Color("ecd9b3"))
 			Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.35))
-			if known:
-				Art.item(ci, iid, sz * 0.5, 90)
+			if seen:
+				Art.item(ci, slot_id, sz * 0.5, 76)
 			else:
-				ci.draw_string(G.font_title, Vector2(sz.x * 0.5 - 18, sz.y * 0.5 + 20), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 60, Color(0.7, 0.55, 0.35, 0.6))
+				ci.draw_string(G.font_title, Vector2(sz.x * 0.5 - 16, sz.y * 0.5 + 18), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 52, Color(0.7, 0.55, 0.35, 0.6))
 			if cur:
 				Paint.cell_bracket(ci, Rect2(Vector2.ZERO, sz).grow(-2))
-			if l % 4 != 3 and l < items.size() - 1:
-				ci.draw_colored_polygon(Art.poly([Vector2(sz.x + 10, sz.y * 0.5 - 9), Vector2(sz.x + 24, sz.y * 0.5), Vector2(sz.x + 10, sz.y * 0.5 + 9)], l), Color(0.75, 0.6, 0.4, 0.8)))
-	var y := y0 + (int((items.size() - 1) / 4) + 1) * 124 + 20
-	var t := c["type"] as String
-	if t == "gen":
-		section(p.box, "可以生产：", y)
-		var outs := Data.gen_outputs(id)
-		for k in outs.size():
-			var oid := "%s_1" % outs[k]
-			UI.icon(p.box, oid, Vector2(r.get_center().x + (float(k) - (outs.size() - 1) * 0.5) * 130, y + 110), 110)
-		y += 190
-		var nx := Data.next_id(id)
-		if nx != "":
-			var more := []
-			for o in Data.gen_outputs(nx):
-				if not (o in outs):
-					more.append(o)
-			if not more.is_empty():
-				section(p.box, "下一级还能生产：", y)
-				UI.icon(p.box, "%s_1" % more[0], Vector2(r.get_center().x, y + 110), 110)
-				UI.lbl(p.box, "NEW", Rect2(r.get_center().x, y + 44, 80, 30), 22, Art.CLAY, HORIZONTAL_ALIGNMENT_CENTER, 6, Color.WHITE, true)
-	elif t == "item":
-		section(p.box, "获取途径：", y)
-		var prods := Data.producers_of(ch)
-		for k in prods.size():
-			UI.icon(p.box, prods[k], Vector2(r.get_center().x + (float(k) - (prods.size() - 1) * 0.5) * 130, y + 110), 110)
-	else:
-		section(p.box, "获取途径：", y)
-		UI.lbl(p.box, "生产器随机掉落、开启宝箱、升级奖励", Rect2(r.position.x, y + 60, r.size.x, 60), 24, Color("7a5a3a"))
+			if owned > 0:
+				_draw_count(ci, Vector2(15, 15), owned)
+			if lv % cols != cols - 1 and lv < items.size() - 1:
+				ci.draw_colored_polygon(Art.poly([Vector2(sz.x + 3, sz.y * 0.5 - 7), Vector2(sz.x + 14, sz.y * 0.5), Vector2(sz.x + 3, sz.y * 0.5 + 7)], lv), Color(0.75, 0.6, 0.4, 0.8)))
+		cells.append(cell)
+		var hit := UI.hit(p.box, Rect2(cx - half, cy, cell_w, cell_w), func():
+			if not G.discovered.has(slot_id) and _board_count(slot_id) <= 0:
+				return
+			if slot_id == state["id"]:
+				return
+			state["id"] = slot_id
+			var now: String = state["id"]
+			name_lbl.text = "%s · 第 %d 级" % [Data.name_of(now), Data.lv(now)]
+			for cell_box in cells:
+				cell_box.queue_redraw()
+			rebuild.call()
+			Sfx.play("tap"))
+		hit.sound = ""
+		var offer := _shop_offer(slot_id)
+		if not offer.is_empty():
+			var bought_id := slot_id
+			var price := int(offer["price"])
+			var cap_h := 24.0
+			var buy := UI.btn(p.box, Rect2(cx - 40.0, cy + cell_w - cap_h * 0.5, 80, cap_h), str(price), "green", Callable(), 15)
+			buy.title_font = false
+			buy.res = "amber_3"
+			buy.z_index = 3
+			buy.set_meta("iid", bought_id)
+			buy.pressed.connect(func():
+				var from := buy.get_global_rect().get_center()
+				if _buy_from_shop(bought_id, from):
+					refresh_buys.call()
+					for cell_box in cells:
+						cell_box.queue_redraw())
+			buys.append(buy)
+	p.box.add_child(lower)
+	rebuild.call()
+	if str(c.get("type", "")) == "item":
+		var prods: Array = Data.producers_of(ch)
+		if not prods.is_empty():
+			p.on_close = _pulse_source.bind(Data.chain(str(prods[0])))
 	return p
 
+static func _board_count(id: String) -> int:
+	var n := 0
+	for c in G.board:
+		if str(c.get("id", "")) == id and int(c.get("lock", 0)) != 2:
+			n += 1
+	return n
+
+static func _draw_count(ci: CanvasItem, c: Vector2, n: int) -> void:
+	ci.draw_circle(c, 12.0, Color(0.28, 0.18, 0.1, 0.45))
+	ci.draw_circle(c, 10.5, Color(0.42, 0.3, 0.18, 0.72))
+	var f: Font = G.font_title
+	if f == null:
+		return
+	var label := str(n)
+	var fs := 15 if n < 10 else 12
+	var w := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var baseline := c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
+	ci.draw_string(f, Vector2(c.x - w * 0.5, baseline), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("f4ead8"))
+
+## 集市里还买得到的这一件。deal 为真时记在每日特惠，否则记在热卖。
+static func _shop_offer(id: String) -> Dictionary:
+	var rows: Array = [{"id": "chest_1", "price": 10, "stock": 1, "key": "deal_0", "deal": true}]
+	if G.level >= Data.CARD_LEVEL:
+		rows.append({"id": "pack_1", "price": 15, "stock": 1, "key": "deal_1", "deal": true})
+	for k in Data.STORE_HOT.size():
+		var d: Dictionary = Data.STORE_HOT[k]
+		rows.append({
+			"id": str(d.get("id", "")),
+			"price": int(d.get("price", 0)),
+			"stock": int(d.get("stock", 0)),
+			"key": "hot_%d" % k,
+			"deal": false,
+		})
+	for row in rows:
+		if str(row["id"]) != id:
+			continue
+		var deal := bool(row["deal"])
+		var book: Dictionary = G.deals_bought if deal else G.hot_bought
+		var left := int(row["stock"]) - int(book.get(row["key"], 0))
+		if left > 0:
+			return {"price": int(row["price"]), "left": left, "key": str(row["key"]), "deal": deal}
+	return {}
+
+static func _buy_from_shop(id: String, origin: Vector2) -> bool:
+	var offer := _shop_offer(id)
+	if offer.is_empty() or G.main == null:
+		return false
+	if not G.spend("amber", int(offer["price"])):
+		G.main.toast("琥珀不够了！")
+		return false
+	var deal := bool(offer["deal"])
+	var book: Dictionary = G.deals_bought if deal else G.hot_bought
+	var key := str(offer["key"])
+	book[key] = int(book.get(key, 0)) + 1
+	G.discover(id)
+	G.stash_push(id)
+	_fly_stash([[id, origin]])
+	G.main.toast("已放入暂存区：%s" % Data.name_of(id))
+	return true
+
+static func _pulse_source(chain_id: String) -> void:
+	if G.main == null or G.main.board_screen == null or G.main.board_screen.board == null:
+		return
+	G.main.board_screen.board.pulse_chain(chain_id)
+
 # ---------------------------------------------------------------- 升级
+
+static func _spread_x(k: int, n: int, center: float, gap: float) -> float:
+	if n <= 1:
+		return center
+	var step := minf(gap, 620.0 / float(n))
+	return center + (float(k) - (n - 1) * 0.5) * step
 
 static func levelup() -> PopupBase:
 	var p := PopupBase.new()
 	p.dim_alpha = 0.8
 	var rewards := Data.level_rewards(G.level)
+	var spots: Array[Vector2] = []
+	for k in rewards.size():
+		spots.append(Vector2(_spread_x(k, rewards.size(), 360.0, 156.0), 700.0))
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
 		var c := Vector2(360, 470)
 		var rot := float(Time.get_ticks_msec()) / 3000.0
@@ -622,19 +928,18 @@ static func levelup() -> PopupBase:
 		ci.draw_circle(c, 150, Color(1, 0.85, 0.4, 0.2))
 		Paint.level_badge(ci, c, 220)
 		Paint.heroine(ci, Vector2(250, 1260), 160))
-	UI.title(p.box, "部落升级！", Rect2(0, 210, 720, 110), 76)
+	UI.title(p.box, "主角升级！", Rect2(0, 210, 720, 110), 76)
 	UI.lbl(p.box, str(G.level), Rect2(260, 400, 200, 140), 96, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 16, Art.INK, true)
 	for k in rewards.size():
-		var x := 105.0 + k * 170.0
-		UI.icon(p.box, rewards[k][0], Vector2(x, 700), 130)
-		UI.lbl(p.box, "×%d" % rewards[k][1], Rect2(x - 70, 760, 140, 50), 34, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+		UI.icon(p.box, rewards[k][0], spots[k], 120)
+		UI.lbl(p.box, "×%d" % rewards[k][1], Rect2(spots[k].x - 70, spots[k].y + 58, 140, 50), 34, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	var hint := UI.lbl(p.box, "点击任意处领取", Rect2(0, 850, 720, 50), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
 	var tw := hint.create_tween().set_loops()
 	tw.tween_property(hint, "modulate:a", 0.3, 0.6)
 	tw.tween_property(hint, "modulate:a", 1.0, 0.6)
 	Sfx.play("fanfare")
 	p.on_tap = func():
-		grant_rewards(rewards, func(k): return Vector2(105.0 + k * 170.0, 700))
+		grant_rewards(rewards, func(k): return spots[k] if k < spots.size() else Vector2(360, 700))
 		p.on_tap = Callable()
 		p.close()
 	var redraw := Timer.new()
@@ -648,19 +953,275 @@ static func levelup() -> PopupBase:
 				break)
 	return p
 
-## 发放奖励：体力/贝币/琥珀飞向顶栏，其他物品进暂存区
+## 一批 [[id, 数量]]。和棋盘气泡用同一张全屏领奖。
+static func reward_screen(rewards: Array, apply := true) -> PopupBase:
+	var entries: Array = []
+	for rw in rewards:
+		if not (rw is Array) or rw.size() < 2:
+			continue
+		var n := int(rw[1])
+		if str(rw[0]) == "" or n < 1:
+			continue
+		entries.append({"i": -1, "id": str(rw[0]), "n": n})
+	var p := board_reward(entries)
+	if p != null:
+		p.set_meta("reward_screen", true)
+		p.set_meta("reward_apply", apply)
+	return p
+
+## 棋盘上的奖励解锁：全屏展示，点一下才领。entries 是 [{i, id, n}, ...]。
+## 画面：柔和的旋转光芒 + 绳捆木板标题 + 每件奖励一个发光台座，依次弹出、轻轻浮动；底部「收下」按钮，点任意处也能领。
+static func board_reward(entries: Array) -> PopupBase:
+	if entries.is_empty():
+		return null
+	var p := PopupBase.new()
+	p.dim_alpha = 0.86
+	p.set_meta("board_reward", true)
+	var n := entries.size()
+	var cols := n if n <= 4 else (3 if n <= 6 else 4)
+	var rows := int(ceil(float(n) / float(cols)))
+	var slot := 210.0 if n == 1 else (156.0 if n <= 3 else 124.0)
+	var show_name := n <= 4
+	var gap_x := minf(slot + 34.0, 640.0 / float(cols))
+	var gap_y := slot + (96.0 if show_name else 64.0)
+	var origin_y := 740.0 - float(rows - 1) * gap_y * 0.5
+	var spots: Array[Vector2] = []
+	for k in n:
+		var row := int(k / cols)
+		var in_row := mini(cols, n - row * cols)
+		var col := k % cols
+		spots.append(Vector2(360.0 + (float(col) - float(in_row - 1) * 0.5) * gap_x, origin_y + float(row) * gap_y))
+	var glow := Vector2(360, origin_y + float(rows - 1) * gap_y * 0.5)
+	var grid_bottom := origin_y + float(rows - 1) * gap_y + slot * 0.5 + (70.0 if show_name else 40.0)
+	var br := Rect2(170, 190, 380, 92)
+	var t0 := Time.get_ticks_msec()
+	# 背景：光晕、两层反向旋转的光芒、台座、闪烁的星点
+	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
+		var t := float(Time.get_ticks_msec() - t0) / 1000.0
+		var open := clampf(t / 0.5, 0.0, 1.0)
+		for k in 8:
+			ci.draw_circle(glow, 320.0 - float(k) * 34.0, Color(1, 0.84, 0.45, 0.018 * open))
+		# 光芒从中心向外渐隐，不画出硬边
+		for layer in 2:
+			var nr := 10 if layer == 0 else 8
+			var rot := t * (0.12 if layer == 0 else -0.08) + float(layer) * 0.35
+			var reach := 1100.0 * (0.5 + 0.5 * open)
+			var half := 0.06 if layer == 0 else 0.09
+			var a_in := (0.07 if layer == 0 else 0.035) * open
+			var c_in := Color(1, 0.9, 0.55, a_in)
+			var c_out := Color(1, 0.9, 0.55, 0.0)
+			for k in nr:
+				var a := rot + TAU * float(k) / float(nr)
+				ci.draw_polygon(PackedVector2Array([
+					glow + Vector2(cos(a), sin(a)) * 30.0,
+					glow + Vector2(cos(a - half), sin(a - half)) * reach,
+					glow + Vector2(cos(a + half), sin(a + half)) * reach,
+				]), PackedColorArray([c_in, c_out, c_out]))
+		for k in spots.size():
+			var c: Vector2 = spots[k]
+			var appear := clampf((t - 0.18 - 0.09 * float(k)) / 0.3, 0.0, 1.0)
+			if appear <= 0.0:
+				continue
+			var r := slot * 0.5
+			for j in 4:
+				ci.draw_circle(c, r * (1.0 - 0.13 * float(j)), Color(1, 0.9, 0.55, 0.05 * appear))
+			var burst := Art.star_pts(c, r * 0.98, r * 0.62, 8, 40 + k, t * 0.5 + float(k))
+			ci.draw_colored_polygon(burst, Color(1, 0.95, 0.7, 0.08 * appear))
+			var plate := Art.ell(c + Vector2(0, r * 0.66), Vector2(r * 0.72, r * 0.2), 60 + k, 0.03, 22, 0.0, 0.0)
+			Art.dilate(ci, plate, 3.0, Color(Art.INK, appear))
+			ci.draw_colored_polygon(plate, Color(Art.LEATHER, appear))
+			ci.draw_colored_polygon(Art.ell(c + Vector2(0, r * 0.63), Vector2(r * 0.6, r * 0.12), 70 + k, 0.03, 20, 0.0, 0.0), Color(Art.OCHRE, appear * 0.9))
+		for k in 14:
+			var sp := Vector2(40.0 + Art.srnd(k * 7 + 1) * 640.0, 200.0 + Art.srnd(k * 13 + 5) * 900.0)
+			if sp.distance_to(glow) < 120.0:
+				continue
+			var tw := 0.5 + 0.5 * sin(t * (2.0 + Art.srnd(k) * 2.0) + float(k) * 1.7)
+			var sr := (3.0 + Art.srnd(k * 3) * 5.0) * (0.45 + 0.55 * tw) * open
+			if sr > 2.4:
+				ci.draw_colored_polygon(Art.star_pts(sp, sr * 2.2, sr * 0.6, 4, k), Color(1, 0.95, 0.75, 0.6 * tw))
+		Paint.mascot(ci, Vector2(br.end.x - 36, br.position.y - 8), 74)
+		Paint.banner(ci, br, Color("c4532e")))
+	UI.title(p.box, "获得奖励", Rect2(br.position.x + 40, br.position.y + 4, br.size.x - 80, br.size.y - 10), 46, Color("fff1c4"))
+	# 奖励：依次弹出，落地后轻轻浮动
+	for k in n:
+		var id := str(entries[k]["id"])
+		var count := int(entries[k]["n"])
+		var at: Vector2 = spots[k]
+		var holder := Control.new()
+		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.position = at - Vector2(slot, slot) * 0.5
+		holder.size = Vector2(slot, slot)
+		holder.pivot_offset = holder.size * 0.5
+		holder.scale = Vector2.ZERO
+		p.box.add_child(holder)
+		var icon := UI.icon(holder, id, Vector2(slot, slot) * 0.5 + Vector2(0, -slot * 0.06), slot * 0.86)
+		var bfs := 30 if n == 1 else (26 if n <= 3 else 22)
+		var text := "×%d" % count
+		var tw_px := float(text.length()) * bfs * 0.62
+		if G.font_title:
+			tw_px = G.font_title.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x
+		var bw := tw_px + 26.0
+		var bh := bfs + 16.0
+		var badge := Rect2(slot * 0.5 + slot * 0.16, slot * 0.66 - bh * 0.5, bw, bh)
+		badge.position.x = minf(badge.position.x, slot + 6.0 - bw)
+		UI.box(holder, badge, func(ci, sz):
+			var b := Art.rrect(Rect2(Vector2(3, 3), sz - Vector2(6, 6)), (sz.y - 6) * 0.5, 80 + k, 0.5)
+			Art.dilate(ci, b, 3.0, Art.INK)
+			ci.draw_colored_polygon(b, Color("5a3416"))
+			ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(9, 6), Vector2(sz.x - 18, sz.y * 0.28)), 6, 81 + k, 0.2), Color(1, 1, 1, 0.14)))
+		UI.lbl(holder, text, badge, bfs, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 0, Art.INK, true)
+		var name_lbl: Label = null
+		if show_name and (Data.DISHES.has(id) or Data.CHAINS.has(Data.chain(id))):
+			var nfs := 34 if n == 1 else 24
+			name_lbl = UI.lbl(p.box, Data.name_of(id), Rect2(at.x - gap_x * 0.5, at.y + slot * 0.5 + 8, gap_x, nfs + 14), nfs, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+			name_lbl.modulate.a = 0.0
+		var delay := 0.18 + 0.09 * float(k)
+		var pop := holder.create_tween()
+		pop.tween_interval(delay)
+		pop.tween_callback(func(): Sfx.play("pop", 1.0 + 0.08 * float(k)))
+		pop.tween_property(holder, "scale", Vector2.ONE, 0.38).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		if name_lbl != null:
+			var nl := name_lbl
+			pop.parallel().tween_property(nl, "modulate:a", 1.0, 0.25).set_delay(0.12)
+		var base_y := icon.position.y
+		var period := 0.8 + 0.07 * float(k % 3)
+		pop.tween_callback(func():
+			if not is_instance_valid(icon):
+				return
+			var bob := icon.create_tween().set_loops()
+			bob.tween_property(icon, "position:y", base_y - 6.0, period).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			bob.tween_property(icon, "position:y", base_y + 2.0, period).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT))
+	# 底部：收下按钮 + 提示
+	var by := clampf(grid_bottom + 30.0, 1190.0, 1250.0)
+	var take := UI.btn(p.box, Rect2(220, by, 280, 96), "收下", "green", Callable(), 44)
+	take.modulate.a = 0.0
+	var hint := UI.lbl(p.box, "点击任意处领取", Rect2(0, by + 104, 720, 40), 22, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	hint.modulate.a = 0.0
+	var fade := take.create_tween()
+	fade.tween_interval(0.3 + 0.09 * float(n))
+	fade.tween_property(take, "modulate:a", 1.0, 0.25)
+	fade.parallel().tween_property(hint, "modulate:a", 0.8, 0.25)
+	var pulse := hint.create_tween().set_loops()
+	pulse.tween_interval(0.8 + 0.09 * float(n))
+	pulse.tween_property(hint, "modulate:a", 0.35, 0.7)
+	pulse.tween_property(hint, "modulate:a", 0.8, 0.7)
+	Sfx.play("fanfare")
+	var given := {"ok": false}
+	var give := func(fly: bool) -> void:
+		if given["ok"]:
+			return
+		var rewards: Array = []
+		for e in entries:
+			var i := int(e["i"])
+			if i >= 0:
+				if i >= G.board.size():
+					continue
+				var cell: Dictionary = G.board[i]
+				if Layout.parse_reward(cell.get("rw", null)).is_empty():
+					continue
+				cell.erase("rw")
+			rewards.append([str(e["id"]), int(e["n"])])
+		given["ok"] = true
+		if rewards.is_empty():
+			return
+		var apply := true
+		if p.has_meta("reward_apply"):
+			apply = bool(p.get_meta("reward_apply"))
+		if apply:
+			settle(rewards, func(k): return spots[k] if k < spots.size() else glow, fly)
+		elif fly and G.main != null:
+			var flies: Array = []
+			for k in rewards.size():
+				flies.append([str(rewards[k][0]), spots[k] if k < spots.size() else glow])
+			_fly_stash(flies)
+	p.on_tap = func():
+		give.call(true)
+		p.on_tap = Callable()
+		p.close()
+	take.pressed.connect(func():
+		if p.on_tap.is_valid():
+			p.on_tap.call())
+	p.tree_exiting.connect(func(): give.call(false))
+	var redraw := Timer.new()
+	redraw.wait_time = 0.033
+	redraw.autostart = true
+	p.add_child(redraw)
+	redraw.timeout.connect(func():
+		for ch in p.box.get_children():
+			if ch is DrawBox:
+				ch.queue_redraw()
+				break)
+	return p
+
+## 棋盘物品飞进暂存：主界面先把「去合成」滑上来再飞向按钮，否则飞向暂存区
+static func _fly_stash(flies: Array) -> void:
+	if flies.is_empty():
+		return
+	if G.main.screen == "home":
+		var home: HomeScreen = G.main.home
+		home.present_go(func():
+			home.arm_go(flies.size())
+			var dest: Vector2 = home.go_center()
+			for item in flies:
+				var id: String = item[0]
+				var from: Vector2 = item[1]
+				G.main.fly(id, from, dest, home.release_go, 90))
+	else:
+		var dest: Vector2 = G.main.board_screen.stash_pos()
+		for item in flies:
+			var id: String = item[0]
+			var from: Vector2 = item[1]
+			G.main.fly(id, from, dest, Callable(), 90)
+
+## 发放奖励。fly 为真时图标飞向顶栏或暂存；为假时直接入账。
 static func grant_rewards(rewards: Array, from: Callable) -> void:
+	settle(rewards, from, true)
+
+static func settle(rewards: Array, from: Callable, fly: bool) -> void:
+	var item_flies: Array = []
+	var pack_n := 0
+	var leveled := false
 	for k in rewards.size():
-		var id: String = rewards[k][0]
-		var n: int = rewards[k][1]
-		var t := Data.type_of(id)
-		var pos: Vector2 = from.call(k)
-		if t in ["energy", "shell", "amber"]:
-			G.main.fly(id, pos, G.main.topbar.target(t), func(): G.add_currency(t, n), 100)
+		var id := str(rewards[k][0])
+		var n := int(rewards[k][1])
+		var pos := Vector2(360, 700)
+		if from.is_valid():
+			pos = from.call(k)
+		var t := ""
+		if Data.DISHES.has(id) or Data.CHAINS.has(Data.chain(id)):
+			t = Data.type_of(id)
+		if t in ["energy", "shell", "amber", "sand"]:
+			if fly and G.main != null and G.main.topbar != null:
+				G.main.fly(id, pos, G.main.topbar.target(t), func(tt := t, nn := n): G.add_currency(tt, nn), 100)
+			else:
+				G.add_currency(t, n)
+		elif t == "xp":
+			if fly and G.main != null and G.main.topbar != null:
+				var dest: Vector2 = G.main.topbar.get_global_transform() * Vector2(64, 82)
+				G.main.fly(id, pos, dest, func(nn := n):
+					if G.add_xp(nn):
+						G.main.open("levelup")
+				, 100)
+			elif G.add_xp(n):
+				leveled = true
+		elif t == "token":
+			pack_n += G.add_tokens(n)
+			if fly and G.main != null and G.main.board_screen != null:
+				G.main.fly(id, pos, G.main.board_screen.stash_pos(), Callable(), 90)
 		else:
-			for j in n:
+			for _j in n:
 				G.stash.append(id)
-			G.main.fly(id, pos, G.main.board_screen.stash_pos(), Callable(), 90)
+			if fly:
+				item_flies.append([id, pos])
+	if fly and not item_flies.is_empty():
+		_fly_stash(item_flies)
+	if pack_n > 0:
+		for _j in pack_n:
+			G.stash.append("pack_1")
+		if fly and G.main != null:
+			G.main.present_rewards([["pack_1", pack_n]], false)
+	if leveled and G.main != null:
+		G.main.open("levelup")
 	G.dirty()
 	G.changed.emit()
 
@@ -696,16 +1257,16 @@ static func level_info() -> PopupBase:
 		var rb := Art.rrect(Rect2(r.position.x + 40, r.position.y + 680, r.size.x - 80, 280), 22, 403, 0.8)
 		ci.draw_colored_polygon(rb, Color("ecd9b3"))
 		Art.outline(ci, rb, 2.0, Color(0.6, 0.4, 0.2, 0.4)))
-	UI.title(p.box, "部落等级", Rect2(r.get_center().x - 200, r.position.y + 50, 400, 60), 38, Color.WHITE)
+	UI.title(p.box, "主角等级", Rect2(r.get_center().x - 200, r.position.y + 50, 400, 60), 38, Color.WHITE)
 	UI.lbl(p.box, str(G.level), Rect2(r.get_center().x - 60, r.position.y - 44, 120, 80), 50, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
-	var tip := UI.lbl(p.box, "完成带 ★ 的部落订单，提升部落等级并领取奖励！", Rect2(r.position.x + 40, r.position.y + 446, r.size.x - 80, 90), 25, Color("6b4a2a"))
+	var tip := UI.lbl(p.box, "完成带 ★ 的订单，提升主角等级并领取奖励！", Rect2(r.position.x + 40, r.position.y + 446, r.size.x - 80, 90), 25, Color("6b4a2a"))
 	tip.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 	UI.lbl(p.box, "%d/%d" % [G.xp, G.xp_need()], Rect2(r.position.x + 70, r.position.y + 560, 400, 44), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	UI.lbl(p.box, str(G.level + 1), Rect2(r.position.x + 480, r.position.y + 548, 80, 60), 34, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	section(p.box, "下一级奖励", r.position.y + 640, Color("8a5a30"))
 	var rw := Data.level_rewards(G.level + 1)
 	for k in rw.size():
-		var cx := r.get_center().x + (float(k) - (rw.size() - 1) * 0.5) * 136.0
+		var cx := _spread_x(k, rw.size(), r.get_center().x, 136.0)
 		var cy := r.position.y + 790
 		UI.icon(p.box, rw[k][0], Vector2(cx, cy), 110)
 		UI.lbl(p.box, "×%d" % rw[k][1], Rect2(cx - 60, cy + 54, 120, 40), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
@@ -730,7 +1291,7 @@ static func event() -> PopupBase:
 	UI.lbl(root, G.fmt_time(G.event_left()), Rect2(300, 350, 160, 44), 22, Art.INK)
 	var info := UI.hit(root, Rect2(474, 342, 60, 60), func(): G.main.toast("开启兽皮卡包收集岩画卡牌，集齐卡册赢取大奖！"))
 	info.extra = func(ci, sz): Paint.glyph(ci, "info", sz * 0.5, 1.2)
-	var rw := [["fire_3", 800], ["amber_3", 250], ["chest_1", 1]]
+	var rw := [["fire_4", 800], ["amber_4", 250], ["chest_1", 1]]
 	for k in 3:
 		var x := 200.0 + k * 160.0
 		UI.icon(root, rw[k][0], Vector2(x, 450), 90)
@@ -783,7 +1344,7 @@ static func _paint_event(ci: CanvasItem, sz: Vector2) -> void:
 		var cols := [Art.CLAY, Art.OCHRE, Art.TEAL, Art.BONE]
 		ci.draw_colored_polygon(Art.poly([q + Vector2(-16, -4), q + Vector2(16, -4), q + Vector2(0, 26)], k), cols[k % 4])
 	ci.draw_colored_polygon(Art.ell(Vector2(360, 250), Vector2(200, 40), 1, 0.0, 24), Color(1, 0.6, 0.2, 0.25))
-	Art.item(ci, "fire_3", Vector2(360, 190), 130)
+	Art.item(ci, "fire_4", Vector2(360, 190), 130)
 	for k in 4:
 		var x := 120.0 + k * 160.0
 		if k == 1 or k == 2:

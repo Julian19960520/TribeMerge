@@ -1,0 +1,8 @@
+[
+	{"id": "fruit_3", "price": 2, "stock": 5},
+	{"id": "tool_3", "price": 3, "stock": 5},
+	{"id": "seed_2", "price": 8, "stock": 5},
+	{"id": "cloth_3", "price": 3, "stock": 5},
+	{"id": "fire_5", "price": 12, "stock": 3},
+	{"id": "basket_2", "price": 25, "stock": 1}
+]

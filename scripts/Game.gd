@@ -6,14 +6,17 @@ signal changed
 signal board_changed
 signal orders_changed
 
-const COLS := 7
-const ROWS := 9
-const MAX_ENERGY := 100
-const REGEN_SEC := 120
-const SAVE_PATH := "user://tribe_save_v2.json"
-const RANDOM_ORDERS := 3
-const TOKEN_STEP := 10
-const INV_MAX := 10
+const Layout := preload("res://scripts/config/board_layout.gd")
+const Roll := preload("res://scripts/OrderRoll.gd")
+
+var COLS := 7
+var ROWS := 9
+var MAX_ENERGY := 100
+var REGEN_SEC := 120
+const SAVE_PATH := "user://tribe_save_v17.json"
+var RANDOM_ORDERS := 4
+var TOKEN_STEP := 10
+var INV_MAX := 10
 
 var main: Node = null
 var font_title: Font
@@ -24,24 +27,43 @@ var xp := 0
 var energy := 100
 var shells := 320
 var amber := 140
+var rush := 0
 var energy_stamp := 0.0
 var board: Array = []
+## 最近一次合成解开的巨石格子，给崩坏动画用
+var opened: Array = []
 var inv: Array = []
 var inv_cap := 5
 var discovered := {}
+## 图鉴里已经领过奖的物品。新发现的还没领，格子上是礼物。
+var book_claimed := {}
 var orders: Array = []
+## 刚做完的格子，棋盘下一帧播合成爆开
+var cooked_pop: Array = []
 var builds := {}
 var cards := {}
 var stash: Array = []
 var tokens := 0
 var token_claimed := 0
+var pass_pts := 0
+var pass_tier := 0
+var pass_free: Array = []
+var pass_prem: Array = []
+var pass_endless := 0
+var pass_super_bonus := false
 var scroll_drag := false
+## 有列表正在拖动或惯性滑动。这时推迟线条沸腾，避免整屏重绘把滚动卡住。
+var scroll_moving := false
+var _boil_hold := false
 var settings := {"music": true, "sound": true, "vibrate": true, "hint": true}
 var hot_bought := {}
+## 今天用琥珀买了几次火种。价格逐次上涨，零点清零。
+var energy_buys := 0
 var deals_bought := {}
 var deals_day := ""
 var player_id := ""
 var seen_tutorial := false
+var tutorial_on := false
 
 var _boil_t := 0.0
 var _save_t := -1.0
@@ -49,12 +71,25 @@ var _regen_t := 0.0
 var rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
+	_apply_rules()
 	rng.randomize()
 	font_title = _sysfont(["STHupo", "Microsoft YaHei UI", "Microsoft YaHei"], 400)
 	font_body = _sysfont(["Microsoft YaHei UI", "Microsoft YaHei", "SimHei"], 700)
 	if not load_game():
 		new_game()
 	_check_day()
+
+func _apply_rules() -> void:
+	var r: Dictionary = Data.RULES
+	if r.is_empty():
+		return
+	COLS = int(r["cols"])
+	ROWS = int(r["rows"])
+	MAX_ENERGY = int(r["max_energy"])
+	REGEN_SEC = int(r["regen_sec"])
+	RANDOM_ORDERS = int(r["random_orders"])
+	TOKEN_STEP = int(r["token_step"])
+	INV_MAX = int(r["inv_max"])
 
 func clear_scroll_drag() -> void:
 	scroll_drag = false
@@ -68,10 +103,19 @@ func _sysfont(names: Array, weight: int) -> SystemFont:
 	return f
 
 func _process(delta: float) -> void:
+	var moving := scroll_moving
+	scroll_moving = false
 	_boil_t += delta
-	if _boil_t >= 0.125:
-		_boil_t = fmod(_boil_t, 0.125)
+	if _boil_t >= Items.frame_sec:
+		_boil_t = fmod(_boil_t, Items.frame_sec)
 		Art.boil = (Art.boil + 1) % 4
+		if moving:
+			_boil_hold = true
+		else:
+			_boil_hold = false
+			boil_tick.emit()
+	elif _boil_hold and not moving:
+		_boil_hold = false
 		boil_tick.emit()
 	_regen_t += delta
 	if _regen_t >= 1.0:
@@ -81,6 +125,7 @@ func _process(delta: float) -> void:
 		_save_t -= delta
 		if _save_t < 0.0:
 			save_game()
+	_tick_cooks()
 
 func now() -> float:
 	return Time.get_unix_time_from_system()
@@ -127,6 +172,7 @@ func _check_day() -> void:
 		deals_day = d
 		deals_bought = {}
 		hot_bought = {}
+		energy_buys = 0
 
 # ---------------------------------------------------------------- 存档
 
@@ -137,60 +183,75 @@ func new_game() -> void:
 	level = 1
 	xp = 0
 	energy = 100
-	shells = 320
-	amber = 140
+	shells = 0
+	amber = 80
+	rush = 0
 	energy_stamp = now()
 	inv = []
 	inv_cap = 5
 	discovered = {}
+	book_claimed = {}
 	builds = {"fire": 1}
 	cards = {}
-	stash = ["pack_1", "chest_1"]
+	stash = []
 	tokens = 0
 	token_claimed = 0
+	pass_pts = 0
+	pass_tier = 0
+	pass_free = []
+	pass_prem = []
+	pass_endless = 0
+	pass_super_bonus = false
 	player_id = "TRB" + str(rng.randi_range(10000000, 99999999))
 	seen_tutorial = false
+	tutorial_on = true
+	deals_bought.clear()
+	hot_bought.clear()
+	energy_buys = 0
+	deals_day = Time.get_date_string_from_system()
 	_init_board()
-	orders = []
-	_add_story_orders()
-	for i in RANDOM_ORDERS:
-		orders.append(_make_order())
+	var cost := build_cost("fire")
+	var first := 25
+	orders = [
+		{"who": 0, "items": ["fruit_2"], "rw": {"shell": first}, "story": true, "tutorial": 1},
+		{"who": 1, "items": ["fruit_8"], "rw": {"shell": maxi(cost - first, 1)}, "story": true, "tutorial": 2},
+	]
 	dirty()
 
+## 新局棋盘来自 data/board.json。locks：0 开放、1 藤蔓、2 巨石。
+## 新手从中间偏左的两捆干草束合成。石头底下的物品都还在，只有生产器正上方那一格空着，给第一颗野莓落点。
+## 两笔订单的贝币加起来刚好够盖下一段篝火广场。
+## rewards：石头上的气泡。裂开时弹出全屏领取面板，点一下后体力、贝币、琥珀飞向顶栏，其他物品进暂存。
 func _init_board() -> void:
 	board = []
 	for i in COLS * ROWS:
 		board.append({"id": "", "lock": 0})
-	var open_items := {
-		0: "berry_1", 1: "stone_1", 4: "berry_2", 6: "fish_1",
-		8: "basket_2", 11: "hunt_2", 13: "fire_1",
-		14: "berry_1", 17: "meat_1", 19: "shell_1",
-		22: "stone_1", 24: "berry_1", 26: "meat_2",
-	}
-	for k in open_items:
-		board[k]["id"] = open_items[k]
-	var pool := ["berry_1", "berry_2", "stone_1", "stone_2", "meat_1", "meat_2", "fish_1", "shell_1", "fire_1", "amber_1"]
-	var r := RandomNumberGenerator.new()
-	r.seed = 1234
-	for row in range(4, ROWS):
+	var cells: Array = Data.BOARD
+	for row in ROWS:
 		for col in COLS:
-			var i := row * COLS + col
-			if row == 4 and col % 3 != 0:
-				continue
-			board[i]["id"] = pool[r.randi() % pool.size()]
-			board[i]["lock"] = 1 if row <= 5 else 2
+			var at := idx(col, row)
+			var n := row * COLS + col
+			var id := str(cells[n]) if n < cells.size() else ""
+			if id != "":
+				board[at]["id"] = id
+			board[at]["lock"] = Layout.lock_of(Data.LOCKS, n, col, row, COLS, ROWS)
+			var rw := Layout.reward_of(Data.REWARDS, n)
+			if not rw.is_empty():
+				board[at]["rw"] = rw
 	for k in board:
 		if k["id"] != "" and k["lock"] == 0:
 			discover(k["id"])
 
 func save_game() -> void:
 	var d := {
-		"level": level, "xp": xp, "energy": energy, "shells": shells, "amber": amber,
+		"level": level, "xp": xp, "energy": energy, "shells": shells, "amber": amber, "rush": rush,
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
-		"discovered": discovered, "orders": orders, "builds": builds, "cards": cards,
+		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "builds": builds, "cards": cards,
 		"stash": stash, "tokens": tokens, "token_claimed": token_claimed, "settings": settings, "hot_bought": hot_bought,
-		"deals_bought": deals_bought, "deals_day": deals_day, "player_id": player_id,
-		"seen_tutorial": seen_tutorial,
+		"deals_bought": deals_bought, "deals_day": deals_day, "energy_buys": energy_buys, "player_id": player_id,
+		"seen_tutorial": seen_tutorial, "tutorial_on": tutorial_on,
+		"pass_pts": pass_pts, "pass_tier": pass_tier, "pass_free": pass_free, "pass_prem": pass_prem,
+		"pass_endless": pass_endless, "pass_super_bonus": pass_super_bonus,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
@@ -210,18 +271,30 @@ func load_game() -> bool:
 	energy = int(d["energy"])
 	shells = int(d["shells"])
 	amber = int(d["amber"])
+	rush = int(d.get("rush", 0))
 	energy_stamp = float(d["energy_stamp"])
 	board = d["board"]
 	for c in board:
 		c["lock"] = int(c["lock"])
+		var rw := Layout.parse_reward(c.get("rw", null))
+		if rw.is_empty():
+			c.erase("rw")
+		else:
+			c["rw"] = rw
 	inv = d["inv"]
 	inv_cap = int(d["inv_cap"])
 	discovered = d["discovered"]
+	book_claimed = d.get("book_claimed", {})
 	orders = d["orders"]
 	for o in orders:
 		o["who"] = int(o["who"])
 		for k in o["rw"]:
-			o["rw"][k] = int(o["rw"][k])
+			var v = o["rw"][k]
+			var t := typeof(v)
+			if t == TYPE_INT or t == TYPE_FLOAT or t == TYPE_BOOL:
+				o["rw"][k] = int(v)
+			elif t == TYPE_STRING and str(v).is_valid_int():
+				o["rw"][k] = int(v)
 	builds = d["builds"]
 	for k in builds:
 		builds[k] = int(builds[k])
@@ -230,11 +303,33 @@ func load_game() -> bool:
 	tokens = int(d.get("tokens", 0))
 	token_claimed = int(d.get("token_claimed", 0))
 	settings = d["settings"]
+	if not settings.has("hint"):
+		settings["hint"] = true
 	hot_bought = d.get("hot_bought", {})
 	deals_bought = d.get("deals_bought", {})
 	deals_day = d.get("deals_day", "")
+	energy_buys = int(d.get("energy_buys", 0))
 	player_id = d.get("player_id", "TRB00000000")
 	seen_tutorial = d.get("seen_tutorial", true)
+	tutorial_on = bool(d.get("tutorial_on", false))
+	pass_pts = int(d.get("pass_pts", 0))
+	pass_tier = int(d.get("pass_tier", 0))
+	pass_free = []
+	pass_prem = []
+	var pf = d.get("pass_free", [])
+	if typeof(pf) == TYPE_ARRAY:
+		for x in pf:
+			pass_free.append(int(x))
+	var pp = d.get("pass_prem", [])
+	if typeof(pp) == TYPE_ARRAY:
+		for x in pp:
+			pass_prem.append(int(x))
+	pass_endless = int(d.get("pass_endless", 0))
+	pass_super_bonus = bool(d.get("pass_super_bonus", false))
+	_ensure_craft_order(false)
+	if not tutorial_on:
+		_ensure_story()
+	_reconcile_cooks()
 	return true
 
 func reset_game() -> void:
@@ -251,6 +346,7 @@ func add_currency(kind: String, n: int) -> void:
 		"energy": energy += n
 		"shell": shells += n
 		"amber": amber += n
+		"sand": rush += n
 	if kind == "energy" and energy >= MAX_ENERGY:
 		energy_stamp = now()
 	dirty()
@@ -272,8 +368,28 @@ func spend(kind: String, n: int) -> bool:
 			if amber < n:
 				return false
 			amber -= n
+		"sand":
+			if rush < n:
+				return false
+			rush -= n
 	dirty()
 	changed.emit()
+	return true
+
+## 用琥珀买 100 火种的价格：每天第一次 energy_price，之后每次加 energy_price_step，最多 energy_price_max。
+func energy_price() -> int:
+	var r: Dictionary = Data.RULES
+	var base := int(r.get("energy_price", 20))
+	var step := int(r.get("energy_price_step", 10))
+	var top := int(r.get("energy_price_max", 60))
+	return mini(base + step * energy_buys, maxi(top, base))
+
+func buy_energy() -> bool:
+	_check_day()
+	if not spend("amber", energy_price()):
+		return false
+	energy_buys += 1
+	dirty()
 	return true
 
 func xp_need() -> int:
@@ -288,6 +404,8 @@ func add_xp(n: int) -> bool:
 		up = true
 		_add_story_orders()
 		orders_changed.emit()
+	if not up and not tutorial_on and _ensure_story():
+		orders_changed.emit()
 	dirty()
 	changed.emit()
 	return up
@@ -298,12 +416,12 @@ func stash_push(id: String) -> void:
 	dirty()
 	changed.emit()
 
+## 返回这次攒满换到的兽皮卡包数量。卡包另开全屏领奖，不在这里塞进暂存。
 func add_tokens(n: int) -> int:
 	tokens += n
 	var packs := 0
 	while tokens - token_claimed >= TOKEN_STEP:
 		token_claimed += TOKEN_STEP
-		stash.append("pack_1")
 		packs += 1
 	dirty()
 	changed.emit()
@@ -320,10 +438,14 @@ func cell_id(i: int) -> String:
 func is_free(i: int) -> bool:
 	return board[i]["lock"] == 0
 
+func _vacant(i: int) -> bool:
+	var c: Dictionary = board[i]
+	return c["id"] == "" and int(c["lock"]) == 0 and typeof(c.get("ck")) != TYPE_DICTIONARY
+
 func empty_count() -> int:
 	var n := 0
-	for c in board:
-		if c["id"] == "" and c["lock"] == 0:
+	for i in board.size():
+		if _vacant(i):
 			n += 1
 	return n
 
@@ -332,7 +454,7 @@ func find_empty_near(i: int) -> int:
 	var bd := 1e9
 	var c0 := Vector2(i % COLS, i / COLS)
 	for k in board.size():
-		if board[k]["id"] == "" and board[k]["lock"] == 0:
+		if _vacant(k):
 			var d := c0.distance_squared_to(Vector2(k % COLS, k / COLS)) + float(k) * 0.0001
 			if d < bd:
 				bd = d
@@ -344,15 +466,46 @@ func place(i: int, id: String) -> void:
 	discover(id)
 	dirty()
 
+## 图鉴格子还能领奖：已经发现，但还没点过礼物。
+func book_prize(id: String) -> bool:
+	return id != "" and discovered.has(id) and not book_claimed.has(id)
+
+func book_prize_count() -> int:
+	var n := 0
+	for line in Data.LINES:
+		for key in ["gen", "main", "sub"]:
+			var ch := str(line[key])
+			if not Data.CHAINS.has(ch):
+				continue
+			var items: Array = Data.CHAINS[ch]["items"]
+			for i in items.size():
+				if book_prize("%s_%d" % [ch, i + 1]):
+					n += 1
+	return n
+
+## 领走这份图鉴奖。返回贝币数量，已经领过或还没发现则是 0。
+func claim_book(id: String) -> int:
+	if not book_prize(id):
+		return 0
+	book_claimed[id] = true
+	dirty()
+	changed.emit()
+	return maxi(1, Data.lv(id))
+
 func discover(id: String) -> bool:
 	if id == "" or discovered.has(id):
 		return false
+	if Data.is_dish(id):
+		discovered[id] = true
+		return true
 	var ch := Data.chain(id)
 	for l in range(1, Data.lv(id) + 1):
 		discovered["%s_%d" % [ch, l]] = true
 	return true
 
-func unlock_around(i: int) -> void:
+## 合成后，上下左右的巨石崩开。有物品的格子露出藤蔓，空格直接开放。返回这些格子。
+func unlock_around(i: int) -> Array:
+	var out: Array = []
 	var c := i % COLS
 	var r := i / COLS
 	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
@@ -361,13 +514,19 @@ func unlock_around(i: int) -> void:
 		if nc < 0 or nr < 0 or nc >= COLS or nr >= ROWS:
 			continue
 		var k := idx(nc, nr)
-		if board[k]["lock"] == 2:
-			board[k]["lock"] = 1
+		if board[k]["lock"] != 2:
+			continue
+		board[k]["lock"] = 0 if board[k]["id"] == "" else 1
+		out.append(k)
+	return out
 
 ## 返回 "merge" / "move" / "swap" / ""
 func try_drop(a: int, b: int) -> String:
+	opened = []
 	if a == b:
 		return ""
+	if cooking(a) or cooking(b):
+		return _drop_cook(a, b)
 	var ida: String = board[a]["id"]
 	var idb: String = board[b]["id"]
 	var lb: int = board[b]["lock"]
@@ -380,13 +539,16 @@ func try_drop(a: int, b: int) -> String:
 		board[a]["id"] = ""
 		board[b]["id"] = nx
 		board[b]["lock"] = 0
+		board[a].erase("gm")
+		board[b].erase("gm")
 		discover(nx)
-		unlock_around(b)
+		opened = unlock_around(b)
 		dirty()
 		board_changed.emit()
 		return "merge"
 	if lb != 0:
 		return ""
+	_swap_gm(a, b)
 	if idb == "":
 		board[b]["id"] = ida
 		board[a]["id"] = ""
@@ -399,59 +561,352 @@ func try_drop(a: int, b: int) -> String:
 	board_changed.emit()
 	return "swap"
 
+## 制作中的格子可以拖到空位，或和另一个未锁定的物品对调。
+func _drop_cook(a: int, b: int) -> String:
+	if int(board[a]["lock"]) != 0 or int(board[b]["lock"]) != 0:
+		return ""
+	if not cooking(a) and str(board[a]["id"]) == "":
+		return ""
+	var onto_empty := str(board[b]["id"]) == "" and not cooking(b)
+	var ida: String = board[a]["id"]
+	var idb: String = board[b]["id"]
+	var cka = board[a].get("ck")
+	var ckb = board[b].get("ck")
+	board[a]["id"] = idb
+	board[b]["id"] = ida
+	if typeof(cka) == TYPE_DICTIONARY:
+		board[b]["ck"] = cka
+	else:
+		board[b].erase("ck")
+	if typeof(ckb) == TYPE_DICTIONARY:
+		board[a]["ck"] = ckb
+	else:
+		board[a].erase("ck")
+	_swap_gm(a, b)
+	_sync_cook_cells()
+	dirty()
+	board_changed.emit()
+	return "move" if onto_empty else "swap"
+
+func _sync_cook_cells() -> void:
+	var at := {}
+	for i in board.size():
+		var ck = board[i].get("ck")
+		if typeof(ck) == TYPE_DICTIONARY:
+			at[str(ck.get("uid", ""))] = i
+	for o in orders:
+		if str(o.get("kind", "")) != "craft" or str(o.get("phase", "")) != "cook":
+			continue
+		var uid := str(o.get("uid", ""))
+		if at.has(uid):
+			o["cell"] = int(at[uid])
+
+# ---------------------------------------------------------------- 生产器
+
+## 开了冷却的生产器，用量记在格子的 "gm" 里：g 是生产器 id，u 是已用次数，t 是最后一次生产的时间。
+## 用光后从 t 起算，过了回满时间一次性恢复。
+func _swap_gm(a: int, b: int) -> void:
+	var ga = board[a].get("gm")
+	var gb = board[b].get("gm")
+	board[a].erase("gm")
+	board[b].erase("gm")
+	if ga != null:
+		board[b]["gm"] = ga
+	if gb != null:
+		board[a]["gm"] = gb
+
+## 剩余次数；没有冷却的生产器返回 -1（不限次数）
+func gen_left(i: int) -> int:
+	var id: String = board[i]["id"]
+	var st := Data.gen_stats(id)
+	if not st.has("charges"):
+		return -1
+	var cap: int = st["charges"]
+	var gm = board[i].get("gm")
+	if typeof(gm) != TYPE_DICTIONARY or str(gm.get("g", "")) != id:
+		return cap
+	var used := int(gm["u"])
+	if used >= cap and now() - float(gm["t"]) >= float(st["refill"]) * 60.0:
+		board[i].erase("gm")
+		return cap
+	return maxi(cap - used, 0)
+
+## 生产器用光后还要等多少秒；没在休息时为 0
+func gen_wait(i: int) -> int:
+	if gen_left(i) != 0:
+		return 0
+	var st := Data.gen_stats(board[i]["id"])
+	return maxi(1, int(float(st["refill"]) * 60.0 - (now() - float(board[i]["gm"]["t"]))))
+
+func gen_use(i: int) -> void:
+	var left := gen_left(i)
+	if left < 0:
+		return
+	var id: String = board[i]["id"]
+	board[i]["gm"] = {"g": id, "u": int(Data.gen_stats(id)["charges"]) - left + 1, "t": now()}
+	dirty()
+
+func _pick(dist: Array) -> int:
+	var r := rng.randf() * 100.0
+	for k in dist.size():
+		r -= float(dist[k])
+		if r < 0.0:
+			return k
+	return dist.size() - 1
+
 func roll_produce(gen_id: String) -> String:
-	var r := rng.randf()
-	if r < 0.05:
-		return "fire_1"
-	if r < 0.08:
-		return "shell_1"
-	var outs := Data.gen_outputs(gen_id)
-	var ch: String = outs[rng.randi() % outs.size()]
-	var lv := 1
-	if rng.randf() < 0.12 * float(Data.lv(gen_id) - 1):
-		lv = 2
-	return "%s_%d" % [ch, lv]
+	var st := Data.gen_stats(gen_id)
+	var drops: Array = st["drops"]
+	var total := 0.0
+	for d in drops:
+		total += float(d["p"])
+	var r := rng.randf() * total
+	for d in drops:
+		r -= float(d["p"])
+		if r < 0.0:
+			return str(d["id"])
+	return str(drops.back()["id"])
 
 func roll_chest() -> Array:
 	var out := []
-	var pool := ["berry_2", "stone_2", "meat_2", "fish_2", "fire_2", "shell_2", "amber_1", "berry_3", "meat_3"]
+	var pool := ["fire_4", "shell_4", "amber_2", "sand_2"]
+	var open := Data.unlocked_lines(level)
+	for l in open:
+		pool.append_array(["%s_2" % l["main"], "%s_3" % l["main"], "%s_1" % l["sub"]])
 	for i in 3:
-		out.append(pool[rng.randi() % pool.size()])
+		if rng.randf() < 0.1:
+			out.append("%s_1" % open[rng.randi() % open.size()]["gen"])
+		else:
+			out.append(pool[rng.randi() % pool.size()])
 	return out
 
 # ---------------------------------------------------------------- 订单
 
-## 随机订单：不给声望，奖励贝币，偶尔有卡包 / 祭典鼓
-func _make_order() -> Dictionary:
+func _is_random_order(o: Dictionary) -> bool:
+	return not bool(o.get("story", false)) and str(o.get("kind", "")) != "craft"
+
+func _random_left() -> int:
+	var n := 0
+	for o in orders:
+		if o is Dictionary and _is_random_order(o):
+			n += 1
+	return n
+
+## 随机订单常驻 RANDOM_ORDERS 张，每张占一个难度位（slot）：0 号最简单，最后一号最难。
+## 交掉一张就在原位补一张同难度位的新单，不用等一整批做完。
+func _random_slots_taken() -> Dictionary:
+	var taken := {}
+	for o in orders:
+		if o is Dictionary and _is_random_order(o) and o.has("slot"):
+			taken[int(o["slot"])] = true
+	return taken
+
+## 这一张常驻单的目标火苗。
+func _slot_target(slot: int) -> int:
+	return Data.random_slot_target(level, slot)
+
+## 把缺的难度位补齐。at 大于等于 0 时，第一张补的单插在这个位置（交单的原位）。
+func _add_random_batch(at: int = -1) -> void:
+	var n := maxi(0, RANDOM_ORDERS)
+	if n == 0:
+		return
+	var taken := _random_slots_taken()
+	var have := _random_left()
+	var avoid: Array = []
+	for o in orders:
+		if o is Dictionary and _is_random_order(o) and o.get("items") is Array:
+			avoid = o["items"]
+	var slot := 0
+	while have < n and slot < n:
+		if taken.has(slot):
+			slot += 1
+			continue
+		var made: Dictionary
+		if Data.random_curve_count() <= 0:
+			made = _spice(_make_order_free())
+		else:
+			made = _make_order(_slot_target(slot), avoid)
+			if made.is_empty():
+				made = _spice(_make_order_free())
+		made["slot"] = slot
+		if made.get("items") is Array:
+			avoid = made["items"]
+		_insert_random(made, at)
+		at = -1
+		taken[slot] = true
+		have += 1
+		slot += 1
+
+## 随机单按难度位排在一起：放在比它难的第一张随机单前面；给了 at 就直接放 at。
+func _insert_random(made: Dictionary, at: int) -> void:
+	if at >= 0 and at <= orders.size():
+		orders.insert(at, made)
+		return
+	var slot := int(made.get("slot", 0))
+	for i in orders.size():
+		var o = orders[i]
+		if o is Dictionary and _is_random_order(o) and int(o.get("slot", 99)) > slot:
+			orders.insert(i, made)
+			return
+	var tail := orders.size()
+	for i in orders.size():
+		if str(orders[i].get("kind", "")) == "craft":
+			tail = i
+			break
+	orders.insert(tail, made)
+
+## 场上没有剧情单、声望却还不够升级时，重新发这一级的剧情单，保证永远能升级。
+## 声望是在交单动画飞完后才入账的，所以在 add_xp 和读档时检查。返回是否补了单。
+func _ensure_story() -> bool:
+	for o in orders:
+		if o is Dictionary and bool(o.get("story", false)):
+			return false
+	if xp >= xp_need():
+		return false
+	_add_story_orders()
+	return true
+
+## 随机订单：不给声望，奖励贝币，偶尔有卡包 / 祭典鼓。target 是这单的目标火苗。
+func _make_order(target: int = -1, avoid: Array = []) -> Dictionary:
+	if Data.random_curve_count() <= 0:
+		return _spice(_make_order_free())
+	var bounds := Data.random_bounds(level)
+	var t := target
+	if t < 1:
+		t = bounds.x if bounds.x >= bounds.y else rng.randi_range(bounds.x, bounds.y)
+	var made: Dictionary = Roll.make(level, float(t), rng, avoid)
+	if made.is_empty():
+		made = _make_order_free()
+	return _spice(made)
+
+func _spice(made: Dictionary) -> Dictionary:
+	if made.is_empty() or not (made.get("rw") is Dictionary):
+		return made
+	if rng.randf() < 0.25 and level >= Data.CARD_LEVEL:
+		made["rw"]["pack"] = 1
+	if rng.randf() < 0.5:
+		made["rw"]["token"] = rng.randi_range(1, 3) * (made.get("items", []) as Array).size()
+	return made
+
+func _make_order_free() -> Dictionary:
 	var r := rng.randf()
 	var n := 1 if level < 2 or r < 0.45 else (2 if r < 0.85 else 3)
 	var items := []
 	var shell := 0
-	var top: int = mini(5, 2 + level / 2)
+	var top: int = 2 + level / 2
+	var open := Data.unlocked_lines(level)
 	for i in n:
-		var ch: String = Data.ORDER_CHAINS[rng.randi() % Data.ORDER_CHAINS.size()]
+		var ln: Dictionary = open[rng.randi() % open.size()]
+		var sub := str(ln.get("sub", ""))
+		if level >= 2 and sub != "" and Data.product_open(level, sub) and rng.randf() < 0.15:
+			var sl := rng.randi_range(1, mini(3, 1 + level / 3))
+			items.append("%s_%d" % [sub, sl])
+			shell += 12 * int(pow(2, sl - 1)) + rng.randi_range(0, 4)
+			continue
+		var ch: String = ln["main"]
+		if not Data.product_open(level, ch):
+			continue
 		var l := rng.randi_range(1 if level < 2 else 2, mini(top, Data.max_lv(ch)))
 		items.append("%s_%d" % [ch, l])
 		shell += 3 * int(pow(2, l - 1)) + rng.randi_range(0, 4)
 	var rw := {"shell": shell}
-	if rng.randf() < 0.25:
-		rw["pack"] = 1
-	if rng.randf() < 0.5:
-		rw["token"] = rng.randi_range(1, 3) * n
 	return {"who": rng.randi() % Data.PEOPLE.size(), "items": items, "rw": rw, "story": false}
 
-func _add_story_orders() -> void:
+func _has_craft_order() -> bool:
+	for o in orders:
+		if str(o.get("kind", "")) == "craft":
+			return true
+	return false
+
+func _pick_dish(avoid: String = "") -> Dictionary:
+	var pool := Data.dishes_for(level)
+	var fresh: Array = []
+	for d in pool:
+		if str(d["id"]) != avoid:
+			fresh.append(d)
+	if fresh.is_empty():
+		fresh = pool
+	if fresh.is_empty():
+		return {}
+	return fresh[rng.randi() % fresh.size()]
+
+func _craft_order(d: Dictionary) -> Dictionary:
+	if d.is_empty():
+		return {}
+	var mats: Array = (d["mats"] as Array).duplicate()
+	var shell := 4
+	for id in mats:
+		shell += 4 * int(pow(2.0, float(Data.lv(str(id)) - 1)))
+	var rw := {"shell": shell}
+	if rng.randf() < 0.4:
+		rw["token"] = rng.randi_range(1, 3)
+	return {
+		"who": rng.randi() % Data.PEOPLE.size(),
+		"kind": "craft",
+		"dish": str(d["id"]),
+		"mats": mats,
+		"items": mats.duplicate(),
+		"secs": int(d["secs"]),
+		"rw": rw,
+		"story": false,
+		"phase": "need",
+		"cell": -1,
+		"t0": 0.0,
+		"uid": "c%d" % rng.randi(),
+	}
+
+## 场上始终留着一单制作。新局替换最后一张随机单，读档则补一张。
+func _ensure_craft_order(replace: bool, avoid: String = "") -> void:
+	if _has_craft_order():
+		return
+	var made := _craft_order(_pick_dish(avoid))
+	if made.is_empty():
+		return
+	if replace:
+		for i in range(orders.size() - 1, -1, -1):
+			if not bool(orders[i].get("story", false)):
+				orders[i] = made
+				return
+	orders.append(made)
+	dirty()
+
+func _add_story_orders(skip: Array = []) -> void:
 	var at := 0
 	for o in orders:
 		if o["story"]:
 			at += 1
+	## 只和场上的剧情单比重复；和随机单撞了也照发，不然这一级的声望会不够
+	var listed: Array = orders.filter(func(o): return o is Dictionary and bool(o.get("story", false)))
 	for s in Data.story_orders(level):
+		var items: Array = s["items"]
+		if _story_listed(items, skip) or _story_listed(items, listed):
+			continue
 		var rw := {"xp": int(s["xp"]), "shell": int(s["shell"])}
-		for k in ["pack", "token"]:
-			if s.has(k):
-				rw[k] = int(s[k])
-		orders.insert(at, {"who": int(s["who"]), "items": s["items"].duplicate(), "rw": rw, "story": true})
+		if s.has("token"):
+			rw["token"] = int(s["token"])
+		if s.get("rewards") is Array and not (s["rewards"] as Array).is_empty():
+			rw["rewards"] = (s["rewards"] as Array).duplicate()
+		elif int(s.get("pack", 0)) > 0:
+			var packs: Array = []
+			for _i in int(s["pack"]):
+				packs.append("pack_1")
+			rw["rewards"] = packs
+		orders.insert(at, {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true})
 		at += 1
+
+func _story_listed(items: Array, rows: Array) -> bool:
+	for row in rows:
+		var got: Array = row["items"] if row is Dictionary else row
+		if got.size() != items.size():
+			continue
+		var same := true
+		for i in items.size():
+			if str(got[i]) != str(items[i]):
+				same = false
+				break
+		if same:
+			return true
+	return false
 
 func board_has(id: String, exclude: Array = []) -> int:
 	for k in board.size():
@@ -459,48 +914,470 @@ func board_has(id: String, exclude: Array = []) -> int:
 			return k
 	return -1
 
-func order_cells(o: Dictionary) -> Array:
+func _match_ids(ids: Array) -> Array:
 	var used := []
-	for id in o["items"]:
-		var k := board_has(id, used)
+	for id in ids:
+		var k := board_has(str(id), used)
 		if k < 0:
 			return []
 		used.append(k)
 	return used
 
+func order_cells(o: Dictionary) -> Array:
+	if str(o.get("kind", "")) == "craft":
+		var phase := str(o.get("phase", "need"))
+		if phase == "ready":
+			var k := board_has(str(o.get("dish", "")))
+			return [k] if k >= 0 else []
+		if phase == "cook":
+			return []
+		return _match_ids(o.get("mats", []))
+	return _match_ids(o["items"])
+
 func order_ready(o: Dictionary) -> bool:
+	if str(o.get("kind", "")) == "craft":
+		return str(o.get("phase", "")) == "ready" and board_has(str(o.get("dish", ""))) >= 0
 	return order_cells(o).size() == o["items"].size()
+
+func craft_mats_ready(o: Dictionary) -> bool:
+	if str(o.get("kind", "")) != "craft" or str(o.get("phase", "need")) != "need":
+		return false
+	var mats: Array = o.get("mats", [])
+	return not mats.is_empty() and order_cells(o).size() == mats.size()
 
 func wanted_ids() -> Dictionary:
 	var d := {}
 	for o in orders:
+		if str(o.get("kind", "")) == "craft":
+			var phase := str(o.get("phase", "need"))
+			if phase == "ready":
+				d[str(o.get("dish", ""))] = true
+			elif phase == "need":
+				for id in o.get("mats", []):
+					d[str(id)] = true
+			continue
 		for id in o["items"]:
 			d[id] = true
 	return d
 
-## 交付订单，返回被移除的格子
-func complete_order(oi: int) -> Array:
-	var o: Dictionary = orders[oi]
-	var cells := order_cells(o)
-	if cells.size() != o["items"].size():
+## 每个格子的订单底色。0 无关，1 普通绿（这单还没齐），2 亮绿（这单需求已经齐了）。
+## 只给真正填进需求的那几格上色，多出来的相同物品保持原木底。凑齐的订单先占格子。
+func order_cell_tone() -> PackedInt32Array:
+	var tone := PackedInt32Array()
+	tone.resize(board.size())
+	var claimed: Array = []
+	for o in orders:
+		if not _order_filled(o):
+			continue
+		for k in order_cells(o):
+			var i := int(k)
+			if i < 0 or i >= tone.size():
+				continue
+			tone[i] = 2
+			if not (i in claimed):
+				claimed.append(i)
+	for o in orders:
+		if _order_filled(o):
+			continue
+		for k in _take_partial(o, claimed):
+			tone[int(k)] = 1
+	return tone
+
+func _order_filled(o: Dictionary) -> bool:
+	if str(o.get("kind", "")) == "craft":
+		var phase := str(o.get("phase", "need"))
+		if phase == "cook":
+			return false
+		if phase == "ready":
+			return order_ready(o)
+		return craft_mats_ready(o)
+	return order_ready(o)
+
+func _order_need_ids(o: Dictionary) -> Array:
+	if str(o.get("kind", "")) == "craft":
+		var phase := str(o.get("phase", "need"))
+		if phase == "need":
+			return o.get("mats", [])
+		if phase == "ready":
+			var dish := str(o.get("dish", ""))
+			return [dish] if dish != "" else []
 		return []
+	var items = o.get("items", [])
+	return items if items is Array else []
+
+## 还没凑齐时，按需求逐件占格；找到几件就标几件。
+func _take_partial(o: Dictionary, claimed: Array) -> Array:
+	var got: Array = []
+	for id in _order_need_ids(o):
+		var sid := str(id)
+		if sid == "":
+			continue
+		var k := board_has(sid, claimed)
+		if k < 0:
+			continue
+		claimed.append(k)
+		got.append(k)
+	return got
+
+func cooking(i: int) -> bool:
+	return i >= 0 and i < board.size() and typeof(board[i].get("ck")) == TYPE_DICTIONARY
+
+func cook_left(i: int) -> int:
+	if not cooking(i):
+		return 0
+	var ck: Dictionary = board[i]["ck"]
+	var left := float(ck["t0"]) + float(ck["secs"]) - now()
+	return maxi(0, int(ceil(left)))
+
+## 花 1 份沙漏，让这一格的制作快 10 秒。时间够了就当场完成。
+func rush_cook(i: int) -> int:
+	if not cooking(i) or rush < 1:
+		return 0
+	rush -= 1
+	var ck: Dictionary = board[i]["ck"]
+	ck["t0"] = float(ck["t0"]) - 10.0
+	var uid := str(ck.get("uid", ""))
+	for o in orders:
+		if str(o.get("kind", "")) == "craft" and str(o.get("uid", "")) == uid:
+			o["t0"] = float(ck["t0"])
+	_tick_cooks()
+	dirty()
+	changed.emit()
+	board_changed.emit()
+	return 10
+
+func _gather_anchor(cells: Array) -> int:
+	var sx := 0.0
+	var sy := 0.0
 	for k in cells:
+		sx += float(int(k) % COLS)
+		sy += float(int(k) / COLS)
+	sx /= float(cells.size())
+	sy /= float(cells.size())
+	var best: int = int(cells[0])
+	var bd := 1e9
+	for k in cells:
+		var d := Vector2(int(k) % COLS, int(k) / COLS).distance_squared_to(Vector2(sx, sy))
+		if d < bd:
+			bd = d
+			best = int(k)
+	return best
+
+## 材料飞向同一格并开始计时。返回每件材料的飞行：from、to、id、delay。
+func begin_craft(oi: int) -> Array:
+	if oi < 0 or oi >= orders.size():
+		return []
+	var o: Dictionary = orders[oi]
+	if not craft_mats_ready(o):
+		return []
+	var cells := order_cells(o)
+	var anchor := _gather_anchor(cells)
+	var flights := []
+	var mats: Array = []
+	for n in cells.size():
+		var k: int = int(cells[n])
+		var id := str(board[k]["id"])
+		mats.append(id)
+		flights.append({"from": k, "to": anchor, "id": id, "delay": float(n) * 0.05})
 		board[k]["id"] = ""
-	orders.remove_at(oi)
-	if not o["story"]:
-		orders.append(_make_order())
+		board[k].erase("gm")
+		board[k].erase("ck")
+	var fly := 0.36 + 0.05 * float(maxi(cells.size() - 1, 0))
+	var t0 := now() + fly
+	board[anchor]["ck"] = {
+		"dish": str(o["dish"]),
+		"t0": t0,
+		"secs": int(o["secs"]),
+		"uid": str(o["uid"]),
+		"mats": mats,
+	}
+	o["phase"] = "cook"
+	o["cell"] = anchor
+	o["t0"] = t0
 	dirty()
 	board_changed.emit()
 	orders_changed.emit()
+	return flights
+
+func _reconcile_cooks() -> void:
+	var live := {}
+	for i in board.size():
+		var ck = board[i].get("ck")
+		if typeof(ck) == TYPE_DICTIONARY:
+			live[str(ck.get("uid", ""))] = i
+	for o in orders:
+		if str(o.get("kind", "")) != "craft":
+			continue
+		if str(o.get("uid", "")) == "":
+			o["uid"] = "c%d" % rng.randi()
+		var phase := str(o.get("phase", "need"))
+		if phase == "cook":
+			var uid := str(o["uid"])
+			if live.has(uid):
+				o["cell"] = int(live[uid])
+			elif board_has(str(o.get("dish", ""))) >= 0:
+				o["phase"] = "ready"
+			else:
+				o["phase"] = "need"
+				o["cell"] = -1
+		elif phase == "ready" and board_has(str(o.get("dish", ""))) < 0:
+			o["phase"] = "need"
+			o["cell"] = -1
+	_tick_cooks()
+
+func _tick_cooks() -> void:
+	if board.is_empty():
+		return
+	var done: Array = []
+	for i in board.size():
+		var ck = board[i].get("ck")
+		if typeof(ck) != TYPE_DICTIONARY:
+			continue
+		if now() < float(ck["t0"]) + float(ck["secs"]):
+			continue
+		done.append(i)
+	if done.is_empty():
+		return
+	for slot in done:
+		var at := int(slot)
+		var ck: Dictionary = board[at]["ck"]
+		var dish := str(ck["dish"])
+		var uid := str(ck.get("uid", ""))
+		board[at]["id"] = dish
+		board[at].erase("ck")
+		discover(dish)
+		for o in orders:
+			if str(o.get("kind", "")) == "craft" and str(o.get("uid", "")) == uid:
+				o["phase"] = "ready"
+				o["cell"] = at
+		cooked_pop.append(at)
+	dirty()
+	board_changed.emit()
+	orders_changed.emit()
+	if main != null and str(main.screen) == "board":
+		Sfx.play("merge", 1.08)
+
+## 交付订单，返回被移除的格子
+func complete_order(oi: int) -> Array:
+	var o: Dictionary = orders[oi]
+	var craft := str(o.get("kind", "")) == "craft"
+	if craft and str(o.get("phase", "")) != "ready":
+		return []
+	var cells := order_cells(o)
+	if craft:
+		if cells.size() != 1:
+			return []
+	elif cells.size() != o["items"].size():
+		return []
+	for k in cells:
+		board[k]["id"] = ""
+		board[k].erase("ck")
+	var dish := str(o.get("dish", ""))
+	orders.remove_at(oi)
+	if craft:
+		_ensure_craft_order(false, dish)
+	elif _is_random_order(o):
+		_add_random_batch(oi)
+	pass_pts += 2 if pass_tier >= 2 else 1
+	dirty()
+	board_changed.emit()
+	orders_changed.emit()
+	changed.emit()
 	return cells
+
+# ---------------------------------------------------------------- 丰收通行证
+
+func pass_reached() -> int:
+	return int(_pass_cursor()["reached"])
+
+func pass_prog_text() -> String:
+	var c := _pass_cursor()
+	return "%d/%d" % [int(c["into"]), int(c["need"])]
+
+func pass_frac() -> float:
+	var c := _pass_cursor()
+	var need := int(c["need"])
+	if need < 1:
+		return 0.0
+	return clampf(float(c["into"]) / float(need), 0.0, 1.0)
+
+func pass_endless_ready() -> int:
+	if pass_tier != 2:
+		return 0
+	var c := _pass_cursor()
+	if int(c["reached"]) < Data.PASS_LEVELS.size():
+		return 0
+	var step := int(c["need"])
+	if step < 1:
+		return 0
+	return maxi(0, int(int(c["extra"]) / float(step)) - pass_endless)
+
+func _pass_cursor() -> Dictionary:
+	var left := pass_pts
+	var n := Data.PASS_LEVELS.size()
+	for i in n:
+		var need := Data.pass_need(i)
+		if left < need:
+			return {"reached": i, "into": left, "need": need, "extra": 0}
+		left -= need
+	if n == 0:
+		return {"reached": 0, "into": 0, "need": 8, "extra": 0}
+	var tail := Data.pass_need(n - 1)
+	return {"reached": n, "into": tail, "need": tail, "extra": left}
+
+func pass_got(prem: bool, lv: int) -> bool:
+	return _pass_has(pass_prem if prem else pass_free, lv)
+
+func pass_claimable() -> bool:
+	var reached := pass_reached()
+	for i in reached:
+		var lv := i + 1
+		if not _pass_has(pass_free, lv):
+			return true
+		if pass_tier >= 1 and not _pass_has(pass_prem, lv):
+			return true
+	return pass_endless_ready() > 0
+
+func claim_pass_free(lv: int) -> Array:
+	if lv < 1 or lv > Data.PASS_LEVELS.size():
+		return []
+	if pass_reached() < lv or _pass_has(pass_free, lv):
+		return []
+	pass_free.append(lv)
+	dirty()
+	changed.emit()
+	return Data.PASS_LEVELS[lv - 1]["free"]
+
+func claim_pass_prem(lv: int) -> Array:
+	if lv < 1 or lv > Data.PASS_LEVELS.size() or _pass_has(pass_prem, lv):
+		return []
+	if pass_tier < 1:
+		if main:
+			main.toast("激活通行证后可领取")
+		return []
+	if pass_reached() < lv:
+		return []
+	pass_prem.append(lv)
+	dirty()
+	changed.emit()
+	return Data.PASS_LEVELS[lv - 1]["prem"]
+
+func claim_pass_endless() -> Array:
+	if pass_tier != 2:
+		if main:
+			main.toast("超级贵宾可领取循环奖励")
+		return []
+	if pass_endless_ready() <= 0:
+		return []
+	pass_endless += 1
+	dirty()
+	changed.emit()
+	return [["chest_1", 1]]
+
+func buy_pass_vip() -> bool:
+	if pass_tier >= 1:
+		if main:
+			main.toast("已经拥有")
+		return false
+	if not spend("amber", 49):
+		if main:
+			main.toast("琥珀不够")
+		return false
+	pass_tier = 1
+	add_currency("energy", 150)
+	return true
+
+func buy_pass_super() -> bool:
+	if pass_tier >= 2:
+		if main:
+			main.toast("已经拥有")
+		return false
+	if not spend("amber", 79):
+		if main:
+			main.toast("琥珀不够")
+		return false
+	var from_zero := pass_tier == 0
+	pass_tier = 2
+	if not pass_super_bonus:
+		pass_super_bonus = true
+		pass_pts += 10
+	if from_zero:
+		add_currency("energy", 150)
+	else:
+		dirty()
+		changed.emit()
+	return true
+
+func _pass_has(arr: Array, lv: int) -> bool:
+	for x in arr:
+		if int(x) == lv:
+			return true
+	return false
 
 # ---------------------------------------------------------------- 建筑 / 卡牌
 
+## 下一个要建的区域：新手引导期间固定篝火广场，之后挑已开放、下一件最便宜的。都建完或都未开放则空。
+func next_build_id() -> String:
+	if int(builds.get("fire", 0)) < 2 and build_can("fire"):
+		return "fire"
+	var best := ""
+	var best_cost := 0
+	for b in Data.BUILDS:
+		var id := str(b["id"])
+		if not build_can(id):
+			continue
+		var c := build_cost(id)
+		if best == "" or c < best_cost:
+			best = id
+			best_cost = c
+	return best
+
+func build_open(id: String) -> bool:
+	return level >= Data.build_unlock(Data.build_def(id))
+
+## 已开放且还有没建的部件
+func build_can(id: String) -> bool:
+	var d := Data.build_def(id)
+	return not d.is_empty() and build_open(id) and int(builds.get(id, 0)) < Data.build_stages(d)
+
+## 下一件要建的部件；建完则空
+func build_part(id: String) -> Dictionary:
+	var parts := Data.build_parts(Data.build_def(id))
+	var st := int(builds.get(id, 0))
+	if st >= 0 and st < parts.size() and parts[st] is Dictionary:
+		return parts[st]
+	return {}
+
 func build_cost(id: String) -> int:
+	var part := build_part(id)
+	if part.has("cost"):
+		return maxi(0, int(part["cost"]))
 	return 60 + int(builds.get(id, 0)) * 45
 
-func build_reward(id: String) -> int:
-	return 15 + int(builds.get(id, 0)) * 5
+## 建好下一件部件时发出的奖励
+func build_rewards(id: String) -> Array:
+	var part := build_part(id)
+	var out := []
+	var all = part.get("rewards", [])
+	if all is Array:
+		for rw in all:
+			if rw is Array and rw.size() >= 2 and str(rw[0]) != "":
+				out.append([str(rw[0]), maxi(1, int(rw[1]))])
+	return out
+
+## 花贝币建下一件部件。成功返回 {"idx": 部件下标, "rewards": [...]}，失败返回空。
+func do_build(id: String) -> Dictionary:
+	if not build_can(id):
+		return {}
+	var cost := build_cost(id)
+	var rewards := build_rewards(id)
+	if not spend("shell", cost):
+		return {}
+	var st := int(builds.get(id, 0))
+	builds[id] = st + 1
+	dirty()
+	changed.emit()
+	return {"idx": st, "rewards": rewards}
 
 func open_pack() -> Array:
 	var out := []

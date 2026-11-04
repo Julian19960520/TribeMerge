@@ -1,0 +1,539 @@
+"""石器部落 · 合成 —— 数值模型。
+
+用法：python tools/balance.py          只算，输出 tools/balance_out.json 和 难度曲线.html
+      python tools/balance.py --write  同时把结果写回 data/*.json
+
+思路：先定节奏（每级玩几天、每天能点几下），再用「点击次数」做统一度量，
+反推订单难度、剧情订单、升级奖励、建造价格。所有可调的旋钮都在 KNOBS 里。
+
+模型是期望值模型，不是逐次点击的模拟：
+- 生产器每次点击的期望火苗 = Σ 掉率 × 2^(级-1)（主产物）。
+- 合成会剩零头，用 WASTE 放大需要的点击数。
+- 生产器等级由「1 级零件当量」决定：4 级 = 8 当量，每升一级翻倍。
+  当量来源：产线开放送的 4 级、建造部件送的 3 级、升级奖励送的 3 级。
+"""
+import itertools
+import json
+import math
+import os
+import random
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA = os.path.join(ROOT, "data")
+
+KNOBS = {
+    "levels": 40,
+    # 活跃玩家每天大约用掉的火种（自然回复 720，按一天 3-4 局、睡觉时溢出折算）
+    "day_taps": 450,
+    # 每个等级段预计玩几天
+    "days": [(5, 0.25), (10, 0.5), (20, 1.0), (30, 1.5), (40, 2.0)],
+    # 每级点击里有多少花在剧情订单上，其余给随机单 / 制作单（换贝币）
+    "story_share": 0.45,
+    # 合成剩零头、产出不对口的损耗
+    "waste": 1.15,
+    # 随机订单难度（点击数）：简单单 = easy_a + easy_b × 等级，难单 = hard_a + hard_b × 等级
+    "easy_a": 12, "easy_b": 0.5,
+    "hard_a": 60, "hard_b": 4.0,
+    # 常驻 4 张随机单在简单～难之间的位置：1 简单、2 中等、1 难
+    "slots": [0.0, 0.3, 0.55, 1.0],
+    # 升到下一级要的声望 = xp_base + (等级-1) // xp_div
+    "xp_base": 3, "xp_div": 2,
+    # 升级送的火种 = fire_a + fire_b × 等级
+    "fire_a": 60, "fire_b": 2,
+    # 贝币：建造总价占全程订单贝币收入的比例
+    "build_share": 0.85,
+    # 每个区域从开放到建完大约用几级
+    "build_span": 7,
+    "seed": 20261104,
+}
+
+MAIN_PAY = 3   # 随机单每火苗贝币
+STORY_PAY = 4  # 剧情单每火苗贝币
+
+
+def load(name):
+    with open(os.path.join(DATA, name), encoding="utf-8") as f:
+        return json.load(f)
+
+
+CHAINS = {c["id"]: c for c in load("chains.json")}
+RAW_CHAINS = load("chains.json")
+TAB = chr(9)
+NL = chr(10)
+
+# 生产器掉落表模板：(主产物等级, 掉率) 和 (副产物等级, 掉率)。每升一级主产物期望火苗约 +15~25%。
+DROP_TEMPLATE = {
+    4: ([(1, 100)], []),
+    5: ([(1, 80), (2, 15)], [(1, 5)]),
+    6: ([(1, 62), (2, 22), (3, 6)], [(1, 8), (2, 2)]),
+    7: ([(1, 50), (2, 25), (3, 10), (4, 3)], [(1, 9), (2, 3)]),
+    8: ([(1, 38), (2, 27), (3, 14), (4, 6), (5, 1)], [(1, 9), (2, 4), (3, 1)]),
+    9: ([(1, 28), (2, 26), (3, 17), (4, 9), (5, 3)], [(1, 9), (2, 5), (3, 3)]),
+}
+
+
+def apply_drop_template():
+    for l in LINES:
+        gen = CHAINS[l["gen"]]
+        for i, slot in enumerate(gen["prod"]):
+            g = i + 1
+            if not slot or g not in DROP_TEMPLATE:
+                continue
+            main, sub = DROP_TEMPLATE[g]
+            drops = [{"id": "%s_%d" % (l["main"], lv), "p": p} for lv, p in main]
+            drops += [{"id": "%s_%d" % (l["sub"], lv), "p": p} for lv, p in sub]
+            slot["drops"] = drops
+
+LINES = load("lines.json")
+BUILDS = load("builds.json")
+PEOPLE = load("people.json")
+UNLOCKS = load("unlocks.json")
+BASE = os.path.join(ROOT, "tools", "baseline")
+
+
+def load_base(name):
+    """改版前的原始数值，只用来画新旧对比。"""
+    with open(os.path.join(BASE, name), encoding="utf-8") as f:
+        return json.load(f)
+
+
+OLD_RANDOM = load_base("random_orders.json")
+OLD_STORY = load_base("story.json")
+OLD_BUILDS = load_base("builds.json")
+apply_drop_template()
+
+
+def days_of(L):
+    for top, d in KNOBS["days"]:
+        if L <= top:
+            return d
+    return KNOBS["days"][-1][1]
+
+
+def xp_need(L):
+    return KNOBS["xp_base"] + (L - 1) // KNOBS["xp_div"]
+
+
+def level_fire(L):
+    return KNOBS["fire_a"] + KNOBS["fire_b"] * L
+
+
+def max_lv(ch):
+    return len(CHAINS[ch]["items"])
+
+
+def prod_levels(gen):
+    return [i + 1 for i, s in enumerate(CHAINS[gen]["prod"]) if s]
+
+
+def eff(gen, g):
+    """这一级生产器每次点击的期望火苗（主产物）和副产物 1 级当量。"""
+    prods = CHAINS[gen]["prod"]
+    g = max(min(g, max(prod_levels(gen))), min(prod_levels(gen)))
+    slot = prods[g - 1]
+    line = next(l for l in LINES if l["gen"] == gen)
+    em = es = 0.0
+    for d in slot["drops"]:
+        ch, lv = d["id"].rsplit("_", 1)
+        v = d["p"] / 100.0 * 2 ** (int(lv) - 1)
+        if ch == line["main"]:
+            em += v
+        elif ch == line["sub"]:
+            es += v
+    return em, es
+
+
+def sub_avg_percent(sub):
+    """副产物 1 级在各级生产器里的平均掉率，用来算副产物的理论火苗。和 OrderRoll.gd 一致。"""
+    line = next(l for l in LINES if l["sub"] == sub)
+    ps = []
+    for s in CHAINS[line["gen"]]["prod"]:
+        if not s:
+            continue
+        for d in s["drops"]:
+            if d["id"] == sub + "_1" and d["p"] > 0:
+                ps.append(d["p"])
+    return sum(ps) / len(ps) if ps else 5.0
+
+
+def gen_level(eq, gen):
+    g = int(math.floor(math.log2(max(eq, 1)))) + 1
+    return max(4, min(g, max(prod_levels(gen))))
+
+
+def open_lines(L):
+    return [l for l in LINES if l["unlock"] <= L]
+
+
+def product_open(L, ch):
+    for row in UNLOCKS["rows"]:
+        if row["id"] == ch:
+            return row["open"][min(L - 1, len(row["open"]) - 1)] != 0
+    return any(l["main"] == ch and l["unlock"] <= L for l in LINES)
+
+
+# ---------------------------------------------------------------- 主循环
+
+
+def area_window(b):
+    if b["line"] == "":
+        return 1, 5
+    u = next(l["unlock"] for l in LINES if l["id"] == b["line"])
+    if u == 1:
+        return 2, 9
+    return u, u + KNOBS["build_span"]
+
+
+def simulate(costs, level_gens):
+    """costs: {area: [part costs]}，level_gens: {L: gen id 或 None}。返回逐级数据。"""
+    K = KNOBS
+    eq = {l["gen"]: 0 for l in LINES}
+    eq["basket"] = 8
+    built = {b["id"]: (1 if b["id"] == "fire" else 0) for b in BUILDS}
+    coins = 0.0
+    cum_coins = 0.0
+    cum_cost = 0.0
+    rows = []
+    for L in range(1, K["levels"] + 1):
+        for l in LINES:
+            if l["unlock"] == L and L > 1:
+                eq[l["gen"]] += 8
+        g = level_gens.get(L)
+        if g:
+            eq[g] += 2 ** (gen_reward_lv(L) - 1)
+        lines = open_lines(L)
+        gl = {l["gen"]: gen_level(eq[l["gen"]], l["gen"]) for l in lines}
+        effs = [eff(l["gen"], gl[l["gen"]])[0] for l in lines]
+        e = sum(effs) / len(effs)
+        taps = days_of(L) * K["day_taps"] + (level_fire(L) if L > 1 else 0)
+        story_taps = taps * K["story_share"]
+        rand_taps = taps - story_taps
+        story_f = story_taps * e / K["waste"]
+        rand_f = rand_taps * e / K["waste"]
+        income = story_f * STORY_PAY + rand_f * MAIN_PAY
+        # 建造：这一级的贝币分几步到账，每到账一次就把能盖的都盖掉（推荐最便宜的）
+        built_now = []
+        steps = 4
+        for _s in range(steps):
+            coins += income / steps
+            cum_coins += income / steps
+            while True:
+                best = None
+                for b in BUILDS:
+                    lo, _hi = area_window(b)
+                    if lo > L:
+                        continue
+                    k = built[b["id"]]
+                    if k >= len(b["parts"]):
+                        continue
+                    c = costs[b["id"]][k]
+                    if best is None or c < best[1]:
+                        best = (b, c)
+                if best is None or best[1] > coins:
+                    break
+                b, c = best
+                coins -= c
+                cum_cost += c
+                part = b["parts"][built[b["id"]]]
+                built[b["id"]] += 1
+                built_now.append(part["name"])
+                for rid, n in part["rewards"]:
+                    ch, lv = rid.rsplit("_", 1)
+                    if ch in eq:
+                        eq[ch] += n * 2 ** (int(lv) - 1)
+        lo_t = K["easy_a"] + K["easy_b"] * L
+        hi_t = K["hard_a"] + K["hard_b"] * L
+        old_lo = OLD_RANDOM["curves"][0]["diff"][L - 1]
+        old_hi = OLD_RANDOM["curves"][1]["diff"][L - 1]
+        rows.append({
+            "level": L,
+            "days": days_of(L),
+            "taps": round(taps),
+            "eff": round(e, 3),
+            "gens": dict(gl),
+            "easy_taps": round(lo_t, 1),
+            "hard_taps": round(hi_t, 1),
+            "slot_taps": [round(lo_t + (hi_t - lo_t) * s, 1) for s in K["slots"]],
+            "easy_f": max(1, round(lo_t * e / K["waste"])),
+            "hard_f": max(2, round(hi_t * e / K["waste"])),
+            "story_taps": round(story_taps),
+            "story_f": round(story_f),
+            "income": round(income),
+            "cum_coins": round(cum_coins),
+            "cum_cost": round(cum_cost),
+            "built": built_now,
+            "xp_need": xp_need(L),
+            # 旧设计：同一张订单要点几下（按新的产能折算，旧曲线本身就是火苗）
+            "old_easy_taps": round(old_lo * K["waste"] / e, 1),
+            "old_hard_taps": round(old_hi * K["waste"] / e, 1),
+            "old_avg_taps": round((old_lo + old_hi) / 2 * K["waste"] / e, 1),
+        })
+    return rows, built, eq
+
+
+def gen_reward_lv(L):
+    """升级奖励送的生产器等级：前期 3 级，中期 4 级，后期 5 级。"""
+    return 3 if L < 12 else (4 if L < 24 else 5)
+
+
+def plan_level_gens():
+    """升级奖励里送哪条产线的 3 级生产器：新产线开放那级送 4 级（由 eq 处理），其余送「最落后」的产线。"""
+    eq = {l["gen"]: 0 for l in LINES}
+    eq["basket"] = 8
+    out = {}
+    for L in range(2, KNOBS["levels"] + 1):
+        fresh = [l for l in LINES if l["unlock"] == L]
+        for l in fresh:
+            eq[l["gen"]] += 8
+        if fresh:
+            out[L] = None
+            continue
+        cand = [l for l in open_lines(L) if gen_level(eq[l["gen"]], l["gen"]) < max(prod_levels(l["gen"]))]
+        if not cand:
+            out[L] = None
+            continue
+        # 越早开的产线目标越高；按「开放后经过的级数 / 当量」最落后的优先
+        def behind(l):
+            age = L - l["unlock"] + 4
+            return eq[l["gen"]] / age
+        pick = min(cand, key=behind)
+        eq[pick["gen"]] += 2 ** (gen_reward_lv(L) - 1)
+        out[L] = pick["gen"]
+    return out
+
+
+def make_costs(rows):
+    """按每级贝币收入给部件定价：部件均匀排在区域的建造窗口里，价格 ∝ 那一级的收入。"""
+    income = {r["level"]: r["income"] for r in rows}
+    total = sum(income.values())
+    slots = []
+    for b in BUILDS:
+        lo, hi = area_window(b)
+        parts = b["parts"]
+        paid = [i for i, p in enumerate(parts) if not (b["id"] == "fire" and i == 0)]
+        for j, i in enumerate(paid):
+            t = lo + (hi - lo) * (j + 0.5) / len(paid)
+            slots.append((b["id"], i, t))
+    # 价格 ∝ 部件目标等级的收入（线性插值），再整体缩放到总价 = 收入 × build_share
+    def rate(t):
+        a = max(1, min(KNOBS["levels"], int(math.floor(t))))
+        b = min(KNOBS["levels"], a + 1)
+        f = t - math.floor(t)
+        return income[a] * (1 - f) + income[b] * f
+    weights = [rate(t) for _b, _i, t in slots]
+    k = total * KNOBS["build_share"] / sum(weights)
+    costs = {b["id"]: [0] * len(b["parts"]) for b in BUILDS}
+    for (bid, i, _t), w in zip(slots, weights):
+        costs[bid][i] = int(round(w * k / 10.0)) * 10
+    # 区域内价格不降
+    for bid in costs:
+        row = costs[bid]
+        for i in range(1, len(row)):
+            if row[i] and row[i] < row[i - 1]:
+                row[i] = row[i - 1] + 10
+    return costs
+
+
+# ---------------------------------------------------------------- 剧情订单
+
+
+def story_for(L, rows_by_level, rng):
+    r = rows_by_level[L]
+    total_f = r["story_f"]
+    need = xp_need(L)
+    shares = [0.25, 0.33, 0.42]
+    fresh = [l for l in LINES if l["unlock"] <= L <= l["unlock"] + 2]
+    chains = [l["main"] for l in open_lines(L) if product_open(L, l["main"])]
+    out = []
+    xps = [need // 3] * 3
+    for i in range(need % 3):
+        xps[2 - i] += 1
+    for i, s in enumerate(shares):
+        f = total_f * s
+        if f <= 24:
+            n = 1
+        elif f <= 80:
+            n = rng.choice([1, 2, 2])
+        else:
+            n = rng.choice([2, 2, 3])
+        # 在 n 件物品的组合里找理论火苗最接近目标的；第一件优先用刚开放的产线
+        first = fresh[0]["main"] if fresh else None
+        picks = [first if (first and k == 0) else rng.choice(chains) for k in range(n)]
+        best = None
+        for combo in itertools.product(*[range(2, max_lv(c) - 1) for c in picks]):
+            got = sum(2 ** (lv - 1) for lv in combo)
+            err = abs(got - f) / f
+            if best is None or err < best[0] - 1e-9:
+                best = (err, combo)
+        items = [f"{c}_{lv}" for c, lv in zip(picks, best[1])]
+        items.sort(key=lambda x: -int(x.rsplit("_", 1)[1]))
+        # 游戏会跳过同一级里物品完全相同的剧情单（声望就丢了），这里换一换
+        seen = [sorted(o["items"]) for o in out]
+        tries = 0
+        while sorted(items) in seen and tries < 20:
+            tries += 1
+            k = tries % len(items)
+            ch, lv = items[k].rsplit("_", 1)
+            lv = int(lv)
+            if tries % 2 == 1 and len(items) < 3 and lv > 2:
+                items[k] = f"{ch}_{lv - 1}"
+                items.append(f"{rng.choice(chains)}_{lv - 1}")
+            else:
+                alt = [c for c in chains if c != ch]
+                items[k] = f"{rng.choice(alt) if alt else ch}_{lv + (0 if alt else 1)}"
+            items.sort(key=lambda x: -int(x.rsplit("_", 1)[1]))
+        flames = sum(2 ** (int(x.rsplit("_", 1)[1]) - 1) for x in items)
+        o = {"items": items, "rewards": [], "shell": STORY_PAY * flames,
+             "who": rng.randrange(len(PEOPLE)), "xp": xps[i]}
+        if i == 1 and L >= 8:
+            o["rewards"] = ["pack_1"]
+        if i == 2 and L >= 2:
+            o["token"] = 2 + L // 2
+        out.append(o)
+    return out
+
+
+def level_rewards(L, level_gens):
+    rw = [["fire_2", level_fire(L)], ["chest_1", 1]]
+    if L >= 8:
+        rw.append(["pack_1", 1])
+    fresh = [l for l in LINES if l["unlock"] == L]
+    if fresh:
+        rw.append([f"{fresh[0]['gen']}_4", 1])
+    elif level_gens.get(L):
+        rw.append([f"{level_gens[L]}_{gen_reward_lv(L)}", 1])
+    if L % 2 == 0:
+        rw.append(["amber_3", 5])
+    return rw
+
+
+def run():
+    level_gens = plan_level_gens()
+    costs = {b["id"]: [p["cost"] for p in b["parts"]] for b in BUILDS}
+    rows = None
+    for _ in range(4):
+        rows, built, eq = simulate(costs, level_gens)
+        costs = make_costs(rows)
+    rows, built, eq = simulate(costs, level_gens)
+    by = {r["level"]: r for r in rows}
+    rng = random.Random(KNOBS["seed"])
+    story = [{"level": L, "orders": story_for(L, by, rng)} for L in range(1, KNOBS["levels"] + 1)]
+
+    # 声望对比：旧设计每级剧情约 5 点、需要 L+1；新设计每级剧情正好给满
+    old_supply = 0
+    old_need = 0
+    stuck = None
+    for r in rows:
+        L = r["level"]
+        lv = next((x for x in OLD_STORY["levels"] if x["level"] == L), None)
+        old_supply += sum(o["xp"] for o in lv["orders"]) if lv else 5
+        old_need += L + 1
+        r["old_xp_supply"] = old_supply
+        r["old_xp_need"] = old_need
+        if stuck is None and old_supply < old_need:
+            stuck = L
+        r["new_xp_supply"] = sum(xp_need(i) for i in range(1, L + 1))
+        r["new_xp_need"] = r["new_xp_supply"]
+        sl = story[L - 1]["orders"]
+        r["story_items"] = [o["items"] for o in sl]
+        r["story_order_taps"] = [round(sum(2 ** (int(x.rsplit("_", 1)[1]) - 1) for x in o["items"]) * KNOBS["waste"] / r["eff"]) for o in sl]
+
+    cum = 0.0
+    for r in rows:
+        cum += r["days"]
+        r["cum_days"] = round(cum, 2)
+
+    out = {
+        "knobs": KNOBS,
+        "rows": rows,
+        "costs": costs,
+        "level_gens": {str(k): v for k, v in level_gens.items()},
+        "old_stuck_level": stuck,
+        "final_eq": eq,
+        "total_build": sum(sum(v) for v in costs.values()),
+        "old_total_build": sum(p["cost"] for b in OLD_BUILDS for p in b["parts"]),
+        "story": story,
+        "level_rewards": {L: level_rewards(L, level_gens) for L in range(2, KNOBS["levels"] + 1)},
+        "sub_percent": {l["sub"]: round(sub_avg_percent(l["sub"]), 2) for l in LINES},
+    }
+    return out
+
+
+# ---------------------------------------------------------------- 写回
+
+
+def dump_rows(path, head, rows, tail):
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(head)
+        f.write(",\n".join(rows))
+        f.write(tail)
+
+
+def write_back(out):
+    rows = out["rows"]
+    # 随机订单：下限 = 简单单火苗，上限 = 难单火苗，slots 是 4 张常驻单的位置
+    rnd = {"curves": [
+        {"name": "下限", "diff": [r["easy_f"] for r in rows]},
+        {"name": "上限", "diff": [r["hard_f"] for r in rows]},
+    ], "slots": KNOBS["slots"]}
+    with open(os.path.join(DATA, "random_orders.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(rnd, f, ensure_ascii=False, indent="\t")
+        f.write("\n")
+    with open(os.path.join(DATA, "story.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"levels": out["story"]}, f, ensure_ascii=False, indent="\t")
+        f.write("\n")
+    lv_rows = ['\t\t{"level": %d, "rewards": %s}' % (L, json.dumps(rw, ensure_ascii=False))
+               for L, rw in out["level_rewards"].items()]
+    dump_rows(os.path.join(DATA, "levels.json"), '{\n\t"levels": [\n', lv_rows, "\n\t]\n}\n")
+    blocks = []
+    for b in BUILDS:
+        parts = []
+        for i, p in enumerate(b["parts"]):
+            q = dict(p)
+            q["cost"] = out["costs"][b["id"]][i]
+            parts.append("\t\t" + json.dumps(q, ensure_ascii=False))
+        head = {k: v for k, v in b.items() if k != "parts"}
+        h = json.dumps(head, ensure_ascii=False)[:-1]
+        blocks.append("\t%s, \"parts\": [\n%s\n\t]}" % (h, ",\n".join(parts)))
+    with open(os.path.join(DATA, "builds.json"), "w", encoding="utf-8", newline="\n") as f:
+        f.write("[\n" + ",\n".join(blocks) + "\n]\n")
+    lines = []
+    for c in RAW_CHAINS:
+        lines.append(TAB + json.dumps(CHAINS[c["id"]], ensure_ascii=False))
+    with open(os.path.join(DATA, "chains.json"), "w", encoding="utf-8", newline=NL) as f:
+        f.write("[" + NL + ("," + NL).join(lines) + NL + "]" + NL)
+    rules = load("rules.json")
+    rules.update({"random_orders": len(KNOBS["slots"]), "xp_base": KNOBS["xp_base"], "xp_div": KNOBS["xp_div"],
+                  "energy_price": 20, "energy_price_step": 10, "energy_price_max": 60})
+    with open(os.path.join(DATA, "rules.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(rules, f, ensure_ascii=False, indent="\t")
+        f.write("\n")
+
+
+def write_html(out):
+    tpl_path = os.path.join(ROOT, "tools", "curve_template.html")
+    with open(tpl_path, encoding="utf-8") as f:
+        tpl = f.read()
+    slim = {k: out[k] for k in ["knobs", "rows", "costs", "old_stuck_level", "total_build", "old_total_build"]}
+    html = tpl.replace("/*DATA*/null", json.dumps(slim, ensure_ascii=False))
+    with open(os.path.join(ROOT, "难度曲线.html"), "w", encoding="utf-8", newline="\n") as f:
+        f.write(html)
+
+
+if __name__ == "__main__":
+    out = run()
+    with open(os.path.join(ROOT, "tools", "balance_out.json"), "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=1)
+    if "--write" in sys.argv:
+        write_back(out)
+    if os.path.exists(os.path.join(ROOT, "tools", "curve_template.html")):
+        write_html(out)
+    r = out["rows"]
+    print("旧设计声望断供等级:", out["old_stuck_level"])
+    print("建造总价 旧 %d → 新 %d" % (out["old_total_build"], out["total_build"]))
+    print("到 Lv40 预计天数: %.1f" % r[-1]["cum_days"])
+    for x in r[::3] + [r[-1]]:
+        print("Lv%2d 效率%.2f 简单%3.0f下 难%4.0f下 | 旧均值%4.0f下 | 剧情%s下 | 收入%5d 累计收%6d 累计建%6d | 生产器%s" % (
+            x["level"], x["eff"], x["easy_taps"], x["hard_taps"], x["old_avg_taps"], x["story_order_taps"],
+            x["income"], x["cum_coins"], x["cum_cost"], x["gens"]))

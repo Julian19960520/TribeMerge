@@ -1,0 +1,1516 @@
+{
+	"levels": [
+		{
+			"level": 1,
+			"orders": [
+				{
+					"items": [
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 32,
+					"who": 1,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 64,
+					"who": 2,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_4",
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 64,
+					"who": 3,
+					"xp": 1
+				}
+			]
+		},
+		{
+			"level": 2,
+			"orders": [
+				{
+					"items": [
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 64,
+					"who": 0,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_4",
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 64,
+					"who": 3,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_6"
+					],
+					"rewards": [],
+					"shell": 128,
+					"who": 0,
+					"xp": 1,
+					"token": 3
+				}
+			]
+		},
+		{
+			"level": 3,
+			"orders": [
+				{
+					"items": [
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 64,
+					"who": 3,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_5",
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 96,
+					"who": 3,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_5",
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 128,
+					"who": 3,
+					"xp": 2,
+					"token": 3
+				}
+			]
+		},
+		{
+			"level": 4,
+			"orders": [
+				{
+					"items": [
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 64,
+					"who": 0,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_5",
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 96,
+					"who": 0,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_5",
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 128,
+					"who": 3,
+					"xp": 2,
+					"token": 4
+				}
+			]
+		},
+		{
+			"level": 5,
+			"orders": [
+				{
+					"items": [
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 64,
+					"who": 3,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_5",
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 96,
+					"who": 1,
+					"xp": 2
+				},
+				{
+					"items": [
+						"fruit_6"
+					],
+					"rewards": [],
+					"shell": 128,
+					"who": 0,
+					"xp": 2,
+					"token": 4
+				}
+			]
+		},
+		{
+			"level": 6,
+			"orders": [
+				{
+					"items": [
+						"tool_5",
+						"tool_5"
+					],
+					"rewards": [],
+					"shell": 128,
+					"who": 3,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_6",
+						"tool_4"
+					],
+					"rewards": [],
+					"shell": 160,
+					"who": 2,
+					"xp": 2
+				},
+				{
+					"items": [
+						"tool_6",
+						"tool_5"
+					],
+					"rewards": [],
+					"shell": 192,
+					"who": 3,
+					"xp": 2,
+					"token": 5
+				}
+			]
+		},
+		{
+			"level": 7,
+			"orders": [
+				{
+					"items": [
+						"tool_6"
+					],
+					"rewards": [],
+					"shell": 128,
+					"who": 1,
+					"xp": 2
+				},
+				{
+					"items": [
+						"fruit_6",
+						"tool_5"
+					],
+					"rewards": [],
+					"shell": 192,
+					"who": 3,
+					"xp": 2
+				},
+				{
+					"items": [
+						"tool_6",
+						"fruit_6"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 2,
+					"xp": 2,
+					"token": 5
+				}
+			]
+		},
+		{
+			"level": 8,
+			"orders": [
+				{
+					"items": [
+						"tool_6",
+						"tool_3"
+					],
+					"rewards": [],
+					"shell": 144,
+					"who": 0,
+					"xp": 2
+				},
+				{
+					"items": [
+						"tool_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 128,
+					"who": 0,
+					"xp": 2
+				},
+				{
+					"items": [
+						"tool_6",
+						"tool_6"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 1,
+					"xp": 2,
+					"token": 6
+				}
+			]
+		},
+		{
+			"level": 9,
+			"orders": [
+				{
+					"items": [
+						"tool_6",
+						"fruit_3"
+					],
+					"rewards": [],
+					"shell": 144,
+					"who": 2,
+					"xp": 2
+				},
+				{
+					"items": [
+						"fruit_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 128,
+					"who": 0,
+					"xp": 2
+				},
+				{
+					"items": [
+						"tool_6",
+						"tool_6"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 3,
+					"xp": 3,
+					"token": 6
+				}
+			]
+		},
+		{
+			"level": 10,
+			"orders": [
+				{
+					"items": [
+						"tool_6"
+					],
+					"rewards": [],
+					"shell": 128,
+					"who": 1,
+					"xp": 2
+				},
+				{
+					"items": [
+						"fruit_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 128,
+					"who": 2,
+					"xp": 2
+				},
+				{
+					"items": [
+						"fruit_6",
+						"tool_6"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 0,
+					"xp": 3,
+					"token": 7
+				}
+			]
+		},
+		{
+			"level": 11,
+			"orders": [
+				{
+					"items": [
+						"cloth_6",
+						"cloth_6"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 0,
+					"xp": 2
+				},
+				{
+					"items": [
+						"cloth_7",
+						"cloth_5"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 320,
+					"who": 3,
+					"xp": 3
+				},
+				{
+					"items": [
+						"cloth_7",
+						"cloth_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 2,
+					"xp": 3,
+					"token": 7
+				}
+			]
+		},
+		{
+			"level": 12,
+			"orders": [
+				{
+					"items": [
+						"cloth_7"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 3,
+					"xp": 2
+				},
+				{
+					"items": [
+						"cloth_7",
+						"cloth_4",
+						"fruit_4"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 320,
+					"who": 2,
+					"xp": 3
+				},
+				{
+					"items": [
+						"cloth_7",
+						"cloth_6",
+						"cloth_4"
+					],
+					"rewards": [],
+					"shell": 416,
+					"who": 1,
+					"xp": 3,
+					"token": 8
+				}
+			]
+		},
+		{
+			"level": 13,
+			"orders": [
+				{
+					"items": [
+						"cloth_6",
+						"cloth_6"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 1,
+					"xp": 3
+				},
+				{
+					"items": [
+						"cloth_7",
+						"cloth_4",
+						"tool_4"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 320,
+					"who": 3,
+					"xp": 3
+				},
+				{
+					"items": [
+						"fruit_7",
+						"cloth_6",
+						"cloth_4"
+					],
+					"rewards": [],
+					"shell": 416,
+					"who": 0,
+					"xp": 3,
+					"token": 8
+				}
+			]
+		},
+		{
+			"level": 14,
+			"orders": [
+				{
+					"items": [
+						"fruit_7",
+						"fruit_2"
+					],
+					"rewards": [],
+					"shell": 264,
+					"who": 2,
+					"xp": 3
+				},
+				{
+					"items": [
+						"fruit_7",
+						"tool_5"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 320,
+					"who": 0,
+					"xp": 3
+				},
+				{
+					"items": [
+						"cloth_7",
+						"tool_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 2,
+					"xp": 3,
+					"token": 9
+				}
+			]
+		},
+		{
+			"level": 15,
+			"orders": [
+				{
+					"items": [
+						"fruit_7"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 1,
+					"xp": 3
+				},
+				{
+					"items": [
+						"fruit_7",
+						"fruit_5"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 320,
+					"who": 2,
+					"xp": 3
+				},
+				{
+					"items": [
+						"tool_7",
+						"tool_6",
+						"tool_5"
+					],
+					"rewards": [],
+					"shell": 448,
+					"who": 3,
+					"xp": 4,
+					"token": 9
+				}
+			]
+		},
+		{
+			"level": 16,
+			"orders": [
+				{
+					"items": [
+						"beast_7"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 0,
+					"xp": 3
+				},
+				{
+					"items": [
+						"beast_7",
+						"beast_5"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 320,
+					"who": 2,
+					"xp": 3
+				},
+				{
+					"items": [
+						"cloth_7",
+						"beast_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 3,
+					"xp": 4,
+					"token": 10
+				}
+			]
+		},
+		{
+			"level": 17,
+			"orders": [
+				{
+					"items": [
+						"beast_7"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 0,
+					"xp": 3
+				},
+				{
+					"items": [
+						"tool_7",
+						"beast_5"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 320,
+					"who": 2,
+					"xp": 4
+				},
+				{
+					"items": [
+						"cloth_7",
+						"beast_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 3,
+					"xp": 4,
+					"token": 10
+				}
+			]
+		},
+		{
+			"level": 18,
+			"orders": [
+				{
+					"items": [
+						"beast_6",
+						"tool_6"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 1,
+					"xp": 3
+				},
+				{
+					"items": [
+						"fruit_7",
+						"beast_5"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 320,
+					"who": 2,
+					"xp": 4
+				},
+				{
+					"items": [
+						"cloth_7",
+						"beast_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 0,
+					"xp": 4,
+					"token": 11
+				}
+			]
+		},
+		{
+			"level": 19,
+			"orders": [
+				{
+					"items": [
+						"tool_7"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 0,
+					"xp": 4
+				},
+				{
+					"items": [
+						"cloth_7",
+						"cloth_5"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 320,
+					"who": 3,
+					"xp": 4
+				},
+				{
+					"items": [
+						"fruit_7",
+						"tool_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 3,
+					"xp": 4,
+					"token": 11
+				}
+			]
+		},
+		{
+			"level": 20,
+			"orders": [
+				{
+					"items": [
+						"cloth_7"
+					],
+					"rewards": [],
+					"shell": 256,
+					"who": 3,
+					"xp": 4
+				},
+				{
+					"items": [
+						"cloth_7",
+						"fruit_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 384,
+					"who": 1,
+					"xp": 4
+				},
+				{
+					"items": [
+						"tool_7",
+						"fruit_7"
+					],
+					"rewards": [],
+					"shell": 512,
+					"who": 1,
+					"xp": 4,
+					"token": 12
+				}
+			]
+		},
+		{
+			"level": 21,
+			"orders": [
+				{
+					"items": [
+						"veg_7",
+						"tool_5",
+						"veg_4"
+					],
+					"rewards": [],
+					"shell": 352,
+					"who": 1,
+					"xp": 4
+				},
+				{
+					"items": [
+						"beast_7",
+						"veg_6",
+						"fruit_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 512,
+					"who": 0,
+					"xp": 4
+				},
+				{
+					"items": [
+						"fruit_8",
+						"veg_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 1,
+					"xp": 5,
+					"token": 12
+				}
+			]
+		},
+		{
+			"level": 22,
+			"orders": [
+				{
+					"items": [
+						"cloth_7",
+						"veg_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 2,
+					"xp": 4
+				},
+				{
+					"items": [
+						"veg_7",
+						"fruit_7"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 512,
+					"who": 2,
+					"xp": 4
+				},
+				{
+					"items": [
+						"fruit_8",
+						"veg_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 1,
+					"xp": 5,
+					"token": 13
+				}
+			]
+		},
+		{
+			"level": 23,
+			"orders": [
+				{
+					"items": [
+						"tool_7",
+						"veg_5",
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 2,
+					"xp": 4
+				},
+				{
+					"items": [
+						"beast_7",
+						"veg_6",
+						"cloth_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 512,
+					"who": 0,
+					"xp": 5
+				},
+				{
+					"items": [
+						"tool_8",
+						"veg_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 1,
+					"xp": 5,
+					"token": 13
+				}
+			]
+		},
+		{
+			"level": 24,
+			"orders": [
+				{
+					"items": [
+						"fruit_7",
+						"beast_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 2,
+					"xp": 4
+				},
+				{
+					"items": [
+						"fruit_8",
+						"fruit_4"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 544,
+					"who": 1,
+					"xp": 5
+				},
+				{
+					"items": [
+						"cloth_8",
+						"tool_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 3,
+					"xp": 5,
+					"token": 14
+				}
+			]
+		},
+		{
+			"level": 25,
+			"orders": [
+				{
+					"items": [
+						"cloth_7",
+						"beast_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 2,
+					"xp": 5
+				},
+				{
+					"items": [
+						"cloth_8",
+						"veg_4"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 544,
+					"who": 3,
+					"xp": 5
+				},
+				{
+					"items": [
+						"fruit_8",
+						"beast_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 2,
+					"xp": 5,
+					"token": 14
+				}
+			]
+		},
+		{
+			"level": 26,
+			"orders": [
+				{
+					"items": [
+						"tool_7",
+						"furn_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 0,
+					"xp": 5
+				},
+				{
+					"items": [
+						"fruit_7",
+						"tool_7",
+						"furn_2"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 520,
+					"who": 0,
+					"xp": 5
+				},
+				{
+					"items": [
+						"tool_8",
+						"furn_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 0,
+					"xp": 5,
+					"token": 15
+				}
+			]
+		},
+		{
+			"level": 27,
+			"orders": [
+				{
+					"items": [
+						"beast_7",
+						"furn_6"
+					],
+					"rewards": [],
+					"shell": 384,
+					"who": 0,
+					"xp": 5
+				},
+				{
+					"items": [
+						"tool_7",
+						"fruit_7",
+						"furn_2"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 520,
+					"who": 3,
+					"xp": 5
+				},
+				{
+					"items": [
+						"furn_8",
+						"furn_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 0,
+					"xp": 6,
+					"token": 15
+				}
+			]
+		},
+		{
+			"level": 28,
+			"orders": [
+				{
+					"items": [
+						"fruit_7",
+						"tool_6",
+						"furn_3"
+					],
+					"rewards": [],
+					"shell": 400,
+					"who": 1,
+					"xp": 5
+				},
+				{
+					"items": [
+						"beast_8",
+						"furn_3"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 528,
+					"who": 1,
+					"xp": 5
+				},
+				{
+					"items": [
+						"beast_8",
+						"furn_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 1,
+					"xp": 6,
+					"token": 16
+				}
+			]
+		},
+		{
+			"level": 29,
+			"orders": [
+				{
+					"items": [
+						"tool_7",
+						"tool_6",
+						"cloth_4"
+					],
+					"rewards": [],
+					"shell": 416,
+					"who": 0,
+					"xp": 5
+				},
+				{
+					"items": [
+						"beast_8",
+						"fruit_4"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 544,
+					"who": 3,
+					"xp": 6
+				},
+				{
+					"items": [
+						"furn_8",
+						"cloth_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 2,
+					"xp": 6,
+					"token": 16
+				}
+			]
+		},
+		{
+			"level": 30,
+			"orders": [
+				{
+					"items": [
+						"furn_7",
+						"beast_6",
+						"cloth_4"
+					],
+					"rewards": [],
+					"shell": 416,
+					"who": 1,
+					"xp": 5
+				},
+				{
+					"items": [
+						"furn_8",
+						"tool_3",
+						"veg_3"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 544,
+					"who": 1,
+					"xp": 6
+				},
+				{
+					"items": [
+						"furn_8",
+						"cloth_6"
+					],
+					"rewards": [],
+					"shell": 640,
+					"who": 1,
+					"xp": 6,
+					"token": 17
+				}
+			]
+		},
+		{
+			"level": 31,
+			"orders": [
+				{
+					"items": [
+						"veg_7",
+						"pot_6",
+						"fruit_6"
+					],
+					"rewards": [],
+					"shell": 512,
+					"who": 3,
+					"xp": 6
+				},
+				{
+					"items": [
+						"furn_8",
+						"pot_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 640,
+					"who": 2,
+					"xp": 6
+				},
+				{
+					"items": [
+						"pot_8",
+						"beast_7",
+						"pot_5"
+					],
+					"rewards": [],
+					"shell": 832,
+					"who": 2,
+					"xp": 6,
+					"token": 17
+				}
+			]
+		},
+		{
+			"level": 32,
+			"orders": [
+				{
+					"items": [
+						"cloth_7",
+						"fruit_7",
+						"pot_2"
+					],
+					"rewards": [],
+					"shell": 520,
+					"who": 1,
+					"xp": 6
+				},
+				{
+					"items": [
+						"cloth_8",
+						"pot_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 640,
+					"who": 1,
+					"xp": 6
+				},
+				{
+					"items": [
+						"fruit_8",
+						"pot_7"
+					],
+					"rewards": [],
+					"shell": 768,
+					"who": 3,
+					"xp": 6,
+					"token": 18
+				}
+			]
+		},
+		{
+			"level": 33,
+			"orders": [
+				{
+					"items": [
+						"pot_8",
+						"pot_3"
+					],
+					"rewards": [],
+					"shell": 528,
+					"who": 0,
+					"xp": 6
+				},
+				{
+					"items": [
+						"beast_8",
+						"pot_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 640,
+					"who": 0,
+					"xp": 6
+				},
+				{
+					"items": [
+						"fruit_8",
+						"pot_7"
+					],
+					"rewards": [],
+					"shell": 768,
+					"who": 2,
+					"xp": 7,
+					"token": 18
+				}
+			]
+		},
+		{
+			"level": 34,
+			"orders": [
+				{
+					"items": [
+						"beast_8",
+						"beast_4",
+						"veg_2"
+					],
+					"rewards": [],
+					"shell": 552,
+					"who": 1,
+					"xp": 6
+				},
+				{
+					"items": [
+						"furn_8",
+						"fruit_7"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 768,
+					"who": 3,
+					"xp": 6
+				},
+				{
+					"items": [
+						"tool_8",
+						"furn_8"
+					],
+					"rewards": [],
+					"shell": 1024,
+					"who": 2,
+					"xp": 7,
+					"token": 19
+				}
+			]
+		},
+		{
+			"level": 35,
+			"orders": [
+				{
+					"items": [
+						"pot_8",
+						"cloth_4",
+						"pot_4"
+					],
+					"rewards": [],
+					"shell": 576,
+					"who": 2,
+					"xp": 6
+				},
+				{
+					"items": [
+						"fruit_8",
+						"tool_6",
+						"cloth_6"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 768,
+					"who": 1,
+					"xp": 7
+				},
+				{
+					"items": [
+						"tool_8",
+						"pot_7",
+						"cloth_6"
+					],
+					"rewards": [],
+					"shell": 896,
+					"who": 0,
+					"xp": 7,
+					"token": 19
+				}
+			]
+		},
+		{
+			"level": 36,
+			"orders": [
+				{
+					"items": [
+						"fruit_8",
+						"tool_5"
+					],
+					"rewards": [],
+					"shell": 576,
+					"who": 2,
+					"xp": 6
+				},
+				{
+					"items": [
+						"veg_8",
+						"furn_7"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 768,
+					"who": 2,
+					"xp": 7
+				},
+				{
+					"items": [
+						"fruit_8",
+						"furn_8"
+					],
+					"rewards": [],
+					"shell": 1024,
+					"who": 1,
+					"xp": 7,
+					"token": 20
+				}
+			]
+		},
+		{
+			"level": 37,
+			"orders": [
+				{
+					"items": [
+						"furn_8",
+						"cloth_5",
+						"cloth_4"
+					],
+					"rewards": [],
+					"shell": 608,
+					"who": 1,
+					"xp": 7
+				},
+				{
+					"items": [
+						"cloth_8",
+						"beast_7"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 768,
+					"who": 2,
+					"xp": 7
+				},
+				{
+					"items": [
+						"cloth_8",
+						"pot_8"
+					],
+					"rewards": [],
+					"shell": 1024,
+					"who": 1,
+					"xp": 7,
+					"token": 20
+				}
+			]
+		},
+		{
+			"level": 38,
+			"orders": [
+				{
+					"items": [
+						"pot_8",
+						"fruit_5",
+						"cloth_4"
+					],
+					"rewards": [],
+					"shell": 608,
+					"who": 0,
+					"xp": 7
+				},
+				{
+					"items": [
+						"fruit_8",
+						"veg_7"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 768,
+					"who": 0,
+					"xp": 7
+				},
+				{
+					"items": [
+						"veg_8",
+						"beast_7",
+						"tool_7"
+					],
+					"rewards": [],
+					"shell": 1024,
+					"who": 0,
+					"xp": 7,
+					"token": 21
+				}
+			]
+		},
+		{
+			"level": 39,
+			"orders": [
+				{
+					"items": [
+						"pot_8",
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 576,
+					"who": 0,
+					"xp": 7
+				},
+				{
+					"items": [
+						"fruit_8",
+						"pot_7"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 768,
+					"who": 2,
+					"xp": 7
+				},
+				{
+					"items": [
+						"cloth_8",
+						"beast_8"
+					],
+					"rewards": [],
+					"shell": 1024,
+					"who": 1,
+					"xp": 8,
+					"token": 21
+				}
+			]
+		},
+		{
+			"level": 40,
+			"orders": [
+				{
+					"items": [
+						"tool_8",
+						"pot_5",
+						"tool_4"
+					],
+					"rewards": [],
+					"shell": 608,
+					"who": 0,
+					"xp": 7
+				},
+				{
+					"items": [
+						"tool_8",
+						"cloth_7"
+					],
+					"rewards": [
+						"pack_1"
+					],
+					"shell": 768,
+					"who": 1,
+					"xp": 7
+				},
+				{
+					"items": [
+						"beast_8",
+						"beast_8"
+					],
+					"rewards": [],
+					"shell": 1024,
+					"who": 3,
+					"xp": 8,
+					"token": 22
+				}
+			]
+		}
+	]
+}

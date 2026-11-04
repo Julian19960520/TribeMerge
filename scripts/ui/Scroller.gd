@@ -2,6 +2,8 @@ class_name Scroller
 extends Control
 ## 惯性滚动容器。拖动超过阈值后，松手不会触发内部按钮。
 
+const _CurvePad := preload("res://scripts/ui/OrderCurvePad.gd")
+
 var content: Control
 var horizontal := false
 var length := 0.0
@@ -9,6 +11,7 @@ var offset := 0.0
 var _vel := 0.0
 var _tracking := false
 var _dragging := false
+var _yield := false
 var _press := Vector2.ZERO
 var _last := Vector2.ZERO
 var _last_t := 0
@@ -26,6 +29,14 @@ func set_length(l: float) -> void:
 	offset = clampf(offset, 0.0, _max())
 	_apply()
 
+## 停到指定位置，并清掉正在进行的拖动和惯性。
+func jump_to(o: float) -> void:
+	_vel = 0.0
+	_tracking = false
+	_dragging = false
+	offset = clampf(o, 0.0, _max())
+	_apply()
+
 func _max() -> float:
 	return maxf(0.0, length - (size.x if horizontal else size.y))
 
@@ -38,10 +49,19 @@ func _inside() -> bool:
 	var h := get_viewport().gui_get_hovered_control()
 	return h != null and (h == self or is_ancestor_of(h))
 
+## 这次按下由内部控件处理（棋盘拖动换位），松手之前不要滚动。
+func yield_gesture() -> void:
+	_tracking = false
+	_dragging = false
+	_vel = 0.0
+	_yield = true
+
 func _input(e: InputEvent) -> void:
 	if e is InputEventMouseButton:
 		if e.button_index == MOUSE_BUTTON_LEFT:
 			if e.pressed:
+				if _yield:
+					return
 				if _inside():
 					_tracking = true
 					_dragging = false
@@ -49,13 +69,21 @@ func _input(e: InputEvent) -> void:
 					_last = _press
 					_last_t = Time.get_ticks_msec()
 					_vel = 0.0
+			elif _yield:
+				_yield = false
+				_tracking = false
+				_dragging = false
 			elif _tracking:
 				_tracking = false
 				if _dragging:
 					G.scroll_drag = true
 					G.clear_scroll_drag.call_deferred()
 		elif e.pressed and _inside() and e.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+			var hovered := get_viewport().gui_get_hovered_control()
+			if hovered != null and hovered.get_script() == _CurvePad:
+				return
 			_vel += (-1.0 if e.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0) * 900.0
+			_mark_motion()
 	elif e is InputEventMouseMotion and _tracking:
 		var p := get_global_mouse_position()
 		if not _dragging and absf(_axis(p - _press)) > 12.0:
@@ -69,10 +97,12 @@ func _input(e: InputEvent) -> void:
 			_vel = lerpf(_vel, -d / dt, 0.4)
 			_last_t = now
 			_apply()
+			_mark_motion()
 		_last = p
 
 func _process(delta: float) -> void:
 	if _tracking and _dragging:
+		_mark_motion()
 		return
 	if absf(_vel) > 1.0:
 		offset += _vel * delta
@@ -87,6 +117,13 @@ func _process(delta: float) -> void:
 		offset = lerpf(offset, m, 1.0 - exp(-delta * 14.0))
 		_vel *= 0.6
 	_apply()
+	_mark_motion()
+
+func _mark_motion() -> void:
+	if not is_visible_in_tree():
+		return
+	if (_tracking and _dragging) or absf(_vel) > 4.0 or offset < -0.5 or offset > _max() + 0.5:
+		G.scroll_moving = true
 
 func _apply() -> void:
 	if horizontal:

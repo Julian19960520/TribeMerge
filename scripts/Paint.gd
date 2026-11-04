@@ -84,6 +84,24 @@ static func banner(ci: CanvasItem, r: Rect2, col: Color, seed: int = 2) -> void:
 		var dx: float = 52.0 if side == 0 else -52.0
 		ci.draw_colored_polygon(Art.star_pts(Vector2(x + dx, r.get_center().y), 7, 3, 4, seed + side), Color(1, 1, 1, 0.55))
 
+## 图鉴里还没领的新发现：红礼盒。
+static func gift(ci: CanvasItem, c: Vector2, s: float) -> void:
+	var w := s * 0.62
+	var h := s * 0.48
+	var box := Rect2(c + Vector2(-w * 0.5, -h * 0.22), Vector2(w, h))
+	var body := Art.rrect(box, 8, 9, 0.4)
+	Art.dilate(ci, body, 3.0, Art.INK)
+	ci.draw_colored_polygon(body, Art.CLAY)
+	var lid := Art.rrect(Rect2(box.position + Vector2(-4, -s * 0.14), Vector2(w + 8, s * 0.2)), 6, 10, 0.35)
+	Art.dilate(ci, lid, 3.0, Art.INK)
+	ci.draw_colored_polygon(lid, Color("e15a38"))
+	ci.draw_rect(Rect2(c.x - s * 0.045, box.position.y, s * 0.09, h), Art.OCHRE)
+	ci.draw_rect(Rect2(box.position.x, box.position.y + s * 0.04, w, s * 0.08), Art.OCHRE)
+	ci.draw_colored_polygon(Art.ell(c + Vector2(-s * 0.12, -s * 0.24), Vector2(s * 0.12, s * 0.07), 11, 0.15, 12, 0.35), Art.OCHRE)
+	ci.draw_colored_polygon(Art.ell(c + Vector2(s * 0.12, -s * 0.24), Vector2(s * 0.12, s * 0.07), 12, 0.15, 12, -0.35), Art.OCHRE)
+	ci.draw_circle(c + Vector2(0, -s * 0.2), s * 0.055, Art.OCHRE)
+	ci.draw_circle(c + Vector2(0, -s * 0.2), s * 0.055, Art.INK, false, 2.0, true)
+
 static func close_btn(ci: CanvasItem, c: Vector2, rad: float = 26.0, seed: int = 4) -> void:
 	ci.draw_colored_polygon(Art.ell(c + Vector2(0, 5), Vector2(rad, rad), seed, 0.0, 20, 0.0, 0.0), Color(0, 0, 0, 0.3))
 	Art.sil(ci, [Art.P(Art.ell(c + Vector2(4, -rad - 2), Vector2(11, 5), seed + 1, 0.05, 12, -0.5), Art.LEAF, 1),
@@ -240,8 +258,14 @@ static func glyph(ci: CanvasItem, kind: String, c: Vector2, s: float = 1.0, col:
 
 static func hammer(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	var d := (Vector2(16, -16) - Vector2(-30, 34)).normalized()
+	var ang := d.angle() + PI / 2.0
+	var tip := Vector2(16, -16) + d * 8.0
+	var head := PackedVector2Array()
+	for p in Art.rrect(Rect2(-25, -13, 50, 26), 9, 2, 0.35):
+		head.append((p as Vector2).rotated(ang) + tip)
 	Art.sil(ci, [Art.P(Art.capsule(Vector2(-30, 34), Vector2(16, -16), 6.0, 1), Art.WOOD, 1),
-		Art.P(Art.rrect(Rect2(-6, -38, 50, 26), 9, 2, 0.6).duplicate(), Art.STONE, 1)])
+		Art.P(head, Art.STONE, 1)])
 	Art._rope(ci, Vector2(-30, 34), Vector2(16, -16), 0.82, 2, 7.0, 3)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -293,6 +317,165 @@ static func home_icon(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	Art.ln(ci, Vector2(-6, -44), Vector2(6, -24), 3.0, Art.WOOD_D, 5)
 	Art.ln(ci, Vector2(6, -44), Vector2(-6, -24), 3.0, Art.WOOD_D, 6)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+## 配置首页上每个编辑器的标记。按这一页在改什么来画。
+static func cfg_icon(ci: CanvasItem, kind: String, c: Vector2, size: float) -> void:
+	var s := size / 100.0
+	match kind:
+		"chains":
+			Art.item(ci, "fruit_1", c, size)
+		"board":
+			_cfg_board(ci, c, s)
+		"story":
+			_cfg_story(ci, c, s)
+		"pass":
+			_cfg_pass(ci, c, s)
+		"albums":
+			cards_icon(ci, c, s * 1.45)
+		"people":
+			_cfg_people(ci, c, s)
+		"builds":
+			hut_icon(ci, c + Vector2(0, 4.0 * s), s * 1.05)
+		"level":
+			Art.item(ci, "xp_1", c, size)
+		"amber":
+			_cfg_amber(ci, c, s)
+		"rules":
+			_cfg_rules(ci, c, s)
+		"rand":
+			_cfg_rand(ci, c, s)
+		"unlock":
+			_cfg_unlock(ci, c, s)
+
+static func _cfg_rand(ci: CanvasItem, c: Vector2, s: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	Art.ln(ci, Vector2(-36, 30), Vector2(38, 30), 3.0, Art.INK, 1)
+	Art.ln(ci, Vector2(-36, 30), Vector2(-36, -34), 3.0, Art.INK, 2)
+	var easy: Array = [Vector2(-28, 16), Vector2(-6, 8), Vector2(14, 6), Vector2(32, -8)]
+	var hard: Array = [Vector2(-28, 20), Vector2(-6, 4), Vector2(14, -10), Vector2(32, -26)]
+	var band := PackedVector2Array()
+	for p in easy:
+		band.append(p)
+	for i in range(hard.size() - 1, -1, -1):
+		band.append(hard[i])
+	ci.draw_colored_polygon(band, Color(0.92, 0.65, 0.23, 0.45))
+	Art.pl(ci, easy, 4.0, Art.TEAL, 3)
+	Art.pl(ci, hard, 4.0, Art.CLAY, 4)
+	for i in easy.size():
+		Art.dot(ci, easy[i], 4.5, Art.TEAL)
+		Art.dot(ci, hard[i], 4.5, Art.CLAY)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+static func _cfg_unlock(ci: CanvasItem, c: Vector2, s: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	var cell := 18.0
+	var gap := 4.0
+	var origin := -((cell * 3.0 + gap * 2.0) * 0.5)
+	for i in 9:
+		var col := i % 3
+		var row := int(i / 3.0)
+		var r := Rect2(origin + float(col) * (cell + gap), origin + float(row) * (cell + gap), cell, cell)
+		var on := i % 3 != 0
+		_cfg_tile(ci, r, Color("8cc63f") if on else Color("c8c0b4"), 40 + i)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+static func _cfg_board(ci: CanvasItem, c: Vector2, s: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	var cell := 22.0
+	var gap := 4.0
+	var origin := -((cell * 3.0 + gap * 2.0) * 0.5)
+	var marks := {0: Art.BERRY, 4: Art.STONE, 7: Art.LEAF, 8: Art.AMBER}
+	for i in 9:
+		var col := i % 3
+		var row := int(i / 3.0)
+		var r := Rect2(origin + float(col) * (cell + gap), origin + float(row) * (cell + gap), cell, cell)
+		_cfg_tile(ci, r, Color("fff7e6"), 20 + i)
+		if marks.has(i):
+			Art.fill(ci, Art.ell(r.get_center(), Vector2(6, 6), 30 + i, 0.05, 10), marks[i], 1.5)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+static func _cfg_story(ci: CanvasItem, c: Vector2, s: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	var r := Rect2(-40, -26, 80, 54)
+	var b := Art.rrect(r, 12, 4, 0.35)
+	Art.dilate(ci, b, 2.4, Art.INK)
+	ci.draw_colored_polygon(b, Color("ffe9a8"))
+	Art.dashed(ci, Art.rrect(r.grow(-4), 8, 5, 0.0), 5, 4, Color(0.65, 0.4, 0.2, 0.55), 1.6)
+	var head := Art.ell(Vector2(-16, 2), Vector2(14, 14), 6, 0.02, 16)
+	Art.dilate(ci, head, 2.0, Art.INK)
+	ci.draw_colored_polygon(head, Art.OCHRE.lightened(0.25))
+	_mini_face(ci, Vector2(-16, 2), 11.0, Color("b97a4a"), 12)
+	Art.fill(ci, Art.ell(Vector2(10, 6), Vector2(7, 7), 8, 0.04, 10), Art.BERRY, 1.5)
+	Art.fill(ci, Art.ell(Vector2(20, 10), Vector2(7, 7), 9, 0.04, 10), Art.BERRY, 1.5)
+	Art.ln(ci, Vector2(14, 2), Vector2(16, -8), 1.8, Art.LEAF_D, 2)
+	Art.fill(ci, Art.ell(Vector2(20, -8), Vector2(6, 3), 10, 0.0, 8, -0.4), Art.LEAF, 1.3)
+	Art.fill(ci, Art.star_pts(Vector2(26, -14), 9, 4, 5, 11), Art.OCHRE, 1.5)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+static func _cfg_pass(ci: CanvasItem, c: Vector2, s: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	_cfg_tile(ci, Rect2(-34, -22, 32, 56), Color("e4d0aa"), 1)
+	_cfg_tile(ci, Rect2(2, -22, 32, 56), Art.BONE, 2)
+	Art.fill(ci, Art.star_pts(Vector2(0, -32), 13, 6, 5, 3), Art.OCHRE, 1.8)
+	_cfg_pip(ci, Vector2(-18, -6), Art.SHELL)
+	_cfg_pip(ci, Vector2(-18, 16), Art.MOSS)
+	_cfg_pip(ci, Vector2(18, -6), Art.AMBER)
+	_cfg_pip(ci, Vector2(18, 16), Art.TEAL)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+static func _cfg_people(ci: CanvasItem, c: Vector2, s: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	Art.sil(ci, [Art.P(Art.ell(Vector2(0, 28), Vector2(34, 18), 2, 0.04, 16), Color("9c5a2a"), 1)], true, 2.0)
+	var parts := []
+	var cols := [Art.CLAY, Art.OCHRE, Art.BONE, Art.TEAL, Art.OCHRE]
+	for i in 5:
+		var a := -PI * 0.5 + (float(i) - 2.0) * 0.36
+		parts.append(Art.P(Art.ell(Vector2(0, -6) + Vector2(cos(a), sin(a)) * 28.0, Vector2(6, 14), 8 + i, 0.04, 10, a + PI * 0.5), cols[i], 1))
+	Art.sil(ci, parts, true, 2.0)
+	face(ci, Vector2(0, 2), 18, Color("b97a4a"), 11)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+static func _cfg_amber(ci: CanvasItem, c: Vector2, s: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	var gem := Art.poly([Vector2(-26, 2), Vector2(-14, -28), Vector2(12, -34), Vector2(28, -6), Vector2(16, 22), Vector2(-10, 26)], 4, 0.5)
+	Art.sil(ci, [Art.P(gem, Art.AMBER, 1)], true, 2.2)
+	ci.draw_colored_polygon(Art.poly([Vector2(-14, -28), Vector2(12, -34), Vector2(0, -8)], 5, 0.3), Color(1, 0.92, 0.55, 0.7))
+	var sh := Art._scallop(Vector2(22, 20), 13, 0.15, 6)
+	Art.sil(ci, [Art.P(sh, Art.SHELL, 1)], true, 1.8)
+	Art._scallop_det(ci, Vector2(22, 20), 13, 0.15, 6)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+static func _cfg_rules(ci: CanvasItem, c: Vector2, s: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	var board := Art.rrect(Rect2(-26, -36, 52, 72), 8, 7, 0.3)
+	Art.sil(ci, [Art.P(board, Art.WOOD, 1)], true, 2.2)
+	var hole := Art.ell(Vector2(0, -26), Vector2(3.6, 3.6), 8, 0.0, 10)
+	ci.draw_colored_polygon(hole, Color("fff7e6"))
+	Art.outline(ci, hole, 1.6, Art.INK)
+	Art.fill(ci, Art.flame_pts(Vector2(-14, -10), 5, 12, 9), Art.FIRE, 1.3)
+	Art.ln(ci, Vector2(-4, -12), Vector2(16, -12), 2.6, Art.INK, 1)
+	for i in 4:
+		var cell := Art.rrect(Rect2(-16.0 + float(i % 2) * 7.0, 0.0 + float(int(i / 2)) * 7.0, 6, 6), 1.4, 12 + i, 0.1)
+		ci.draw_colored_polygon(cell, Art.BONE)
+		Art.outline(ci, cell, 1.3, Art.INK)
+	Art.ln(ci, Vector2(-1, 6), Vector2(16, 6), 2.6, Art.INK, 2)
+	Art.ln(ci, Vector2(-14, 22), Vector2(16, 22), 2.6, Art.INK, 3)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+static func _cfg_tile(ci: CanvasItem, r: Rect2, fill: Color, seed: int) -> void:
+	var b := Art.rrect(r, minf(8.0, r.size.x * 0.22), seed, 0.22)
+	Art.dilate(ci, b, 2.0, Art.INK)
+	ci.draw_colored_polygon(b, fill)
+	Art.outline(ci, b, 1.7, Art.INK)
+
+static func _cfg_pip(ci: CanvasItem, c: Vector2, col: Color) -> void:
+	Art.fill(ci, Art.ell(c, Vector2(6.5, 6.5), int(c.x + c.y), 0.04, 10), col, 1.5)
+
+static func _mini_face(ci: CanvasItem, c: Vector2, r: float, skin: Color, seed: int) -> void:
+	Art.fill(ci, Art.ell(c, Vector2(r, r * 1.02), seed, 0.03, 14), skin, 1.6)
+	for sx in [-1.0, 1.0]:
+		ci.draw_circle(c + Vector2(r * 0.34 * sx, -r * 0.02), r * 0.16, Art.INK)
+	Art.pl(ci, [c + Vector2(-r * 0.28, r * 0.32), c + Vector2(0, r * 0.52), c + Vector2(r * 0.28, r * 0.32)], maxf(1.5, r * 0.12), Art.INK, seed)
 
 # ---------------------------------------------------------------- 角色
 
@@ -431,6 +614,60 @@ static func heroine(ci: CanvasItem, c: Vector2, s: float) -> void:
 	Art.sil(ci, [Art.P(Art.capsule(Vector2(-40, 56), Vector2(30, 82), 11.0, 40), skin, 1)], false)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+## 阿焰半身。原点在胸口，头顶朝上。
+static func bust(ci: CanvasItem, c: Vector2, s: float) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * (s / 100.0))
+	var hair := Color("d9431f")
+	var skin := Color("d9a072")
+	Art.sil(ci, [
+		Art.P(Art.ell(Vector2(0, 26), Vector2(72, 32), 1, 0.04), Color("8a5a2b")),
+		Art.P(Art.ell(Vector2(0, -48), Vector2(56, 58), 2, 0.05), hair),
+		Art.P(Art.flame_pts(Vector2(-44, -74), 22, 92, 3), hair, 1),
+	], true)
+	ci.draw_colored_polygon(Art.flame_pts(Vector2(-44, -68), 10, 52, 4), Color("ffb03a"))
+	Art.sil(ci, [Art.P(Art.poly([Vector2(-58, 4), Vector2(58, 4), Vector2(46, 44), Vector2(-46, 44)], 5), Art.LEAF, 1)], false)
+	for i in 6:
+		Art.ln(ci, Vector2(-44 + i * 17, 8), Vector2(-40 + i * 16, 40), 2.0, Art.LEAF_D, 6 + i)
+	face(ci, Vector2(0, -24), 40, skin, 20)
+	Art.sil(ci, [
+		Art.P(Art.ell(Vector2(-16, -60), Vector2(28, 15), 21, 0.06, 18, -0.3), hair, 1),
+		Art.P(Art.ell(Vector2(20, -62), Vector2(24, 13), 22, 0.06, 18, 0.4), hair, 1),
+		Art.P(Art.ell(Vector2(18, -80), Vector2(12, 5), 23, 0.05, 12, -0.5), Art.LEAF, 1),
+		Art.P(Art.capsule(Vector2(-38, -42), Vector2(38, -42), 4.2, 24), Art.TEAL, 1),
+	], false)
+	for sx in [-1.0, 1.0]:
+		Art.ln(ci, Vector2(20 * sx, -10), Vector2(30 * sx, -12), 3.0, Color("f5f0e0"), 25)
+		Art.sil(ci, [Art.P(Art.capsule(Vector2(46 * sx, 0), Vector2(54 * sx, 38), 10.0, 40), skin, 1)], false)
+	for i in 5:
+		var x := -24.0 + float(i) * 12.0
+		Art.sil(ci, [Art.P(Art.poly([Vector2(x - 4, 0), Vector2(x + 4, 0), Vector2(x, 14)], 30 + i), Art.BONE, 2)], false, 2.0)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+## 引导气泡。point_left 时尾巴朝左。
+static func speech(ci: CanvasItem, r: Rect2, point_left: bool, seed: int = 8) -> void:
+	var tail_y := r.position.y + r.size.y * 0.56
+	var base_x := r.position.x + 12.0 if point_left else r.end.x - 12.0
+	var tip := Vector2(r.position.x - 26.0, tail_y + 10.0) if point_left else Vector2(r.end.x + 26.0, tail_y + 10.0)
+	var tail := PackedVector2Array([
+		Vector2(base_x, tail_y - 24.0),
+		tip,
+		Vector2(base_x, tail_y + 22.0),
+	])
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 8), r.size), 24, seed, 0.0), Color(0, 0, 0, 0.35))
+	ci.draw_colored_polygon(tail, Art.BONE)
+	var body := Art.rrect(r, 24, seed, 0.85)
+	Art.dilate(ci, body, 3.0, Art.INK)
+	ci.draw_colored_polygon(body, Art.BONE)
+	Art.outline(ci, tail, 3.0, Art.INK)
+	var patch := 8.0 if point_left else -20.0
+	ci.draw_colored_polygon(PackedVector2Array([
+		Vector2(base_x + patch, tail_y - 16.0),
+		Vector2(base_x + patch + 18.0, tail_y - 16.0),
+		Vector2(base_x + patch + 18.0, tail_y + 14.0),
+		Vector2(base_x + patch, tail_y + 14.0),
+	]), Art.BONE)
+	Art.dashed(ci, Art.rrect(r.grow(-9), 16, seed + 2, 0.0), 9, 6, Color("e4c59a"), 2.0)
+
 # ---------------------------------------------------------------- 岩画卡牌
 
 const ALBUM_COL := [Color("c98a55"), Color("b8a27a"), Color("6b4a3a"), Color("a07858"), Color("c4a06a"), Color("8a9a8a"),
@@ -555,59 +792,49 @@ static func palm(ci: CanvasItem, base: Vector2, h: float, seed: int, col: Color 
 static func campfire_scene(ci: CanvasItem, c: Vector2, s: float) -> void:
 	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
 	ci.draw_colored_polygon(Art.ell(Vector2(0, 30), Vector2(90, 26), 1, 0.03, 24), Color(1, 0.6, 0.2, 0.2))
-	Art.item(ci, "fire_3", Vector2.ZERO, 100)
+	Art.item(ci, "fire_4", Vector2.ZERO, 100)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-const SPOTS := {
-	"fire": Vector2(360, 860),
-	"totem": Vector2(560, 700),
-	"hut": Vector2(170, 690),
-	"rack": Vector2(560, 1010),
-	"tower": Vector2(150, 1010),
-}
 
-static func village(ci: CanvasItem, sz: Vector2, builds: Dictionary) -> void:
-	vgrad(ci, Rect2(0, 0, sz.x, 560), Color("7cc6c9"), Color("f6dca0"))
-	ci.draw_circle(Vector2(560, 250), 60, Color(1, 0.95, 0.7, 0.6))
-	ci.draw_circle(Vector2(560, 250), 42, Color("fff1b8"))
-	hills(ci, 430, sz.x, 90, Color("8fb4a8"), 3, 600)
-	hills(ci, 500, sz.x, 70, Color("6f9c6a"), 7, 640)
-	vgrad(ci, Rect2(0, 560, sz.x, sz.y - 560), Color("9cc35a"), Color("6d9a3c"))
-	hills(ci, 600, sz.x, 40, Color("86b54e"), 11, 700)
+## hide = {区域 id: 部件下标}：正在播建造动画的那件先不画
+static func village(ci: CanvasItem, sz: Vector2, builds: Dictionary, level: int = 99, hide: Dictionary = {}) -> void:
+	# 地平线在 450 左右；篝火广场的位置决定小路和广场
+	var hub := TribeArt.area_at("fire")
+	vgrad(ci, Rect2(0, 0, sz.x, 450), Color("7cc6c9"), Color("f6dca0"))
+	ci.draw_circle(Vector2(540, 200), 56, Color(1, 0.95, 0.7, 0.6))
+	ci.draw_circle(Vector2(540, 200), 39, Color("fff1b8"))
+	hills(ci, 320, sz.x, 90, Color("8fb4a8"), 3, 490)
+	hills(ci, 390, sz.x, 70, Color("6f9c6a"), 7, 530)
+	vgrad(ci, Rect2(0, 450, sz.x, sz.y - 450), Color("9cc35a"), Color("6d9a3c"))
+	hills(ci, 490, sz.x, 40, Color("86b54e"), 11, 590)
 	for i in 5:
-		palm(ci, Vector2(30 + i * 160 + Art.srnd(i) * 40, 600), 120 + Art.srnd(i + 3) * 60, i)
+		palm(ci, Vector2(30 + i * 160 + Art.srnd(i) * 40, 490), 110 + Art.srnd(i + 3) * 50, i)
 	var river := PackedVector2Array()
-	for k in 13:
-		var y := 640.0 + float(k) * 70.0
-		river.append(Vector2(640 + sin(float(k) * 0.8) * 30.0, y))
-	for k in 13:
-		var y := 640.0 + float(12 - k) * 70.0
-		river.append(Vector2(720 + sin(float(12 - k) * 0.8) * 30.0, y))
+	for k in 15:
+		var y := 530.0 + float(k) * 70.0
+		river.append(Vector2(700 + sin(float(k) * 0.8) * 14.0, y))
+	for k in 15:
+		var y := 530.0 + float(14 - k) * 70.0
+		river.append(Vector2(740 + sin(float(14 - k) * 0.8) * 14.0, y))
 	ci.draw_colored_polygon(river, Color("5fb4c8"))
 	var path := PackedVector2Array()
+	var top := hub.y - 50.0
+	var plen := sz.y - top
 	for k in 9:
 		var t := float(k) / 8.0
-		path.append(Vector2(360 + sin(t * 4.0) * 40.0 - 50.0 * (1.0 - t), 900 + t * 560))
+		path.append(Vector2(360 + sin(t * 4.0) * 40.0 - 50.0 * (1.0 - t), top + t * plen))
 	for k in 9:
 		var t := 1.0 - float(k) / 8.0
-		path.append(Vector2(360 + sin(t * 4.0) * 40.0 + 50.0 + 40.0 * t, 900 + t * 560))
+		path.append(Vector2(360 + sin(t * 4.0) * 40.0 + 50.0 + 40.0 * t, top + t * plen))
 	ci.draw_colored_polygon(path, Color("d9b778"))
-	ci.draw_colored_polygon(Art.ell(Vector2(360, 880), Vector2(190, 90), 2, 0.04, 30, 0.0, 0.0), Color("d9b778"))
+	ci.draw_colored_polygon(Art.ell(hub + Vector2(0, -10), Vector2(180, 96), 2, 0.04, 30, 0.0, 0.0), Color("d9b778"))
 	for i in 40:
-		var p := Vector2(Art.srnd(i * 5) * sz.x, 620 + Art.srnd(i * 9) * (sz.y - 640))
+		var p := Vector2(Art.srnd(i * 5) * sz.x, 510 + Art.srnd(i * 9) * (sz.y - 530))
 		Art.pl(ci, [p, p + Vector2(-4, -10), p + Vector2(0, -2), p + Vector2(5, -11)], 2.0, Color("4f7a1f"), i)
-	_spot_hut(ci, SPOTS["hut"], builds.get("hut", 0))
-	_spot_totem(ci, SPOTS["totem"], builds.get("totem", 0))
-	_spot_fire(ci, SPOTS["fire"], builds.get("fire", 0))
-	_spot_rack(ci, SPOTS["rack"], builds.get("rack", 0))
-	_spot_tower(ci, SPOTS["tower"], builds.get("tower", 0))
-
-static func _ghost(ci: CanvasItem, c: Vector2, r: Vector2) -> void:
-	Art.dashed(ci, Art.ell(c, r, 5, 0.0, 28, 0.0, 0.0), 10, 8, Color(1, 1, 1, 0.8), 3.0)
+	TribeArt.village(ci, builds, level, hide)
 
 static func _spot_hut(ci: CanvasItem, c: Vector2, st: int) -> void:
 	if st == 0:
-		_ghost(ci, c + Vector2(0, 10), Vector2(90, 40))
 		return
 	var s := 0.9 + 0.08 * float(st)
 	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
@@ -626,65 +853,31 @@ static func _spot_hut(ci: CanvasItem, c: Vector2, st: int) -> void:
 		ci.draw_circle(Vector2(5, -122), 2.5, Art.INK)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-static func _spot_totem(ci: CanvasItem, c: Vector2, st: int) -> void:
-	if st == 0:
-		_ghost(ci, c + Vector2(0, 60), Vector2(50, 22))
+## 格子上的奖励气泡。id 为空时画一枚淡淡的空泡，给编辑器点选。
+static func reward_bubble(ci: CanvasItem, c: Vector2, rad: float, id: String, n: int, seed: int, lift: float = 0.0) -> void:
+	c += Vector2(0, lift)
+	var shadow := Art.ell(c + Vector2(0, rad * 0.28), Vector2(rad * 0.86, rad * 0.22), seed, 0.0, 14, 0.0, 0.0)
+	ci.draw_colored_polygon(shadow, Color(0, 0, 0, 0.16))
+	var body := Art.ell(c, Vector2(rad, rad * 0.94), seed, 0.035, 22)
+	var glass := Color(0.9, 0.97, 1.0, 0.55) if id == "" else Color(0.86, 0.96, 1.0, 0.82)
+	ci.draw_colored_polygon(body, glass)
+	Art.outline(ci, body, maxf(2.0, rad * 0.09), Color(0.25, 0.4, 0.55, 0.85 if id != "" else 0.4))
+	var shine := Art.ell(c + Vector2(-rad * 0.32, -rad * 0.38), Vector2(rad * 0.28, rad * 0.16), seed + 3, 0.0, 12, -0.5, 0.0)
+	ci.draw_colored_polygon(shine, Color(1, 1, 1, 0.72 if id != "" else 0.35))
+	if id == "":
+		var arm := rad * 0.34
+		var w := maxf(2.0, rad * 0.12)
+		ci.draw_line(c + Vector2(-arm, 0), c + Vector2(arm, 0), Color("6a8aaa"), w, true)
+		ci.draw_line(c + Vector2(0, -arm), c + Vector2(0, arm), Color("6a8aaa"), w, true)
 		return
-	ci.draw_set_transform(c, 0.0, Vector2.ONE)
-	ci.draw_colored_polygon(Art.ell(Vector2(0, 66), Vector2(50, 12), 1, 0.0, 20, 0.0, 0.0), Color(0, 0, 0, 0.15))
-	var n: int = min(st + 1, 4)
-	var cols := [Art.WOOD, Art.CLAY, Art.TEAL, Art.OCHRE]
-	for i in n:
-		var y := 40.0 - float(i) * 44.0
-		Art.sil(ci, [Art.P(Art.rrect(Rect2(-26, y - 22, 52, 46), 8, 10 + i, 0.6), cols[i], 1)], i == 0)
-		ci.draw_circle(Vector2(-10, y - 4), 5.0, Art.BONE)
-		ci.draw_circle(Vector2(10, y - 4), 5.0, Art.BONE)
-		ci.draw_circle(Vector2(-10, y - 4), 2.5, Art.INK)
-		ci.draw_circle(Vector2(10, y - 4), 2.5, Art.INK)
-		ci.draw_rect(Rect2(-10, y + 8, 20, 6), Art.INK)
-	if st >= 3:
-		var ty := 40.0 - float(n) * 44.0 + 22.0
-		Art.sil(ci, [Art.P(Art.poly([Vector2(-60, ty), Vector2(0, ty - 20), Vector2(60, ty), Vector2(0, ty + 8)], 20), Art.OCHRE, 1)], false)
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-static func _spot_fire(ci: CanvasItem, c: Vector2, st: int) -> void:
-	for i in 10:
-		var a := TAU * float(i) / 10.0
-		var p := c + Vector2(cos(a) * 130.0, sin(a) * 55.0 + 20.0)
-		if st >= 2 or i % 3 == 0:
-			Art.sil(ci, [Art.P(Art.ell(p, Vector2(16, 10), i, 0.1), Art.STONE)], false, 2.0)
-	if st == 0:
-		Art.item(ci, "fire_1", c + Vector2(0, 10), 70)
+	var icon_y := -rad * 0.08 if n > 1 else 0.0
+	Art.item(ci, id, c + Vector2(0, icon_y), rad * 1.45, false)
+	if n <= 1 or G.font_title == null:
 		return
-	Art.item(ci, "fire_3", c, 90 + float(st) * 12.0)
-	if st >= 4:
-		for sx in [-1.0, 1.0]:
-			Art.sil(ci, [Art.P(Art.capsule(c + Vector2(110 * sx, 30), c + Vector2(160 * sx, 10), 10.0, 7), Art.WOOD, 1)], true)
-
-static func _spot_rack(ci: CanvasItem, c: Vector2, st: int) -> void:
-	if st == 0:
-		_ghost(ci, c + Vector2(0, 30), Vector2(80, 30))
-		return
-	ci.draw_set_transform(c, 0.0, Vector2.ONE)
-	Art.sil(ci, [Art.P(Art.capsule(Vector2(-60, 50), Vector2(-50, -50), 6.0, 1), Art.WOOD, 1),
-		Art.P(Art.capsule(Vector2(60, 50), Vector2(50, -50), 6.0, 2), Art.WOOD, 1),
-		Art.P(Art.capsule(Vector2(-66, -46), Vector2(66, -46), 5.0, 3), Art.WOOD_D, 1)])
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	var goods := ["meat_2", "fish_2", "meat_4", "fish_4", "meat_2"]
-	for i in min(st + 1, 4):
-		Art.item(ci, goods[i], c + Vector2(-36 + i * 24, -14), 40)
-
-static func _spot_tower(ci: CanvasItem, c: Vector2, st: int) -> void:
-	if st == 0:
-		_ghost(ci, c + Vector2(0, 40), Vector2(60, 24))
-		return
-	var h := 60.0 + float(st) * 22.0
-	ci.draw_set_transform(c, 0.0, Vector2.ONE)
-	Art.sil(ci, [Art.P(Art.capsule(Vector2(-40, 50), Vector2(-24, 50 - h), 5.0, 1), Art.WOOD, 1),
-		Art.P(Art.capsule(Vector2(40, 50), Vector2(24, 50 - h), 5.0, 2), Art.WOOD, 1),
-		Art.P(Art.rrect(Rect2(-44, 40 - h, 88, 18), 4, 3, 0.6), Art.WOOD_D, 1),
-		Art.P(Art.poly([Vector2(-50, 40 - h), Vector2(0, 0 - h), Vector2(50, 40 - h)], 4), Color("d9a54a"), 1)])
-	for k in int(h / 26.0):
-		var y := 40.0 - float(k) * 26.0
-		Art.ln(ci, Vector2(-36 + k * 1.5, y), Vector2(36 - k * 1.5, y), 3.0, Art.WOOD_D, k)
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var f: Font = G.font_title
+	var fs := int(clampf(round(rad * 0.58), 11.0, 20.0))
+	var text := str(n)
+	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var pos := c + Vector2(-tw * 0.5, rad * 0.62)
+	ci.draw_string_outline(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(3, int(fs / 5.0)), Art.INK)
+	ci.draw_string(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)

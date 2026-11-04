@@ -1,0 +1,9 @@
+{
+	"cols": 7,
+	"rows": 9,
+	"max_energy": 100,
+	"regen_sec": 120,
+	"random_orders": 5,
+	"token_step": 10,
+	"inv_max": 10
+}

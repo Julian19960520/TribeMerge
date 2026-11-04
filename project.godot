@@ -1,4 +1,10 @@
 ; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -13,6 +19,7 @@ boot_splash/bg_color=Color(0.231, 0.137, 0.078, 1)
 
 G="*res://scripts/Game.gd"
 Sfx="*res://scripts/Sfx.gd"
+Items="*res://scripts/ItemAnim.gd"
 
 [display]
 
@@ -21,7 +28,14 @@ window/size/viewport_height=1480
 window/size/window_width_override=468
 window/size/window_height_override=962
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/tribe_config/plugin.cfg")
+
+[gui]
+
+common/snap_controls_to_pixels=false
 
 [rendering]
 

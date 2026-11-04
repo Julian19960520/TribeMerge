@@ -1,0 +1,14 @@
+{
+	"cols": 7,
+	"rows": 9,
+	"max_energy": 100,
+	"regen_sec": 120,
+	"random_orders": 4,
+	"token_step": 10,
+	"inv_max": 10,
+	"xp_base": 3,
+	"xp_div": 2,
+	"energy_price": 20,
+	"energy_price_step": 10,
+	"energy_price_max": 60
+}

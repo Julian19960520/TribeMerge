@@ -1,0 +1,174 @@
+{
+	"levels": [
+		{
+			"level": 1,
+			"orders": [
+				{
+					"items": [
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 32,
+					"who": 0,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 56,
+					"who": 2,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_4",
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 64,
+					"who": 1,
+					"xp": 2
+				}
+			]
+		},
+		{
+			"level": 2,
+			"orders": [
+				{
+					"items": [
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 56,
+					"who": 3,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_6"
+					],
+					"rewards": [],
+					"shell": 112,
+					"who": 2,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_5",
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 88,
+					"token": 2,
+					"who": 0,
+					"xp": 2
+				}
+			]
+		},
+		{
+			"level": 3,
+			"orders": [
+				{
+					"items": [
+						"fruit_6"
+					],
+					"rewards": [],
+					"shell": 112,
+					"who": 1,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_5",
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 112,
+					"who": 2,
+					"xp": 2
+				},
+				{
+					"items": [
+						"fruit_6",
+						"fruit_4"
+					],
+					"rewards": [],
+					"shell": 144,
+					"who": 0,
+					"xp": 2
+				}
+			]
+		},
+		{
+			"level": 4,
+			"orders": [
+				{
+					"items": [
+						"fruit_6"
+					],
+					"rewards": [],
+					"shell": 112,
+					"who": 3,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_7"
+					],
+					"rewards": [],
+					"shell": 224,
+					"token": 3,
+					"who": 2,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_6",
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 168,
+					"who": 1,
+					"xp": 2
+				}
+			]
+		},
+		{
+			"level": 5,
+			"orders": [
+				{
+					"items": [
+						"fruit_7"
+					],
+					"rewards": [],
+					"shell": 224,
+					"who": 0,
+					"xp": 1
+				},
+				{
+					"items": [
+						"fruit_6",
+						"fruit_6"
+					],
+					"rewards": [],
+					"shell": 224,
+					"who": 1,
+					"xp": 2
+				},
+				{
+					"items": [
+						"fruit_7",
+						"fruit_5"
+					],
+					"rewards": [],
+					"shell": 280,
+					"token": 4,
+					"who": 2,
+					"xp": 2
+				}
+			]
+		}
+	]
+}
