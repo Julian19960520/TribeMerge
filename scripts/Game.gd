@@ -135,8 +135,10 @@ func _process(delta: float) -> void:
 			save_game()
 	_tick_cooks()
 
+## 服务器时间（Cloud 按服务器给的差值换算）；没有 Cloud 时用本机时间。体力回复、冷却、制作计时都用它。
 func now() -> float:
-	return Time.get_unix_time_from_system()
+	var c = get_node_or_null("/root/Cloud")
+	return c.server_now() if c != null else Time.get_unix_time_from_system()
 
 func _regen() -> void:
 	if energy >= MAX_ENERGY:
@@ -185,6 +187,58 @@ func cloud_mark() -> void:
 	var c = get_node_or_null("/root/Cloud")
 	if c != null:
 		c.mark()
+
+## 服务器模式：云服务开着（正式玩法），花钱、领奖、开箱、建造都先问服务器。
+## 关掉时（--cloud-off、测试脚本）走下面的本地规则。
+func server_mode() -> bool:
+	var c = get_node_or_null("/root/Cloud")
+	return c != null and c.enabled
+
+func _cloud():
+	return get_node_or_null("/root/Cloud")
+
+## 本地先生效、服务器随后结算的事件（交单、气泡、收取、退款）
+func cloud_event(ev: Dictionary) -> void:
+	if server_mode():
+		_cloud().event(ev)
+
+## 把服务器状态里的一个字段写回本地（Cloud.apply_state 用）
+func set_server_field(k: String, v) -> void:
+	match k:
+		"hot_bought", "deals_bought", "book_claimed":
+			set(k, (v as Dictionary).duplicate() if v is Dictionary else {})
+		"builds", "cards":
+			var d := {}
+			if v is Dictionary:
+				for key in v:
+					d[str(key)] = int(v[key])
+			set(k, d)
+		"pass_free", "pass_prem":
+			var a := []
+			if v is Array:
+				for x in v:
+					a.append(int(x))
+			set(k, a)
+		"pass_super_bonus":
+			pass_super_bonus = bool(v)
+		"deals_day":
+			deals_day = str(v)
+		_:
+			set(k, int(v))
+
+## 服务器拒绝 / 连不上时的提示。「琥珀不够」这类调用方自己会提示。
+func _srv_fail(r: Dictionary) -> void:
+	if main != null and not str(r.get("error", "")).begins_with("not_enough"):
+		main.toast(str(r.get("message", "连不上服务器，请稍后再试")))
+
+## 服务器发的、UI 不会另外处理的东西：实物进暂存，体力 / 沙漏直接加
+func take_give(give: Dictionary) -> void:
+	for id in give.get("items", []):
+		stash_push(str(id))
+	if int(give.get("energy", 0)) > 0:
+		add_currency("energy", int(give["energy"]))
+	if int(give.get("rush", 0)) > 0:
+		add_currency("sand", int(give["rush"]))
 
 func event_left() -> int:
 	return 35 * 86400 + 15 * 3600 - int(fmod(now(), 86400.0))
@@ -418,12 +472,70 @@ func energy_price() -> int:
 	return mini(base + step * energy_buys, maxi(top, base))
 
 func buy_energy() -> bool:
+	if server_mode():
+		var r: Dictionary = await _cloud().act("/v1/energy/buy")
+		if not r.get("ok", false):
+			_srv_fail(r)
+		return bool(r.get("ok", false))
 	_check_day()
 	if not spend("amber", energy_price()):
 		return false
 	energy_buys += 1
 	dirty()
 	return true
+
+## 储物洞扩一格（花琥珀）
+func expand_storage() -> bool:
+	if server_mode():
+		var r: Dictionary = await _cloud().act("/v1/storage/expand")
+		if not r.get("ok", false):
+			_srv_fail(r)
+		return bool(r.get("ok", false))
+	if inv_cap >= INV_MAX or not spend("amber", 50):
+		return false
+	inv_cap += 1
+	dirty()
+	return true
+
+## 领一次升级奖励。成功返回奖励列表；已经领过返回 []；连不上返回 null（奖励留着，稍后再领）。
+func claim_level(lv: int):
+	var rw := Data.level_rewards(lv)
+	if not server_mode():
+		return rw
+	var r: Dictionary = await _cloud().act("/v1/level/claim", {"level": lv}, rw)
+	if r.get("ok", false):
+		return rw
+	if str(r.get("error", "")) == "already_claimed":
+		return []
+	_srv_fail(r)
+	return null
+
+## 集市购买。返回 {"ok", "message"}；成功时服务器已扣琥珀、记了已购数。
+func shop_buy(key: String, id: String, price: int, deal: bool) -> Dictionary:
+	if server_mode():
+		var r: Dictionary = await _cloud().act("/v1/shop/buy", {"key": key, "item": id})
+		return r
+	if not spend("amber", price):
+		return {"ok": false, "error": "not_enough_amber", "message": "琥珀不够了！"}
+	var book: Dictionary = deals_bought if deal else hot_bought
+	book[key] = int(book.get(key, 0)) + 1
+	return {"ok": true}
+
+## 琥珀礼包：服务器下单 → 支付渠道（现在是 mock）回调到账。返回到账的琥珀数，失败 0。
+func buy_amber_pack(k: int) -> int:
+	var n := int(Data.AMBER_PACKS[k].get("n", 0)) if k >= 0 and k < Data.AMBER_PACKS.size() else 0
+	if not server_mode():
+		return n
+	var c = _cloud()
+	var r: Dictionary = await c.act("/v1/payments/orders", {"pack": k})
+	if not r.get("ok", false):
+		_srv_fail(r)
+		return 0
+	var paid: Dictionary = await c.act("/v1/payments/mock/%s/pay" % str(r.get("order_id", "")), {}, [["amber_1", n]])
+	if not paid.get("ok", false) or str(paid.get("status", "")) != "paid":
+		_srv_fail(paid)
+		return 0
+	return int(paid.get("amber", n))
 
 func xp_need() -> int:
 	return Data.xp_need(level)
@@ -524,6 +636,12 @@ func book_prize_count() -> int:
 func claim_book(id: String) -> int:
 	if not book_prize(id):
 		return 0
+	if server_mode():
+		var r: Dictionary = await _cloud().act("/v1/book/claim", {"item": id})
+		if not r.get("ok", false):
+			_srv_fail(r)
+			return 0
+		return int(r.get("give", {}).get("energy", maxi(1, Data.lv(id))))
 	book_claimed[id] = true
 	dirty()
 	changed.emit()
@@ -703,6 +821,19 @@ func roll_produce(gen_id: String) -> String:
 		if r < 0.0:
 			return str(d["id"])
 	return str(drops.back()["id"])
+
+## 打开一个宝箱：服务器抽（连不上返回 []，宝箱留着）；本地模式用 roll_chest
+func open_chest() -> Array:
+	if not server_mode():
+		return roll_chest()
+	var r: Dictionary = await _cloud().act("/v1/chest/open")
+	if not r.get("ok", false):
+		_srv_fail(r)
+		return []
+	var out := []
+	for id in r.get("give", {}).get("items", []):
+		out.append(str(id))
+	return out
 
 func roll_chest() -> Array:
 	var out := []
@@ -1217,6 +1348,7 @@ func complete_order(oi: int) -> Array:
 			return []
 	elif cells.size() != o["items"].size():
 		return []
+	cloud_event({"type": "order", "order": o.duplicate(true)})
 	for k in cells:
 		board[k]["id"] = ""
 		board[k].erase("ck")
@@ -1288,6 +1420,8 @@ func pass_claimable() -> bool:
 	return pass_endless_ready() > 0
 
 func claim_pass_free(lv: int) -> Array:
+	if server_mode():
+		return await _claim_pass_srv("free", lv)
 	if lv < 1 or lv > Data.PASS_LEVELS.size():
 		return []
 	if pass_reached() < lv or _pass_has(pass_free, lv):
@@ -1298,6 +1432,8 @@ func claim_pass_free(lv: int) -> Array:
 	return Data.PASS_LEVELS[lv - 1]["free"]
 
 func claim_pass_prem(lv: int) -> Array:
+	if server_mode():
+		return await _claim_pass_srv("prem", lv)
 	if lv < 1 or lv > Data.PASS_LEVELS.size() or _pass_has(pass_prem, lv):
 		return []
 	if pass_tier < 1:
@@ -1311,7 +1447,22 @@ func claim_pass_prem(lv: int) -> Array:
 	changed.emit()
 	return Data.PASS_LEVELS[lv - 1]["prem"]
 
+func _claim_pass_srv(track: String, lv: int) -> Array:
+	var rw: Array = [["chest_1", 1]]
+	if track != "endless":
+		if lv < 1 or lv > Data.PASS_LEVELS.size():
+			return []
+		rw = Data.PASS_LEVELS[lv - 1][track]
+	var r: Dictionary = await _cloud().act("/v1/pass/claim", {"track": track, "level": lv}, rw)
+	if not r.get("ok", false):
+		if main:
+			main.toast(str(r.get("message", "连不上服务器")))
+		return []
+	return rw
+
 func claim_pass_endless() -> Array:
+	if server_mode():
+		return await _claim_pass_srv("endless", 0)
 	if pass_tier != 2:
 		if main:
 			main.toast("超级贵宾可领取循环奖励")
@@ -1324,6 +1475,14 @@ func claim_pass_endless() -> Array:
 	return [["chest_1", 1]]
 
 func buy_pass_vip() -> bool:
+	if server_mode():
+		var r: Dictionary = await _cloud().act("/v1/pass/buy", {"tier": "vip"})
+		if not r.get("ok", false):
+			if main:
+				main.toast(str(r.get("message", "连不上服务器")))
+			return false
+		take_give({"energy": int(r.get("give", {}).get("energy", 0))})
+		return true
 	if pass_tier >= 1:
 		if main:
 			main.toast("已经拥有")
@@ -1337,6 +1496,14 @@ func buy_pass_vip() -> bool:
 	return true
 
 func buy_pass_super() -> bool:
+	if server_mode():
+		var r: Dictionary = await _cloud().act("/v1/pass/buy", {"tier": "super"})
+		if not r.get("ok", false):
+			if main:
+				main.toast(str(r.get("message", "连不上服务器")))
+			return false
+		take_give({"energy": int(r.get("give", {}).get("energy", 0))})
+		return true
 	if pass_tier >= 2:
 		if main:
 			main.toast("已经拥有")
@@ -1418,6 +1585,15 @@ func build_rewards(id: String) -> Array:
 func do_build(id: String) -> Dictionary:
 	if not build_can(id):
 		return {}
+	if server_mode():
+		var rw := build_rewards(id)
+		var r: Dictionary = await _cloud().act("/v1/build", {"area": id}, rw)
+		if not r.get("ok", false):
+			_srv_fail(r)
+			if main and str(r.get("error", "")).begins_with("not_enough"):
+				main.toast(str(r.get("message", "")))
+			return {}
+		return {"idx": int(r.get("give", {}).get("idx", int(builds.get(id, 1)) - 1)), "rewards": rw}
 	var cost := build_cost(id)
 	var rewards := build_rewards(id)
 	if not spend("shell", cost):
@@ -1430,6 +1606,19 @@ func do_build(id: String) -> Dictionary:
 	return {"idx": st, "rewards": rewards}
 
 func open_pack() -> Array:
+	if server_mode():
+		var r: Dictionary = await _cloud().act("/v1/pack/open")
+		if not r.get("ok", false):
+			_srv_fail(r)
+			return []
+		var give: Dictionary = r.get("give", {})
+		var got := []
+		for c in give.get("cards", []):
+			got.append([int(c[0]), int(c[1])])
+		if give.has("albums_done") and main:
+			main.toast("集齐卡册！大奖已放入暂存区")
+		take_give(give)
+		return got
 	var out := []
 	for i in 2:
 		var a := rng.randi() % Data.ALBUMS.size()

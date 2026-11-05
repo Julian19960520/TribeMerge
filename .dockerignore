@@ -1,0 +1,9 @@
+# 服务器镜像只需要 data/ 和 server/（见 server/Dockerfile）
+*
+!data
+!server
+**/__pycache__
+**/*.db
+**/*.db-*
+**/.env
+**/.pytest_cache

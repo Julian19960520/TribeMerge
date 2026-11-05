@@ -52,7 +52,7 @@ static func energy() -> PopupBase:
 	b.res = "amber_3"
 	UI.lbl(p.box, "今天第 %d 次购买，每次涨价，零点恢复。" % (G.energy_buys + 1), Rect2(r.position.x + 30, r.position.y + 676, r.size.x - 60, 40), 22, Color("8a6a4a"))
 	b.pressed.connect(func():
-		if G.buy_energy():
+		if await G.buy_energy():
 			G.main.fly("fire_2", Vector2(360, 760), G.main.topbar.target("energy"), func(): G.add_currency("energy", 100), 90)
 			p.close()
 		else:
@@ -236,9 +236,12 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 184, r.size.x - 44, 64), a["price"], "orange", Callable(), 30)
 	b.title_font = false
 	b.pressed.connect(func():
+		# 服务器下单 → 支付回调到账（现在是 mock 支付），到账后再播飞入动画
+		var got: int = await G.buy_amber_pack(k)
+		if got <= 0:
+			return
 		G.main.fly("amber_3", b.get_global_rect().get_center() + Vector2(0, -100), G.main.topbar.target("amber"), func(): G.add_currency("amber", a["n"]), 80)
-		Cloud.purchase(int(a["n"]))
-		G.main.toast("演示版本：琥珀 ×%d 已到账" % a["n"]))
+		G.main.toast("演示版本：琥珀 ×%d 已到账" % got))
 
 static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
 	var r := Rect2(30, 236, 660, 262)
@@ -289,7 +292,7 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 	refresh.call()
 	b.pressed.connect(func():
 		var origin: Vector2 = b.get_global_rect().get_center() + Vector2(0, -110)
-		if _buy_from_shop(str(d["id"]), origin):
+		if await _buy_from_shop(str(d["id"]), origin):
 			refresh.call())
 
 # ---------------------------------------------------------------- 设置
@@ -329,6 +332,10 @@ static func settings() -> PopupBase:
 	cfg.pressed.connect(func():
 		p.close()
 		G.main.show_screen("cfg"))
+	var acct := UI.btn(p.box, Rect2(106, r.position.y + 510, 508, 70), "账号与数据", "teal", Callable(), 30)
+	acct.pressed.connect(func():
+		p.close()
+		load("res://scripts/ui/AccountPopup.gd").open())
 	var reset := UI.btn(p.box, Rect2(r.end.x - 170, r.position.y + 690, 130, 50), "重新开始", "grey", Callable(), 20)
 	reset.title_font = false
 	reset.pressed.connect(func():
@@ -415,7 +422,7 @@ static func build(id: String) -> PopupBase:
 			Sfx.play("deny")
 			G.main.toast("贝币不够，去完成订单吧！")
 			return
-		var res := G.do_build(id)
+		var res: Dictionary = await G.do_build(id)
 		if res.is_empty():
 			return
 		var idx := int(res["idx"])
@@ -584,7 +591,7 @@ static func _book_chain(page: Control, r: Rect2, chain_id: String, y: float) -> 
 				if not G.book_prize(id):
 					G.main.open("item_info", id)
 					return
-				var shells := G.claim_book(id)
+				var shells: int = await G.claim_book(id)
 				if shells <= 0:
 					return
 				box.queue_redraw()
@@ -682,9 +689,8 @@ static func inventory() -> PopupBase:
 			unlock.position = centers[G.inv_cap] + Vector2(-54, 30)
 	refresh.call()
 	unlock.pressed.connect(func():
-		if G.spend("amber", 50):
-			var k := G.inv_cap
-			G.inv_cap += 1
+		if await G.expand_storage():
+			var k := G.inv_cap - 1
 			G.dirty()
 			G.board_changed.emit()
 			Sfx.play("merge", 1.2)
@@ -827,7 +833,7 @@ static func item_info(id: String) -> PopupBase:
 			buy.set_meta("iid", bought_id)
 			buy.pressed.connect(func():
 				var from := buy.get_global_rect().get_center()
-				if _buy_from_shop(bought_id, from):
+				if await _buy_from_shop(bought_id, from):
 					refresh_buys.call()
 					for cell_box in cells:
 						cell_box.queue_redraw())
@@ -887,13 +893,10 @@ static func _buy_from_shop(id: String, origin: Vector2) -> bool:
 	var offer := _shop_offer(id)
 	if offer.is_empty() or G.main == null:
 		return false
-	if not G.spend("amber", int(offer["price"])):
-		G.main.toast("琥珀不够了！")
+	var r: Dictionary = await G.shop_buy(str(offer["key"]), id, int(offer["price"]), bool(offer["deal"]))
+	if not r.get("ok", false):
+		G.main.toast("琥珀不够了！" if str(r.get("error", "")) == "not_enough_amber" else str(r.get("message", "连不上服务器，请稍后再试")))
 		return false
-	var deal := bool(offer["deal"])
-	var book: Dictionary = G.deals_bought if deal else G.hot_bought
-	var key := str(offer["key"])
-	book[key] = int(book.get(key, 0)) + 1
 	G.discover(id)
 	G.stash_push(id)
 	_fly_stash([[id, origin]])
@@ -944,8 +947,18 @@ static func levelup() -> PopupBase:
 	tw.tween_property(hint, "modulate:a", 0.3, 0.6)
 	tw.tween_property(hint, "modulate:a", 1.0, 0.6)
 	Sfx.play("fanfare")
+	var claiming := {"busy": false}
 	p.on_tap = func():
-		grant_rewards(rewards, func(k): return spots[k] if k < spots.size() else Vector2(360, 700))
+		# 升级奖励由服务器发：连不上就先留着弹窗，稍后再点
+		if claiming["busy"]:
+			return
+		claiming["busy"] = true
+		var got = await G.claim_level(G.level)
+		claiming["busy"] = false
+		if got == null:
+			return
+		if not (got as Array).is_empty():
+			grant_rewards(got, func(k): return spots[k] if k < spots.size() else Vector2(360, 700))
 		p.on_tap = Callable()
 		p.close()
 	var redraw := Timer.new()
@@ -1126,6 +1139,7 @@ static func board_reward(entries: Array) -> PopupBase:
 				if Layout.parse_reward(cell.get("rw", null)).is_empty():
 					continue
 				cell.erase("rw")
+				G.cloud_event({"type": "bubble", "cell": i})
 			rewards.append([str(e["id"]), int(e["n"])])
 		given["ok"] = true
 		if rewards.is_empty():
@@ -1415,7 +1429,12 @@ static func pack() -> PopupBase:
 		state["open"] = true
 		Sfx.play("merge", 1.3)
 		hint.visible = false
-		var got := G.open_pack()
+		var got: Array = await G.open_pack()
+		if got.is_empty():
+			# 连不上服务器：卡包放回暂存区
+			G.stash_push("pack_1")
+			p.close()
+			return
 		for k in got.size():
 			var ab: int = got[k][0]
 			var ix: int = got[k][1]

@@ -1,51 +1,46 @@
-# 排行榜服务器
+# 游戏服务器
 
-按「部落解锁进度」（已建成的建造部件总数）给玩家排名。只用 Python 3 标准库，不用装依赖。
+账号、云存档、服务器经济（货币、集市、建造、通行证、卡包、领奖）、热卖、排行榜。
+FastAPI + Uvicorn，SQLAlchemy 2 + Alembic，本地 SQLite / 正式 PostgreSQL。
+设计、归属表、接口清单、部署和开销估算见仓库根目录 `DESIGN.md`「十二」。
 
 ## 启动
 
-双击 `启动排行榜服务器.bat`，或：
+不用 Docker（Python 3.12）：
 
 ```
-python server/rank_server.py --host 127.0.0.1 --port 8765 --db server/rank.db
+pip install -r server/requirements.txt
+python server/run.py                 # 先 alembic upgrade head，再起 Uvicorn：http://127.0.0.1:8765
 ```
 
-默认监听 `http://127.0.0.1:8765`，数据存在 `server/rank.db`（SQLite，已在 .gitignore 里）。
-游戏连哪个地址由 `data/rules.json` 的 `rank_server` 决定。
+或双击 `启动服务器.bat`（第一次自动装依赖）。数据在 `server/tribe.db`。接口文档：http://127.0.0.1:8765/docs
 
-## 接口
-
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/api/health` | 健康检查，返回 `{"ok": true}` |
-| POST | `/api/submit` | 提交成绩，body：`{"id": "TRB12345678", "name": "昵称", "progress": 7, "time": 1793000000}`。`time` 是达到这个进度的 Unix 时间（秒），缺省取服务器时间，未来时间会被截到当前。返回 `{"ok", "rank", "total", "progress"}` |
-| GET | `/api/top?n=50&id=TRB12345678` | 前 n 名（最多 200），并返回自己的名次 `me`（没提交过为 null） |
-
-规则：
-- 每个 id 只保留最高进度。进度上涨时记录新的达成时间；进度没涨只更新昵称。
-- 排序：进度从高到低；平分时先达到的排前面；再相同按 id。
-- id 只允许字母、数字、`_`、`-`，最长 32；昵称最长 16 字。
-
-## 手动验证
+用 Docker（app + PostgreSQL）：
 
 ```
-curl -X POST http://127.0.0.1:8765/api/submit -H "Content-Type: application/json" -d "{\"id\":\"TEST1\",\"name\":\"测试\",\"progress\":3}"
-curl "http://127.0.0.1:8765/api/top?n=10&id=TEST1"
+cd server
+docker compose up --build
 ```
 
-或运行 `python server/test_rank.py`（会在临时目录起一个独立服务器，不碰 rank.db）。
+配置全部是 `TRIBE_` 开头的环境变量，复制 `.env.example` 为 `.env` 再改。正式环境前面必须放 HTTPS 反向代理。
 
-## 云存档 + 热卖
+## 测试
 
-同一个服务器还提供云存档和集市热卖（`cloud.py`，配置 `cloud_config.json`，规则和开销估算见 DESIGN.md「十二」）：
+```
+pip install -r server/requirements-dev.txt
+cd server && python -m pytest -q
+```
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| POST | `/api/register` | `{"id"}` → `{"token"}`。id 已注册返回 409 |
-| GET | `/api/save?id=` | 头 `X-Token`。→ `{"version", "hash", "data"}`，data 是 base64 的 gzip JSON，没传过是空串 |
-| POST | `/api/save` | 头 `X-Token`。`{"id", "base", "hash", "data"}` → `{"version"}`；base 落后 409，校验不过 422（带 reason） |
-| POST | `/api/purchase` | 头 `X-Token`。`{"id", "amber"}`：充值到账，下一份快照放行这么多琥珀 |
-| GET | `/api/hot?id=` | 头 `X-Token`。当天热卖换货 `{"picks": [{"slot", "id"}]}`，每人每天只抽一次；没快照 404 |
-| GET | `/api/time` | 服务器时间 |
+游戏联调（自起临时服务器，两台设备各一套测试文件）：
 
-所有成功返回都带 `now`（服务器 Unix 时间）和 `day`（北京日期）。自测：`python server/test_cloud.py`。
+```
+Godot_v4.6.3-stable_win64_console.exe --headless --path . --script tools/cloud_check.gd
+```
+
+## 表结构迁移
+
+```
+cd server
+alembic revision --autogenerate -m "说明"   # 生成迁移，检查后提交
+alembic upgrade head                        # run.py 启动时也会自动执行
+```

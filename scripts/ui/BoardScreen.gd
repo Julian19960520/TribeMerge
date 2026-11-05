@@ -914,6 +914,7 @@ func _on_undo() -> void:
 
 func _clear_undo() -> void:
 	if _undo_pay > 0:
+		G.cloud_event({"type": "refund", "item": _undo_id})
 		G.add_currency("shell", _undo_pay)
 		_undo_pay = 0
 	_undo_cell = -1
@@ -987,9 +988,13 @@ func _on_activate(i: int) -> void:
 			G.board_changed.emit()
 			board.select(-1)
 			Sfx.play("coin")
+			G.cloud_event({"type": "collect", "item": id})
 			G.main.fly(id, board.cell_global(i), G.main.topbar.target(kind), func(): G.add_currency(kind, v), 70)
 		"chest":
-			var items := G.roll_chest()
+			# 宝箱由服务器开：连不上就留在原地
+			var items: Array = await G.open_chest()
+			if items.is_empty() or str(G.board[i]["id"]) != id:
+				return
 			G.board[i]["id"] = ""
 			var extra := 0
 			for it in items:
@@ -1060,6 +1065,7 @@ func _on_stash() -> void:
 			G.dirty()
 			G.changed.emit()
 			Sfx.play("coin")
+			G.cloud_event({"type": "collect", "item": id})
 			G.main.fly(id, stash_pos(), G.main.topbar.target(kind), func(): G.add_currency(kind, v), 70)
 		"chest":
 			_take_stash_chest()
@@ -1080,10 +1086,13 @@ func _on_stash() -> void:
 
 ## 暂存区顶上的宝箱：先改完棋盘和暂存，再发一次信号
 func _take_stash_chest() -> void:
+	var got: Array = await G.open_chest()
+	if got.is_empty() or G.stash.is_empty() or Data.type_of(str(G.stash.back())) != "chest":
+		return
 	G.stash.pop_back()
 	var extra := 0
 	var placed := 0
-	for it in G.roll_chest():
+	for it in got:
 		G.discover(it)
 		var to := G.find_empty_near(G.idx(0, 0))
 		if to < 0:

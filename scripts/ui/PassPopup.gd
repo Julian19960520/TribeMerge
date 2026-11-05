@@ -112,14 +112,14 @@ static func _stamp(p: PopupBase, r: Rect2) -> void:
 	lab.rotation = 0.18
 
 static func _do_vip(p: PopupBase) -> void:
-	if not G.buy_pass_vip():
+	if not await G.buy_pass_vip():
 		return
 	p.close()
 	G.main.toast("已激活贵宾：火种 ×150，高级奖励已开放")
 
 static func _do_super(p: PopupBase) -> void:
 	var fresh := G.pass_tier == 0
-	if not G.buy_pass_super():
+	if not await G.buy_pass_super():
 		return
 	p.close()
 	if fresh:
@@ -128,17 +128,17 @@ static func _do_super(p: PopupBase) -> void:
 		G.main.toast("已升级超级贵宾：通行证 +10，循环奖励已开放")
 
 static func _claim_free(lv: int, btn: Control) -> void:
-	var rw: Array = G.claim_pass_free(lv)
+	var rw: Array = await G.claim_pass_free(lv)
 	if not rw.is_empty():
 		_grant(btn, rw)
 
 static func _claim_prem(lv: int, btn: Control) -> void:
-	var rw: Array = G.claim_pass_prem(lv)
+	var rw: Array = await G.claim_pass_prem(lv)
 	if not rw.is_empty():
 		_grant(btn, rw)
 
 static func _claim_endless(btn: Control) -> void:
-	var rw: Array = G.claim_pass_endless()
+	var rw: Array = await G.claim_pass_endless()
 	if not rw.is_empty():
 		_grant(btn, rw)
 

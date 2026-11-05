@@ -1,7 +1,8 @@
 extends Node
 ## 排行榜客户端（自动加载 Rank）。
 ## 排名指标：部落解锁进度 = 所有区域已建成的部件总数（G.builds 里每个区域的段数，按部件上限截断）。
-## 进度上涨时记下达成时间并自动上传；连不上服务器只记一笔，下次进度变化或打开排行榜时补传。
+## 进度由服务器从它记的建造进度算（建造走服务器，见 Cloud），客户端不再上报数字；这里只同步昵称、查名次。
+## 请求带 Cloud 的登录 token（Authorization: Bearer）。连不上服务器只记一笔，下次进度变化或打开排行榜时再试。
 ## 服务器地址：data/rules.json 的 rank_server。状态（默认昵称、已上传的进度；以后改成平台账号名）存在 user://rank_state.json，不动主存档。
 
 signal synced(ok: bool)
@@ -127,14 +128,14 @@ func submit() -> void:
 		_again = true
 		return
 	_sending = true
-	var body := JSON.stringify({"id": G.player_id, "name": nick, "progress": progress,
-		"time": reached_at if reached_at > 0.0 else Time.get_unix_time_from_system()})
+	var body := JSON.stringify({"name": nick})
 	var want := progress
-	_request("/api/submit", HTTPClient.METHOD_POST, body, func(ok: bool, d: Dictionary):
+	_request("/v1/rank/name", HTTPClient.METHOD_POST, body, func(ok: bool, d: Dictionary):
 		_sending = false
 		if ok:
 			sent = want
-			last_rank = int(d.get("rank", 0))
+			var me = d.get("me")
+			last_rank = int(me.get("rank", 0)) if me is Dictionary else 0
 			_save()
 		else:
 			_retry_t = RETRY_SEC
@@ -149,7 +150,7 @@ func submit() -> void:
 func fetch(cb: Callable) -> void:
 	if sent != progress and not _sending:
 		submit()
-	_request("/api/top?n=%d&id=%s" % [top_n, G.player_id.uri_encode()], HTTPClient.METHOD_GET, "", func(ok: bool, d: Dictionary):
+	_request("/v1/rank/top?n=%d" % top_n, HTTPClient.METHOD_GET, "", func(ok: bool, d: Dictionary):
 		if ok:
 			var me = d.get("me")
 			if me is Dictionary:
@@ -172,6 +173,9 @@ func _request(path: String, method: int, body: String, done: Callable) -> void:
 		else:
 			done.call(false, {}))
 	var headers := PackedStringArray(["Content-Type: application/json"])
+	var cloud = get_node_or_null("/root/Cloud")
+	if cloud != null and str(cloud.token) != "" and str(cloud.kicked) == "":
+		headers.append("Authorization: Bearer " + str(cloud.token))
 	var err := h.request(url + path, headers, method, body)
 	if err != OK:
 		h.queue_free()

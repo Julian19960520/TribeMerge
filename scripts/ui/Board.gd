@@ -238,6 +238,7 @@ func _grant_board_now(batch: Array) -> void:
 		if Layout.parse_reward(cell.get("rw", null)).is_empty():
 			continue
 		cell.erase("rw")
+		G.cloud_event({"type": "bubble", "cell": i})
 		var id := str(e["id"])
 		var n := int(e["n"])
 		var kind := ""
