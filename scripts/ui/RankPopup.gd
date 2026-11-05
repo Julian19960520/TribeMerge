@@ -1,10 +1,15 @@
 class_name RankPopup
 extends RefCounted
-## 部落排行：按部落解锁进度（已建成部件数）排名，平分时先达到的在前。自己那行高亮，底部固定显示自己的名次。
+## 部落排行：按部落解锁进度（已建成部件数）排名，平分时先达到的在前。前三名站领奖台，第四名起是列表，自己高亮，底部固定显示自己的名次。
 ## 名字头像以后接平台账号，这里不提供改名。连不上服务器时列表区显示提示和「重试」，不影响游戏。
 
 const ROW := 78.0
 const R := Rect2(36, 206, 648, 1110)
+## 领奖台区域高度和三级台阶高度（第一、二、三名）
+const POD_H := 330.0
+const STEP_H := [160.0, 124.0, 100.0]
+const STEP_GAP := 6.0
+const MEDAL := [Color("f2c35a"), Color("cfc9c0"), Color("d08a4a")]
 
 static func open() -> PopupBase:
 	var p := PopupBase.new()
@@ -18,28 +23,31 @@ static func _build(p: PopupBase) -> void:
 	var x0 := r.position.x + 30
 	var w := r.size.x - 60
 
-	# 我的进度
-	UI.box(p.box, Rect2(x0, r.position.y + 62, w, 132), func(ci, sz): _card(ci, sz, Color("fbeccb"), Art.LEATHER, 3))
-	UI.lbl(p.box, "我的部落进度", Rect2(x0 + 24, r.position.y + 72, 260, 40), 24, Color("8a5a30"), HORIZONTAL_ALIGNMENT_LEFT)
-	var prog := UI.lbl(p.box, "", Rect2(x0 + 24, r.position.y + 110, 300, 60), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 8, Art.INK, true)
-	var areas := UI.lbl(p.box, "", Rect2(x0 + 24, r.position.y + 158, 330, 30), 20, Color("8a7a66"), HORIZONTAL_ALIGNMENT_LEFT)
-	var rank_big := UI.lbl(p.box, "", Rect2(x0 + w - 250, r.position.y + 84, 226, 70), 46, Art.FIRE2, HORIZONTAL_ALIGNMENT_RIGHT, 10, Art.INK, true)
-	var rank_sub := UI.lbl(p.box, "", Rect2(x0 + w - 250, r.position.y + 150, 226, 30), 20, Color("8a7a66"), HORIZONTAL_ALIGNMENT_RIGHT)
+	# 领奖台（前三名）
+	var pod := Control.new()
+	pod.name = "Podium"
+	pod.position = Vector2(x0, r.position.y + 56)
+	pod.size = Vector2(w, POD_H)
+	pod.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.box.add_child(pod)
 
-	# 表头 + 列表
-	var hy := r.position.y + 214
-	UI.lbl(p.box, "名次", Rect2(x0, hy, 96, 34), 22, Color("8a5a30"))
-	UI.lbl(p.box, "昵称", Rect2(x0 + 110, hy, 280, 34), 22, Color("8a5a30"), HORIZONTAL_ALIGNMENT_LEFT)
-	UI.lbl(p.box, "进度", Rect2(x0 + w - 170, hy, 150, 34), 22, Color("8a5a30"), HORIZONTAL_ALIGNMENT_RIGHT)
+	# 表头 + 第 4 名起的列表
+	var hy := r.position.y + 56 + POD_H + 10
+	var head := Control.new()
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.box.add_child(head)
+	UI.lbl(head, "名次", Rect2(x0, hy, 96, 34), 22, Color("8a5a30"))
+	UI.lbl(head, "昵称", Rect2(x0 + 110, hy, 280, 34), 22, Color("8a5a30"), HORIZONTAL_ALIGNMENT_LEFT)
+	UI.lbl(head, "进度", Rect2(x0 + w - 170, hy, 150, 34), 22, Color("8a5a30"), HORIZONTAL_ALIGNMENT_RIGHT)
 	var list_top := hy + 40
 	var list_bot := r.end.y - 128
 	var sc := Scroller.new()
 	sc.position = Vector2(x0, list_top)
 	sc.size = Vector2(w, list_bot - list_top)
 	p.box.add_child(sc)
-	var status := UI.lbl(p.box, "", Rect2(x0, list_top + 120, w, 150), 26, Color("8a5a30"))
+	var status := UI.lbl(p.box, "", Rect2(x0, r.position.y + 300, w, 150), 26, Color("8a5a30"))
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var retry := UI.btn(p.box, Rect2(r.get_center().x - 110, list_top + 300, 220, 76), "重试", "green", Callable(), 32)
+	var retry := UI.btn(p.box, Rect2(r.get_center().x - 110, r.position.y + 480, 220, 76), "重试", "green", Callable(), 32)
 	retry.visible = false
 
 	# 底部：自己
@@ -50,53 +58,43 @@ static func _build(p: PopupBase) -> void:
 	p.box.add_child(me_row)
 
 	var state := {"data": {}, "ok": false, "loading": true}
-	var refresh_head := func():
-		var pn := Rank.progress_now()
-		prog.text = "%d / %d 件" % [pn, Rank.parts_total()]
-		areas.text = "完成区域 %d / %d" % [Rank.areas_done(), Rank.areas_total()]
-		var me = state["data"].get("me") if state["ok"] else null
-		if me is Dictionary:
-			rank_big.text = "第 %d 名" % int(me["rank"])
-			rank_sub.text = "共 %d 个部落" % int(state["data"].get("total", 0))
-		elif state["ok"]:
-			rank_big.text = "未上榜"
-			rank_sub.text = "建造后自动上传"
-		else:
-			rank_big.text = "离线"
-			rank_sub.text = "排名暂时看不到"
 	var render := func():
-		for c in sc.content.get_children():
-			c.queue_free()
-		for c in me_row.get_children():
-			c.queue_free()
-		refresh_head.call()
+		for n in [sc.content, me_row, pod]:
+			for c in n.get_children():
+				c.queue_free()
 		retry.visible = false
+		var top: Array = state["data"].get("top", []) if state["ok"] else []
+		var shown: bool = state["ok"] and not top.is_empty()
+		head.visible = shown
 		if state["loading"]:
 			status.text = "正在联络远方的部落……"
-			sc.set_length(0)
-			return
-		if not state["ok"]:
-			status.text = "暂时连不上排行榜服务器。\n先去建造吧，进度会在连上后自动补传。"
+		elif not state["ok"]:
+			status.text = "暂时连不上排行榜服务器。
+先去建造吧，进度会在连上后自动补传。"
 			retry.visible = true
+		elif top.is_empty():
+			status.text = "还没有部落上榜。"
+		else:
+			status.text = ""
+		var mine := {"rank": 0, "name": Rank.nick, "progress": Rank.progress_now()}
+		if state["ok"] and state["data"].get("me") is Dictionary:
+			mine = state["data"]["me"]
+		if not state["loading"]:
+			_row(me_row, mine, true)
+		if not shown:
 			sc.set_length(0)
-			_row(me_row, {"rank": 0, "name": Rank.nick, "progress": Rank.progress_now()}, true)
 			return
-		var top: Array = state["data"].get("top", [])
-		status.text = "还没有部落上榜。" if top.is_empty() else ""
-		for i in top.size():
-			var e: Dictionary = top[i]
+		_podium(pod, top)
+		var rest := top.slice(3)
+		for i in rest.size():
+			var e: Dictionary = rest[i]
 			var holder := Control.new()
 			holder.position = Vector2(0, i * ROW)
 			holder.size = Vector2(w, ROW)
 			holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			sc.content.add_child(holder)
 			_row(holder, e, str(e.get("id", "")) == G.player_id)
-		sc.set_length(top.size() * ROW + 8)
-		var me = state["data"].get("me")
-		if me is Dictionary:
-			_row(me_row, me, true)
-		else:
-			_row(me_row, {"rank": 0, "name": Rank.nick, "progress": Rank.progress_now()}, true)
+		sc.set_length(rest.size() * ROW + 8)
 	var reload := func():
 		state["loading"] = true
 		render.call()
@@ -112,9 +110,55 @@ static func _build(p: PopupBase) -> void:
 	Popups.live(p, Rank.synced, func(ok: bool):
 		if ok and not state["loading"]:
 			reload.call())
-	Popups.live(p, G.changed, refresh_head)
 
 	reload.call()
+
+## 领奖台：第二名在左、第一名居中最高、第三名在右。台阶上写名次和进度，台阶上方是头像（暂用名字首字）和名字。
+static func _podium(pod: Control, top: Array) -> void:
+	var w := pod.size.x
+	var sw := (w - 2 * STEP_GAP) / 3.0
+	var order := [1, 0, 2]
+	for k in 3:
+		var i: int = order[k]
+		var hgt: float = STEP_H[i]
+		var x := k * (sw + STEP_GAP)
+		var y := POD_H - hgt
+		var e: Dictionary = top[i] if i < top.size() else {}
+		var mine := not e.is_empty() and str(e.get("id", "")) == G.player_id
+		var rk := i + 1
+		UI.box(pod, Rect2(x, y, sw, hgt), func(ci, sz): _paint_step(ci, sz, rk), false)
+		UI.lbl(pod, str(rk), Rect2(x, y + 6, sw, 54), 48 if rk == 1 else 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+		if e.is_empty():
+			UI.lbl(pod, "虚位以待", Rect2(x, y - 44, sw, 36), 22, Color("a08a70"))
+			continue
+		UI.lbl(pod, "%d 件" % int(e.get("progress", 0)), Rect2(x, y + 56, sw, 34), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+		var nm := str(e.get("name", ""))
+		UI.lbl(pod, nm + ("（我）" if mine else ""), Rect2(x - 6, y - 44, sw + 12, 36), 22 if nm.length() <= 6 else 18, Art.CLAY if mine else Art.INK)
+		var ac := Vector2(x + sw * 0.5, y - 92)
+		var ar := 42.0 if rk == 1 else 36.0
+		UI.box(pod, Rect2(ac - Vector2(ar + 8, ar + 8), Vector2(ar + 8, ar + 8) * 2), func(ci, sz): _paint_avatar(ci, sz * 0.5, ar, rk, mine))
+		UI.lbl(pod, nm.left(1), Rect2(ac - Vector2(ar, ar), Vector2(ar, ar) * 2), int(ar * 0.9), Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+		if rk == 1:
+			UI.box(pod, Rect2(ac + Vector2(-30, -ar - 40), Vector2(60, 40)), func(ci, sz): _paint_crown(ci, sz))
+
+static func _paint_step(ci: CanvasItem, sz: Vector2, rk: int) -> void:
+	var body := Art.rrect(Rect2(Vector2(2, 2), sz - Vector2(4, 0)), 12, 70 + rk, 0.6)
+	Art.dilate(ci, body, 3.0, Art.INK)
+	ci.draw_colored_polygon(body, MEDAL[rk - 1].darkened(0.12))
+	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(10, 10), Vector2(sz.x - 20, sz.y - 12)), 8, 73 + rk, 0.4), MEDAL[rk - 1])
+	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(16, 14), Vector2(sz.x - 32, 12)), 6, 76 + rk, 0.3), Color(1, 1, 1, 0.3))
+
+static func _paint_avatar(ci: CanvasItem, c: Vector2, rad: float, rk: int, mine: bool) -> void:
+	var ring := Art.ell(c, Vector2(rad + 5, rad + 5), 80 + rk, 0.02, 22)
+	Art.dilate(ci, ring, 2.6, Art.INK)
+	ci.draw_colored_polygon(ring, Art.CLAY if mine else MEDAL[rk - 1])
+	var disc := Art.ell(c, Vector2(rad, rad), 83 + rk, 0.02, 22)
+	Art.dilate(ci, disc, 1.8, Art.INK)
+	ci.draw_colored_polygon(disc, [Art.TEAL, Art.LEATHER, Art.MOSS_D][rk - 1])
+
+static func _paint_crown(ci: CanvasItem, sz: Vector2) -> void:
+	var pts := [Vector2(4, sz.y - 4), Vector2(2, 10), Vector2(17, 22), Vector2(sz.x * 0.5, 2), Vector2(sz.x - 17, 22), Vector2(sz.x - 2, 10), Vector2(sz.x - 4, sz.y - 4)]
+	Art.fill(ci, Art.poly(pts, 90, 0.3), Art.FIRE2, 2.6)
 
 ## 一行：名次（前三名奖牌）、昵称、进度。mine 为真时高亮。
 static func _row(parent: Control, e: Dictionary, mine: bool) -> void:
@@ -126,10 +170,9 @@ static func _row(parent: Control, e: Dictionary, mine: bool) -> void:
 		else:
 			_card(ci, sz, Art.BONE, Color("c9a77a"), 2)
 		if rk >= 1 and rk <= 3:
-			var cols := [Art.FIRE2, Color("d9d4cc"), Color("d08a4a")]
 			var m := Art.ell(Vector2(48, sz.y * 0.5), Vector2(24, 24), 40 + rk, 0.03, 18)
 			Art.dilate(ci, m, 2.6, Art.INK)
-			ci.draw_colored_polygon(m, cols[rk - 1])
+			ci.draw_colored_polygon(m, MEDAL[rk - 1])
 	, false)
 	var rank_txt := "未上榜" if rk <= 0 else str(rk)
 	var fs := 18 if rk <= 0 else (30 if rk < 100 else 22)

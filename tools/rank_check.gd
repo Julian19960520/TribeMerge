@@ -73,7 +73,8 @@ func _run() -> void:
 	await create_timer(1.0).timeout
 	var texts := _texts(p)
 	_ok(texts.any(func(t): return t.contains("联调部落（我）")), "弹窗里有自己那行并标了（我）")
-	_ok(texts.any(func(t): return t.begins_with("第 ") and t.ends_with(" 名")), "弹窗显示名次")
+	var pod: Node = p.find_child("Podium", true, false)
+	_ok(pod != null and ["1", "2", "3"].all(func(t): return _texts(pod).has(t)), "领奖台三级台阶都在")
 	if shot != "":
 		await create_timer(0.5).timeout
 		root.get_viewport().get_texture().get_image().save_png(shot)
