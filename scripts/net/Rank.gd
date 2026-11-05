@@ -2,7 +2,7 @@ extends Node
 ## 排行榜客户端（自动加载 Rank）。
 ## 排名指标：部落解锁进度 = 所有区域已建成的部件总数（G.builds 里每个区域的段数，按部件上限截断）。
 ## 进度上涨时记下达成时间并自动上传；连不上服务器只记一笔，下次进度变化或打开排行榜时补传。
-## 服务器地址：data/rules.json 的 rank_server。状态（昵称、已上传的进度）存在 user://rank_state.json，不动主存档。
+## 服务器地址：data/rules.json 的 rank_server。状态（默认昵称、已上传的进度；以后改成平台账号名）存在 user://rank_state.json，不动主存档。
 
 signal synced(ok: bool)
 

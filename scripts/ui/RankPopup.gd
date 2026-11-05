@@ -1,7 +1,7 @@
 class_name RankPopup
 extends RefCounted
 ## 部落排行：按部落解锁进度（已建成部件数）排名，平分时先达到的在前。自己那行高亮，底部固定显示自己的名次。
-## 连不上服务器时列表区显示提示和「重试」，不影响游戏。
+## 名字头像以后接平台账号，这里不提供改名。连不上服务器时列表区显示提示和「重试」，不影响游戏。
 
 const ROW := 78.0
 const R := Rect2(36, 206, 648, 1110)
@@ -26,22 +26,8 @@ static func _build(p: PopupBase) -> void:
 	var rank_big := UI.lbl(p.box, "", Rect2(x0 + w - 250, r.position.y + 84, 226, 70), 46, Art.FIRE2, HORIZONTAL_ALIGNMENT_RIGHT, 10, Art.INK, true)
 	var rank_sub := UI.lbl(p.box, "", Rect2(x0 + w - 250, r.position.y + 150, 226, 30), 20, Color("8a7a66"), HORIZONTAL_ALIGNMENT_RIGHT)
 
-	# 昵称
-	var ny := r.position.y + 210
-	var nick_lbl := UI.lbl(p.box, "", Rect2(x0 + 8, ny, w - 170, 56), 26, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
-	var edit := LineEdit.new()
-	edit.position = Vector2(x0, ny + 4)
-	edit.size = Vector2(w - 170, 50)
-	edit.max_length = 12
-	edit.visible = false
-	edit.add_theme_font_override("font", G.font_body)
-	edit.add_theme_font_size_override("font_size", 26)
-	p.box.add_child(edit)
-	var rename := UI.btn(p.box, Rect2(x0 + w - 150, ny + 2, 150, 54), "改名", "teal", Callable(), 26)
-	rename.title_font = false
-
 	# 表头 + 列表
-	var hy := ny + 70
+	var hy := r.position.y + 214
 	UI.lbl(p.box, "名次", Rect2(x0, hy, 96, 34), 22, Color("8a5a30"))
 	UI.lbl(p.box, "昵称", Rect2(x0 + 110, hy, 280, 34), 22, Color("8a5a30"), HORIZONTAL_ALIGNMENT_LEFT)
 	UI.lbl(p.box, "进度", Rect2(x0 + w - 170, hy, 150, 34), 22, Color("8a5a30"), HORIZONTAL_ALIGNMENT_RIGHT)
@@ -68,7 +54,6 @@ static func _build(p: PopupBase) -> void:
 		var pn := Rank.progress_now()
 		prog.text = "%d / %d 件" % [pn, Rank.parts_total()]
 		areas.text = "完成区域 %d / %d" % [Rank.areas_done(), Rank.areas_total()]
-		nick_lbl.text = "昵称：%s" % Rank.nick
 		var me = state["data"].get("me") if state["ok"] else null
 		if me is Dictionary:
 			rank_big.text = "第 %d 名" % int(me["rank"])
@@ -123,33 +108,12 @@ static func _build(p: PopupBase) -> void:
 			state["data"] = d
 			render.call())
 	retry.pressed.connect(reload)
-	# 上传成功（建造或改名）后刷新一次；失败不刷新，免得来回重试
+	# 上传成功（建造）后刷新一次；失败不刷新，免得来回重试
 	Popups.live(p, Rank.synced, func(ok: bool):
 		if ok and not state["loading"]:
 			reload.call())
 	Popups.live(p, G.changed, refresh_head)
 
-	var commit := func():
-		if not edit.visible:
-			return
-		edit.visible = false
-		nick_lbl.visible = true
-		rename.text = "改名"
-		rename.queue_redraw()
-		Rank.set_nick(edit.text)
-		refresh_head.call()
-	rename.pressed.connect(func():
-		if edit.visible:
-			commit.call()
-			return
-		edit.text = Rank.nick
-		edit.visible = true
-		nick_lbl.visible = false
-		rename.text = "确定"
-		rename.queue_redraw()
-		edit.grab_focus()
-		edit.select_all())
-	edit.text_submitted.connect(func(_t): commit.call())
 	reload.call()
 
 ## 一行：名次（前三名奖牌）、昵称、进度。mine 为真时高亮。
