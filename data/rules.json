@@ -11,5 +11,7 @@
 	"energy_price": 20,
 	"energy_price_step": 10,
 	"energy_price_max": 60,
-	"craft_level": 3
+	"craft_level": 3,
+	"rank_server": "http://127.0.0.1:8765",
+	"rank_top": 50
 }

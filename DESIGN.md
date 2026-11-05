@@ -300,3 +300,28 @@ python tools/balance.py --write
 - 合成剩零头、产出不对口的损耗按 15% 算。
 - 照这个节奏，约 49 天到 Lv40。
 
+
+## 十一、排行榜
+
+按「部落解锁进度」给所有玩家排名：**已建成的建造部件总数**（`data/builds.json` 里每个区域的部件，存档 `builds` 记的是每个区域建到第几件），平分时先达到的排前面。
+
+- **入口**：主页右上角齿轮下面的「排行」奖杯。弹窗（`scripts/ui/RankPopup.gd`）顶部是自己的进度（已建 / 总件数、完成区域数、名次），中间是前 N 名，自己那行高亮，底部固定显示自己的名次。可以改昵称（最多 12 字）。
+- **客户端**：自动加载 `Rank`（`scripts/net/Rank.gd`），用 `HTTPRequest` 连服务器，超时 4 秒。
+  - 监听 `G.changed`，进度一上涨就记下达成时间并上传（建造完成即上传）。上传失败 90 秒后重试，打开排行榜时也会补传。
+  - 玩家 id 用存档里的 `player_id`（新档开局生成）；老存档还是默认的 `TRB00000000` 时换成随机 id 写回存档。
+  - 昵称、已上传的进度存在 `user://rank_state.json`，不进主存档。
+  - 连不上服务器时弹窗显示「暂时连不上排行榜服务器」和「重试」，游戏其他部分不受影响。
+- **配置**：`data/rules.json` 的 `rank_server`（默认 `http://127.0.0.1:8765`）和 `rank_top`（前多少名，默认 50）。
+- **服务器**：`server/rank_server.py`，Python 3 标准库（`http.server` + SQLite），数据在 `server/rank.db`。接口见 `server/README.md`：`POST /api/submit` 提交，`GET /api/top?n=&id=` 查前 N 名和自己的名次。每个 id 只保留最高进度。
+
+### 启动与验证
+
+1. 双击 `server/启动排行榜服务器.bat`（或 `python server/rank_server.py`），看到「排行榜服务器已启动：http://127.0.0.1:8765」。
+2. 服务器自测（临时库，不碰 rank.db）：`python server/test_rank.py`，输出 `OK`。
+3. 游戏联调（不写主存档，换测试 id；另起一个服务器避免测试数据进正式榜）：
+   ```
+   python server/rank_server.py --port 18766 --db %TEMP%/rank_check.db
+   Godot_v4.6.3-stable_win64_console.exe --headless --path . --script tools/rank_check.gd -- --rank-state=user://rank_check_state.json --rank-url=http://127.0.0.1:18766
+   ```
+   依次检查：首次上传、查询名次、建造一件后自动上传、弹窗里有「（我）」那行、服务器不通时显示提示，最后输出 `RESULT: PASS`。去掉 `--headless` 加 `--shot=xxx.png` 可以截主页和弹窗。
+4. 实机：开着服务器运行游戏，点「排行」能看到自己；建造一件后再打开，进度 +1。关掉服务器再打开排行，显示连不上的提示，游戏照常。

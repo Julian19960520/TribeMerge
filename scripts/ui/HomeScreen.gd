@@ -16,6 +16,7 @@ var _village: DrawBox
 var _hide := {}
 var _build_fx: Control
 const PASS_K := 0.8
+const RankPopupScript := preload("res://scripts/ui/RankPopup.gd")
 const CARD_YELLOW := Color("e7b45a")
 const CARD_YELLOW_L := Color("f2c66e")
 
@@ -54,6 +55,12 @@ func _ready() -> void:
 	gear.is_round = true
 	gear.glyph = "gear"
 
+	# 排行榜：齿轮下面一枚奖杯
+	var rank := UI.btn(self, Rect2(626, 246, 80, 80), "", "teal", func(): RankPopupScript.open())
+	rank.is_round = true
+	rank.extra = func(ci, sz): _paint_trophy(ci, sz * 0.5)
+	UI.lbl(self, "排行", Rect2(616, 322, 100, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+
 	var build := UI.btn(self, Rect2(16, 1316, 124, 128), "", "wood", _open_next_build)
 	build.extra = func(ci, sz): Paint.hammer(ci, sz * 0.5 + Vector2(0, -6), 1.1)
 	UI.lbl(build, "建造", Rect2(0, 86, 124, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
@@ -75,6 +82,22 @@ func _ready() -> void:
 		Art.item(ci, "roast_7", Vector2(30, sz.y - 22), 50)
 
 	G.changed.connect(_build_spots)
+
+## 排行榜按钮上的石杯奖杯
+func _paint_trophy(ci: CanvasItem, c: Vector2) -> void:
+	var cup := Art.poly([c + Vector2(-17, -18), c + Vector2(17, -18), c + Vector2(14, -2), c + Vector2(6, 6), c + Vector2(-6, 6), c + Vector2(-14, -2)], 61, 0.4)
+	for sx in [-1.0, 1.0]:
+		var ear := Art.ell(c + Vector2(19 * sx, -10), Vector2(7, 7), 62 + int(sx), 0.02, 12)
+		Art.dilate(ci, ear, 2.4, Art.INK)
+		ci.draw_colored_polygon(ear, Art.AMBER)
+	var stem := Art.poly([c + Vector2(-4, 5), c + Vector2(4, 5), c + Vector2(5, 13), c + Vector2(-5, 13)], 63, 0.2)
+	var base := Art.rrect(Rect2(c + Vector2(-14, 12), Vector2(28, 9)), 3, 64, 0.3)
+	for part in [stem, base]:
+		Art.dilate(ci, part, 2.4, Art.INK)
+		ci.draw_colored_polygon(part, Art.WOOD)
+	Art.dilate(ci, cup, 2.6, Art.INK)
+	ci.draw_colored_polygon(cup, Art.FIRE2)
+	ci.draw_colored_polygon(Art.poly([c + Vector2(-12, -15), c + Vector2(-5, -15), c + Vector2(-8, -3)], 65, 0.2), Color(1, 1, 1, 0.45))
 
 ## 通行证按钮：青色兽皮卡上一枚琥珀勋章（带当前等级）、两条飘带，底部是到下一级的进度；买了通行证换金边。
 func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
