@@ -7,6 +7,7 @@
   POST /api/submit                      body: {"id", "name", "progress", "time"}
         → {"ok": true, "rank": 名次, "total": 总人数, "progress": 服务器记录的进度}
   GET  /api/top?n=50&id=玩家id          → {"ok": true, "total", "top": [...], "me": {...} 或 null}
+云存档和热卖的接口见 cloud.py。
 
 排序：进度从高到低；进度相同，先达到（reached_at 小）的排前面；再相同按 id。
 """
@@ -22,6 +23,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+from cloud import ApiError, Cloud
+
 ID_RE = re.compile(r"^[A-Za-z0-9_\-]{1,32}$")
 NAME_MAX = 16
 PROGRESS_MAX = 100000
@@ -30,6 +33,9 @@ BODY_MAX = 4096
 
 _lock = threading.Lock()
 _db: sqlite3.Connection = None  # type: ignore
+_cloud: Cloud = None  # type: ignore
+## 云存档快照比较大（gzip+base64 后 2～6KB），单独放宽
+SAVE_BODY_MAX = 96 * 1024
 
 
 def open_db(path: str) -> sqlite3.Connection:
@@ -132,37 +138,59 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         u = urlparse(self.path)
         q = parse_qs(u.query)
-        if u.path == "/api/health":
-            self._send(200, {"ok": True})
-        elif u.path == "/api/top":
-            try:
-                n = int(q.get("n", ["50"])[0])
-            except ValueError:
-                n = 50
-            self._send(200, top(n, q.get("id", [""])[0]))
-        else:
-            self._send(404, {"ok": False, "error": "not found"})
+        pid = q.get("id", [""])[0]
+        try:
+            if u.path == "/api/health":
+                self._send(200, _cloud.stamp({"ok": True}))
+            elif u.path == "/api/time":
+                self._send(200, _cloud.stamp({"ok": True}))
+            elif u.path == "/api/top":
+                try:
+                    n = int(q.get("n", ["50"])[0])
+                except ValueError:
+                    n = 50
+                self._send(200, top(n, pid))
+            elif u.path == "/api/save":
+                self._send(200, _cloud.get_save(pid, self._token()))
+            elif u.path == "/api/hot":
+                self._send(200, _cloud.hot(pid, self._token()))
+            else:
+                self._send(404, {"ok": False, "error": "not found"})
+        except ApiError as e:
+            self._send(e.code, e.body)
+
+    def _token(self) -> str:
+        return str(self.headers.get("X-Token", "")).strip()
 
     def do_POST(self) -> None:
-        if urlparse(self.path).path != "/api/submit":
+        path = urlparse(self.path).path
+        routes = {
+            "/api/submit": lambda b: submit(b),
+            "/api/register": lambda b: _cloud.register(b),
+            "/api/save": lambda b: _cloud.put_save(b, self._token()),
+            "/api/purchase": lambda b: _cloud.purchase(b, self._token()),
+        }
+        if path not in routes:
             self._send(404, {"ok": False, "error": "not found"})
             return
         try:
             length = int(self.headers.get("Content-Length", "0"))
-            if length <= 0 or length > BODY_MAX:
+            if length <= 0 or length > (SAVE_BODY_MAX if path == "/api/save" else BODY_MAX):
                 raise ValueError("bad body")
             body = json.loads(self.rfile.read(length).decode("utf-8"))
             if not isinstance(body, dict):
                 raise ValueError("bad body")
-            self._send(200, submit(body))
-        except (ValueError, json.JSONDecodeError) as e:
+            self._send(200, routes[path](body))
+        except ApiError as e:
+            self._send(e.code, e.body)
+        except (ValueError, json.JSONDecodeError, UnicodeDecodeError) as e:
             self._send(400, {"ok": False, "error": str(e)})
 
     def do_OPTIONS(self) -> None:
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Token")
         self.end_headers()
 
     def log_message(self, fmt: str, *args) -> None:
@@ -181,11 +209,14 @@ def main() -> None:
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--db", default=os.path.join(here, "rank.db"))
+    ap.add_argument("--data", default=os.path.join(os.path.dirname(here), "data"), help="游戏配置目录（热卖、校验要读）")
+    ap.add_argument("--cloud-config", default=os.path.join(here, "cloud_config.json"))
     args = ap.parse_args()
-    global _db
+    global _db, _cloud
     _db = open_db(args.db)
+    _cloud = Cloud(_db, _lock, args.data, args.cloud_config, log=lambda m: print(m, flush=True))
     srv = ThreadingHTTPServer((args.host, args.port), Handler)
-    print("排行榜服务器已启动：http://%s:%d  数据：%s" % (args.host, args.port, args.db), flush=True)
+    print("排行榜 / 云存档服务器已启动：http://%s:%d  数据：%s" % (args.host, args.port, args.db), flush=True)
     print("按 Ctrl+C 停止。", flush=True)
     try:
         srv.serve_forever()

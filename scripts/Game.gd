@@ -14,6 +14,10 @@ var ROWS := 9
 var MAX_ENERGY := 100
 var REGEN_SEC := 120
 const SAVE_PATH := "user://tribe_save_v17.json"
+## 实际读写的存档路径。测试可以用 `-- --save=user://xxx.json` 换掉，不碰真实存档
+var save_path := SAVE_PATH
+## 启动时读到了本地存档（false = 没存档、新开了一局，云存档会试着从服务器恢复）
+var loaded_save := false
 var RANDOM_ORDERS := 4
 var TOKEN_STEP := 10
 var INV_MAX := 10
@@ -73,9 +77,13 @@ var rng := RandomNumberGenerator.new()
 func _ready() -> void:
 	_apply_rules()
 	rng.randomize()
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--save="):
+			save_path = a.trim_prefix("--save=")
 	font_title = _sysfont(["STHupo", "Microsoft YaHei UI", "Microsoft YaHei"], 400)
 	font_body = _sysfont(["Microsoft YaHei UI", "Microsoft YaHei", "SimHei"], 700)
-	if not load_game():
+	loaded_save = load_game()
+	if not loaded_save:
 		new_game()
 	_check_day()
 
@@ -159,15 +167,34 @@ static func fmt_time(sec: int) -> String:
 		return "%d时%d分" % [sec / 3600, (sec % 3600) / 60]
 	return "%d分%02d秒" % [sec / 60, sec % 60]
 
+## 到北京时间零点还有几秒（按服务器时间，连不上时按本机时间）
 func secs_to_midnight() -> int:
+	var c = get_node_or_null("/root/Cloud")
+	if c != null:
+		return c.secs_to_midnight()
 	var t := Time.get_datetime_dict_from_system()
 	return 86400 - (int(t["hour"]) * 3600 + int(t["minute"]) * 60 + int(t["second"]))
+
+## 今天的日期：服务器的北京时间日期（Cloud），连不上时按本机时间
+func today() -> String:
+	var c = get_node_or_null("/root/Cloud")
+	return c.today() if c != null else Time.get_date_string_from_system()
+
+## 关键事件：让云存档记一笔待上传（交单、建造、升级、花/得琥珀、开卡包）
+func cloud_mark() -> void:
+	var c = get_node_or_null("/root/Cloud")
+	if c != null:
+		c.mark()
 
 func event_left() -> int:
 	return 35 * 86400 + 15 * 3600 - int(fmod(now(), 86400.0))
 
 func _check_day() -> void:
-	var d := Time.get_date_string_from_system()
+	# 等云存档拿到服务器时间（或确认连不上）再判断，免得改了本机时间先把每日次数清掉
+	var c = get_node_or_null("/root/Cloud")
+	if c == null or not c.clock_ready:
+		return
+	var d: String = c.today()
 	if d != deals_day:
 		deals_day = d
 		deals_bought = {}
@@ -208,7 +235,7 @@ func new_game() -> void:
 	deals_bought.clear()
 	hot_bought.clear()
 	energy_buys = 0
-	deals_day = Time.get_date_string_from_system()
+	deals_day = today()
 	_init_board()
 	var cost := build_cost("fire")
 	var first := 25
@@ -243,7 +270,13 @@ func _init_board() -> void:
 			discover(k["id"])
 
 func save_game() -> void:
-	var d := {
+	var f := FileAccess.open(save_path, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(save_dict()))
+
+## 整份存档。本地存档和云存档快照都用它。
+func save_dict() -> Dictionary:
+	return {
 		"level": level, "xp": xp, "energy": energy, "shells": shells, "amber": amber, "rush": rush,
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
 		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "builds": builds, "cards": cards,
@@ -253,14 +286,11 @@ func save_game() -> void:
 		"pass_pts": pass_pts, "pass_tier": pass_tier, "pass_free": pass_free, "pass_prem": pass_prem,
 		"pass_endless": pass_endless, "pass_super_bonus": pass_super_bonus,
 	}
-	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(d))
 
 func load_game() -> bool:
-	if not FileAccess.file_exists(SAVE_PATH):
+	if not FileAccess.file_exists(save_path):
 		return false
-	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var f := FileAccess.open(save_path, FileAccess.READ)
 	if f == null:
 		return false
 	var d = JSON.parse_string(f.get_as_text())
@@ -349,6 +379,8 @@ func add_currency(kind: String, n: int) -> void:
 		"sand": rush += n
 	if kind == "energy" and energy >= MAX_ENERGY:
 		energy_stamp = now()
+	if kind == "amber":
+		cloud_mark()
 	dirty()
 	changed.emit()
 
@@ -368,6 +400,7 @@ func spend(kind: String, n: int) -> bool:
 			if amber < n:
 				return false
 			amber -= n
+			cloud_mark()
 		"sand":
 			if rush < n:
 				return false
@@ -402,6 +435,7 @@ func add_xp(n: int) -> bool:
 		xp -= xp_need()
 		level += 1
 		up = true
+		cloud_mark()
 		_add_story_orders()
 		if not tutorial_on:
 			_add_random_batch()
@@ -1193,6 +1227,7 @@ func complete_order(oi: int) -> Array:
 	elif _is_random_order(o):
 		_add_random_batch(oi)
 	pass_pts += 2 if pass_tier >= 2 else 1
+	cloud_mark()
 	dirty()
 	board_changed.emit()
 	orders_changed.emit()
@@ -1389,6 +1424,7 @@ func do_build(id: String) -> Dictionary:
 		return {}
 	var st := int(builds.get(id, 0))
 	builds[id] = st + 1
+	cloud_mark()
 	dirty()
 	changed.emit()
 	return {"idx": st, "rewards": rewards}
@@ -1401,6 +1437,7 @@ func open_pack() -> Array:
 		var key := "%d_%d" % [a, c]
 		cards[key] = int(cards.get(key, 0)) + 1
 		out.append([a, c])
+	cloud_mark()
 	dirty()
 	return out
 

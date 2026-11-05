@@ -21,6 +21,7 @@ G="*res://scripts/Game.gd"
 Sfx="*res://scripts/Sfx.gd"
 Items="*res://scripts/ItemAnim.gd"
 Rank="*res://scripts/net/Rank.gd"
+Cloud="*res://scripts/net/Cloud.gd"
 
 [display]
 

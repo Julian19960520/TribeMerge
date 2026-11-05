@@ -237,6 +237,7 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 	b.title_font = false
 	b.pressed.connect(func():
 		G.main.fly("amber_3", b.get_global_rect().get_center() + Vector2(0, -100), G.main.topbar.target("amber"), func(): G.add_currency("amber", a["n"]), 80)
+		Cloud.purchase(int(a["n"]))
 		G.main.toast("演示版本：琥珀 ×%d 已到账" % a["n"]))
 
 static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:

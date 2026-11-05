@@ -34,3 +34,18 @@ curl "http://127.0.0.1:8765/api/top?n=10&id=TEST1"
 ```
 
 或运行 `python server/test_rank.py`（会在临时目录起一个独立服务器，不碰 rank.db）。
+
+## 云存档 + 热卖
+
+同一个服务器还提供云存档和集市热卖（`cloud.py`，配置 `cloud_config.json`，规则和开销估算见 DESIGN.md「十二」）：
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/register` | `{"id"}` → `{"token"}`。id 已注册返回 409 |
+| GET | `/api/save?id=` | 头 `X-Token`。→ `{"version", "hash", "data"}`，data 是 base64 的 gzip JSON，没传过是空串 |
+| POST | `/api/save` | 头 `X-Token`。`{"id", "base", "hash", "data"}` → `{"version"}`；base 落后 409，校验不过 422（带 reason） |
+| POST | `/api/purchase` | 头 `X-Token`。`{"id", "amber"}`：充值到账，下一份快照放行这么多琥珀 |
+| GET | `/api/hot?id=` | 头 `X-Token`。当天热卖换货 `{"picks": [{"slot", "id"}]}`，每人每天只抽一次；没快照 404 |
+| GET | `/api/time` | 服务器时间 |
+
+所有成功返回都带 `now`（服务器 Unix 时间）和 `day`（北京日期）。自测：`python server/test_cloud.py`。
