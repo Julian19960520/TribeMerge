@@ -2,6 +2,7 @@ class_name CfgEdit
 extends Control
 ## 游戏里的配置编辑。物品链排成方格，点开后从底部拉起面板改这一级。
 ## 每一页的保存只写回自己的那一个 data/*.json，并立刻重新读入。
+const Meme := preload("res://scripts/Meme.gd")
 
 const Files := preload("res://scripts/config/config_files.gd")
 const OrderCurvePadSc := preload("res://scripts/ui/OrderCurvePad.gd")
@@ -1206,13 +1207,14 @@ func _album_face(parent: Node, r: Rect2, album: int, idx: int) -> void:
 func _amber() -> float:
 	var y := 12.0
 	var arr: Array = _pages[Files.AMBER]
+	# 和集市的琥珀礼包一样：都是六边琥珀，礼包越大堆得越多
 	var piles := [
-		["amber_2", 1],
-		["amber_3", 1],
-		["amber_3", 3],
-		["amber_4", 2],
-		["amber_4", 4],
-		["amber_4", 6],
+		[Art.AMBER_ICON, 1],
+		[Art.AMBER_ICON, 2],
+		[Art.AMBER_ICON, 3],
+		[Art.AMBER_ICON, 4],
+		[Art.AMBER_ICON, 5],
+		[Art.AMBER_ICON, 6],
 	]
 	for i in arr.size():
 		var a: Dictionary = arr[i]
@@ -1406,7 +1408,7 @@ func _pass() -> float:
 		y += 60
 		y = _pass_sides(y, lv)
 	UI.btn(_root, Rect2(180, y, 360, 72), "添加一档", "green", func():
-		levels.append({"need": _next_pass_need(levels), "free": [], "prem": []})
+		levels.append({"need": _next_pass_need(levels), "free": [], "prem": [], "super": []})
 		_touch(Files.PASS)
 		_rerender()
 	, 28).title_font = false
@@ -1417,31 +1419,33 @@ func _next_pass_need(levels: Array) -> int:
 		return 8
 	return int(levels.back().get("need", 8)) + levels.size() + 1
 
+## 一档的三列奖励：免费、贵宾（prem）、超级贵宾（super）
 func _pass_sides(y: float, lv: Dictionary) -> float:
-	for key in ["free", "prem"]:
+	var keys := ["free", "prem", "super"]
+	var names := ["免费", "贵宾", "超级贵宾"]
+	var fills := [Color("e4d0aa"), Art.BONE, Color("f6d48a")]
+	for key in keys:
 		if not lv.has(key) or not (lv[key] is Array):
 			lv[key] = []
-	var free: Array = lv["free"]
-	var prem: Array = lv["prem"]
 	var cols := 2
 	var margin := 12.0
-	var gap := 12.0
-	var pane_w := (720.0 - margin * 2.0 - gap) * 0.5
-	var pad := 12.0
-	var col_gap := 8.0
+	var gap := 8.0
+	var pane_w := (720.0 - margin * 2.0 - gap * 2.0) / 3.0
+	var pad := 10.0
+	var col_gap := 6.0
 	var sq := (pane_w - pad * 2.0 - col_gap) * 0.5
 	var pitch_x := sq + col_gap
 	var pitch_y := sq + 62.0
 	var head := 44.0
-	var rows := maxi(_reward_rows(free, cols), _reward_rows(prem, cols))
+	var rows := 1
+	for key in keys:
+		rows = maxi(rows, _reward_rows(lv[key], cols))
 	var h := head + float(rows) * pitch_y + 10.0
-	_pass_pane(Rect2(margin, y, pane_w, h), Color("e4d0aa"))
-	_pass_pane(Rect2(margin + pane_w + gap, y, pane_w, h), Art.BONE)
-	UI.lbl(_root, "免费", Rect2(margin + pad, y + 8, pane_w - pad * 2.0, 32), 24, Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
-	UI.lbl(_root, "付费", Rect2(margin + pane_w + gap + pad, y + 8, pane_w - pad * 2.0, 32), 24, Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
-	var content_y := y + head
-	_reward_grid(margin + pad, content_y, sq, pitch_x, pitch_y, cols, free, Files.PASS)
-	_reward_grid(margin + pane_w + gap + pad, content_y, sq, pitch_x, pitch_y, cols, prem, Files.PASS)
+	for k in keys.size():
+		var x := margin + float(k) * (pane_w + gap)
+		_pass_pane(Rect2(x, y, pane_w, h), fills[k])
+		UI.lbl(_root, names[k], Rect2(x + pad, y + 8, pane_w - pad * 2.0, 32), 22, Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
+		_reward_grid(x + pad, y + head, sq, pitch_x, pitch_y, cols, lv[keys[k]], Files.PASS)
 	return y + h + 12.0
 
 func _reward_rows(items: Array, cols: int) -> int:
@@ -1952,7 +1956,7 @@ func _paint_story_card(ci: CanvasItem, sz: Vector2, o: Dictionary, items: Array,
 	var head := Art.ell(head_c, Vector2(head_rad, head_rad), seed + 3, 0.02, 20)
 	Art.dilate(ci, head, 3.0, Art.INK)
 	ci.draw_colored_polygon(head, Art.OCHRE.lightened(0.28))
-	Paint.portrait(ci, int(o.get("who", 0)), head_c + Vector2(0, -2), head_rad * 1.62)
+	Meme.portrait(ci, int(o.get("who", 0)), head_c + Vector2(0, -2), head_rad * 1.62)
 	var star: Vector2 = layout["star"]
 	Art.item(ci, "xp_1", star, float(layout["star_s"]))
 	for k in items.size():
@@ -2490,7 +2494,6 @@ func _fit_board() -> void:
 
 class BoardPad extends Control:
 	const LIFT := Vector2(0, -14)
-	const FOLLOW := 32.0
 
 	var edit: CfgEdit
 	var cols := 7
@@ -2516,7 +2519,7 @@ class BoardPad extends Control:
 	func _process(delta: float) -> void:
 		if not dragging:
 			return
-		drag_vis = drag_vis.lerp(drag_pos, 1.0 - exp(-delta * FOLLOW))
+		drag_vis = drag_pos
 		queue_redraw()
 
 	func _gui_input(e: InputEvent) -> void:
@@ -2554,7 +2557,7 @@ class BoardPad extends Control:
 				dragging = true
 				drag_from = press_cell
 				drag_pos = e.position
-				drag_vis = _icon_center(press_cell)
+				drag_vis = e.position
 				hover = _cell_at(e.position)
 				mouse_default_cursor_shape = CURSOR_DRAG
 				Sfx.play("tap", 1.3)
@@ -2599,7 +2602,7 @@ class BoardPad extends Control:
 				dragging = true
 				drag_from = press_cell
 				drag_pos = e.position
-				drag_vis = _icon_center(press_cell)
+				drag_vis = e.position
 				hover = _cell_at(e.position)
 				mouse_default_cursor_shape = CURSOR_DRAG
 				_reward_nums(press_cell, false)

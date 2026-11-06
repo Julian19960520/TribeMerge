@@ -2,6 +2,7 @@ class_name OrderCurvePad
 extends Control
 ## 随机订单难度曲线。横轴主角等级，纵轴理论火苗。点住圆点上下拖。
 ## 空白处长按再拖出选框，可多选；包围框上下边缩放高度，框内拖动整体升降。
+const Meme := preload("res://scripts/Meme.gd")
 
 const Roll := preload("res://scripts/OrderRoll.gd")
 
@@ -1047,7 +1048,7 @@ func _draw_order() -> void:
 	Art.dilate(self, head, 3.0, Art.INK)
 	draw_colored_polygon(head, Art.TEAL.lightened(0.3))
 	var who := int(order.get("who", 0))
-	Paint.portrait(self, who, head_c + Vector2(0, -2), 56)
+	Meme.portrait(self, who, head_c + Vector2(0, -2), 56)
 	_text(_who_name(who), r.position + Vector2(92, 54), 22, Art.INK)
 	var n := items.size()
 	var slot := minf(150.0, (r.size.x - 40.0) / float(n))

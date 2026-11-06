@@ -5,6 +5,8 @@ signal boil_tick
 signal changed
 signal board_changed
 signal orders_changed
+## 交付了一张订单（篝火竞速用它先在本地给自己的头像加分，服务器结算为准）
+signal order_delivered(items: Array)
 
 const Layout := preload("res://scripts/config/board_layout.gd")
 const Roll := preload("res://scripts/OrderRoll.gd")
@@ -53,6 +55,8 @@ var pass_pts := 0
 var pass_tier := 0
 var pass_free: Array = []
 var pass_prem: Array = []
+## 超级贵宾那一列已领的级别（贵宾列是 pass_prem）
+var pass_super: Array = []
 var pass_endless := 0
 var pass_super_bonus := false
 var scroll_drag := false
@@ -65,6 +69,9 @@ var hot_bought := {}
 var energy_buys := 0
 var deals_bought := {}
 var deals_day := ""
+## 贝币小摊本轮已购（key "shell_%d" -> 个数）和轮次号，轮次按服务器时间每 Data.STORE_SHELL_HOURS 小时换一次
+var shell_bought := {}
+var shell_period := ""
 var player_id := ""
 var seen_tutorial := false
 var tutorial_on := false
@@ -205,7 +212,7 @@ func cloud_event(ev: Dictionary) -> void:
 ## 把服务器状态里的一个字段写回本地（Cloud.apply_state 用）
 func set_server_field(k: String, v) -> void:
 	match k:
-		"hot_bought", "deals_bought", "book_claimed":
+		"hot_bought", "deals_bought", "book_claimed", "shell_bought":
 			set(k, (v as Dictionary).duplicate() if v is Dictionary else {})
 		"builds", "cards":
 			var d := {}
@@ -213,7 +220,7 @@ func set_server_field(k: String, v) -> void:
 				for key in v:
 					d[str(key)] = int(v[key])
 			set(k, d)
-		"pass_free", "pass_prem":
+		"pass_free", "pass_prem", "pass_super":
 			var a := []
 			if v is Array:
 				for x in v:
@@ -223,6 +230,8 @@ func set_server_field(k: String, v) -> void:
 			pass_super_bonus = bool(v)
 		"deals_day":
 			deals_day = str(v)
+		"shell_period":
+			shell_period = str(v)
 		_:
 			set(k, int(v))
 
@@ -239,6 +248,21 @@ func take_give(give: Dictionary) -> void:
 		add_currency("energy", int(give["energy"]))
 	if int(give.get("rush", 0)) > 0:
 		add_currency("sand", int(give["rush"]))
+
+## 贝币小摊的轮次号（东八区零点对齐，每 Data.STORE_SHELL_HOURS 小时一轮），和服务器 Economy.shell_period 算法一致
+func shell_period_now() -> String:
+	return str(int((now() + 8 * 3600) / float(Data.STORE_SHELL_HOURS * 3600)))
+
+func shell_secs_left() -> int:
+	var span := Data.STORE_SHELL_HOURS * 3600
+	return span - int(now() + 8 * 3600) % span
+
+## 换轮了就把本轮已购清零（服务器那边同样在换轮时清零）
+func check_shell_period() -> void:
+	var p := shell_period_now()
+	if p != shell_period:
+		shell_period = p
+		shell_bought = {}
 
 func event_left() -> int:
 	return 35 * 86400 + 15 * 3600 - int(fmod(now(), 86400.0))
@@ -281,6 +305,7 @@ func new_game() -> void:
 	pass_tier = 0
 	pass_free = []
 	pass_prem = []
+	pass_super = []
 	pass_endless = 0
 	pass_super_bonus = false
 	player_id = "TRB" + str(rng.randi_range(10000000, 99999999))
@@ -288,6 +313,8 @@ func new_game() -> void:
 	tutorial_on = true
 	deals_bought.clear()
 	hot_bought.clear()
+	shell_bought = {}
+	shell_period = ""
 	energy_buys = 0
 	deals_day = today()
 	_init_board()
@@ -335,9 +362,9 @@ func save_dict() -> Dictionary:
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
 		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "builds": builds, "cards": cards,
 		"stash": stash, "tokens": tokens, "token_claimed": token_claimed, "settings": settings, "hot_bought": hot_bought,
-		"deals_bought": deals_bought, "deals_day": deals_day, "energy_buys": energy_buys, "player_id": player_id,
+		"deals_bought": deals_bought, "deals_day": deals_day, "shell_bought": shell_bought, "shell_period": shell_period, "energy_buys": energy_buys, "player_id": player_id,
 		"seen_tutorial": seen_tutorial, "tutorial_on": tutorial_on,
-		"pass_pts": pass_pts, "pass_tier": pass_tier, "pass_free": pass_free, "pass_prem": pass_prem,
+		"pass_pts": pass_pts, "pass_tier": pass_tier, "pass_free": pass_free, "pass_prem": pass_prem, "pass_super": pass_super,
 		"pass_endless": pass_endless, "pass_super_bonus": pass_super_bonus,
 	}
 
@@ -392,6 +419,8 @@ func load_game() -> bool:
 	hot_bought = d.get("hot_bought", {})
 	deals_bought = d.get("deals_bought", {})
 	deals_day = d.get("deals_day", "")
+	shell_bought = d.get("shell_bought", {})
+	shell_period = str(d.get("shell_period", ""))
 	energy_buys = int(d.get("energy_buys", 0))
 	player_id = d.get("player_id", "TRB00000000")
 	seen_tutorial = d.get("seen_tutorial", true)
@@ -408,6 +437,11 @@ func load_game() -> bool:
 	if typeof(pp) == TYPE_ARRAY:
 		for x in pp:
 			pass_prem.append(int(x))
+	pass_super = []
+	var ps = d.get("pass_super", [])
+	if typeof(ps) == TYPE_ARRAY:
+		for x in ps:
+			pass_super.append(int(x))
 	pass_endless = int(d.get("pass_endless", 0))
 	pass_super_bonus = bool(d.get("pass_super_bonus", false))
 	_ensure_craft_order(false)
@@ -510,11 +544,17 @@ func claim_level(lv: int):
 	_srv_fail(r)
 	return null
 
-## 集市购买。返回 {"ok", "message"}；成功时服务器已扣琥珀、记了已购数。
+## 集市购买。返回 {"ok", "message"}；成功时服务器已扣琥珀（贝币小摊 key "shell_N" 扣贝币）、记了已购数。
 func shop_buy(key: String, id: String, price: int, deal: bool) -> Dictionary:
 	if server_mode():
 		var r: Dictionary = await _cloud().act("/v1/shop/buy", {"key": key, "item": id})
 		return r
+	if key.begins_with("shell_"):
+		check_shell_period()
+		if not spend("shell", price):
+			return {"ok": false, "error": "not_enough_shell", "message": "贝币不够了！"}
+		shell_bought[key] = int(shell_bought.get(key, 0)) + 1
+		return {"ok": true}
 	if not spend("amber", price):
 		return {"ok": false, "error": "not_enough_amber", "message": "琥珀不够了！"}
 	var book: Dictionary = deals_bought if deal else hot_bought
@@ -632,7 +672,7 @@ func book_prize_count() -> int:
 					n += 1
 	return n
 
-## 领走这份图鉴奖。返回贝币数量，已经领过或还没发现则是 0。
+## 领走这份图鉴奖。返回火苗数量（等于物品等级），已经领过或还没发现则是 0。
 func claim_book(id: String) -> int:
 	if not book_prize(id):
 		return 0
@@ -656,6 +696,9 @@ func discover(id: String) -> bool:
 	var ch := Data.chain(id)
 	for l in range(1, Data.lv(id) + 1):
 		discovered["%s_%d" % [ch, l]] = true
+	# 马上告诉服务器「见过了」：服务器平时只在同步存档时看棋盘，刚合出来就领图鉴、马上丢弃退款的物品它还不知道。
+	# 事件按顺序结算，领奖接口会先把排队的事件交掉，所以领奖、退款之前服务器一定已经知道。
+	cloud_event({"type": "found", "item": id})
 	return true
 
 ## 合成后，上下左右的巨石崩开。有物品的格子露出藤蔓，空格直接开放。返回这些格子。
@@ -869,9 +912,9 @@ func _random_slots_taken() -> Dictionary:
 			taken[int(o["slot"])] = true
 	return taken
 
-## 当前等级场上最多几张随机单：1 级 1 张，之后每级多 1 张，直到 RANDOM_ORDERS。新手不会一下看到一整排订单。
+## 当前等级场上最多几张随机单，按 Data.random_cap 的曲线逐级变多，不超过 RANDOM_ORDERS。
 func random_cap() -> int:
-	return clampi(level, 0, maxi(0, RANDOM_ORDERS))
+	return clampi(Data.random_cap(level), 0, maxi(0, RANDOM_ORDERS))
 
 ## 制作订单从这一级开放（rules.json 的 craft_level）。
 func craft_level() -> int:
@@ -1046,17 +1089,27 @@ func _ensure_craft_order(replace: bool, avoid: String = "") -> void:
 	orders.append(made)
 	dirty()
 
-func _add_story_orders(skip: Array = []) -> void:
+## 发这一级的剧情单。场上同时最多 Data.story_cap 张，按 story.json 的顺序一张张放出来：
+## after 是已经放出过的最大序号（交单时传入），只发它后面的。行里记 si（序号），交单时据此放下一张。
+func _add_story_orders(skip: Array = [], after: int = -1) -> void:
 	var at := 0
 	for o in orders:
 		if o["story"]:
 			at += 1
 	## 只和场上的剧情单比重复；和随机单撞了也照发，不然这一级的声望会不够
 	var listed: Array = orders.filter(func(o): return o is Dictionary and bool(o.get("story", false)))
-	for s in Data.story_orders(level):
+	var room := Data.story_cap(level) - listed.size()
+	var list := Data.story_orders(level)
+	for si in list.size():
+		if room <= 0:
+			break
+		if si <= after:
+			continue
+		var s: Dictionary = list[si]
 		var items: Array = s["items"]
 		if _story_listed(items, skip) or _story_listed(items, listed):
 			continue
+		room -= 1
 		var rw := {"xp": int(s["xp"]), "shell": int(s["shell"])}
 		if s.has("token"):
 			rw["token"] = int(s["token"])
@@ -1067,7 +1120,7 @@ func _add_story_orders(skip: Array = []) -> void:
 			for _i in int(s["pack"]):
 				packs.append("pack_1")
 			rw["rewards"] = packs
-		var row := {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true}
+		var row := {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true, "si": si}
 		if str(s.get("say", "")) != "":
 			row["say"] = str(s["say"])
 		orders.insert(at, row)
@@ -1349,15 +1402,25 @@ func complete_order(oi: int) -> Array:
 	elif cells.size() != o["items"].size():
 		return []
 	cloud_event({"type": "order", "order": o.duplicate(true)})
+	order_delivered.emit((o["items"] as Array).duplicate())
 	for k in cells:
 		board[k]["id"] = ""
 		board[k].erase("ck")
 	var dish := str(o.get("dish", ""))
+	# 交的是剧情单：记下这一级已经放出过的最大序号，交完后补下一张
+	var story_after := -1
+	if bool(o.get("story", false)):
+		for row in orders:
+			if row is Dictionary and bool(row.get("story", false)) and str(row.get("items", [])) != str(["seed_1"]):
+				# 旧存档的剧情单没有 si、而且这一级的已经全摆出来了，不再补发，升级后再按新规则（新手引导的草籽单不算）
+				story_after = maxi(story_after, int(row["si"]) if row.has("si") else 999)
 	orders.remove_at(oi)
 	if craft:
 		_ensure_craft_order(false, dish)
 	elif _is_random_order(o):
 		_add_random_batch(oi)
+	elif not tutorial_on:
+		_add_story_orders([], story_after)
 	pass_pts += 2 if pass_tier >= 2 else 1
 	cloud_mark()
 	dirty()
@@ -1409,6 +1472,14 @@ func _pass_cursor() -> Dictionary:
 func pass_got(prem: bool, lv: int) -> bool:
 	return _pass_has(pass_prem if prem else pass_free, lv)
 
+## track：free 免费 / prem 贵宾 / super 超级贵宾
+func pass_got_in(track: String, lv: int) -> bool:
+	match track:
+		"free": return _pass_has(pass_free, lv)
+		"prem": return _pass_has(pass_prem, lv)
+		"super": return _pass_has(pass_super, lv)
+	return false
+
 func pass_claimable() -> bool:
 	var reached := pass_reached()
 	for i in reached:
@@ -1416,6 +1487,8 @@ func pass_claimable() -> bool:
 		if not _pass_has(pass_free, lv):
 			return true
 		if pass_tier >= 1 and not _pass_has(pass_prem, lv):
+			return true
+		if pass_tier >= 2 and not _pass_has(pass_super, lv):
 			return true
 	return pass_endless_ready() > 0
 
@@ -1447,12 +1520,29 @@ func claim_pass_prem(lv: int) -> Array:
 	changed.emit()
 	return Data.PASS_LEVELS[lv - 1]["prem"]
 
+## 超级贵宾那一列：只有超级贵宾能领
+func claim_pass_super(lv: int) -> Array:
+	if server_mode():
+		return await _claim_pass_srv("super", lv)
+	if lv < 1 or lv > Data.PASS_LEVELS.size() or _pass_has(pass_super, lv):
+		return []
+	if pass_tier < 2:
+		if main:
+			main.toast("超级贵宾可领取")
+		return []
+	if pass_reached() < lv:
+		return []
+	pass_super.append(lv)
+	dirty()
+	changed.emit()
+	return Data.PASS_LEVELS[lv - 1].get("super", [])
+
 func _claim_pass_srv(track: String, lv: int) -> Array:
 	var rw: Array = [["chest_1", 1]]
 	if track != "endless":
 		if lv < 1 or lv > Data.PASS_LEVELS.size():
 			return []
-		rw = Data.PASS_LEVELS[lv - 1][track]
+		rw = Data.PASS_LEVELS[lv - 1].get(track, [])
 	var r: Dictionary = await _cloud().act("/v1/pass/claim", {"track": track, "level": lv}, rw)
 	if not r.get("ok", false):
 		if main:
@@ -1474,44 +1564,37 @@ func claim_pass_endless() -> Array:
 	changed.emit()
 	return [["chest_1", 1]]
 
+## 通行证人民币标价（和服务器 server/config/economy.json 的 pass.vip_cny / super_cny 一致）
+const PASS_CNY := {"vip": 30, "super": 68}
+
+## 现在买这一档要付多少：已经是贵宾的升级超级只补差价（¥38）
+func pass_cny(tier: String) -> int:
+	if tier == "vip":
+		return int(PASS_CNY["vip"])
+	if pass_tier == 1:
+		return maxi(0, int(PASS_CNY["super"]) - int(PASS_CNY["vip"]))
+	return int(PASS_CNY["super"])
+
+## 人民币买贵宾（¥30）：服务器下单 → 支付渠道（现在是 mock）回调开通。没连服务器的单机版直接开通。
 func buy_pass_vip() -> bool:
-	if server_mode():
-		var r: Dictionary = await _cloud().act("/v1/pass/buy", {"tier": "vip"})
-		if not r.get("ok", false):
-			if main:
-				main.toast(str(r.get("message", "连不上服务器")))
-			return false
-		take_give({"energy": int(r.get("give", {}).get("energy", 0))})
-		return true
 	if pass_tier >= 1:
 		if main:
 			main.toast("已经拥有")
 		return false
-	if not spend("amber", 49):
-		if main:
-			main.toast("琥珀不够")
-		return false
+	if server_mode():
+		return await _pay_pass("vip")
 	pass_tier = 1
 	add_currency("energy", 150)
 	return true
 
+## 人民币买超级贵宾（¥68）：贵宾、超级两列奖励都能领，一次性 +10 积分。
 func buy_pass_super() -> bool:
-	if server_mode():
-		var r: Dictionary = await _cloud().act("/v1/pass/buy", {"tier": "super"})
-		if not r.get("ok", false):
-			if main:
-				main.toast(str(r.get("message", "连不上服务器")))
-			return false
-		take_give({"energy": int(r.get("give", {}).get("energy", 0))})
-		return true
 	if pass_tier >= 2:
 		if main:
 			main.toast("已经拥有")
 		return false
-	if not spend("amber", 79):
-		if main:
-			main.toast("琥珀不够")
-		return false
+	if server_mode():
+		return await _pay_pass("super")
 	var from_zero := pass_tier == 0
 	pass_tier = 2
 	if not pass_super_bonus:
@@ -1522,6 +1605,19 @@ func buy_pass_super() -> bool:
 	else:
 		dirty()
 		changed.emit()
+	return true
+
+func _pay_pass(tier: String) -> bool:
+	var c = _cloud()
+	var r: Dictionary = await c.act("/v1/pass/order", {"tier": tier})
+	if not r.get("ok", false):
+		_srv_fail(r)
+		return false
+	var paid: Dictionary = await c.act("/v1/payments/mock/%s/pay" % str(r.get("order_id", "")))
+	if not paid.get("ok", false) or str(paid.get("status", "")) != "paid":
+		_srv_fail(paid)
+		return false
+	take_give(paid.get("give", {}) if paid.get("give") is Dictionary else {})
 	return true
 
 func _pass_has(arr: Array, lv: int) -> bool:

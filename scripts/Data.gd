@@ -15,6 +15,9 @@ static var AMBER_PACKS: Array = []
 static var BUILDS: Array = []
 static var LEVEL_REWARDS := {}
 static var STORE_HOT: Array = []
+## 集市「贝币小摊」（data/store_shell.json）：每项 {"id", "price", "stock"}，每 STORE_SHELL_HOURS 小时刷新
+static var STORE_SHELL: Array = []
+static var STORE_SHELL_HOURS := 8
 static var PASS_LEVELS: Array = []
 static var RULES: Dictionary = {}
 static var BOARD: Array = []
@@ -94,6 +97,13 @@ static func _load() -> void:
 					packed.append([str(rw[0]), maxi(1, int(rw[1]))])
 			LEVEL_REWARDS[int(row.get("level", 0))] = packed
 	STORE_HOT = _take(ConfigFiles.STORE, [])
+	var shellf = _take(ConfigFiles.STORE_SHELL, {})
+	STORE_SHELL = []
+	if shellf is Dictionary:
+		for d in shellf.get("items", []):
+			if d is Dictionary:
+				STORE_SHELL.append({"id": str(d.get("id", "")), "price": int(d.get("price", 0)), "stock": int(d.get("stock", 0))})
+		STORE_SHELL_HOURS = maxi(1, int(shellf.get("refresh_hours", 8)))
 	var passf = _take(ConfigFiles.PASS, {"levels": []})
 	PASS_LEVELS = passf.get("levels", [])
 	RULES = _take(ConfigFiles.RULES, {})
@@ -279,6 +289,29 @@ static func default_level_rewards(level: int) -> Array:
 		out.append(["amber_3", 5])
 	return out
 
+## 订单栏逐级变多：数组里第 k 个数是「第 k+1 张从几级开始」。可在 rules.json 里改。
+## 剧情单：1 级 1 张，2 级 2 张，10 级 3 张。一级的剧情单不会一次全摆出来，交一张补下一张。
+## 随机单：1 级 1 张，4 级 2 张，15 级 3 张，20 级 4 张（不超过 random_orders）。
+static func _cap_at(key: String, fallback: Array, level: int, limit: int) -> int:
+	var at = RULES.get(key, fallback)
+	if not (at is Array):
+		at = fallback
+	var n := 0
+	for v in at:
+		if level >= int(v):
+			n += 1
+	return mini(n, limit)
+
+static func story_cap(level: int) -> int:
+	return maxi(1, _cap_at("story_cap_at", [1, 2, 10], level, 99))
+
+static func random_cap(level: int) -> int:
+	return _cap_at("random_cap_at", [1, 4, 15, 20], level, int(RULES.get("random_orders", 4)))
+
+## 这一级订单栏一共几张：剧情 + 随机 + 制作（制作单从 craft_level 起常驻 1 张）
+static func order_total(level: int) -> int:
+	return story_cap(level) + random_cap(level) + (1 if level >= int(RULES.get("craft_level", 3)) else 0)
+
 ## 升到这一级时新开放的东西，给升级弹窗用。每条一句。
 static func level_unlocks(level: int) -> Array:
 	var out: Array = []
@@ -294,9 +327,8 @@ static func level_unlocks(level: int) -> Array:
 		var d: Dictionary = DISHES[id]
 		if int(d["unlock"]) == level and level > int(RULES.get("craft_level", 3)):
 			out.append("新菜谱：%s" % str(d["name"]))
-	var slots := int(RULES.get("random_orders", 4))
-	if level > 1 and level <= slots:
-		out.append("订单栏 +1，现在 %d 张" % level)
+	if level > 1 and order_total(level) > order_total(level - 1):
+		out.append("订单栏 +%d，现在 %d 张" % [order_total(level) - order_total(level - 1), order_total(level)])
 	if level == CARD_LEVEL:
 		out.append("丰收祭卡册开放")
 	return out

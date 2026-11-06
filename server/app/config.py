@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     # 反向代理后面时信任 X-Forwarded-For 取真实 IP
     trust_forwarded: bool = False
     cors_origins: list[str] = Field(default_factory=list)
+    # 异步联机活动（篝火竞速）配置；race_overrides 是调试用的覆盖（JSON），例如
+    # TRIBE_RACE_OVERRIDES='{"cycle_sec": 600, "duration_sec": 480, "join_sec": 420, "fill_sec": 20}' 把场次缩短
+    race_config: str = str(SERVER_DIR / "config" / "race.json")
+    race_overrides: dict = Field(default_factory=dict)
 
     @property
     def is_prod(self) -> bool:

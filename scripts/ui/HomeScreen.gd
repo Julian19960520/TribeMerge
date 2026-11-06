@@ -17,6 +17,7 @@ var _hide := {}
 var _build_fx: Control
 const PASS_K := 0.8
 const RankPopupScript := preload("res://scripts/ui/RankPopup.gd")
+const TribeWalkersScript := preload("res://scripts/ui/TribeWalkers.gd")
 const CARD_YELLOW := Color("e7b45a")
 const CARD_YELLOW_L := Color("f2c66e")
 
@@ -24,7 +25,9 @@ func _ready() -> void:
 	size = Vector2(720, 1480)
 	mouse_filter = MOUSE_FILTER_IGNORE
 	_village = UI.box(self, Rect2(0, 0, 720, 1480), func(ci, sz): Paint.village(ci, sz, G.builds, G.level, _hide))
-	UI.box(self, Rect2(290, 1030, 140, 140), func(ci, sz): Paint.mascot(ci, sz * 0.5, 84))
+	# 「兄弟，我发现」小人在村里溜达（在牌子和按钮下面，只在小人身上接点击）
+	var walkers := TribeWalkersScript.new()
+	add_child(walkers)
 	_spots_root = Control.new()
 	_spots_root.mouse_filter = MOUSE_FILTER_IGNORE
 	add_child(_spots_root)
@@ -50,6 +53,8 @@ func _ready() -> void:
 		ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(8, 6), Vector2(r.size.x - 16, 10)), 5, 94, 0.3), Color(1, 1, 1, 0.22))
 		Art.item(ci, "chest_1", Vector2(sz.x * 0.5, 42), 70)
 	UI.lbl(deal, "每日特惠", Rect2(0, 74, 100, 24), 17, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+	# 礼包链（法币直购活动）：左边一列，每日特惠下面
+	add_child(preload("res://scripts/ui/GiftChainCard.gd").new())
 
 	var gear := UI.btn(self, Rect2(626, 150, 80, 80), "", "teal", func(): G.main.open("settings"))
 	gear.is_round = true

@@ -48,8 +48,6 @@ const ORDER_FULL := Color("aaf745")
 ## 石头先裂开，再碎开飞出去
 const CRUMBLE_HOLD := 0.1
 const CRUMBLE_DUR := 0.62
-## 越大越跟手
-const DRAG_FOLLOW := 32.0
 ## 停手这么久，就让一对能合成的物品呼吸
 const HINT_WAIT := 5.0
 
@@ -65,7 +63,7 @@ func _process(delta: float) -> void:
 	_t += delta
 	_tick_hint(delta)
 	if dragging:
-		drag_vis = drag_vis.lerp(drag_pos, 1.0 - exp(-delta * DRAG_FOLLOW))
+		drag_vis = drag_pos
 	for m in moves:
 		m["t"] += delta / float(m["dur"])
 	for m in moves.duplicate():
@@ -368,11 +366,14 @@ func _gui_input(e: InputEvent) -> void:
 			if held and c["lock"] == 0 and not hid.has(press_cell) and _crumble_for(press_cell).is_empty():
 				dragging = true
 				drag_from = press_cell
-				drag_vis = cell_center(press_cell) - DRAG_LIFT
+				drag_vis = e.position
 				select(press_cell)
 				Sfx.play("tap", 1.3)
 		if dragging:
+			# 物品直接贴着手指，不做缓动
 			drag_pos = e.position
+			drag_vis = e.position
+			queue_redraw()
 
 func _tap(i: int) -> void:
 	var c: Dictionary = G.board[i]
@@ -595,6 +596,8 @@ func _draw_cell(i: int) -> void:
 		_draw_vine(r, i)
 		if breath != 1.0 or nudge != Vector2.ZERO:
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	elif reveal > 0.65 and _is_max_currency(str(c["id"])):
+		_draw_max_badge(r, i)
 	elif prod and reveal > 0.65:
 		var wait := G.gen_wait(i)
 		if wait > 0:
@@ -602,6 +605,23 @@ func _draw_cell(i: int) -> void:
 		elif G.energy > 0:
 			var bolt := Art.flame_pts(r.position + Vector2(80, 78), 7, 18, i)
 			Art.fill(self, bolt, Art.FIRE2, 2.0)
+
+## 贝币、琥珀、沙漏、火种合到最高级后不能再合，右下角挂个 MAX 提示
+const MAX_BADGE_CHAINS := ["shell", "amber", "sand", "fire"]
+
+static func _is_max_currency(id: String) -> bool:
+	if id == "" or Data.DISHES.has(id):
+		return false
+	var ch := Data.chain(id)
+	return ch in MAX_BADGE_CHAINS and Data.CHAINS.has(ch) and Data.lv(id) >= Data.max_lv(ch)
+
+func _draw_max_badge(r: Rect2, i: int) -> void:
+	var box := Rect2(r.position + Vector2(CELL - 50, CELL - 28), Vector2(46, 24))
+	Art.fill(self, Art.rrect(box, 10, i, 0.4), Color("e8453a"), 2.5)
+	var fs := 17
+	var base := Vector2(box.position.x, box.position.y + 18)
+	draw_string_outline(G.font_title, base, "MAX", HORIZONTAL_ALIGNMENT_CENTER, box.size.x, fs, 4, Art.INK)
+	draw_string(G.font_title, base, "MAX", HORIZONTAL_ALIGNMENT_CENTER, box.size.x, fs, Color("fff1c4"))
 
 static func _sec_text(sec: int) -> String:
 	sec = maxi(sec, 0)

@@ -4,6 +4,8 @@ extends RefCounted
 ## 物品图标统一在 100×100 的局部坐标里绘制（中心为原点）。
 
 const INK := Color("3b2314")
+## 琥珀当货币显示时（顶栏、价格按钮、集市、飞入动画）统一用这一件：六边形的虫珀
+const AMBER_ICON := "amber_4"
 const HIDE := Color("f6e7c8")
 const HIDE2 := Color("ead3a6")
 const LEATHER := Color("a7622c")

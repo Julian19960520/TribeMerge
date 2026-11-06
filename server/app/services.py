@@ -37,7 +37,7 @@ def economy_cfg() -> dict:
 def economy() -> Economy:
     gd = gamedata()
     gd.reload()
-    return Economy(gd, economy_cfg(), today)
+    return Economy(gd, economy_cfg(), today, now_fn=clock.now, utc_offset=get_settings().day_utc_offset_hours)
 
 
 def today() -> str:

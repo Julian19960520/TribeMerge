@@ -4,6 +4,7 @@ const BakeItemsScript := preload("res://scripts/BakeItems.gd")
 const PassPopupScript := preload("res://scripts/ui/PassPopup.gd")
 const CfgEditScript := preload("res://scripts/ui/CfgEdit.gd")
 const GuideScript := preload("res://scripts/ui/Guide.gd")
+const ScreenWipeScript := preload("res://scripts/ui/ScreenWipe.gd")
 
 var home: HomeScreen
 var board_screen: BoardScreen
@@ -14,6 +15,7 @@ var pin: Control
 var fx_layer: Control
 var screen := "home"
 var _curtain: ColorRect
+var _wipe: Control
 var _guide
 var _fps_lbl: Label
 ## 全屏领奖一次只开一张，后面的排队
@@ -47,6 +49,8 @@ func _ready() -> void:
 	_curtain.color = Color(0.23, 0.14, 0.08, 0.0)
 	_curtain.mouse_filter = MOUSE_FILTER_IGNORE
 	add_child(_curtain)
+	_wipe = ScreenWipeScript.new()
+	add_child(_wipe)
 	_add_fps()
 	_guide = GuideScript.new()
 	board_screen.add_child(_guide)
@@ -99,6 +103,10 @@ func show_screen(name: String, instant: bool = false) -> void:
 	screen = name
 	if instant:
 		_apply_screen()
+		return
+	# 棋盘 ⇄ 部落用兽皮门转场；配置页还是简单的淡入淡出
+	if name in ["board", "home"] and _wipe != null and not _wipe.running():
+		_wipe.play(name, _apply_screen)
 		return
 	_curtain.mouse_filter = MOUSE_FILTER_STOP
 	var tw := create_tween()

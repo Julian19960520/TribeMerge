@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from . import api_auth, api_game, errors, logs
+from . import api_auth, api_game, errors, logs, race
 from .config import get_settings
 from .db import init_engine
 from .errors import body
@@ -64,6 +64,9 @@ def create_app() -> FastAPI:
 
     app.include_router(api_auth.router)
     app.include_router(api_game.router)
+    app.include_router(race.router)
+    from . import gift_chain  # 礼包链（直购活动）
+    app.include_router(gift_chain.router)
     return app
 
 

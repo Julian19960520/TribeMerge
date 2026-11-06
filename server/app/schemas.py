@@ -67,7 +67,7 @@ class TransferCodeResp(Resp):
 
 class Event(Req):
     id: str = Field(min_length=1, max_length=64)
-    type: Literal["order", "bubble", "collect", "refund"]
+    type: Literal["order", "bubble", "collect", "refund", "found"]
     order: dict[str, Any] | None = None
     cell: int | None = None
     item: str | None = Field(default=None, max_length=32)
@@ -101,7 +101,7 @@ class ActionResp(Resp):
 
 
 class ShopBuyReq(Req):
-    key: str = Field(pattern=r"^(deal|hot)_\d{1,2}$")
+    key: str = Field(pattern=r"^(deal|hot|shell)_\d{1,2}$")
     item: str = Field(default="", max_length=32)
 
 
@@ -109,8 +109,13 @@ class PassBuyReq(Req):
     tier: Literal["vip", "super"]
 
 
+class PassOrderReq(Req):
+    tier: Literal["vip", "super"]
+    provider: str = Field(default="mock", pattern=r"^[a-z0-9_]{1,16}$")
+
+
 class PassClaimReq(Req):
-    track: Literal["free", "prem", "endless"]
+    track: Literal["free", "prem", "super", "endless"]
     level: int = Field(default=0, ge=0, le=1000)
 
 

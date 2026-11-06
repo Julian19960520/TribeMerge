@@ -11,6 +11,7 @@ const AMBER := "res://data/amber_packs.json"
 const BUILDS := "res://data/builds.json"
 const LEVELS := "res://data/levels.json"
 const STORE := "res://data/store.json"
+const STORE_SHELL := "res://data/store_shell.json"
 const PASS := "res://data/pass.json"
 const BOARD := "res://data/board.json"
 const RULES := "res://data/rules.json"
@@ -28,6 +29,7 @@ const RES_AMBER = preload("res://data/amber_packs.json")
 const RES_BUILDS = preload("res://data/builds.json")
 const RES_LEVELS = preload("res://data/levels.json")
 const RES_STORE = preload("res://data/store.json")
+const RES_STORE_SHELL = preload("res://data/store_shell.json")
 const RES_PASS = preload("res://data/pass.json")
 const RES_BOARD = preload("res://data/board.json")
 const RES_RULES = preload("res://data/rules.json")
@@ -93,6 +95,8 @@ static func _imported(path: String) -> Resource:
 			return RES_LEVELS
 		STORE:
 			return RES_STORE
+		STORE_SHELL:
+			return RES_STORE_SHELL
 		PASS:
 			return RES_PASS
 		BOARD:

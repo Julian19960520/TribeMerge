@@ -1,5 +1,6 @@
 class_name BoardScreen
 extends Control
+const Meme := preload("res://scripts/Meme.gd")
 
 const BOARD_POS := Vector2(24, 432)
 ## 暂存区、基地和订单在同一个横向滚动列表里
@@ -11,6 +12,8 @@ const STASH_RECT := Rect2(6, 38, 118, 226)
 const BASE_RECT := Rect2(126, 38, 142, 226)
 const HAMMER_W := 130.0
 const ROW_GAP := 4.0
+## 篝火竞速入口的宽度（在主角卡左边）
+const RACE_W := 104.0
 const CHIP_ICON := {"shell": "shell_2", "pack": "pack_1", "token": "token_1"}
 
 var board: Board
@@ -34,6 +37,7 @@ var _row_tween: Tween
 var _base_btn: TButton
 var _hammer_btn: TButton
 var _pouch: TButton
+var _race_entry: Control
 var _cards: Array[Control] = []
 var _cards_root: Control
 ## 订单在 _cards_root 内的右缘（含原来的 2px），滚动长度再叠上根节点目标 x
@@ -71,6 +75,11 @@ func _ready() -> void:
 	_orders.content.add_child(_stash_wrap)
 	_stash_btn = UI.hit(_stash_wrap, Rect2(Vector2.ZERO, STASH_RECT.size), _on_stash)
 	_stash_btn.extra = _paint_stash
+	# 篝火竞速入口：主角卡左边
+	_race_entry = preload("res://scripts/ui/RaceEntry.gd").new()
+	_race_entry.position = BASE_RECT.position
+	_race_entry.size = Vector2(RACE_W, BASE_RECT.size.y)
+	_orders.content.add_child(_race_entry)
 	_base_btn = UI.hit(_orders.content, BASE_RECT, func(): G.main.open("level"))
 	_base_btn.extra = _paint_hero
 	_lv_lbl = UI.lbl(_base_btn, "", Rect2(0, 140, BASE_RECT.size.x, 30), 18, Art.INK)
@@ -348,12 +357,12 @@ func _build_orders() -> void:
 		var h := ORDER_H_SHORT
 		var card := UI.box(_cards_root, Rect2(x, 44, w, h), _paint_order.bind(oi))
 		_cards[oi] = card
-		var name_w := w - 84.0
+		var name_w := w - 96.0
 		if str(o.get("kind", "")) == "craft":
-			name_w = w - 156.0
+			name_w = w - 168.0
 		elif o["rw"].has("xp") and int(o["rw"]["xp"]) > 0:
-			name_w = w - 132.0
-		UI.lbl(card, Data.PEOPLE[o["who"]].get_slice(" ", 1), Rect2(80, 30, name_w, 32), 20, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
+			name_w = w - 144.0
+		UI.lbl(card, Data.PEOPLE[o["who"]].get_slice(" ", 1), Rect2(92, 30, name_w, 32), 20, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
 		var spots: Array = _formula_spots(o, w) if str(o.get("kind", "")) == "craft" else _order_item_spots(o, w)
 		for spot in spots:
 			var mid := str(spot["id"])
@@ -424,10 +433,10 @@ func _paint_order(ci: CanvasItem, sz: Vector2, oi: int) -> void:
 		bg = Color("eaf6c8")
 	ci.draw_colored_polygon(b, bg)
 	Art.dashed(ci, Art.rrect(r.grow(-6), 12, 61 + oi, 0.0), 8, 6, Color(0.65, 0.4, 0.2, 0.45), 2.0)
-	var head := Art.ell(Vector2(40, 30), Vector2(32, 32), 62 + oi, 0.02, 20)
+	var head := Art.ell(Vector2(46, 38), Vector2(38, 38), 62 + oi, 0.02, 20)
 	Art.dilate(ci, head, 3.0, Art.INK)
 	ci.draw_colored_polygon(head, Art.OCHRE.lightened(0.3) if story else Art.TEAL.lightened(0.3))
-	Paint.portrait(ci, o["who"], Vector2(40, 28), 52)
+	Meme.portrait(ci, int(o["who"]), Vector2(46, 37), 74)
 	if o["rw"].has("xp") and int(o["rw"]["xp"]) > 0:
 		var star := Vector2(sz.x - 20, 36)
 		Art.item(ci, "xp_1", star, 52)
@@ -578,11 +587,12 @@ func _on_deliver(oi: int) -> void:
 	var rw: Dictionary = (o["rw"] as Dictionary).duplicate(true)
 	var who := int(o["who"])
 	G.complete_order(oi)
+	_race_entry.fly_from(card_pos)
 	board.select(-1)
 	Sfx.play("coin")
 	await get_tree().create_timer(0.35).timeout
 	var say := str(o.get("say", ""))
-	G.main.toast("%s：%s" % [Data.PEOPLE[who].get_slice(" ", 1), say if say != "" else "谢谢你！"])
+	G.main.toast("%s：%s" % [Data.PEOPLE[who].get_slice(" ", 1), say if say != "" else Meme.line()])
 	var stash_c := stash_pos()
 	if rw.has("shell"):
 		var shell_n: int = rw["shell"]
@@ -647,6 +657,7 @@ func _tribe_ready() -> bool:
 
 func _cards_x() -> float:
 	var x := 0.0 if not G.stash.is_empty() else -(BASE_RECT.position.x - STASH_RECT.position.x)
+	x += RACE_W + ROW_GAP
 	if _tribe_ready():
 		x += HAMMER_W + ROW_GAP
 	return x
@@ -662,7 +673,8 @@ func _apply_row(animate: bool) -> void:
 		_row_tween.kill()
 	var open := not G.stash.is_empty()
 	var hammer := _tribe_ready()
-	var base_x := BASE_RECT.position.x if open else STASH_RECT.position.x
+	var race_x := BASE_RECT.position.x if open else STASH_RECT.position.x
+	var base_x := race_x + RACE_W + ROW_GAP
 	var hammer_x := base_x + BASE_RECT.size.x + ROW_GAP
 	var cards_x := _cards_x()
 	var stash_was := _stash_open
@@ -674,6 +686,7 @@ func _apply_row(animate: bool) -> void:
 		_stash_wrap.visible = open
 		_stash_wrap.scale = Vector2.ONE if open else Vector2.ZERO
 		_stash_btn.mouse_filter = MOUSE_FILTER_STOP if open else MOUSE_FILTER_IGNORE
+		_race_entry.position.x = race_x
 		_base_btn.position.x = base_x
 		_hammer_btn.visible = hammer
 		_hammer_btn.scale = Vector2.ONE
@@ -701,6 +714,7 @@ func _apply_row(animate: bool) -> void:
 	if hammer != hammer_was:
 		var hammer_dur := 0.22 if hammer else 0.16
 		_row_tween.tween_property(_hammer_btn, "scale", Vector2.ONE if hammer else Vector2.ZERO, hammer_dur).set_trans(Tween.TRANS_BACK if hammer else Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT if hammer else Tween.EASE_IN)
+	_row_tween.tween_property(_race_entry, "position:x", race_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_base_btn, "position:x", base_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_hammer_btn, "position:x", hammer_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_cards_root, "position:x", cards_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)

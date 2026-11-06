@@ -4,7 +4,7 @@ extends PA
 
 const GRAPE := Color("7b4aa8")
 const BLUE := Color("4f6fc4")
-const PLUM := Color("9b3f74")
+const PLUM := Color("e8b52e")  # 黄李：和紫色的无花果、蓝莓分开
 const FIG := Color("7a4a6a")
 const APPLE := Color("e0453a")
 const PEAR := Color("c8d64a")

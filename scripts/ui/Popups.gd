@@ -3,6 +3,7 @@ extends RefCounted
 ## 所有弹窗的构建函数。每个函数返回一个 PopupBase，由 Main.open() 打开。
 
 const Layout := preload("res://scripts/config/board_layout.gd")
+const HotDeals := preload("res://scripts/HotDeals.gd")
 
 static func frame(p: PopupBase, r: Rect2, title: String, col: Color = Art.TEAL, mascot: String = "") -> void:
 	var br := Rect2(r.get_center().x - 180, r.position.y - 34, 360, 78)
@@ -49,7 +50,7 @@ static func energy() -> PopupBase:
 	tag.rotation = -0.06
 	var price := G.energy_price()
 	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.position.y + 560, 300, 100), str(price), "green", Callable(), 44)
-	b.res = "amber_3"
+	b.res = Art.AMBER_ICON
 	UI.lbl(p.box, "今天第 %d 次购买，每次涨价，零点恢复。" % (G.energy_buys + 1), Rect2(r.position.x + 30, r.position.y + 676, r.size.x - 60, 40), 22, Color("8a6a4a"))
 	b.pressed.connect(func():
 		if await G.buy_energy():
@@ -197,12 +198,26 @@ static func store() -> PopupBase:
 	tl.text = "刷新倒计时：%s" % G.fmt_time(G.secs_to_midnight())
 	section(root, "热卖", 880, Color("ffd23f"))
 	var y := 924.0
-	for k in Data.STORE_HOT.size():
-		var d: Dictionary = Data.STORE_HOT[k]
+	var hot: Array = HotDeals.today()
+	for k in hot.size():
+		var d: Dictionary = hot[k]
 		var x := 30.0 + (k % 3) * 226.0
 		y = 924.0 + (k / 3) * 270.0
 		_store_card(root, Rect2(x, y, 208, 250), d, "hot_%d" % k, false)
 	y += 290.0
+	# 贝币小摊：用贝币买低一级的普通货，库存少，每 8 小时按服务器时间刷新
+	G.check_shell_period()
+	section(root, "贝币小摊", y, Color("bfe3ff"))
+	var sy := y + 44.0
+	for k in Data.STORE_SHELL.size():
+		var d: Dictionary = Data.STORE_SHELL[k]
+		sy = y + 44.0 + (k / 3) * 270.0
+		_shell_card(root, Rect2(30.0 + (k % 3) * 226.0, sy, 208, 250), d, "shell_%d" % k)
+	if not Data.STORE_SHELL.is_empty():
+		sy += 264.0
+		var stl := UI.lbl(root, "", Rect2(160, sy, 400, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+		stl.text = "刷新倒计时：%s" % G.fmt_time(G.shell_secs_left())
+		y = sy + 60.0
 	section(root, "琥珀", y, Color("ffd23f"))
 	y += 48.0
 	for k in Data.AMBER_PACKS.size():
@@ -213,7 +228,8 @@ static func store() -> PopupBase:
 	return p
 
 static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> void:
-	var piles := [["amber_2", 1], ["amber_3", 1], ["amber_3", 3], ["amber_4", 2], ["amber_4", 4], ["amber_4", 6]]
+	# 礼包越大，堆的六边琥珀越多
+	var piles := [[Art.AMBER_ICON, 1], [Art.AMBER_ICON, 2], [Art.AMBER_ICON, 3], [Art.AMBER_ICON, 4], [Art.AMBER_ICON, 5], [Art.AMBER_ICON, 6]]
 	UI.box(parent, r, func(ci, sz):
 		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 20, 300 + k, 1.0)
 		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 20, 3, 0.0), Color(0, 0, 0, 0.3))
@@ -240,7 +256,7 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 		var got: int = await G.buy_amber_pack(k)
 		if got <= 0:
 			return
-		G.main.fly("amber_3", b.get_global_rect().get_center() + Vector2(0, -100), G.main.topbar.target("amber"), func(): G.add_currency("amber", a["n"]), 80)
+		G.main.fly(Art.AMBER_ICON, b.get_global_rect().get_center() + Vector2(0, -100), G.main.topbar.target("amber"), func(): G.add_currency("amber", a["n"]), 80)
 		G.main.toast("演示版本：琥珀 ×%d 已到账" % got))
 
 static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
@@ -255,7 +271,7 @@ static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
 		ci.draw_circle(ir.position + Vector2(Art.srnd(i) * ir.size.x, Art.srnd(i + 40) * ir.size.y), 1.5 + Art.srnd(i + 9) * 1.5, Color(1, 1, 0.8, 0.7))
 	Art.item(ci, "chest_1", Vector2(150, 316), 180)
 	for k in 6:
-		Art.item(ci, "amber_3", Vector2(70 + k * 34, 380 - (k % 2) * 10), 54)
+		Art.item(ci, Art.AMBER_ICON, Vector2(70 + k * 34, 380 - (k % 2) * 10), 54)
 	Art.item(ci, "fire_4", Vector2(270, 330), 80)
 	var tag := Art.rrect(Rect2(470, 344, 160, 44), 10, 122, 0.6)
 	Art.dilate(ci, tag, 2.5, Art.INK)
@@ -285,7 +301,7 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 		var left: int = int(d["stock"]) - int(book_of.get(key, 0))
 		left_lbl.text = "剩余 %d" % left
 		b.text = str(d["price"]) if left > 0 else "售罄"
-		b.res = "amber_3" if left > 0 else ""
+		b.res = Art.AMBER_ICON if left > 0 else ""
 		b.style = "green" if left > 0 else "grey"
 		b.enabled = left > 0
 		b.queue_redraw()
@@ -293,6 +309,34 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 	b.pressed.connect(func():
 		var origin: Vector2 = b.get_global_rect().get_center() + Vector2(0, -110)
 		if await _buy_from_shop(str(d["id"]), origin):
+			refresh.call())
+
+## 贝币小摊的一格：样子同热卖卡片，换成浅蓝底、价格按钮用贝币图标
+static func _shell_card(parent: Control, r: Rect2, d: Dictionary, key: String) -> void:
+	UI.box(parent, r, func(ci, sz):
+		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 20, int(r.position.x) + 7, 1.0)
+		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 20, 3, 0.0), Color(0, 0, 0, 0.3))
+		Art.dilate(ci, b, 3.0, Art.INK)
+		ci.draw_colored_polygon(b, Color("6f9fb8"))
+		var ir := Rect2(10, 10, sz.x - 20, sz.y - 86)
+		ci.draw_colored_polygon(Art.rrect(ir, 14, 5, 0.6), Color("eef6f2"))
+		Art.item(ci, d["id"], Vector2(sz.x * 0.5, 82), 112)
+		Paint.glyph(ci, "info", Vector2(sz.x - 18, 18), 1.1))
+	var left_lbl := UI.lbl(parent, "", Rect2(r.position.x, r.position.y + 128, r.size.x, 34), 22, Color("2f4f60"))
+	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 178, r.size.x - 44, 64), "", "green", Callable(), 30)
+	var refresh := func():
+		G.check_shell_period()
+		var left: int = int(d["stock"]) - int(G.shell_bought.get(key, 0))
+		left_lbl.text = "剩余 %d" % left
+		b.text = str(int(d["price"])) if left > 0 else "售罄"
+		b.res = "shell_2" if left > 0 else ""
+		b.style = "green" if left > 0 else "grey"
+		b.enabled = left > 0
+		b.queue_redraw()
+	refresh.call()
+	b.pressed.connect(func():
+		var origin: Vector2 = b.get_global_rect().get_center() + Vector2(0, -110)
+		if await _buy_offer(str(d["id"]), _shell_offer(key), origin):
 			refresh.call())
 
 # ---------------------------------------------------------------- 设置
@@ -591,14 +635,16 @@ static func _book_chain(page: Control, r: Rect2, chain_id: String, y: float) -> 
 				if not G.book_prize(id):
 					G.main.open("item_info", id)
 					return
-				var shells: int = await G.claim_book(id)
-				if shells <= 0:
+				var fire: int = await G.claim_book(id)
+				if fire <= 0:
 					return
 				box.queue_redraw()
 				Sfx.play("coin")
 				if b != null:
 					var from := b.global_position + b.size * 0.5
-					G.main.fly("shell_2", from, G.main.topbar.target("shell"), func(): G.add_currency("shell", shells), 64))
+					G.main.fly("fire_2", from, G.main.topbar.target("energy"), func(): G.add_currency("energy", fire), 64)
+				else:
+					G.add_currency("energy", fire))
 			slot["b"] = btn
 		if lv % 4 == 3 and lv < items.size() - 1:
 			y += 116
@@ -641,7 +687,7 @@ static func inventory() -> PopupBase:
 			var pr := Rect2(10 + k * 230, 6, 200, 44)
 			var b := Art.rrect(pr, 22, 170 + k, 0.6)
 			ci.draw_colored_polygon(b, Color(0, 0, 0, 0.3))
-		Art.item(ci, "amber_3", Vector2(30, 28), 50)
+		Art.item(ci, Art.AMBER_ICON, Vector2(30, 28), 50)
 		Art.item(ci, "shell_2", Vector2(260, 28), 50))
 	var am_lbl := UI.lbl(p.box, "", Rect2(180, 406, 140, 44), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	var sh_lbl := UI.lbl(p.box, "", Rect2(410, 406, 140, 44), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
@@ -678,7 +724,7 @@ static func inventory() -> PopupBase:
 			G.board_changed.emit()
 			Sfx.play("pop"))
 	var unlock := UI.btn(p.box, Rect2(0, 0, 108, 54), "50", "green", Callable(), 26)
-	unlock.res = "amber_3"
+	unlock.res = Art.AMBER_ICON
 	var refresh := func():
 		am_lbl.text = str(G.amber)
 		sh_lbl.text = str(G.shells)
@@ -828,7 +874,7 @@ static func item_info(id: String) -> PopupBase:
 			var cap_h := 24.0
 			var buy := UI.btn(p.box, Rect2(cx - 40.0, cy + cell_w - cap_h * 0.5, 80, cap_h), str(price), "green", Callable(), 15)
 			buy.title_font = false
-			buy.res = "amber_3"
+			buy.res = str(offer.get("res", Art.AMBER_ICON))
 			buy.z_index = 3
 			buy.set_meta("iid", bought_id)
 			buy.pressed.connect(func():
@@ -870,8 +916,9 @@ static func _shop_offer(id: String) -> Dictionary:
 	var rows: Array = [{"id": "chest_1", "price": 10, "stock": 1, "key": "deal_0", "deal": true}]
 	if G.level >= Data.CARD_LEVEL:
 		rows.append({"id": "pack_1", "price": 15, "stock": 1, "key": "deal_1", "deal": true})
-	for k in Data.STORE_HOT.size():
-		var d: Dictionary = Data.STORE_HOT[k]
+	var hot: Array = HotDeals.today()
+	for k in hot.size():
+		var d: Dictionary = hot[k]
 		rows.append({
 			"id": str(d.get("id", "")),
 			"price": int(d.get("price", 0)),
@@ -887,15 +934,37 @@ static func _shop_offer(id: String) -> Dictionary:
 		var left := int(row["stock"]) - int(book.get(row["key"], 0))
 		if left > 0:
 			return {"price": int(row["price"]), "left": left, "key": str(row["key"]), "deal": deal}
+	# 琥珀栏没有（或卖完）才看贝币小摊
+	for k in Data.STORE_SHELL.size():
+		if str(Data.STORE_SHELL[k].get("id", "")) == id:
+			var o := _shell_offer("shell_%d" % k)
+			if not o.is_empty():
+				return o
 	return {}
 
+## 贝币小摊这一格本轮还剩的，卖完返回 {}
+static func _shell_offer(key: String) -> Dictionary:
+	var k := int(key.trim_prefix("shell_"))
+	if k < 0 or k >= Data.STORE_SHELL.size():
+		return {}
+	G.check_shell_period()
+	var d: Dictionary = Data.STORE_SHELL[k]
+	var left := int(d.get("stock", 0)) - int(G.shell_bought.get(key, 0))
+	if left <= 0:
+		return {}
+	return {"price": int(d.get("price", 0)), "left": left, "key": key, "deal": false, "res": "shell_2"}
+
 static func _buy_from_shop(id: String, origin: Vector2) -> bool:
-	var offer := _shop_offer(id)
+	return await _buy_offer(id, _shop_offer(id), origin)
+
+static func _buy_offer(id: String, offer: Dictionary, origin: Vector2) -> bool:
 	if offer.is_empty() or G.main == null:
 		return false
 	var r: Dictionary = await G.shop_buy(str(offer["key"]), id, int(offer["price"]), bool(offer["deal"]))
 	if not r.get("ok", false):
-		G.main.toast("琥珀不够了！" if str(r.get("error", "")) == "not_enough_amber" else str(r.get("message", "连不上服务器，请稍后再试")))
+		var err := str(r.get("error", ""))
+		var msg := "琥珀不够了！" if err == "not_enough_amber" else ("贝币不够了！" if err == "not_enough_shell" else str(r.get("message", "连不上服务器，请稍后再试")))
+		G.main.toast(msg)
 		return false
 	G.discover(id)
 	G.stash_push(id)

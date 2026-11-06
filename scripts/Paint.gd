@@ -1,5 +1,6 @@
 class_name Paint
 extends RefCounted
+const Meme := preload("res://scripts/Meme.gd")
 ## 界面部件、角色、卡牌与村庄的程序化绘制。
 
 const BTN := {
@@ -555,93 +556,40 @@ static func face_mouth_only(ci: CanvasItem, c: Vector2, r: float) -> void:
 	ci.draw_colored_polygon(Art.poly(m, 9, 0.3), Color("8a2a1a"))
 	Art.pl(ci, m, r * 0.05, Art.INK, 9)
 
-## 剑齿虎幼崽「小牙」
+## 小牙：原来是剑齿虎幼崽，现在是披着虎皮帽的「兄弟，我发现」族人（Meme.XIAOYA）。
+## 尺寸和原来的画法对齐：c 在身体中间，s 约等于整只的高度。prop == "hammer" 时手边贴一把石锤。
 static func mascot(ci: CanvasItem, c: Vector2, s: float, prop: String = "") -> void:
-	ci.draw_set_transform(c, 0.0, Vector2.ONE * (s / 100.0))
-	var fur := Color("f0a04b")
-	var parts := [Art.P(Art.capsule(Vector2(30, 30), Vector2(56, -4), 7.0, 1), fur.darkened(0.08), 1),
-		Art.P(Art.ell(Vector2(0, 30), Vector2(40, 30), 2, 0.04), fur),
-		Art.P(Art.poly([Vector2(-36, -40), Vector2(-30, -66), Vector2(-12, -48)], 3), fur, 1),
-		Art.P(Art.poly([Vector2(36, -40), Vector2(30, -66), Vector2(12, -48)], 4), fur, 1),
-		Art.P(Art.ell(Vector2(0, -22), Vector2(42, 34), 5, 0.04), fur)]
-	Art.sil(ci, parts, true)
-	ci.draw_colored_polygon(Art.ell(Vector2(0, 36), Vector2(24, 20), 6, 0.03), Color("fbe6c4"))
-	ci.draw_colored_polygon(Art.ell(Vector2(0, -6), Vector2(24, 14), 7, 0.03), Color("fbe6c4"))
-	for sx in [-1.0, 1.0]:
-		Art.pl(ci, [Vector2(38 * sx, -30), Vector2(26 * sx, -26)], 3.0, Color("b5651d"), 8)
-		Art.pl(ci, [Vector2(40 * sx, -18), Vector2(28 * sx, -18)], 3.0, Color("b5651d"), 9)
-		ci.draw_colored_polygon(Art.poly([Vector2(-30, -42) * Vector2(-sx, 1), Vector2(-28, -58) * Vector2(-sx, 1), Vector2(-18, -48) * Vector2(-sx, 1)], 10), Color("f7b9a8"))
-		var e := Vector2(16 * sx, -26)
-		ci.draw_colored_polygon(Art.ell(e, Vector2(9, 11), 11, 0.0, 14), Color.WHITE)
-		ci.draw_circle(e + Vector2(0, 1), 7.0, Color("2a1a0e"))
-		ci.draw_circle(e + Vector2(-2, -3), 2.6, Color.WHITE)
-		Art.sil(ci, [Art.P(Art.poly([Vector2(6 * sx, -4), Vector2(12 * sx, -4), Vector2(9 * sx, 12)], 12), Color.WHITE, 2)], false, 1.6)
-		ci.draw_colored_polygon(Art.ell(Vector2(16 * sx, 54), Vector2(12, 8), 13, 0.03), fur.lightened(0.1))
-		Art.outline(ci, Art.ell(Vector2(16 * sx, 54), Vector2(12, 8), 13, 0.03), 2.0)
-	for k in 3:
-		Art.pl(ci, [Vector2(-10 + k * 10, -54), Vector2(-8 + k * 8, -44)], 3.0, Color("b5651d"), 14 + k)
-	ci.draw_colored_polygon(Art.poly([Vector2(-5, -12), Vector2(5, -12), Vector2(0, -6)], 15), Color("8a3a2a"))
-	Art.pl(ci, [Vector2(-8, -3), Vector2(0, -6), Vector2(8, -3)], 2.0, Art.INK, 16)
+	var k := s / 100.0
+	var w := 128.0 / Meme.BUST_RECT.size.y * 100.0 * k
+	var hc := c + Vector2(0, 62.0 * k - Meme.BUST_RECT.end.y * w / 100.0)
+	var rot: float = Meme.TILT[Meme.XIAOYA]
+	Meme.props_back(ci, Meme.XIAOYA, hc, w, rot)
+	Meme.bust(ci, hc, w, rot)
+	Meme.clothes(ci, Meme.XIAOYA, hc, w, rot)
+	Meme.props_front(ci, Meme.XIAOYA, hc, w, rot)
 	if prop == "hammer":
-		Art.sil(ci, [Art.P(Art.capsule(Vector2(36, 30), Vector2(60, -26), 4.5, 20), Art.WOOD, 1),
-			Art.P(Art.rrect(Rect2(44, -50, 40, 22), 7, 21, 0.6), Art.STONE, 1)], true)
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		hammer(ci, c + Vector2(52, 20) * k, 0.9 * k)
 
-## 部落少女「阿焰」抱着小牙
+## 主角阿焰（Meme.HERO）和小牙站在一起。c、s 和原来的画法对齐（整张约 280*s/100 高）。
 static func heroine(ci: CanvasItem, c: Vector2, s: float) -> void:
-	ci.draw_set_transform(c, 0.0, Vector2.ONE * (s / 100.0))
-	var hair := Color("d9431f")
-	var skin := Color("d9a072")
-	Art.sil(ci, [Art.P(Art.flame_pts(Vector2(-60, -90), 30, 120, 3), hair, 1),
-		Art.P(Art.ell(Vector2(0, 80), Vector2(66, 50), 1, 0.04), Color("8a5a2b")),
-		Art.P(Art.ell(Vector2(0, -60), Vector2(62, 64), 2, 0.05), hair)], true)
-	ci.draw_colored_polygon(Art.flame_pts(Vector2(-60, -84), 14, 70, 4), Color("ffb03a"))
-	Art.sil(ci, [Art.P(Art.poly([Vector2(-50, 40), Vector2(50, 40), Vector2(40, 70), Vector2(-40, 70)], 5), Art.LEAF, 1)], false)
-	for i in 6:
-		Art.ln(ci, Vector2(-44 + i * 17, 42), Vector2(-40 + i * 16, 68), 2.0, Art.LEAF_D, 6 + i)
-	face(ci, Vector2(0, -36), 46, skin, 20)
-	Art.sil(ci, [Art.P(Art.ell(Vector2(-22, -76), Vector2(34, 18), 21, 0.06, 18, -0.3), hair, 1),
-		Art.P(Art.ell(Vector2(26, -78), Vector2(28, 16), 22, 0.06, 18, 0.4), hair, 1),
-		Art.P(Art.ell(Vector2(24, -96), Vector2(14, 6), 23, 0.05, 12, -0.5), Art.LEAF, 1),
-		Art.P(Art.capsule(Vector2(-46, -58), Vector2(46, -58), 5.0, 24), Art.TEAL, 1)], false)
-	for sx in [-1.0, 1.0]:
-		Art.ln(ci, Vector2(26 * sx, -26), Vector2(36 * sx, -28), 3.0, Color("f5f0e0"), 25)
-	for i in 5:
-		var x := -24.0 + float(i) * 12.0
-		Art.sil(ci, [Art.P(Art.poly([Vector2(x - 4, 22), Vector2(x + 4, 22), Vector2(x, 34)], 30 + i), Art.BONE, 2)], false, 2.0)
-	mascot(ci, c + Vector2(52, 62) * (s / 100.0), 64 * (s / 100.0))
-	ci.draw_set_transform(c, 0.0, Vector2.ONE * (s / 100.0))
-	Art.sil(ci, [Art.P(Art.capsule(Vector2(-40, 56), Vector2(30, 82), 11.0, 40), skin, 1)], false)
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var k := s / 100.0
+	var w := 250.0 / Meme.BUST_RECT.size.y * 100.0 * k
+	var hc := c + Vector2(-14, 130.0 * k - Meme.BUST_RECT.end.y * w / 100.0)
+	_hero_at(ci, hc, w)
+	mascot(ci, c + Vector2(96, 84) * k, 92.0 * k)
 
-## 阿焰半身。原点在胸口，头顶朝上。
+## 阿焰半身。原点在胸口，头顶朝上（尺寸和原来的画法对齐，整张约 164*s/100 高）。
 static func bust(ci: CanvasItem, c: Vector2, s: float) -> void:
-	ci.draw_set_transform(c, 0.0, Vector2.ONE * (s / 100.0))
-	var hair := Color("d9431f")
-	var skin := Color("d9a072")
-	Art.sil(ci, [
-		Art.P(Art.ell(Vector2(0, 26), Vector2(72, 32), 1, 0.04), Color("8a5a2b")),
-		Art.P(Art.ell(Vector2(0, -48), Vector2(56, 58), 2, 0.05), hair),
-		Art.P(Art.flame_pts(Vector2(-44, -74), 22, 92, 3), hair, 1),
-	], true)
-	ci.draw_colored_polygon(Art.flame_pts(Vector2(-44, -68), 10, 52, 4), Color("ffb03a"))
-	Art.sil(ci, [Art.P(Art.poly([Vector2(-58, 4), Vector2(58, 4), Vector2(46, 44), Vector2(-46, 44)], 5), Art.LEAF, 1)], false)
-	for i in 6:
-		Art.ln(ci, Vector2(-44 + i * 17, 8), Vector2(-40 + i * 16, 40), 2.0, Art.LEAF_D, 6 + i)
-	face(ci, Vector2(0, -24), 40, skin, 20)
-	Art.sil(ci, [
-		Art.P(Art.ell(Vector2(-16, -60), Vector2(28, 15), 21, 0.06, 18, -0.3), hair, 1),
-		Art.P(Art.ell(Vector2(20, -62), Vector2(24, 13), 22, 0.06, 18, 0.4), hair, 1),
-		Art.P(Art.ell(Vector2(18, -80), Vector2(12, 5), 23, 0.05, 12, -0.5), Art.LEAF, 1),
-		Art.P(Art.capsule(Vector2(-38, -42), Vector2(38, -42), 4.2, 24), Art.TEAL, 1),
-	], false)
-	for sx in [-1.0, 1.0]:
-		Art.ln(ci, Vector2(20 * sx, -10), Vector2(30 * sx, -12), 3.0, Color("f5f0e0"), 25)
-		Art.sil(ci, [Art.P(Art.capsule(Vector2(46 * sx, 0), Vector2(54 * sx, 38), 10.0, 40), skin, 1)], false)
-	for i in 5:
-		var x := -24.0 + float(i) * 12.0
-		Art.sil(ci, [Art.P(Art.poly([Vector2(x - 4, 0), Vector2(x + 4, 0), Vector2(x, 14)], 30 + i), Art.BONE, 2)], false, 2.0)
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var k := s / 100.0
+	var w := 164.0 / Meme.BUST_RECT.size.y * 100.0 * k
+	_hero_at(ci, c + Vector2(0, 58.0 * k - Meme.BUST_RECT.end.y * w / 100.0), w)
+
+static func _hero_at(ci: CanvasItem, hc: Vector2, w: float) -> void:
+	var rot: float = Meme.TILT[Meme.HERO]
+	Meme.props_back(ci, Meme.HERO, hc, w, rot)
+	Meme.bust(ci, hc, w, rot)
+	Meme.clothes(ci, Meme.HERO, hc, w, rot)
+	Meme.props_front(ci, Meme.HERO, hc, w, rot)
 
 ## 引导气泡。point_left 时尾巴朝左。
 static func speech(ci: CanvasItem, r: Rect2, point_left: bool, seed: int = 8) -> void:

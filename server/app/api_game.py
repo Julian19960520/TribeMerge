@@ -9,14 +9,14 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import delete, func, or_, select, text
 from sqlalchemy.orm import Session
 
-from . import clock
+from . import clock, race
 from .config import get_settings
 from .db import get_db
 from .economy import Economy, Reject
 from .errors import ApiError, body
 from .logs import log
 from .models import Account, HotDeal, PayOrder, Save, SaveBackup
-from .schemas import (ActionResp, BookReq, BuildReq, EventsReq, LevelReq, NameReq, PassBuyReq, PassClaimReq,
+from .schemas import (ActionResp, BookReq, BuildReq, EventsReq, LevelReq, NameReq, PassBuyReq, PassClaimReq, PassOrderReq,
                       PayOrderReq, PayOrderResp, Resp, SaveReq, SaveResp, ShopBuyReq)
 from .security import Auth, current, hash_token, lock_account
 from .services import (audit, b64, economy, gamedata, idem_get, idem_key, idem_put, load_state, pack, stamp,
@@ -55,6 +55,8 @@ def _events(db: Session, econ: Economy, acc: Account, st: dict, events) -> list:
             continue
         try:
             give = econ.apply_event(st, ev.model_dump(exclude_none=True))
+            if ev.type == "order":  # 篝火竞速：按服务器收到的交付事件加分
+                race.on_order(db, acc, st, ev.order or {}, clock.now())
             results.append({"id": ev.id, "ok": True, "give": give})
         except Reject as r:
             audit(db, acc.id, "event_rejected", "%s %s: %s" % (ev.type, ev.model_dump_json(exclude_none=True)[:300], r.message))
@@ -191,6 +193,35 @@ def buy_pass(req: PassBuyReq, request: Request, auth: Auth = Depends(current), d
     return _action(request, auth, db, "pass.buy", lambda e, st: e.buy_pass(st, req.tier))
 
 
+@router.post("/pass/order", response_model=PayOrderResp)
+def pass_order(req: PassOrderReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    """通行证下单（人民币）：贵宾 ¥30、超级贵宾 ¥68（server/config/economy.json 的 pass.vip_cny / super_cny）。
+    付款成功回调里才开通，和琥珀礼包同一套订单。"""
+    key = idem_key(request)
+    hit = idem_get(db, auth.id, key, "pass.order")
+    if hit is not None:
+        return JSONResponse(hit.response, status_code=hit.status)
+    if req.provider != "mock" or not get_settings().enable_mock_payment:
+        raise ApiError(501, "payment_not_configured", "这个支付渠道还没有接入")
+    econ = economy()
+    st = load_state(lock_account(db, auth.id))
+    try:
+        econ.check_pass_tier(st, req.tier)
+    except Reject as r:
+        resp = stamp(body(r.error, r.message))
+        idem_put(db, auth.id, key, "pass.order", r.status, resp)
+        db.commit()
+        return JSONResponse(resp, status_code=r.status)
+    o = PayOrder(id="po_" + secrets.token_hex(12), account_id=auth.id, pack=0, amber=0,
+                 price=econ.pass_price(st, req.tier), provider=req.provider, status="created", created_at=clock.utcnow(),
+                 kind="pass", ref=req.tier)
+    db.add(o)
+    resp = _order_out(o)
+    idem_put(db, auth.id, key, "pass.order", 200, resp)
+    db.commit()
+    return resp
+
+
 @router.post("/pass/claim", response_model=ActionResp)
 def claim_pass(req: PassClaimReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
     return _action(request, auth, db, "pass.claim", lambda e, st: e.claim_pass(st, req.track, req.level))
@@ -252,7 +283,8 @@ def shop(auth: Auth = Depends(current), db: Session = Depends(get_db)):
     picks = _picks(db, econ, auth.id)
     db.commit()
     return stamp({"ok": True, "picks": picks, "offers": econ.offers(st, picks),
-                  "secs_to_midnight": clock.secs_to_midnight(get_settings().day_utc_offset_hours)})
+                  "secs_to_midnight": clock.secs_to_midnight(get_settings().day_utc_offset_hours),
+                  "shell_period": econ.shell_period(), "shell_secs_left": econ.shell_secs_left()})
 
 
 @router.post("/shop/buy", response_model=ActionResp)
@@ -267,8 +299,15 @@ def shop_buy(req: ShopBuyReq, request: Request, auth: Auth = Depends(current), d
 def _order_out(o: PayOrder, st: dict | None = None) -> dict:
     out = {"ok": True, "order_id": o.id, "status": o.status, "amber": o.amber, "price": o.price, "provider": o.provider,
            "pay_params": {"mock_pay_url": "/v1/payments/mock/%s/pay" % o.id} if o.provider == "mock" and o.status == "created" else {}}
+    if o.kind == "gift":  # 礼包链付费步：带上步数和到账时发的东西
+        out.update({"kind": "gift", "step": o.pack, "give": o.give or {}})
+    elif o.kind == "pass":  # 通行证：带上档位和到账时发的东西
+        out.update({"kind": "pass", "tier": o.ref, "give": o.give or {}})
     if st is not None:
         out["state"] = economy().client_state(st)
+        if o.kind == "gift":
+            from . import gift_chain
+            out["chain"] = gift_chain.view(st, clock.now())
     return stamp(out)
 
 
@@ -315,7 +354,17 @@ def _fulfil(db: Session, o: PayOrder, provider_ref: str) -> dict:
         o.status = "paid"
         o.paid_at = clock.utcnow()
         o.provider_ref = provider_ref
-        st["amber"] = int(st.get("amber", 0)) + o.amber
+        if o.kind == "gift":  # 礼包链付费步：验单成功才发奖、队列前移
+            from . import gift_chain
+            o.give = gift_chain.fulfil(db, economy(), acc.id, st, o, clock.now())
+        elif o.kind == "pass":  # 通行证：付款成功才开通档位
+            try:
+                o.give = economy().activate_pass(st, o.ref or "")
+            except Reject as r:  # 两张单都付了（比如先下贵宾单又买了超级）：不重复开通，记下来等人工退款
+                o.give = {}
+                log(logger, logging.WARNING, "pass order not applied", order_id=o.id, reason=r.error)
+        else:
+            st["amber"] = int(st.get("amber", 0)) + o.amber
         store_state(acc, st)
         log(logger, logging.INFO, "payment fulfilled", order_id=o.id, amber=o.amber)
     return st

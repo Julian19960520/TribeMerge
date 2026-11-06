@@ -21,7 +21,7 @@ def _load(path: Path, default):
 
 class GameData:
     FILES = ["chains", "lines", "dishes", "store", "rules", "story", "levels", "pass", "builds", "albums",
-             "board", "amber_packs", "people"]
+             "board", "amber_packs", "people", "store_shell"]
 
     def __init__(self, data_dir: str):
         self.dir = Path(data_dir)
@@ -44,6 +44,10 @@ class GameData:
             self.lines = [l for l in g("lines", []) if isinstance(l, dict)]
             self.dishes = {d["id"]: d for d in g("dishes", []) if isinstance(d, dict) and d.get("id")}
             self.store = [d for d in g("store", []) if isinstance(d, dict)]
+            ss = g("store_shell", {})
+            ss = ss if isinstance(ss, dict) else {}
+            self.store_shell = [d for d in ss.get("items", []) if isinstance(d, dict)]
+            self.shell_refresh_hours = max(1, int(ss.get("refresh_hours", 8) or 8))
             self.rules = g("rules", {})
             self.story = {}
             for lv in g("story", {"levels": []}).get("levels", []):

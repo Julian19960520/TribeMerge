@@ -107,7 +107,7 @@ func _add_gem() -> void:
 		if _gem_mode == "sand":
 			Art.item(ci, "sand_3", a.position + Vector2(4, 22), 60)
 		else:
-			Art.item(ci, "amber_3", a.position + Vector2(2, 24), 56)
+			Art.item(ci, Art.AMBER_ICON, a.position + Vector2(2, 24), 56)
 			Paint.plus_badge(ci, a.position + Vector2(12, 46)))
 	_gem_lbl = UI.lbl(c, "", Rect2(PILLS["amber"].position + Vector2(30, 0) - o, Vector2(116, 50)), 26)
 	UI.hit(c, Rect2(Vector2.ZERO, r.size), func():

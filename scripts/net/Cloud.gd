@@ -30,8 +30,8 @@ const RETRY_SEC := 90.0
 const QUIT_WAIT := 2.0
 const DAY_OFFSET := 8 * 3600
 const SERVER_FIELDS := ["amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought",
-	"inv_cap", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_endless", "pass_super_bonus",
-	"tokens", "token_claimed", "builds", "cards", "book_claimed"]
+	"inv_cap", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus",
+	"tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period"]
 
 var state_path := "user://cloud_state.json"
 var url := DEFAULT_URL

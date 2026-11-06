@@ -4,7 +4,7 @@
 		"amber": 80, "shells": 0, "level": 1, "xp": 0, "inv_cap": 5, "builds": {"fire": 1}
 	},
 	"energy_buy": {"grant": 100},
-	"pass": {"vip_price": 49, "super_price": 79, "vip_energy": 150, "super_bonus_pts": 10, "endless_reward": [["chest_1", 1]]},
+	"pass": {"vip_cny": 30, "super_cny": 68, "vip_energy": 150, "super_bonus_pts": 10, "endless_reward": [["chest_1", 1]]},
 	"storage": {"expand_price": 50},
 	"shop": {
 		"deals": [
@@ -15,7 +15,9 @@
 		"price_sub": 0.33
 	},
 	"album_reward": [["amber_3", 30], ["chest_1", 2]],
-	"tutorial": {"seed_order": {"items": ["seed_1"], "xp": 1, "shell": 50}},
+	"tutorial": {"seed_order": {"items": ["seed_1"], "xp": 1, "shell": 50},
+		"_orders说明": "两张新手单要交的东西（和 Game.gd 新手单一致）；交过就算图鉴里见过。",
+		"orders": {"1": ["fruit_2"], "2": ["fruit_8"]}},
 	"orders": {
 		"_说明": "不在上一份快照里的随机单 / 制作单，按公式上限放行；每份快照之间最多放行这么多张。",
 		"pay_per_flame": 3.0,

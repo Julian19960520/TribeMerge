@@ -125,17 +125,49 @@ def test_bubble_reward_once(client, player):
     assert r.json()["state"]["shells"] == 30
 
 
+def buy_pass(p, tier):
+    """通行证人民币下单 → mock 支付回调开通。"""
+    r = p.post("/v1/pass/order", json={"tier": tier})
+    assert r.status_code == 200, r.json()
+    return r, p.post("/v1/payments/mock/%s/pay" % r.json()["order_id"])
+
+
 def test_pass_buy_and_claim(client, player):
-    give_amber(player, 100)
     player.put(player.snapshot(), events=[ev("order", order={"who": 2, "items": ["fruit_3"], "rw": {"shell": 12}, "story": False}) for _ in range(8)])
     assert player.post("/v1/pass/claim", json={"track": "prem", "level": 1}).json()["error"] == "need_vip"
-    r = player.post("/v1/pass/buy", json={"tier": "vip"})
-    assert r.status_code == 200 and r.json()["give"]["energy"] == 150
-    assert player.post("/v1/pass/buy", json={"tier": "vip"}).json()["error"] == "already_owned"
-    assert player.post("/v1/pass/claim", json={"track": "free", "level": 1}).status_code == 200
+    # 琥珀买不了，只能人民币下单
+    assert player.post("/v1/pass/buy", json={"tier": "vip"}).json()["error"] == "pay_with_cash"
+    amber0 = player.post("/v1/pass/claim", json={"track": "free", "level": 1}).json()["state"]["amber"]
+    order, paid = buy_pass(player, "vip")
+    assert order.json()["price"] == "¥30" and order.json()["status"] == "created" and order.json()["kind"] == "pass"
+    assert paid.status_code == 200 and paid.json()["status"] == "paid" and paid.json()["give"]["energy"] == 150
+    assert paid.json()["state"]["pass_tier"] == 1 and paid.json()["state"]["amber"] == amber0
+    # 重复回调不重复开通；已拥有不能再下单
+    again = player.post("/v1/payments/mock/%s/pay" % order.json()["order_id"])
+    assert again.json()["state"]["pass_tier"] == 1
+    assert player.post("/v1/pass/order", json={"tier": "vip"}).json()["error"] == "already_owned"
     assert player.post("/v1/pass/claim", json={"track": "prem", "level": 1}).status_code == 200
     assert player.post("/v1/pass/claim", json={"track": "free", "level": 1}).json()["error"] == "already_claimed"
     assert player.post("/v1/pass/claim", json={"track": "free", "level": 2}).json()["error"] == "not_reached"
+    # 第三列：贵宾领不了，升级超级贵宾（¥68）后才能领
+    assert player.post("/v1/pass/claim", json={"track": "super", "level": 1}).json()["error"] == "need_super"
+    order, paid = buy_pass(player, "super")
+    assert order.json()["price"] == "¥38"  # 已经是贵宾：补差价
+    st = paid.json()["state"]
+    assert st["pass_tier"] == 2 and st["pass_super_bonus"] and "energy" not in paid.json()["give"]
+    r = player.post("/v1/pass/claim", json={"track": "super", "level": 1})
+    assert r.status_code == 200 and r.json()["state"]["pass_super"] == [1]
+    assert player.post("/v1/pass/claim", json={"track": "super", "level": 1}).json()["error"] == "already_claimed"
+    assert player.post("/v1/pass/claim", json={"track": "prem", "level": 1}).json()["error"] == "already_claimed"
+    assert player.post("/v1/pass/order", json={"tier": "super"}).json()["error"] == "already_owned"
+
+
+def test_pass_super_direct(client, player):
+    """没买过贵宾直接买超级贵宾：一次开通，也送火种。"""
+    order, paid = buy_pass(player, "super")
+    assert order.json()["price"] == "¥68"
+    assert paid.json()["state"]["pass_tier"] == 2 and paid.json()["give"]["energy"] == 150
+    assert paid.json()["state"]["pass_pts"] == 10
 
 
 def test_book_claim_needs_seen_item(client, player):
@@ -170,3 +202,60 @@ def test_pack_open_and_cards(client, player):
     assert r.status_code == 200 and len(r.json()["give"]["cards"]) == 2
     assert sum(r.json()["state"]["cards"].values()) == 2
     assert player.post("/v1/pack/open").json()["error"] == "no_pack"
+
+
+def test_book_claim_counts_delivered_items(client, player):
+    # 合成出来马上交掉、从没出现在快照里的物品，也算图鉴里见过
+    t1 = {"who": 0, "items": ["fruit_2"], "rw": {"shell": 25}, "story": True, "tutorial": 1}
+    t2 = {"who": 1, "items": ["fruit_8"], "rw": {"shell": 315}, "story": True, "tutorial": 2}
+    player.put(player.snapshot(), events=[ev("order", order=t1), ev("order", order=t2)])
+    r = player.post("/v1/book/claim", json={"item": "fruit_8"})
+    assert r.status_code == 200 and r.json()["give"]["energy"] == 8
+
+
+def test_book_claim_backfills_old_accounts(client, player):
+    # 修复前交掉的新手单：服务器只记了 done，没记见过；领奖时按 done 补回来
+    from app.economy import Economy
+    t2 = {"who": 1, "items": ["fruit_8"], "rw": {"shell": 315}, "story": True, "tutorial": 2}
+    orig = Economy._seen_item
+    try:
+        def no_seen(self, st, iid, credit, budget, seen=True):
+            if iid == "fruit_8":
+                return
+            return orig(self, st, iid, credit, budget, seen)
+        Economy._seen_item = no_seen
+        player.put(player.snapshot(), events=[ev("order", order=t2)])
+    finally:
+        Economy._seen_item = orig
+    r = player.post("/v1/book/claim", json={"item": "fruit_8"})
+    assert r.status_code == 200
+
+
+def test_found_event_lets_book_claim_right_away(client, player):
+    # 刚合出来、还没等到下一次存档同步就去领图鉴：found 事件先到，领奖接口能过
+    player.put(player.snapshot(stash=["seed_2"]))
+    assert player.post("/v1/book/claim", json={"item": "seed_3"}).json()["error"] == "not_discovered"
+    r = player.post("/v1/events", json={"events": [ev("found", item="seed_3")]})
+    assert r.status_code == 200
+    assert player.post("/v1/book/claim", json={"item": "seed_3"}).status_code == 200
+
+
+def test_found_event_rejects_level_jumps(client, player):
+    r = player.post("/v1/events", json={"events": [ev("found", item="pot_9")]})
+    assert not r.json()["events"][0]["ok"]
+    assert player.post("/v1/book/claim", json={"item": "pot_9"}).json()["error"] == "not_discovered"
+    r = player.post("/v1/events", json={"events": [ev("found", item="pot_4")]})
+    assert r.json()["events"][0]["ok"]
+
+
+def test_found_chain_cannot_skip_levels(client, player):
+    # 改过的客户端一批连发 found pot_4 ~ pot_12：found 不抬高凭据，只有第一件（4 级以内）能过
+    batch = [ev("found", item="pot_%d" % lv) for lv in range(4, 13)]
+    res = player.post("/v1/events", json={"events": batch}).json()["events"]
+    assert res[0]["ok"] and not any(r["ok"] for r in res[1:])
+    assert player.post("/v1/book/claim", json={"item": "pot_5"}).json()["error"] == "not_discovered"
+    assert player.post("/v1/book/claim", json={"item": "pot_4"}).status_code == 200
+    # 快照里真的出现 pot_4 之后，凭据跟上，再往上一级才放行
+    player.put(player.snapshot(stash=["pot_4"]))
+    assert player.post("/v1/events", json={"events": [ev("found", item="pot_5")]}).json()["events"][0]["ok"]
+    assert not player.post("/v1/events", json={"events": [ev("found", item="pot_6")]}).json()["events"][0]["ok"]

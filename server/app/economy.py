@@ -7,20 +7,23 @@ state 里：
   - budget：棋盘上 / 暂存里的货币物品，折成 1 级个数。只能由服务器发出来（宝箱、奖励、新局棋盘），收取时扣。
   - credits：服务器发出去还没打开的宝箱 / 卡包个数。
   - energy_credit / rush_credit：上一份快照之后服务器发的体力 / 沙漏（校验快照增量用）。
-  - max_lv：快照里出现过、或服务器发过的每条链最高等级（图鉴领奖、丢弃退款用）。
+  - max_lv：快照里出现过、交过、或服务器发过的每条链最高等级（有凭据的进度）。
+  - found：客户端 found 事件报上来的每条链最高等级。只用来放行图鉴领奖、丢弃退款，不抬高 max_lv，
+    这样每次 found 最多只能比有凭据的进度高 1 级，改过的客户端没法一串 found 把整条链刷满。
   - done：一次性的东西（剧情单、新手单、气泡、等级奖励）。
 """
 
 import json
 import math
 import random
+import time
 
 from .gamedata import CURRENCY, GameData
 
 SERVER_FIELDS = [
     "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "inv_cap",
-    "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_endless", "pass_super_bonus",
-    "tokens", "token_claimed", "builds", "cards", "book_claimed",
+    "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus",
+    "tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period",
 ]
 
 
@@ -42,11 +45,13 @@ def num(v, default=0) -> int:
 
 
 class Economy:
-    def __init__(self, gd: GameData, cfg: dict, day_fn, rng: random.Random | None = None):
+    def __init__(self, gd: GameData, cfg: dict, day_fn, rng: random.Random | None = None, now_fn=None, utc_offset: int = 8):
         self.gd = gd
         self.cfg = cfg
         self.day = day_fn
         self.rng = rng or random.SystemRandom()
+        self.now = now_fn or time.time
+        self.utc_offset = utc_offset
 
     # ------------------------------------------------------------ 状态
 
@@ -55,9 +60,10 @@ class Economy:
         st = {
             "amber": num(np.get("amber", 80)), "shells": num(np.get("shells", 0)), "level": num(np.get("level", 1)),
             "xp": num(np.get("xp", 0)), "energy_buys": 0, "deals_day": self.day(), "hot_bought": {}, "deals_bought": {},
-            "inv_cap": num(np.get("inv_cap", 5)), "pass_pts": 0, "pass_tier": 0, "pass_free": [], "pass_prem": [],
+            "inv_cap": num(np.get("inv_cap", 5)), "pass_pts": 0, "pass_tier": 0, "pass_free": [], "pass_prem": [], "pass_super": [],
             "pass_endless": 0, "pass_super_bonus": False, "tokens": 0, "token_claimed": 0,
             "builds": dict(np.get("builds", {"fire": 1})), "cards": {}, "book_claimed": {},
+            "shell_bought": {}, "shell_period": self.shell_period(),
         }
         st.update({"budget": self.gd.initial_board_units(), "credits": {"chest": 0, "pack": 0},
                    "energy_credit": 0, "rush_credit": 0, "max_lv": {}, "done": {}, "adopted": False,
@@ -102,6 +108,22 @@ class Economy:
             st["energy_buys"] = 0
             st["hot_bought"] = {}
             st["deals_bought"] = {}
+        self.ensure_shell(st)
+
+    # 贝币小摊每 refresh_hours 小时（按服务器时间、东八区零点对齐）换一轮，换轮时已购清零
+    def shell_period(self) -> str:
+        span = self.gd.shell_refresh_hours * 3600
+        return str(int((self.now() + self.utc_offset * 3600) // span))
+
+    def shell_secs_left(self) -> int:
+        span = self.gd.shell_refresh_hours * 3600
+        return span - int(self.now() + self.utc_offset * 3600) % span
+
+    def ensure_shell(self, st: dict) -> None:
+        p = self.shell_period()
+        if st.get("shell_period") != p:
+            st["shell_period"] = p
+            st["shell_bought"] = {}
 
     # ------------------------------------------------------------ 物品与奖励
 
@@ -200,41 +222,59 @@ class Economy:
         return self.grant(st, [["fire_1", num(self.cfg.get("energy_buy", {}).get("grant", 100))]], {})
 
     def buy_pass(self, st: dict, tier: str) -> dict:
+        """通行证只能用人民币买：走 /v1/pass/order 下单，支付回调里 activate_pass。"""
+        raise Reject("pay_with_cash", "通行证需要用人民币购买")
+
+    def pass_cny(self, st: dict, tier: str) -> int:
+        """人民币价格：贵宾 30；超级贵宾 68，已经是贵宾的升级只补差价（68 - 30 = 38）。"""
+        pc = self.cfg.get("pass", {})
+        vip, sup = num(pc.get("vip_cny", 30)), num(pc.get("super_cny", 68))
+        if tier == "vip":
+            return vip
+        return max(0, sup - vip) if num(st.get("pass_tier")) == 1 else sup
+
+    def pass_price(self, st: dict, tier: str) -> str:
+        """写进订单的标价，比如 ¥38。"""
+        return "¥%d" % self.pass_cny(st, tier)
+
+    def check_pass_tier(self, st: dict, tier: str) -> None:
+        if tier not in ("vip", "super"):
+            raise Reject("bad_tier", "没有这个档位", 400)
+        if num(st.get("pass_tier")) >= (1 if tier == "vip" else 2):
+            raise Reject("already_owned", "已经拥有")
+
+    def activate_pass(self, st: dict, tier: str) -> dict:
+        """付款成功后开通。贵宾送火种；超级贵宾一次性加积分，从没买过直接买超级也送火种。"""
         pc = self.cfg.get("pass", {})
         out: dict = {}
+        self.check_pass_tier(st, tier)
         cur = num(st.get("pass_tier"))
         if tier == "vip":
-            if cur >= 1:
-                raise Reject("already_owned", "已经拥有")
-            self._spend(st, "amber", num(pc.get("vip_price", 49)))
             st["pass_tier"] = 1
             self.grant(st, [["fire_1", num(pc.get("vip_energy", 150))]], out)
-        elif tier == "super":
-            if cur >= 2:
-                raise Reject("already_owned", "已经拥有")
-            self._spend(st, "amber", num(pc.get("super_price", 79)))
+        else:
             st["pass_tier"] = 2
             if not st.get("pass_super_bonus"):
                 st["pass_super_bonus"] = True
                 st["pass_pts"] = num(st.get("pass_pts")) + num(pc.get("super_bonus_pts", 10))
             if cur == 0:
                 self.grant(st, [["fire_1", num(pc.get("vip_energy", 150))]], out)
-        else:
-            raise Reject("bad_tier", "没有这个档位", 400)
         return out
 
     def claim_pass(self, st: dict, track: str, lv: int) -> dict:
         cur = self.gd.pass_cursor(num(st.get("pass_pts")))
         n = len(self.gd.pass_levels)
         out: dict = {}
-        if track in ("free", "prem"):
+        if track in ("free", "prem", "super"):
             if lv < 1 or lv > n:
                 raise Reject("bad_level", "没有这一档", 400)
             if cur["reached"] < lv:
                 raise Reject("not_reached", "还没到这一档")
-            key = "pass_free" if track == "free" else "pass_prem"
+            key = {"free": "pass_free", "prem": "pass_prem", "super": "pass_super"}[track]
             if track == "prem" and num(st.get("pass_tier")) < 1:
                 raise Reject("need_vip", "激活通行证后可领取")
+            if track == "super" and num(st.get("pass_tier")) < 2:
+                raise Reject("need_super", "超级贵宾可领取")
             got = [num(x) for x in st.get(key) or []]
             if lv in got:
                 raise Reject("already_claimed", "已经领过了")
@@ -288,7 +328,7 @@ class Economy:
         return out
 
     def offers(self, st: dict, picks: list) -> list:
-        """今天集市里卖的全部：每日特惠 + 热卖。每项 {key, id, price, stock, left}。"""
+        """今天集市里卖的全部：每日特惠 + 热卖（琥珀）+ 贝币小摊（贝币）。每项 {key, id, price, stock, left, cur}。"""
         self.ensure_day(st)
         rows = []
         for d in self.cfg.get("shop", {}).get("deals", []):
@@ -298,7 +338,15 @@ class Economy:
             rows.append({"key": "hot_%d" % k, "id": str(d.get("id", "")), "price": num(d.get("price")),
                          "stock": num(d.get("stock")), "deal": False})
         for r in rows:
-            book = st.get("deals_bought" if r["deal"] else "hot_bought") or {}
+            r["cur"] = "amber"
+            r["book"] = "deals_bought" if r["deal"] else "hot_bought"
+        for k, d in enumerate(self.gd.store_shell):
+            iid = str(d.get("id", ""))
+            if self.gd.valid_item(iid) and num(d.get("price")) > 0:
+                rows.append({"key": "shell_%d" % k, "id": iid, "price": num(d.get("price")), "stock": num(d.get("stock")),
+                             "deal": False, "cur": "shell", "book": "shell_bought"})
+        for r in rows:
+            book = st.get(r["book"]) or {}
             r["left"] = max(0, r["stock"] - num(book.get(r["key"], 0)))
         return rows
 
@@ -308,8 +356,8 @@ class Economy:
             raise Reject("no_offer", "这件已经下架了")
         if offer["left"] <= 0:
             raise Reject("sold_out", "卖完了")
-        self._spend(st, "amber", offer["price"])
-        book_key = "deals_bought" if offer["deal"] else "hot_bought"
+        self._spend(st, offer["cur"], offer["price"])
+        book_key = offer["book"]
         book = dict(st.get(book_key) or {})
         book[key] = num(book.get(key, 0)) + 1
         st[book_key] = book
@@ -390,7 +438,8 @@ class Economy:
     def claim_book(self, st: dict, iid: str) -> dict:
         if not self.gd.valid_item(iid) or iid in self.gd.dishes:
             raise Reject("bad_item", "没有这件物品", 400)
-        if num(st.get("max_lv", {}).get(self.gd.chain(iid), 0)) < self.gd.lv(iid):
+        self._backfill_seen(st)
+        if not self._has_seen(st, iid):
             raise Reject("not_discovered", "还没发现这件物品")
         claimed = dict(st.get("book_claimed") or {})
         if claimed.get(iid):
@@ -398,6 +447,28 @@ class Economy:
         claimed[iid] = True
         st["book_claimed"] = claimed
         return self.grant(st, [["fire_1", max(1, self.gd.lv(iid))]], {})
+
+    def _backfill_seen(self, st: dict) -> None:
+        """老账号补一次「见过」：以前交单不记见过，合成出来马上交掉的物品（比如新手单的石榴）服务器不知道。
+        按已经交过的新手单、剧情单补回来，只补一次。"""
+        if st.get("seen_backfill"):
+            return
+        st["seen_backfill"] = 1
+        tut = self.cfg.get("tutorial", {})
+        for key in list((st.get("done") or {}).keys()):
+            items: list = []
+            parts = str(key).split(":")
+            if parts[0] == "tut" and len(parts) == 2:
+                items = tut.get("orders", {}).get(parts[1], [])
+            elif parts[0] == "seed":
+                items = tut.get("seed_order", {}).get("items", [])
+            elif parts[0] == "story" and len(parts) == 3:
+                rows = self.gd.story.get(num(parts[1], -1)) or []
+                si = num(parts[2], -1)
+                if 0 <= si < len(rows):
+                    items = rows[si]["items"]
+            for iid in items:
+                self._seen_item(st, str(iid), credit=False, budget=False)
 
     def claim_level(self, st: dict, level: int) -> dict:
         if level < 2 or level > num(st.get("level"), 1):
@@ -443,7 +514,38 @@ class Economy:
             return self._ev_collect(st, str(ev.get("item", "")))
         if t == "refund":
             return self._ev_refund(st, str(ev.get("item", "")))
+        if t == "found":
+            return self._ev_found(st, str(ev.get("item", "")))
         raise Reject("bad_event", "未知事件", 400)
+
+    def _ev_found(self, st: dict, iid: str) -> dict:
+        """客户端刚发现一件新物品（合成出来 / 生产出来），还没等到下一次快照。
+        只认：比这条链「有凭据的」最高等级（max_lv，含初始棋盘）最多高 1 级，或者 4 级以内（生产器能直接掉的）。
+        记在 found 里，不抬高 max_lv：连发 found 也只能领先凭据 1 级，下一次快照同步后凭据才跟上。"""
+        if not self.gd.valid_item(iid) or iid in self.gd.dishes:
+            raise Reject("bad_item", "没有这件物品", 400)
+        ch = self.gd.chain(iid)
+        lv = self.gd.lv(iid)
+        if lv > max(self._proven_lv(st, ch) + 1, int(self.cfg.get("found_free_lv", 4))):
+            raise Reject("found_too_high", "这件物品等级跳得太快")
+        fd = st.setdefault("found", {})
+        if lv > num(fd.get(ch, 0)):
+            fd[ch] = lv
+        return {}
+
+    def _proven_lv(self, st: dict, ch: str) -> int:
+        """这条链有凭据的最高等级：快照 / 交单 / 服务器发奖记下的 max_lv，以及初始棋盘上（含石头下面）的物品。"""
+        top = num(st.get("max_lv", {}).get(ch, 0))
+        for cid in self.gd.board.get("cells", []) or []:
+            if self.gd.valid_item(str(cid)) and self.gd.chain(str(cid)) == ch:
+                top = max(top, self.gd.lv(str(cid)))
+        return top
+
+    def _has_seen(self, st: dict, iid: str) -> bool:
+        """图鉴领奖、丢弃退款用：有凭据见过，或者 found 报过（已经限制过不能跳级）。"""
+        ch = self.gd.chain(iid)
+        lv = self.gd.lv(iid)
+        return num(st.get("max_lv", {}).get(ch, 0)) >= lv or num(st.get("found", {}).get(ch, 0)) >= lv
 
     def _check_order(self, st: dict, o: dict) -> str:
         """返回一次性 key（剧情 / 新手单），普通单返回空串；不合规抛 Reject。"""
@@ -510,6 +612,9 @@ class Economy:
             if st["done"].get(key):
                 raise Reject("already_done", "这张单已经交过了")
             st["done"][key] = True
+        # 交得出去的东西一定在棋盘上出现过：合成出来、没等到下一次同步就交掉的物品也算见过（图鉴领奖、退款要用）
+        for iid in o.get("items") or []:
+            self._seen_item(st, str(iid), credit=False, budget=False)
         rw = self._norm(o.get("rw") or {})
         out: dict = {}
         st["shells"] = num(st.get("shells")) + max(0, num(rw.get("shell")))
@@ -552,7 +657,8 @@ class Economy:
     def _ev_refund(self, st: dict, iid: str) -> dict:
         if not self.gd.valid_item(iid) or self.gd.type_of(iid) != "item":
             raise Reject("bad_item", "这件不能退款", 400)
-        if num(st.get("max_lv", {}).get(self.gd.chain(iid), 0)) < self.gd.lv(iid):
+        self._backfill_seen(st)
+        if not self._has_seen(st, iid):
             raise Reject("not_seen", "没见过这件物品")
         if num(st.get("refunds")) >= num(self.cfg.get("orders", {}).get("refund_max_per_sync", 60)):
             raise Reject("too_many_refunds", "两次同步之间退款太多")
