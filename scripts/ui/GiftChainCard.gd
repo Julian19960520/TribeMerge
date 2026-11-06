@@ -1,5 +1,5 @@
 extends Control
-## 部落界面的「礼包链」入口卡片（和通行证、每日特惠同一套黄色卡片），点开礼包链面板。
+## 部落界面的「礼包链」入口卡片（和通行证、部落礼包同一套黄色卡片），点开礼包链面板。
 ## 下面一行写队首状态：免费! / ¥6 / 已领完 / 需联网；队首能免费领时亮红点。
 ## 卡片只在第一次显示和换期时问一次服务器（面板打开时会再拉）。
 
@@ -7,8 +7,8 @@ const Net := preload("res://scripts/net/GiftChain.gd")
 const ChainPopup := preload("res://scripts/ui/GiftChainPopup.gd")
 const CARD_YELLOW := Color("e7b45a")
 const CARD_YELLOW_L := Color("f2c66e")
-## 左边卡片区：每日特惠右边（每日特惠下面就是村里的建筑牌子，放不下）
-const RECT := Rect2(120, 284, 100, 100)
+## 左侧原每日特惠位置，方形卡片。
+const RECT := Rect2(14, 280, 100, 116)
 
 var chain: Node
 var _btn: TButton
@@ -23,8 +23,8 @@ func _ready() -> void:
 	_btn = UI.hit(self, Rect2(Vector2.ZERO, RECT.size), func(): ChainPopup.pop_open())
 	_btn.name = "gift_card"
 	_btn.extra = _paint
-	UI.lbl(_btn, "礼包链", Rect2(0, 58, 100, 24), 17, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
-	_state = UI.lbl(_btn, "", Rect2(0, 80, 100, 20), 14, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
+	UI.lbl(_btn, "部落礼包", Rect2(0, 78, 100, 24), 17, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+	_state = UI.lbl(_btn, "", Rect2(0, 100, 100, 20), 14, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
 	chain.updated.connect(_refresh)
 	_refresh()
 
@@ -52,7 +52,7 @@ func _refresh() -> void:
 	_state.text = txt
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	var r := Rect2(10, 3, sz.x - 20, 60)
+	var r := Rect2(10, 3, sz.x - 20, sz.x - 20)
 	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 4), r.size), 14, 292, 0.0), Color(0, 0, 0, 0.28))
 	var b := Art.rrect(r, 14, 292, 0.9)
 	Art.dilate(ci, b, 2.6, Art.INK)
@@ -60,7 +60,7 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	ci.draw_colored_polygon(Art.rrect(r.grow(-5), 10, 293, 0.5), CARD_YELLOW_L)
 	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(8, 6), Vector2(r.size.x - 16, 10)), 5, 294, 0.3), Color(1, 1, 1, 0.22))
 	# 三个用绳子串起来的小礼包
-	var pts := [Vector2(28, 40), Vector2(sz.x * 0.5, 30), Vector2(sz.x - 28, 40)]
+	var pts := [Vector2(26, 51), Vector2(sz.x * 0.5, 37), Vector2(sz.x - 26, 51)]
 	Art.ln(ci, pts[0], pts[1], 3.0, Art.ROPE, 1)
 	Art.ln(ci, pts[1], pts[2], 3.0, Art.ROPE, 2)
 	Art.item(ci, "pack_1", pts[0], 30)

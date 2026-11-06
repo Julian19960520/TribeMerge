@@ -1,0 +1,7 @@
+{
+	"choice_1": {
+		"title": "自选宝箱",
+		"choices": ["fire_4", "shell_4", "amber_3"],
+		"icon": "res://assets/ui/choice_chest.svg"
+	}
+}

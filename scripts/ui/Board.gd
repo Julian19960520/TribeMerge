@@ -11,6 +11,16 @@ signal dropped_outside(i: int, global_pos: Vector2)
 const CELL := 96.0
 const ITEM := 84.0
 
+## Offline-baked assets. Runtime only submits textured quads; source art lives in tools/.
+const BOARD_FRAMES := [preload("res://assets/board/frame_0.png"), preload("res://assets/board/frame_1.png"), preload("res://assets/board/frame_2.png"), preload("res://assets/board/frame_3.png")]
+const ROCK_FRAMES := [preload("res://assets/board/rocks_0.png"), preload("res://assets/board/rocks_1.png"), preload("res://assets/board/rocks_2.png"), preload("res://assets/board/rocks_3.png")]
+const FLOOR_TILE := preload("res://assets/board/floor.png")
+const ROCK_CRACKS := preload("res://assets/board/cracks.png")
+const ROCK_BITS := preload("res://assets/board/fragments.png")
+const MAX_CROWN := preload("res://assets/ui/max_crown.svg")
+
+var _base_layers: Array[DrawBox] = []
+
 var selected := -1
 var press_cell := -1
 var press_pos := Vector2.ZERO
@@ -54,7 +64,19 @@ const HINT_WAIT := 5.0
 func _ready() -> void:
 	size = Vector2(G.COLS * CELL, G.ROWS * CELL)
 	mouse_filter = MOUSE_FILTER_STOP
+	G.boil_tick.connect(_sync_base)
 	G.boil_tick.connect(queue_redraw)
+	G.board_changed.connect(_invalidate_base)
+	G.orders_changed.connect(_invalidate_base)
+	for phase in 4:
+		var layer := UI.box(self, Rect2(Vector2.ZERO, size), func(ci, _sz):
+			var previous := Art.boil
+			Art.boil = phase
+			_draw_base(ci)
+			Art.boil = previous, false)
+		layer.show_behind_parent = true
+		_base_layers.append(layer)
+	_sync_base()
 	G.board_changed.connect(queue_redraw)
 	G.orders_changed.connect(queue_redraw)
 	call_deferred("_grant_loose_rewards")
@@ -154,9 +176,7 @@ func cell_global(i: int) -> Vector2:
 	return get_global_transform() * cell_center(i)
 
 func cell_at(p: Vector2) -> int:
-	if p.x < 0 or p.y < 0 or p.x >= size.x or p.y >= size.y:
-		return -1
-	return int(p.y / CELL) * G.COLS + int(p.x / CELL)
+	return MergeGrid.cell_at(p, CELL, G.COLS, G.ROWS)
 
 func pop(i: int) -> void:
 	pops[i] = 0.0
@@ -239,14 +259,7 @@ func _grant_board_now(batch: Array) -> void:
 		G.cloud_event({"type": "bubble", "cell": i})
 		var id := str(e["id"])
 		var n := int(e["n"])
-		var kind := ""
-		if Data.DISHES.has(id) or Data.CHAINS.has(Data.chain(id)):
-			kind = Data.type_of(id)
-		if kind in ["energy", "shell", "amber", "sand"]:
-			G.add_currency(kind, n)
-		else:
-			for _j in n:
-				G.stash.append(id)
+		Rewards.grant([[id, n]], Callable(), false)
 		any = true
 	if any:
 		G.dirty()
@@ -329,9 +342,7 @@ func _move_done(m: Dictionary) -> void:
 	queue_redraw()
 
 static func ease_back(t: float) -> float:
-	var c1 := 1.70158
-	var c3 := c1 + 1.0
-	return 1.0 + c3 * pow(t - 1.0, 3.0) + c1 * pow(t - 1.0, 2.0)
+	return MergeGrid.ease_back(t)
 
 # ---------------------------------------------------------------- 输入
 
@@ -394,7 +405,7 @@ func _tap(i: int) -> void:
 	if c["id"] == "":
 		select(-1)
 		return
-	if selected == i and c["lock"] == 0:
+	if (selected == i or Data.type_of(str(c["id"])) == "choice") and c["lock"] == 0:
 		pop(i)
 		activated.emit(i)
 	else:
@@ -463,12 +474,8 @@ func _retarget_gathers(from: int, to: int, cook_from: Dictionary, cook_to: Dicti
 
 # ---------------------------------------------------------------- 绘制
 
-func _draw() -> void:
-	var frame := Art.rrect(Rect2(-14, -14, size.x + 28, size.y + 28), 22, 77, 1.0)
-	Art.dilate(self, frame, 3.0, Art.INK)
-	draw_colored_polygon(frame, Art.LEATHER)
-	Art.dashed(self, Art.rrect(Rect2(-7, -7, size.x + 14, size.y + 14), 16, 78, 0.0), 11, 7, Color("f3d7a2"), 2.2)
-	draw_rect(Rect2(Vector2.ZERO, size), Art.HIDE2)
+func _draw_base(ci: CanvasItem) -> void:
+	ci.draw_texture_rect(BOARD_FRAMES[Art.boil % 4], Rect2(Vector2(-20, -20), size + Vector2(40, 40)), false)
 	var tone := G.order_cell_tone()
 	for i in G.board.size():
 		var r := cell_rect(i)
@@ -481,7 +488,20 @@ func _draw() -> void:
 				col = ORDER_FULL
 			elif tone[i] == 1:
 				col = ORDER_PART
-		draw_rect(r.grow(-1.5), col)
+		ci.draw_texture_rect(FLOOR_TILE, r, false, col)
+	for i in G.board.size():
+		if int(G.board[i]["lock"]) == 2:
+			_paint_rock(ci, cell_rect(i), i)
+
+func _sync_base() -> void:
+	for phase in _base_layers.size():
+		RenderingServer.canvas_item_set_visible(_base_layers[phase].get_canvas_item(), phase == Art.boil)
+
+func _invalidate_base() -> void:
+	for layer in _base_layers:
+		layer.queue_redraw()
+
+func _draw() -> void:
 	for i in G.board.size():
 		if i == drag_from and dragging:
 			continue
@@ -565,7 +585,8 @@ func _draw_cell(i: int) -> void:
 		if cracking:
 			var u := float(cu["t"]) / CRUMBLE_HOLD
 			rr.position.x += sin(float(cu["t"]) * 90.0) * 3.0 * (1.0 - u)
-		_draw_rock(rr, i)
+		if int(c["lock"]) != 2 or cracking:
+			_draw_rock(rr, i)
 		if cracking:
 			_draw_rock_cracks(rr, i, float(cu["t"]) / CRUMBLE_HOLD)
 		_draw_reward_bubble(i, rr)
@@ -578,6 +599,9 @@ func _draw_cell(i: int) -> void:
 		_draw_cook(i, r, c["ck"])
 		return
 	if c["id"] == "":
+		return
+	if G.is_merge_bubble(i):
+		_draw_merge_bubble(i, ctr, sc)
 		return
 	var prod := not Data.gen_stats(c["id"]).is_empty()
 	if c["lock"] == 0 and prod and reveal > 0.65:
@@ -597,7 +621,7 @@ func _draw_cell(i: int) -> void:
 		if breath != 1.0 or nudge != Vector2.ZERO:
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	elif reveal > 0.65 and _is_max_currency(str(c["id"])):
-		_draw_max_badge(r, i)
+		_draw_max_badge(r)
 	elif prod and reveal > 0.65:
 		var wait := G.gen_wait(i)
 		if wait > 0:
@@ -606,7 +630,7 @@ func _draw_cell(i: int) -> void:
 			var bolt := Art.flame_pts(r.position + Vector2(80, 78), 7, 18, i)
 			Art.fill(self, bolt, Art.FIRE2, 2.0)
 
-## 贝币、琥珀、沙漏、火种合到最高级后不能再合，右下角挂个 MAX 提示
+## 贝币、琥珀、沙漏、火种合到最高级后不能再合，右下角显示皇冠标志
 const MAX_BADGE_CHAINS := ["shell", "amber", "sand", "fire"]
 
 static func _is_max_currency(id: String) -> bool:
@@ -615,13 +639,8 @@ static func _is_max_currency(id: String) -> bool:
 	var ch := Data.chain(id)
 	return ch in MAX_BADGE_CHAINS and Data.CHAINS.has(ch) and Data.lv(id) >= Data.max_lv(ch)
 
-func _draw_max_badge(r: Rect2, i: int) -> void:
-	var box := Rect2(r.position + Vector2(CELL - 50, CELL - 28), Vector2(46, 24))
-	Art.fill(self, Art.rrect(box, 10, i, 0.4), Color("e8453a"), 2.5)
-	var fs := 17
-	var base := Vector2(box.position.x, box.position.y + 18)
-	draw_string_outline(G.font_title, base, "MAX", HORIZONTAL_ALIGNMENT_CENTER, box.size.x, fs, 4, Art.INK)
-	draw_string(G.font_title, base, "MAX", HORIZONTAL_ALIGNMENT_CENTER, box.size.x, fs, Color("fff1c4"))
+func _draw_max_badge(r: Rect2) -> void:
+	draw_texture_rect(MAX_CROWN, Rect2(r.end - Vector2(44, 34), Vector2(40, 30)), false)
 
 static func _sec_text(sec: int) -> String:
 	sec = maxi(sec, 0)
@@ -676,27 +695,14 @@ func _draw_rest(c: Vector2, t: float) -> void:
 
 ## 巨石：不规则多边形大石 + 小石块 + 裂纹 + 青苔
 func _draw_rock(r: Rect2, i: int) -> void:
-	var c := r.get_center() + Vector2(0, 4)
-	var base := []
-	for k in 9:
-		var a := TAU * float(k) / 9.0 + Art.srnd(i * 13 + k) * 0.3
-		var rad := 36.0 + Art.srnd(i * 7 + k) * 8.0
-		base.append(c + Vector2(cos(a) * rad * 1.08, sin(a) * rad * 0.9))
-	var big := Art.poly(base, i, 0.8)
-	draw_colored_polygon(Art.ell(c + Vector2(0, 30), Vector2(38, 9), i, 0.0, 14), Color(0, 0, 0, 0.18))
-	var small := Art.poly([c + Vector2(18, 14), c + Vector2(38, 8), c + Vector2(46, 26), c + Vector2(30, 36), c + Vector2(14, 30)], i + 5, 0.6)
-	Art.sil(self, [Art.P(big, Color("a39b8d"), 1), Art.P(small, Color("8c8476"), 1)], false, 3.0)
-	var top := Art.poly([c + Vector2(-26, -18), c + Vector2(-6, -32), c + Vector2(18, -26), c + Vector2(6, -10), c + Vector2(-16, -6)], i + 9, 0.6)
-	draw_colored_polygon(top, Color(1, 1, 1, 0.22))
-	var crack := Color(0.25, 0.2, 0.15, 0.75)
-	Art.pl(self, [c + Vector2(-4, -10), c + Vector2(4, 4), c + Vector2(-2, 14), c + Vector2(6, 26)], 2.4, crack, i + 2)
-	Art.pl(self, [c + Vector2(4, 4), c + Vector2(16, 0)], 2.0, crack, i + 3)
-	Art.pl(self, [c + Vector2(-30, 6), c + Vector2(-20, 12), c + Vector2(-22, 22)], 2.0, crack, i + 4)
-	var moss := Art.ell(c + Vector2(-20, -24), Vector2(15, 7), i + 6, 0.12, 12, -0.4)
-	Art.fill(self, moss, Art.MOSS, 2.0)
-	draw_colored_polygon(Art.ell(c + Vector2(-24, -26), Vector2(6, 3), i + 7, 0.0, 8, -0.4), Color(1, 1, 1, 0.35))
-	for k in 3:
-		draw_circle(c + Vector2(-8 + k * 12, 22 - (k % 2) * 6), 1.6, Color(0.3, 0.25, 0.2, 0.5))
+	_paint_rock(self, r, i)
+
+func _paint_rock(ci: CanvasItem, r: Rect2, i: int) -> void:
+	ci.draw_texture_rect_region(ROCK_FRAMES[Art.boil % 4], Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i))
+
+static func _rock_region(i: int) -> Rect2:
+	var variant := posmod(i, 63)
+	return Rect2((variant % 9) * 128, (variant / 9) * 128, 128, 128)
 
 func _crumble_for(i: int) -> Dictionary:
 	for c in crumbles:
@@ -706,54 +712,36 @@ func _crumble_for(i: int) -> Dictionary:
 
 ## 裂开那一下：裂纹变亮、变深
 func _draw_rock_cracks(r: Rect2, i: int, u: float) -> void:
-	var c := r.get_center() + Vector2(0, 4)
-	var flash := Color(1, 0.95, 0.82, 0.85 * (1.0 - u))
-	var deep := Color(0.15, 0.1, 0.08, 0.9)
-	var w := lerpf(2.0, 4.5, u)
-	Art.pl(self, [c + Vector2(-8, -22), c + Vector2(2, -4), c + Vector2(-6, 16), c + Vector2(8, 30)], w, deep, i + 11)
-	Art.pl(self, [c + Vector2(2, -4), c + Vector2(22, -8), c + Vector2(34, 6)], w * 0.8, deep, i + 12)
-	Art.pl(self, [c + Vector2(-28, 2), c + Vector2(-12, 10), c + Vector2(-18, 28)], w * 0.8, deep, i + 13)
-	Art.pl(self, [c + Vector2(-6, -18), c, c + Vector2(4, 12)], w * 0.45, flash, i + 14)
+	draw_texture_rect_region(ROCK_CRACKS, Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i), Color(1, 1, 1, lerpf(0.6, 1.0, u)))
 
-## 巨石崩成碎块，向外飞并落下
+## 碎石和尘土也是图片，只更新位置、旋转、缩放和透明度。
 func _draw_crumble(c: Dictionary) -> void:
 	var i: int = int(c["i"])
 	var lin := clampf((float(c["t"]) - CRUMBLE_HOLD) / (CRUMBLE_DUR - CRUMBLE_HOLD), 0.0, 1.0)
 	var t := lerpf(0.14, 1.0, 1.0 - pow(1.0 - lin, 2.0))
 	var ctr := cell_rect(i).get_center() + Vector2(0, 4)
 	var fade := 1.0 - smoothstep(0.45, 1.0, t)
-	var pieces := 6
-	for k in pieces:
-		var a0 := TAU * float(k) / float(pieces) + Art.srnd(i * 17 + k) * 0.4
-		var a1 := TAU * float(k + 1) / float(pieces) + Art.srnd(i * 17 + k + 1) * 0.4
-		var rad := 30.0 + Art.srnd(i * 19 + k) * 12.0
-		var mid := (a0 + a1) * 0.5
-		var dir := Vector2(cos(mid), sin(mid) * 0.88)
+	for k in 6:
+		var angle := TAU * (float(k) + 0.5) / 6.0 + Art.srnd(i * 17 + k) * 0.4
+		var dir := Vector2(cos(angle), sin(angle) * 0.88)
 		var travel := dir * (22.0 * t + 150.0 * t * t) + Vector2(0, 96.0 * t * t)
 		var spin := (Art.srnd(i * 23 + k) - 0.5) * 3.4 * t
-		var o := ctr + travel
-		var p0 := o + Vector2(cos(a0), sin(a0) * 0.9).rotated(spin) * rad
-		var p1 := o + Vector2(cos(a1), sin(a1) * 0.9).rotated(spin) * rad * (0.82 + Art.srnd(i * 29 + k) * 0.28)
-		var inset := o + dir.rotated(spin) * (5.0 + 10.0 * t)
-		var poly := PackedVector2Array([inset, p0, p1])
-		var col := Color("a39b8d") if k % 2 == 0 else Color("8a8274")
-		col.a = fade
-		draw_colored_polygon(poly, col)
-		draw_polyline(PackedVector2Array([inset, p0, p1, inset]), Color(0.16, 0.12, 0.09, fade * 0.9), 2.0, true)
-		if k % 2 == 0:
-			var hl := inset.lerp(p0, 0.45).lerp(p1, 0.2)
-			draw_circle(hl, 3.2 * (1.0 - t * 0.4), Color(1, 1, 1, 0.28 * fade))
+		_draw_fragment(k, ctr + travel, angle + spin, 0.85 + Art.srnd(i * 19 + k) * 0.35, fade)
 	for k in 5:
-		var a := TAU * float(k) / 5.0 + Art.srnd(i * 31 + k) * 0.8
-		var dir := Vector2(cos(a), sin(a) * 0.85)
-		var q := ctr + dir * (8.0 + 78.0 * t) + Vector2(0, 120.0 * t * t)
-		var rr := (3.2 + Art.srnd(i * 37 + k) * 3.4) * (1.0 - t * 0.25)
-		draw_circle(q, rr + 1.2, Color(0.12, 0.09, 0.07, fade * 0.7))
-		draw_circle(q, rr, Color(Color("9a9284"), fade))
+		var angle := TAU * float(k) / 5.0 + Art.srnd(i * 31 + k) * 0.8
+		var dir := Vector2(cos(angle), sin(angle) * 0.85)
+		var pos := ctr + dir * (8.0 + 78.0 * t) + Vector2(0, 120.0 * t * t)
+		var radius := (3.2 + Art.srnd(i * 37 + k) * 3.4) * (1.0 - t * 0.25)
+		_draw_fragment(6, pos, 0, radius / 12.0, fade)
 	for k in 4:
-		var a := TAU * float(k) / 4.0 + 0.5
-		var q := ctr + Vector2(cos(a), sin(a) * 0.7) * (12.0 + 46.0 * t) + Vector2(0, 18.0 * t * t)
-		draw_circle(q, 7.0 + 16.0 * t, Color(0.72, 0.66, 0.56, 0.32 * (1.0 - t)))
+		var angle := TAU * float(k) / 4.0 + 0.5
+		var pos := ctr + Vector2(cos(angle), sin(angle) * 0.7) * (12.0 + 46.0 * t) + Vector2(0, 18.0 * t * t)
+		_draw_fragment(7, pos, 0, (7.0 + 16.0 * t) / 28.0, 0.32 * (1.0 - t))
+
+func _draw_fragment(k: int, pos: Vector2, rotation_value: float, scale_value: float, alpha: float) -> void:
+	draw_set_transform(pos, rotation_value, Vector2.ONE * scale_value)
+	draw_texture_rect_region(ROCK_BITS, Rect2(-32, -32, 64, 64), Rect2(k * 64, 0, 64, 64), Color(1, 1, 1, alpha))
+	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 
 func _draw_vine(r: Rect2, i: int) -> void:
 	draw_rect(r.grow(-3), Color(0.25, 0.4, 0.1, 0.28))
@@ -850,7 +838,7 @@ func _hint_cell_ok(i: int) -> bool:
 		return false
 	var c: Dictionary = G.board[i]
 	var id := str(c["id"])
-	if id == "" or int(c["lock"]) == 2 or Data.is_dish(id):
+	if id == "" or int(c["lock"]) >= 2 or Data.is_dish(id):
 		return false
 	var ch := Data.chain(id)
 	if not Data.CHAINS.has(ch) or Data.next_id(id) == "":
@@ -973,3 +961,16 @@ func _guide_allows_drop(from_i: int, to_i: int) -> bool:
 	if G.main == null or G.main._guide == null or not G.main._guide.visible:
 		return true
 	return G.main._guide.allows_drop(from_i, to_i)
+
+func _draw_merge_bubble(i: int, ctr: Vector2, sc: float) -> void:
+	Art.item(self, str(G.board[i]["id"]), ctr, ITEM * 0.83 * sc)
+	var radius := 43.0 * sc
+	draw_circle(ctr, radius, Color(0.45, 0.86, 1.0, 0.16))
+	draw_arc(ctr, radius, 0, TAU, 40, Color(0.7, 0.94, 1.0, 0.9), 2.5, true)
+	draw_arc(ctr + Vector2(1, 2), radius - 5, PI * 1.10, PI * 1.60, 15, Color(1, 1, 1, 0.85), 4.0, true)
+	draw_circle(ctr + Vector2(23, -22) * sc, 4.0, Color(1, 1, 1, 0.8))
+	var pos := ctr + Vector2(-37, 36)
+	var seconds := G.bubble_left(i)
+	var label := "%d:%02d" % [seconds / 60, seconds % 60]
+	draw_string_outline(G.font_body, pos, label, HORIZONTAL_ALIGNMENT_CENTER, 74, 20, 5, Art.INK)
+	draw_string(G.font_body, pos, label, HORIZONTAL_ALIGNMENT_CENTER, 74, 20, Color.WHITE)

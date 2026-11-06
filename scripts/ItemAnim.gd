@@ -31,9 +31,10 @@ func _ready() -> void:
 			var arr: Array[Texture2D] = []
 			var ok := true
 			for i in frames:
-				var file := ProjectSettings.globalize_path("res://assets/items/png/%s_r%d_%d.png" % [id, rim_i, i])
-				var img := Image.load_from_file(file)
-				if img == null or img.is_empty():
+				var file := "res://assets/items/png/%s_r%d_%d.png" % [id, rim_i, i]
+				var img := Image.new()
+				var error := img.load_png_from_buffer(FileAccess.get_file_as_bytes(file))
+				if error != OK or img.is_empty():
 					ok = false
 					break
 				arr.append(ImageTexture.create_from_image(img))

@@ -1,6 +1,6 @@
 extends Node
 ## 篝火竞速客户端（异步联机活动第一期，设计见 DESIGN.md「十三」）。比赛收集香蕉：1 分 = 1 根香蕉。
-## 不限时、5 级解锁：随时点「匹配」开一局（假匹配：对手全是影子，客户端播 MATCH_SEC 秒匹配动画）。
+## 不限时、12 级解锁：随时点「匹配」开一局（假匹配：对手全是影子，客户端播 MATCH_SEC 秒匹配动画）。
 ## 不是自动加载：第一次用时由 inst() 挂到 G 下面（/root/G/Race）。
 ## - 只在活动界面（棋盘顶上的赛道、竞速弹窗）显示时每 30 秒 GET /v1/race 一次；没人看就不拉。
 ## - 对手的分数在两次快照之间插值：把这 30 秒里涨的分拆成几次「冲刺」，分散在接下来 30 秒里播，看起来像有人在交单。
@@ -79,6 +79,12 @@ func fetch() -> void:
 	if loading:
 		return
 	_last_ms = Time.get_ticks_msec()
+	if not G.server_mode():
+		LocalRace.tick()
+		info=LocalRace.state()
+		ok=true
+		updated.emit()
+		return
 	if not online():
 		ok = false
 		updated.emit()
@@ -127,10 +133,10 @@ func _steps(from: float, to: float, slot: int) -> Array:
 # ---------------------------------------------------------------- 状态
 
 func unlock_level() -> int:
-	return int(rules().get("unlock_level", 5))
+	return int(rules().get("unlock_level", 12))
 
 func unlocked() -> bool:
-	return G.level >= unlock_level()
+	return G.gm_activities or G.level >= unlock_level()
 
 func current() -> Dictionary:
 	return info.get("current", {}) if info.get("current") is Dictionary else {}
@@ -144,6 +150,7 @@ func members() -> Array:
 	return g.get("members", []) if g.get("members") is Array else []
 
 func rules() -> Dictionary:
+	if not G.server_mode(): return LocalRace.rules()
 	return info.get("rules", {}) if info.get("rules") is Dictionary else {}
 
 func target() -> float:
@@ -186,6 +193,7 @@ func secs_left() -> int:
 
 ## 还没交给服务器的交单事件的理论火苗（只算报名之后的）
 func pending_mine() -> float:
+	if not G.server_mode(): return 0.0
 	var c := _cloud()
 	if c == null or not racing():
 		return 0.0
@@ -260,6 +268,11 @@ func _on_order(_items: Array) -> void:
 	if not racing():
 		return
 	_my_dash_ms = Time.get_ticks_msec()
+	if not G.server_mode():
+		LocalRace.order(_items)
+		info=LocalRace.state()
+		updated.emit()
+		return
 	# 比赛中把交单事件 3 秒内单独交掉（不等 60 秒的快照合并），对手那边看到的进度更及时
 	if _flush_t < 0.0:
 		_flush_t = 3.0
@@ -278,6 +291,12 @@ func _flush_events() -> void:
 # ---------------------------------------------------------------- 报名 / 领奖
 
 func join() -> Dictionary:
+	if not G.server_mode():
+		var r:=LocalRace.join()
+		info=LocalRace.state()
+		if r.get("ok",false):_match_until=Time.get_ticks_msec()+int(MATCH_SEC*1000)
+		updated.emit()
+		return r
 	var c := _cloud()
 	if c == null:
 		return {"ok": false, "message": "连不上服务器，请稍后再试"}
@@ -292,9 +311,15 @@ func join() -> Dictionary:
 
 ## 领一场的奖励。成功时服务器已经发了（货币先减掉，UI 动画再加回来），返回 rewards。
 func claim(res: Dictionary) -> Dictionary:
+	if not G.server_mode():
+		var r:=LocalRace.claim(str(res.get("group",{}).get("id","")))
+		info=LocalRace.state()
+		updated.emit()
+		return r
 	var c := _cloud()
 	var gid := str(res.get("group", {}).get("id", ""))
 	var rw: Array = res.get("me", {}).get("reward", []) if res.get("me", {}).get("reward") is Array else []
+	if int(res.get("me", {}).get("place", 0)) not in [1, 2, 3]: rw = []
 	if c == null:
 		return {"ok": false, "message": "连不上服务器，请稍后再试"}
 	var r: Dictionary = await c.act("/v1/race/claim", {"group": gid}, rw)

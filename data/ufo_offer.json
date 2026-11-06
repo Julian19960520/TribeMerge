@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "first_delay_sec": 60,
+  "interval_sec": 300,
+  "duration_sec": 60,
+  "retry_sec": 15,
+  "max_items": 3,
+  "price_cny": 3,
+  "original_price_cny": 6,
+  "demo_purchase": true,
+  "icon": "res://assets/events/ufo/saucer.svg",
+  "min_items": 3
+}

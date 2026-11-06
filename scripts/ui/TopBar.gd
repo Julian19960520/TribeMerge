@@ -147,7 +147,9 @@ func _add_shop() -> void:
 	var r := Rect2(644, 34, 70, 84)
 	var c := _make_chip("shop", r)
 	_shop = UI.hit(c, Rect2(Vector2.ZERO, r.size), func(): _open_from("shop", "store"))
-	_shop.extra = func(ci, sz): Paint.hut_icon(ci, sz * 0.5 + Vector2(0, 4), 0.85)
+	_shop.extra = func(ci, sz):
+		Paint.hut_icon(ci, sz * 0.5 + Vector2(0, 4), 0.85)
+		if G.has_free_daily(): Paint.badge_num(ci, Vector2(sz.x - 18, 18), 7, 8.0)
 
 func _open_from(id: String, popup_name: String) -> void:
 	var p: PopupBase = G.main.open(popup_name)

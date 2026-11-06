@@ -18,6 +18,7 @@ static var STORE_HOT: Array = []
 ## 集市「贝币小摊」（data/store_shell.json）：每项 {"id", "price", "stock"}，每 STORE_SHELL_HOURS 小时刷新
 static var STORE_SHELL: Array = []
 static var STORE_SHELL_HOURS := 8
+static var STORE_SHELL_REFRESH := 5
 static var PASS_LEVELS: Array = []
 static var RULES: Dictionary = {}
 static var BOARD: Array = []
@@ -103,6 +104,7 @@ static func _load() -> void:
 		for d in shellf.get("items", []):
 			if d is Dictionary:
 				STORE_SHELL.append({"id": str(d.get("id", "")), "price": int(d.get("price", 0)), "stock": int(d.get("stock", 0))})
+		STORE_SHELL_REFRESH = maxi(1, int(shellf.get("refresh_amber", 5)))
 		STORE_SHELL_HOURS = maxi(1, int(shellf.get("refresh_hours", 8)))
 	var passf = _take(ConfigFiles.PASS, {"levels": []})
 	PASS_LEVELS = passf.get("levels", [])
@@ -515,6 +517,7 @@ static func producers_of(ch: String) -> Array:
 	return [pid]
 
 static func describe(id: String) -> String:
+	if id == "energybox_1": return "打开获得3个火种，每个可领取15点体力，也可继续合成。"
 	if DISHES.has(id):
 		var d: Dictionary = DISHES[id]
 		var bits: PackedStringArray = []
@@ -556,6 +559,8 @@ static func describe(id: String) -> String:
 			return "点击收取 %d 琥珀。%s" % [value_of(id), tail]
 		"sand":
 			return "点击收取 %d 份沙漏。每份能让正在制作的食物快 10 秒。%s" % [value_of(id), tail]
+		"choice":
+			return "点击打开，三选一。选择后宝箱变为所选物品。"
 		"chest":
 			return "点击打开，获得随机物品。"
 		"pack":
@@ -596,3 +601,12 @@ static func build_unlock(b: Dictionary) -> int:
 			return maxi(1, int(l.get("unlock", 1)))
 	return 1
 
+
+## 每日特惠的 key 固定，低等级隐藏卡包也不会挤占免费物品的领取记录。
+static func daily_deals(_level: int) -> Array:
+	return JSON.parse_string(FileAccess.get_file_as_string("res://data/daily_deals.json"))
+
+## 掉率越低的副产物越贵；生产器碎片另有稀有度倍率。
+static func bubble_price(id: String) -> int:
+	var factor := 4.0 if type_of(id) == "gen" else (0.33 if OrderRoll.is_sub(chain(id)) else 0.6)
+	return maxi(2, int(round(OrderRoll.flames(id) * factor)))

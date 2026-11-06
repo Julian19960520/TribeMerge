@@ -237,7 +237,7 @@ static func _give(rw: Array, rect: Rect2) -> void:
 		G.main.present_rewards(rw)
 		return
 	var spots := _reward_spots(Rect2(rect.position, rect.size), rw)
-	Popups.grant_rewards(rw, func(k): return spots[k] if k < spots.size() else rect.get_center())
+	Rewards.grant(rw, func(k): return spots[k] if k < spots.size() else rect.get_center())
 
 ## 每件奖励图标的中心（卡片坐标系）
 static func _reward_spots(r: Rect2, rewards: Array) -> Array:

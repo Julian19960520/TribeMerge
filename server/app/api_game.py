@@ -17,7 +17,7 @@ from .errors import ApiError, body
 from .logs import log
 from .models import Account, HotDeal, PayOrder, Save, SaveBackup
 from .schemas import (ActionResp, BookReq, BuildReq, EventsReq, LevelReq, NameReq, PassBuyReq, PassClaimReq, PassOrderReq,
-                      PayOrderReq, PayOrderResp, Resp, SaveReq, SaveResp, ShopBuyReq)
+                      PayOrderReq, PayOrderResp, Resp, SaveReq, SaveResp, ShopBuyReq, MergeBubbleReq, BubbleBuyReq, MergeEventReq, ChoiceChestReq)
 from .security import Auth, current, hash_token, lock_account
 from .services import (audit, b64, economy, gamedata, idem_get, idem_key, idem_put, load_state, pack, stamp,
                        store_state, today, unpack, unpack_blob)
@@ -47,6 +47,7 @@ def server_time():
 # ---------------------------------------------------------------- 事件
 
 def _events(db: Session, econ: Economy, acc: Account, st: dict, events) -> list:
+    econ.ensure_day(st)
     seen = list(st.get("evt_seen") or [])
     results = []
     for ev in events:
@@ -72,8 +73,11 @@ def _events(db: Session, econ: Economy, acc: Account, st: dict, events) -> list:
 def get_save(auth: Auth = Depends(current), db: Session = Depends(get_db)):
     sv = db.get(Save, auth.id)
     econ = economy()
-    st = load_state(auth.account)
+    acc = lock_account(db, auth.id)
+    st = load_state(acc)
     econ.ensure_day(st)
+    store_state(acc, st)
+    db.commit()
     return stamp({"ok": True, "version": sv.version if sv else 0, "hash": sv.hash if sv else "",
                   "data": b64(sv.data) if sv else "", "state": econ.client_state(st)})
 
@@ -259,18 +263,22 @@ def claim_level(req: LevelReq, request: Request, auth: Auth = Depends(current), 
 
 # ---------------------------------------------------------------- 集市
 
-def _picks(db: Session, econ: Economy, aid: str) -> list:
+def _picks(db: Session, econ: Economy, aid: str, refresh: bool = False) -> list:
     """今天的热卖换货：每人每天按服务器存的最新快照抽一次，存库。还没快照时不换（用底子）。"""
     d = today()
     row = db.get(HotDeal, (aid, d))
-    if row is not None:
+    if row is not None and not refresh:
         return row.picks
     sv = db.get(Save, aid)
     snap = unpack_blob(sv.data) if sv and sv.data else None
-    if snap is None:
+    if snap is None and not refresh:
         return []
-    picks = econ.roll_hot(econ.wanted(snap))
-    db.add(HotDeal(account_id=aid, day=d, picks=picks, rolled_at=clock.utcnow()))
+    picks = econ.reroll_hot_all(econ.hot_list(row.picks if row else [])) if refresh else econ.roll_hot(econ.wanted(snap))
+    if row is None:
+        db.add(HotDeal(account_id=aid, day=d, picks=picks, rolled_at=clock.utcnow()))
+    else:
+        row.picks = picks
+        row.rolled_at = clock.utcnow()
     db.execute(delete(HotDeal).where(HotDeal.account_id == aid, HotDeal.day < clock.day(clock.now() - 7 * 86400)))
     db.flush()
     return picks
@@ -279,10 +287,14 @@ def _picks(db: Session, econ: Economy, aid: str) -> list:
 @router.get("/shop")
 def shop(auth: Auth = Depends(current), db: Session = Depends(get_db)):
     econ = economy()
-    st = load_state(auth.account)
+    acc = lock_account(db, auth.id)
+    st = load_state(acc)
+    econ.ensure_day(st)
+    store_state(acc, st)
+    db.commit()
     picks = _picks(db, econ, auth.id)
     db.commit()
-    return stamp({"ok": True, "picks": picks, "offers": econ.offers(st, picks),
+    return stamp({"ok": True, "picks": picks, "offers": econ.offers(st, picks), "hot_revision": st.get("hot_revision", 0),
                   "secs_to_midnight": clock.secs_to_midnight(get_settings().day_utc_offset_hours),
                   "shell_period": econ.shell_period(), "shell_secs_left": econ.shell_secs_left()})
 
@@ -294,6 +306,30 @@ def shop_buy(req: ShopBuyReq, request: Request, auth: Auth = Depends(current), d
     return _action(request, auth, db, "shop.buy", fn)
 
 
+@router.post("/shop/refresh", response_model=ActionResp)
+def refresh_shop(request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    def fn(e: Economy, st: dict) -> dict:
+        e.refresh_hot(st)
+        return {"picks": _picks(db, e, auth.id, refresh=True)}
+    return _action(request, auth, db, "shop.refresh", fn)
+
+
+@router.post("/merge/bubble", response_model=ActionResp)
+def merge_bubble(req: MergeBubbleReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    def fn(e: Economy, st: dict) -> dict:
+        saved = db.get(Save, auth.id)
+        snap = unpack_blob(saved.data) if saved and saved.data else {}
+        if snap and snap.get("tutorial_on", False):
+            return {}
+        return e.merge_bubble(st, req.item)
+    return _action(request, auth, db, "merge.bubble", fn)
+
+
+@router.post("/merge/bubble/buy", response_model=ActionResp)
+def buy_merge_bubble(req: BubbleBuyReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    return _action(request, auth, db, "merge.bubble.buy", lambda e, st: e.buy_merge_bubble(st, req.uid))
+
+
 # ---------------------------------------------------------------- 充值（下单 → 支付渠道回调到账）
 
 def _order_out(o: PayOrder, st: dict | None = None) -> dict:
@@ -301,6 +337,8 @@ def _order_out(o: PayOrder, st: dict | None = None) -> dict:
            "pay_params": {"mock_pay_url": "/v1/payments/mock/%s/pay" % o.id} if o.provider == "mock" and o.status == "created" else {}}
     if o.kind == "gift":  # 礼包链付费步：带上步数和到账时发的东西
         out.update({"kind": "gift", "step": o.pack, "give": o.give or {}})
+    elif o.kind == "ufo":
+        out.update({"kind": "ufo", "give": o.give or {}})
     elif o.kind == "pass":  # 通行证：带上档位和到账时发的东西
         out.update({"kind": "pass", "tier": o.ref, "give": o.give or {}})
     if st is not None:
@@ -357,6 +395,9 @@ def _fulfil(db: Session, o: PayOrder, provider_ref: str) -> dict:
         if o.kind == "gift":  # 礼包链付费步：验单成功才发奖、队列前移
             from . import gift_chain
             o.give = gift_chain.fulfil(db, economy(), acc.id, st, o, clock.now())
+        elif o.kind == "ufo":
+            from . import ufo_offer
+            ufo_offer.fulfil(economy(), st, o)
         elif o.kind == "pass":  # 通行证：付款成功才开通档位
             try:
                 o.give = economy().activate_pass(st, o.ref or "")
@@ -365,6 +406,12 @@ def _fulfil(db: Session, o: PayOrder, provider_ref: str) -> dict:
                 log(logger, logging.WARNING, "pass order not applied", order_id=o.id, reason=r.error)
         else:
             st["amber"] = int(st.get("amber", 0)) + o.amber
+        from . import seven_day
+        if o.kind not in ("gift", "pass", "ufo"):
+            seven_day.record(economy(), st, "amber", o.amber)
+        if o.provider != "mock":
+            from decimal import Decimal
+            seven_day.record(economy(), st, "paid_cents", int(Decimal(o.price.replace("¥", "").replace("￥", "").replace("元", "").strip()) * 100))
         store_state(acc, st)
         log(logger, logging.INFO, "payment fulfilled", order_id=o.id, amber=o.amber)
     return st
@@ -415,3 +462,99 @@ def rank_name(req: NameReq, auth: Auth = Depends(current), db: Session = Depends
     acc.nick = req.name.strip().replace("\n", " ")[:16]
     db.commit()
     return stamp({"ok": True, "me": _rank_of(db, acc) if acc.rank_progress > 0 else None})
+
+
+@router.post("/merge-event/action", response_model=ActionResp)
+def merge_event_action(req: MergeEventReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    from . import merge_event
+    return _action(request, auth, db, "merge_event." + req.action, lambda e, st: merge_event.action(e, st, req))
+
+
+@router.post("/chest/choose", response_model=ActionResp)
+def choice_chest(req: ChoiceChestReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    return _action(request, auth, db, "chest.choose", lambda e, st: e.choose_chest(st, req.box, req.option))
+
+
+from .schemas import SevenDayClaimReq
+
+@router.post("/seven-day/claim", response_model=ActionResp)
+def seven_day_claim(req: SevenDayClaimReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    from . import seven_day
+    return _action(request, auth, db, "seven_day.claim", lambda e, st: seven_day.claim(e, st, req.entry, req.stage))
+
+@router.post("/shop/shell/refresh", response_model=ActionResp)
+def shell_refresh(request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    def refresh(e, st):
+        e.ensure_shell(st)
+        e._spend(st, "amber", e.gd.shell_refresh_amber)
+        st["shell_bought"] = {}
+        return {}
+    return _action(request, auth, db, "shop.shell.refresh", refresh)
+
+
+@router.post("/gm/activities", response_model=ActionResp)
+def gm_activities(request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    if get_settings().env not in ("dev", "test"):
+        raise ApiError(403, "gm_disabled", "当前环境未开放 GM")
+    def unlock(e, st):
+        st["gm_activities"] = True
+        return {}
+    return _action(request, auth, db, "gm.activities", unlock)
+
+
+@router.post("/daily/ad/start", response_model=ActionResp)
+def daily_ad_start(request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    from . import daily_shop
+    return _action(request, auth, db, "daily.ad.start", daily_shop.ad_start)
+
+
+@router.post("/daily/claim", response_model=ActionResp)
+def daily_claim(payload: dict, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    from . import daily_shop
+    return _action(request, auth, db, "daily.claim", lambda e, st: daily_shop.claim(e, st, str(payload.get("key", ""))))
+
+
+@router.post("/energy-chest/open", response_model=ActionResp)
+def energy_chest_open(request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    from . import daily_shop
+    return _action(request, auth, db, "energy_chest.open", daily_shop.energy_chest)
+
+
+def _latest_snapshot(db, aid):
+    sv = db.get(Save, aid)
+    return unpack_blob(sv.data) if sv and sv.data else {}
+
+
+@router.post("/ufo/visit", response_model=ActionResp)
+def ufo_visit(payload: dict, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    from . import ufo_offer
+    return _action(request, auth, db, "ufo.visit", lambda e, st: ufo_offer.visit(e, st, _latest_snapshot(db, auth.id), payload.get("received", [])[:256], bool(payload.get("refresh"))))
+
+
+@router.post("/ufo/order", response_model=PayOrderResp)
+def ufo_order(payload: dict, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    from . import ufo_offer
+    if not get_settings().enable_mock_payment:
+        raise ApiError(501, "payment_not_configured", "这个支付渠道还没有接入")
+    key = idem_key(request)
+    hit = idem_get(db, auth.id, key, "ufo.order")
+    if hit is not None:
+        return JSONResponse(hit.response, status_code=hit.status)
+    st = load_state(lock_account(db, auth.id))
+    ref = str(payload.get("offer", ""))
+    try:
+        items = ufo_offer.reviewed(economy(), st, _latest_snapshot(db, auth.id), ref)
+    except Reject as r:
+        raise ApiError(r.status, r.error, r.message)
+    o = db.execute(select(PayOrder).where(PayOrder.account_id == auth.id, PayOrder.kind == "ufo", PayOrder.ref == ref)).scalar_one_or_none()
+    if o is None:
+        o = PayOrder(id="po_" + secrets.token_hex(12), account_id=auth.id, pack=-1, amber=0, kind="ufo", ref=ref,
+                     price="¥%d" % gamedata().ufo_offer['price_cny'], provider="mock", status="created", created_at=clock.utcnow(), give={"items": items})
+        db.add(o)
+    elif o.status == "created" and o.give.get("items") != items:
+        # One order per visit; the originally reviewed order stays frozen.
+        raise ApiError(409, "ufo_changed", "礼包需求已变化，请等待下一次飞碟")
+    resp = _order_out(o)
+    idem_put(db, auth.id, key, "ufo.order", 200, resp)
+    db.commit()
+    return resp

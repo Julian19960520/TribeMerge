@@ -1,6 +1,7 @@
 class_name HomeScreen
 extends Control
 
+var _spots_signature := ""
 var _spots_root: Control
 var _event_lbl: Label
 var go: TButton
@@ -33,7 +34,7 @@ func _ready() -> void:
 	add_child(_spots_root)
 	_build_spots()
 
-	# 左上两张小卡：通行证、每日特惠（同一套黄色卡片）
+	# 左上两张小卡：通行证、部落礼包（同一套黄色卡片）
 	var ev := UI.hit(self, Rect2(14, 148, 100, 124), func(): G.main.open("pass"))
 	ev.extra = func(ci, sz):
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * PASS_K)
@@ -42,18 +43,7 @@ func _ready() -> void:
 	UI.lbl(ev, "通行证", Rect2(0, 74, 100, 24), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	_event_lbl = UI.lbl(ev, "", Rect2(24, 98, 72, 20), 13, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
 
-	var deal := UI.hit(self, Rect2(14, 280, 100, 104), func(): G.main.open("store"))
-	deal.extra = func(ci, sz):
-		var r := Rect2(8, 3, sz.x - 16, 74)
-		ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 4), r.size), 14, 92, 0.0), Color(0, 0, 0, 0.28))
-		var b := Art.rrect(r, 14, 92, 0.9)
-		Art.dilate(ci, b, 2.6, Art.INK)
-		ci.draw_colored_polygon(b, CARD_YELLOW)
-		ci.draw_colored_polygon(Art.rrect(r.grow(-5), 10, 93, 0.5), CARD_YELLOW_L)
-		ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(8, 6), Vector2(r.size.x - 16, 10)), 5, 94, 0.3), Color(1, 1, 1, 0.22))
-		Art.item(ci, "chest_1", Vector2(sz.x * 0.5, 42), 70)
-	UI.lbl(deal, "每日特惠", Rect2(0, 74, 100, 24), 17, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
-	# 礼包链（法币直购活动）：左边一列，每日特惠下面
+	# 部落礼包占用原每日特惠位置。
 	add_child(preload("res://scripts/ui/GiftChainCard.gd").new())
 
 	var gear := UI.btn(self, Rect2(626, 150, 80, 80), "", "teal", func(): G.main.open("settings"))
@@ -172,6 +162,10 @@ func _process(_d: float) -> void:
 		_event_lbl.text = G.fmt_time(G.event_left())
 
 func _build_spots() -> void:
+	var signature := str(G.level) + ":" + str(G.shells) + ":" + JSON.stringify(G.builds)
+	if signature == _spots_signature:
+		return
+	_spots_signature = signature
 	if _cards_btn != null:
 		_cards_btn.visible = G.level >= Data.CARD_LEVEL
 	for c in _spots_root.get_children():

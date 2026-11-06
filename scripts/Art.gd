@@ -231,6 +231,16 @@ static func dashed(ci: CanvasItem, pts: PackedVector2Array, dash: float, gap: fl
 static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool = true, rot: float = 0.0) -> void:
 	if id == "":
 		return
+	if id == "energybox_1":
+		ci.draw_set_transform(c, rot, Vector2.ONE)
+		ci.draw_texture_rect(MergeEvent.texture("res://assets/ui/energy_chest.svg"), Rect2(-size/2,-size/2,size,size), false)
+		ci.draw_set_transform(Vector2.ZERO,0,Vector2.ONE)
+		return
+	if Data.type_of(id) == "choice":
+		ci.draw_set_transform(c, rot, Vector2.ONE)
+		ci.draw_texture_rect(MergeEvent.texture(str(ChoiceChest.definition(id).get("icon", "res://assets/ui/choice_chest.svg"))), Rect2(-size / 2, -size / 2, size, size), false)
+		ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+		return
 	if Data.is_dish(id):
 		_paint_dish(ci, id, c, size, rim, rot)
 		return

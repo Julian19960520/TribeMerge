@@ -160,6 +160,9 @@ func fetch(cb: Callable) -> void:
 
 ## 发一个请求；连不上、超时、返回不是 JSON 都算失败，不抛错。
 func _request(path: String, method: int, body: String, done: Callable) -> void:
+	if "--cloud-off" in OS.get_cmdline_user_args():
+		done.call_deferred(false, {})
+		return
 	var h := HTTPRequest.new()
 	h.timeout = TIMEOUT
 	add_child(h)

@@ -97,19 +97,22 @@ def test_build_spends_shells_and_ranks(client, player):
 
 
 def test_shop_deal_chest_then_open(client, player):
-    shop = player.get("/v1/shop").json()
-    keys = {o["key"]: o for o in shop["offers"]}
-    assert keys["deal_0"]["id"] == "chest_1" and "deal_1" not in keys  # 卡包 8 级才卖
-    r = player.post("/v1/shop/buy", json={"key": "deal_0", "item": "chest_1"})
-    assert r.status_code == 200 and r.json()["state"]["amber"] == 70 and r.json()["give"]["items"] == ["chest_1"]
-    assert player.post("/v1/shop/buy", json={"key": "deal_0"}).json()["error"] == "sold_out"
-    r = player.post("/v1/chest/open")
-    assert r.status_code == 200 and len(r.json()["give"]["items"]) == 3
+    from test_merge_event import mutate
+    mutate(player, lambda st: st.update(shells=600))
+    keys = {o["key"]: o for o in player.get("/v1/shop").json()["offers"]}
+    assert keys["deal_energybox"]["id"] == "energybox_1" and keys["deal_energybox"]["cur"] == "shell"
+    r = player.post("/v1/daily/claim", {"key": "deal_energybox"})
+    assert r.status_code == 200 and r.json()["state"]["shells"] == 300 and r.json()["give"]["items"] == ["energybox_1"]
+    assert player.post("/v1/daily/claim", {"key": "deal_energybox"}).json()["error"] == "sold_out"
     assert player.post("/v1/chest/open").json()["error"] == "no_chest"
+    r = player.post("/v1/energy-chest/open")
+    assert r.status_code == 200 and r.json()["give"]["items"] == ["fire_4"] * 3
+    assert player.post("/v1/energy-chest/open").json()["error"] == "no_chest"
 
 
 def test_collect_currency_needs_budget(client, player):
-    assert player.post("/v1/shop/buy", json={"key": "deal_0"}).status_code == 200
+    from test_merge_event import mutate
+    mutate(player, lambda st: st["credits"].update(chest=1))
     items = player.post("/v1/chest/open").json()["give"]["items"]
     cur = [i for i in items if i.split("_")[0] in ("amber", "shell", "fire", "sand")]
     evs = [ev("collect", item=i) for i in cur] + [ev("collect", item="amber_6")]
@@ -197,6 +200,8 @@ def test_payment_credits_once(client, player):
 
 
 def test_pack_open_and_cards(client, player):
+    player = Player(client, player_id="TRBcardtest", device="cards")
+    assert player.put(player.snapshot(level=8)).status_code == 200
     player.put(player.snapshot(), events=[ev("order", order={"who": 2, "items": ["fruit_3"], "rw": {"shell": 12, "token": 3}, "story": False}) for _ in range(4)])
     r = player.post("/v1/pack/open")
     assert r.status_code == 200 and len(r.json()["give"]["cards"]) == 2

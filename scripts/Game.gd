@@ -10,6 +10,7 @@ signal order_delivered(items: Array)
 
 const Layout := preload("res://scripts/config/board_layout.gd")
 const Roll := preload("res://scripts/OrderRoll.gd")
+const HotDeals := preload("res://scripts/HotDeals.gd")
 
 var COLS := 7
 var ROWS := 9
@@ -22,9 +23,16 @@ var save_path := SAVE_PATH
 var loaded_save := false
 var RANDOM_ORDERS := 4
 var TOKEN_STEP := 10
-var INV_MAX := 10
 
 var main: Node = null
+var ufo_offer: Dictionary = {}
+var ufo_receipts: Array = []
+var local_race: Dictionary = {}
+var gm_activities := false
+var seven_day: Dictionary = {}
+signal seven_day_changed
+var merge_events: Dictionary = {}
+signal merge_event_changed
 var font_title: Font
 var font_body: Font
 
@@ -65,6 +73,12 @@ var scroll_moving := false
 var _boil_hold := false
 var settings := {"music": true, "sound": true, "vibrate": true, "hint": true}
 var hot_bought := {}
+var hot_revision := 0
+var _hot_refresh_busy := false
+var _bubble_busy := {}
+const MERGE_BUBBLE_CHANCE := 0.15
+const MERGE_BUBBLE_MIN_LEVEL := 5
+const MERGE_BUBBLE_SECONDS := 60.0
 ## 今天用琥珀买了几次火种。价格逐次上涨，零点清零。
 var energy_buys := 0
 var deals_bought := {}
@@ -104,12 +118,13 @@ func _apply_rules() -> void:
 	REGEN_SEC = int(r["regen_sec"])
 	RANDOM_ORDERS = int(r["random_orders"])
 	TOKEN_STEP = int(r["token_step"])
-	INV_MAX = int(r["inv_max"])
 
 func clear_scroll_drag() -> void:
 	scroll_drag = false
 
-func _sysfont(names: Array, weight: int) -> SystemFont:
+func _sysfont(names: Array, weight: int) -> Font:
+	if OS.has_feature("web"):
+		return load("res://assets/fonts/NotoSansCJKsc-Regular.otf")
 	var f := SystemFont.new()
 	f.font_names = PackedStringArray(names)
 	f.font_weight = weight
@@ -135,6 +150,8 @@ func _process(delta: float) -> void:
 	_regen_t += delta
 	if _regen_t >= 1.0:
 		_regen_t = 0.0
+		_check_day()
+		_tick_bubbles()
 		_regen()
 	if _save_t >= 0.0:
 		_save_t -= delta
@@ -212,6 +229,14 @@ func cloud_event(ev: Dictionary) -> void:
 ## 把服务器状态里的一个字段写回本地（Cloud.apply_state 用）
 func set_server_field(k: String, v) -> void:
 	match k:
+		"ufo_offer":
+			ufo_offer = v.duplicate(true) if v is Dictionary else {}
+		"gm_activities":
+			gm_activities = bool(v)
+		"seven_day":
+			seven_day = Data.ConfigFiles.ints(v) if v is Dictionary else {}
+		"merge_events":
+			merge_events = Data.ConfigFiles.ints(v) if v is Dictionary else {}
 		"hot_bought", "deals_bought", "book_claimed", "shell_bought":
 			set(k, (v as Dictionary).duplicate() if v is Dictionary else {})
 		"builds", "cards":
@@ -242,12 +267,12 @@ func _srv_fail(r: Dictionary) -> void:
 
 ## 服务器发的、UI 不会另外处理的东西：实物进暂存，体力 / 沙漏直接加
 func take_give(give: Dictionary) -> void:
-	for id in give.get("items", []):
-		stash_push(str(id))
+	var rewards := Rewards.items(give.get("items", []))
 	if int(give.get("energy", 0)) > 0:
-		add_currency("energy", int(give["energy"]))
+		rewards.append(["fire_2", int(give["energy"])])
 	if int(give.get("rush", 0)) > 0:
-		add_currency("sand", int(give["rush"]))
+		rewards.append(["sand_2", int(give["rush"])])
+	Rewards.grant(rewards)
 
 ## 贝币小摊的轮次号（东八区零点对齐，每 Data.STORE_SHELL_HOURS 小时一轮），和服务器 Economy.shell_period 算法一致
 func shell_period_now() -> String:
@@ -268,6 +293,7 @@ func event_left() -> int:
 	return 35 * 86400 + 15 * 3600 - int(fmod(now(), 86400.0))
 
 func _check_day() -> void:
+	SevenDay.login()
 	# 等云存档拿到服务器时间（或确认连不上）再判断，免得改了本机时间先把每日次数清掉
 	var c = get_node_or_null("/root/Cloud")
 	if c == null or not c.clock_ready:
@@ -277,6 +303,8 @@ func _check_day() -> void:
 		deals_day = d
 		deals_bought = {}
 		hot_bought = {}
+		hot_revision = 0
+		dirty()
 		energy_buys = 0
 
 # ---------------------------------------------------------------- 存档
@@ -293,12 +321,18 @@ func new_game() -> void:
 	rush = 0
 	energy_stamp = now()
 	inv = []
-	inv_cap = 5
+	inv_cap = int(Data.RULES.get("storage_initial", 5))
 	discovered = {}
 	book_claimed = {}
 	builds = {"fire": 1}
 	cards = {}
 	stash = []
+	ufo_offer = {}
+	ufo_receipts = []
+	local_race = {}
+	gm_activities = false
+	seven_day = {}
+	merge_events = {}
 	tokens = 0
 	token_claimed = 0
 	pass_pts = 0
@@ -313,6 +347,8 @@ func new_game() -> void:
 	tutorial_on = true
 	deals_bought.clear()
 	hot_bought.clear()
+	hot_revision = 0
+	_bubble_busy.clear()
 	shell_bought = {}
 	shell_period = ""
 	energy_buys = 0
@@ -358,10 +394,10 @@ func save_game() -> void:
 ## 整份存档。本地存档和云存档快照都用它。
 func save_dict() -> Dictionary:
 	return {
-		"level": level, "xp": xp, "energy": energy, "shells": shells, "amber": amber, "rush": rush,
+		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "local_race": local_race, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "shells": shells, "amber": amber, "rush": rush,
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
 		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "builds": builds, "cards": cards,
-		"stash": stash, "tokens": tokens, "token_claimed": token_claimed, "settings": settings, "hot_bought": hot_bought,
+		"stash": stash, "tokens": tokens, "token_claimed": token_claimed, "settings": settings, "hot_bought": hot_bought, "hot_revision": hot_revision,
 		"deals_bought": deals_bought, "deals_day": deals_day, "shell_bought": shell_bought, "shell_period": shell_period, "energy_buys": energy_buys, "player_id": player_id,
 		"seen_tutorial": seen_tutorial, "tutorial_on": tutorial_on,
 		"pass_pts": pass_pts, "pass_tier": pass_tier, "pass_free": pass_free, "pass_prem": pass_prem, "pass_super": pass_super,
@@ -377,6 +413,12 @@ func load_game() -> bool:
 	var d = JSON.parse_string(f.get_as_text())
 	if typeof(d) != TYPE_DICTIONARY or not d.has("board"):
 		return false
+	ufo_offer = d.get("ufo_offer", {}) if d.get("ufo_offer", {}) is Dictionary else {}
+	ufo_receipts = d.get("ufo_receipts", []) if d.get("ufo_receipts", []) is Array else []
+	local_race = d.get("local_race", {}) if d.get("local_race", {}) is Dictionary else {}
+	gm_activities = bool(d.get("gm_activities", false))
+	seven_day = Data.ConfigFiles.ints(d.get("seven_day", {})) if d.get("seven_day", {}) is Dictionary else {}
+	merge_events = Data.ConfigFiles.ints(d.get("merge_events", {})) if d.get("merge_events", {}) is Dictionary else {}
 	level = int(d["level"])
 	xp = int(d["xp"])
 	energy = int(d["energy"])
@@ -417,6 +459,7 @@ func load_game() -> bool:
 	if not settings.has("hint"):
 		settings["hint"] = true
 	hot_bought = d.get("hot_bought", {})
+	hot_revision = int(d.get("hot_revision", 0))
 	deals_bought = d.get("deals_bought", {})
 	deals_day = d.get("deals_day", "")
 	shell_bought = d.get("shell_bought", {})
@@ -460,6 +503,7 @@ func reset_game() -> void:
 # ---------------------------------------------------------------- 货币
 
 func add_currency(kind: String, n: int) -> void:
+	if kind in ["shell", "amber"]: SevenDay.record(kind, n)
 	match kind:
 		"energy": energy += n
 		"shell": shells += n
@@ -488,6 +532,7 @@ func spend(kind: String, n: int) -> bool:
 			if amber < n:
 				return false
 			amber -= n
+			SevenDay.record("amber_spent", n)
 			cloud_mark()
 		"sand":
 			if rush < n:
@@ -518,18 +563,27 @@ func buy_energy() -> bool:
 	dirty()
 	return true
 
-## 储物洞扩一格（花琥珀）
+## 按已扩充的格子计算下一格价格；旧存档直接沿用现有容量。
+func storage_price() -> int:
+	return int(Data.RULES.get("storage_expand_price", 50)) + maxi(0, inv_cap - int(Data.RULES.get("storage_initial", 5))) * int(Data.RULES.get("storage_expand_step", 10))
+
+var _storage_busy := false
 func expand_storage() -> bool:
+	if _storage_busy: return false
+	_storage_busy = true
+	var success := false
 	if server_mode():
 		var r: Dictionary = await _cloud().act("/v1/storage/expand")
-		if not r.get("ok", false):
-			_srv_fail(r)
-		return bool(r.get("ok", false))
-	if inv_cap >= INV_MAX or not spend("amber", 50):
-		return false
-	inv_cap += 1
-	dirty()
-	return true
+		success = bool(r.get("ok", false))
+		if not success: _srv_fail(r)
+	elif spend("amber", storage_price()):
+		inv_cap += 1
+		success = true
+	_storage_busy = false
+	if success:
+		dirty()
+		changed.emit()
+	return success
 
 ## 领一次升级奖励。成功返回奖励列表；已经领过返回 []；连不上返回 null（奖励留着，稍后再领）。
 func claim_level(lv: int):
@@ -545,21 +599,138 @@ func claim_level(lv: int):
 	return null
 
 ## 集市购买。返回 {"ok", "message"}；成功时服务器已扣琥珀（贝币小摊 key "shell_N" 扣贝币）、记了已购数。
-func shop_buy(key: String, id: String, price: int, deal: bool) -> Dictionary:
+func shop_buy(key: String, id: String, _price: int, _deal: bool) -> Dictionary:
+	if key.begins_with("deal_"): return {"ok":false,"message":"请从每日商品入口领取"}
 	if server_mode():
-		var r: Dictionary = await _cloud().act("/v1/shop/buy", {"key": key, "item": id})
-		return r
-	if key.begins_with("shell_"):
-		check_shell_period()
-		if not spend("shell", price):
-			return {"ok": false, "error": "not_enough_shell", "message": "贝币不够了！"}
-		shell_bought[key] = int(shell_bought.get(key, 0)) + 1
-		return {"ok": true}
-	if not spend("amber", price):
-		return {"ok": false, "error": "not_enough_amber", "message": "琥珀不够了！"}
-	var book: Dictionary = deals_bought if deal else hot_bought
+		return await _cloud().act("/v1/shop/buy", {"key": key, "item": id})
+	_check_day()
+	check_shell_period()
+	var offer: Dictionary = {}
+	var rows: Array = Data.daily_deals(level)
+	for k in HotDeals.today().size():
+		var d: Dictionary = HotDeals.today()[k].duplicate()
+		d["key"] = "hot_%d" % k
+		rows.append(d)
+	for k in Data.STORE_SHELL.size():
+		var d: Dictionary = Data.STORE_SHELL[k].duplicate()
+		d["key"] = "shell_%d" % k
+		rows.append(d)
+	for d in rows:
+		if str(d["key"]) == key and str(d["id"]) == id:
+			offer = d
+			break
+	if offer.is_empty():
+		return {"ok": false, "message": "这件已经下架了"}
+	var book: Dictionary = shell_bought if key.begins_with("shell_") else (deals_bought if key.begins_with("deal_") else hot_bought)
+	if int(book.get(key, 0)) >= int(offer["stock"]):
+		return {"ok": false, "message": "已经领完了" if int(offer["price"]) == 0 else "卖完了"}
+	var currency := "shell" if key.begins_with("shell_") else "amber"
+	if not spend(currency, int(offer["price"])):
+		return {"ok": false, "error": "not_enough_" + currency}
 	book[key] = int(book.get(key, 0)) + 1
+	dirty()
+	changed.emit()
 	return {"ok": true}
+
+func has_free_daily() -> bool:
+	for d in Data.daily_deals(level):
+		if str(d.get("mode", "")) == "ad" or int(d["price"]) > 0 or pass_tier < int(d.get("min_tier",0)): continue
+		if deals_day != today() or int(deals_bought.get(d["key"],0)) < int(d["stock"]): return true
+	return false
+
+func refresh_hot() -> Dictionary:
+	if _hot_refresh_busy:
+		return {"ok": false, "message": "正在刷新"}
+	_hot_refresh_busy = true
+	_check_day()
+	var previous: Array = HotDeals.today().duplicate(true)
+	var result: Dictionary
+	if server_mode():
+		result = await _cloud().act("/v1/shop/refresh")
+		if result.get("ok", false):
+			_cloud().accept_hot(today(), hot_revision, result.get("give", {}).get("picks", []))
+	elif not spend("amber", 10):
+		result = {"ok": false, "message": "琥珀不够了！"}
+	else:
+		hot_bought = {}
+		hot_revision += 1
+		HotDeals.reroll_all(previous)
+		result = {"ok": true}
+	_hot_refresh_busy = false
+	if result.get("ok", false):
+		HotDeals.clear_cache()
+		dirty()
+		changed.emit()
+	return result
+
+## lock=3：额外复制的物品尚未购买，不能当作库存、订单材料或合成对象。
+func is_merge_bubble(i: int) -> bool:
+	return i >= 0 and i < board.size() and int(board[i].get("lock", 0)) == 3 and board[i].get("bubble") is Dictionary
+
+func bubble_left(i: int) -> int:
+	return maxi(0, int(ceil(float(board[i]["bubble"].get("expires", 0)) - now()))) if is_merge_bubble(i) else 0
+
+func _maybe_spawn_bubble(id: String, near: int) -> void:
+	# 引导固定了每一步用到的格子，完成后才开始出现随机额外物品。
+	if tutorial_on or Data.lv(id) < MERGE_BUBBLE_MIN_LEVEL or find_empty_near(near) < 0:
+		return
+	var offer: Dictionary
+	if server_mode():
+		var r: Dictionary = await _cloud().act("/v1/merge/bubble", {"item": id})
+		if not r.get("ok", false):
+			return
+		offer = r.get("give", {}).get("offer", {})
+	else:
+		if rng.randf() >= MERGE_BUBBLE_CHANCE:
+			return
+		offer = {"uid": "%s-%s" % [Time.get_ticks_usec(), rng.randi()], "item": id,
+			"expires": now() + MERGE_BUBBLE_SECONDS, "price": Data.bubble_price(id)}
+	if tutorial_on or offer.is_empty() or float(offer.get("expires", 0)) <= now():
+		return
+	var at := find_empty_near(near)
+	if at < 0:
+		return
+	board[at] = {"id": id, "lock": 3, "bubble": offer}
+	dirty()
+	board_changed.emit()
+
+func _tick_bubbles() -> void:
+	var expired := false
+	for i in board.size():
+		if not is_merge_bubble(i):
+			continue
+		if bubble_left(i) == 0 and not _bubble_busy.has(str(board[i]["bubble"].get("uid", ""))):
+			board[i] = {"id": "", "lock": 0}
+			expired = true
+	if expired:
+		dirty()
+		board_changed.emit()
+
+func buy_bubble(i: int) -> Dictionary:
+	if not is_merge_bubble(i) or bubble_left(i) <= 0:
+		_tick_bubbles()
+		return {"ok": false, "message": "泡泡已经消失了"}
+	var offer: Dictionary = board[i]["bubble"]
+	var uid := str(offer.get("uid", ""))
+	if _bubble_busy.has(uid):
+		return {"ok": false, "message": "正在购买"}
+	_bubble_busy[uid] = true
+	var result: Dictionary
+	if server_mode():
+		result = await _cloud().act("/v1/merge/bubble/buy", {"uid": uid})
+	else:
+		result = {"ok": spend("amber", Data.bubble_price(str(board[i]["id"]))), "message": "琥珀不够了！"}
+	_bubble_busy.erase(uid)
+	if result.get("ok", false):
+		board[i]["lock"] = 0
+		board[i].erase("bubble")
+		discover(str(board[i]["id"]))
+		dirty()
+		board_changed.emit()
+		changed.emit()
+	else:
+		_tick_bubbles()
+	return result
 
 ## 琥珀礼包：服务器下单 → 支付渠道（现在是 mock）回调到账。返回到账的琥珀数，失败 0。
 func buy_amber_pack(k: int) -> int:
@@ -581,6 +752,7 @@ func xp_need() -> int:
 	return Data.xp_need(level)
 
 func add_xp(n: int) -> bool:
+	SevenDay.record("xp", n)
 	xp += n
 	var up := false
 	while xp >= xp_need():
@@ -639,16 +811,7 @@ func empty_count() -> int:
 	return n
 
 func find_empty_near(i: int) -> int:
-	var best := -1
-	var bd := 1e9
-	var c0 := Vector2(i % COLS, i / COLS)
-	for k in board.size():
-		if _vacant(k):
-			var d := c0.distance_squared_to(Vector2(k % COLS, k / COLS)) + float(k) * 0.0001
-			if d < bd:
-				bd = d
-				best = k
-	return best
+	return MergeGrid.nearest_empty(board, COLS, i)
 
 func place(i: int, id: String) -> void:
 	board[i]["id"] = id
@@ -670,6 +833,9 @@ func book_prize_count() -> int:
 			for i in items.size():
 				if book_prize("%s_%d" % [ch, i + 1]):
 					n += 1
+	for id in Data.DISHES:
+		if book_prize(str(id)):
+			n += 1
 	return n
 
 ## 领走这份图鉴奖。返回火苗数量（等于物品等级），已经领过或还没发现则是 0。
@@ -692,6 +858,7 @@ func discover(id: String) -> bool:
 		return false
 	if Data.is_dish(id):
 		discovered[id] = true
+		cloud_event({"type": "found", "item": id})
 		return true
 	var ch := Data.chain(id)
 	for l in range(1, Data.lv(id) + 1):
@@ -703,61 +870,28 @@ func discover(id: String) -> bool:
 
 ## 合成后，上下左右的巨石崩开。有物品的格子露出藤蔓，空格直接开放。返回这些格子。
 func unlock_around(i: int) -> Array:
-	var out: Array = []
-	var c := i % COLS
-	var r := i / COLS
-	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-		var nc: int = c + d.x
-		var nr: int = r + d.y
-		if nc < 0 or nr < 0 or nc >= COLS or nr >= ROWS:
-			continue
-		var k := idx(nc, nr)
-		if board[k]["lock"] != 2:
-			continue
-		board[k]["lock"] = 0 if board[k]["id"] == "" else 1
-		out.append(k)
-	return out
+	return MergeGrid.reveal_neighbors(board, i, COLS)
 
-## 返回 "merge" / "move" / "swap" / ""
 func try_drop(a: int, b: int) -> String:
 	opened = []
-	if a == b:
-		return ""
-	if cooking(a) or cooking(b):
-		return _drop_cook(a, b)
-	var ida: String = board[a]["id"]
-	var idb: String = board[b]["id"]
-	var lb: int = board[b]["lock"]
-	if ida == "" or board[a]["lock"] != 0:
-		return ""
-	if lb == 2:
-		return ""
-	if idb == ida and Data.next_id(ida) != "":
-		var nx := Data.next_id(ida)
-		board[a]["id"] = ""
-		board[b]["id"] = nx
-		board[b]["lock"] = 0
+	if a < 0 or b < 0 or a >= board.size() or b >= board.size() or a == b: return ""
+	if cooking(a) or cooking(b): return _drop_cook(a, b)
+	var result := MergeGrid.drop_kind(board, a, b, Data.next_id)
+	if result == "": return ""
+	if result != "merge": _swap_gm(a, b)
+	MergeGrid.apply_drop(board, a, b, result, Data.next_id)
+	if result == "merge":
+		SevenDay.record("merges", 1)
+		var nx := str(board[b]["id"])
 		board[a].erase("gm")
 		board[b].erase("gm")
 		discover(nx)
 		opened = unlock_around(b)
-		dirty()
-		board_changed.emit()
-		return "merge"
-	if lb != 0:
-		return ""
-	_swap_gm(a, b)
-	if idb == "":
-		board[b]["id"] = ida
-		board[a]["id"] = ""
-		dirty()
-		board_changed.emit()
-		return "move"
-	board[b]["id"] = ida
-	board[a]["id"] = idb
+		_maybe_spawn_bubble(nx, b)
+		_merge_coin(nx, b)
 	dirty()
 	board_changed.emit()
-	return "swap"
+	return result
 
 ## 制作中的格子可以拖到空位，或和另一个未锁定的物品对调。
 func _drop_cook(a: int, b: int) -> String:
@@ -866,10 +1000,10 @@ func roll_produce(gen_id: String) -> String:
 	return str(drops.back()["id"])
 
 ## 打开一个宝箱：服务器抽（连不上返回 []，宝箱留着）；本地模式用 roll_chest
-func open_chest() -> Array:
+func open_chest(box_id: String = "chest_1") -> Array:
 	if not server_mode():
-		return roll_chest()
-	var r: Dictionary = await _cloud().act("/v1/chest/open")
+		return ["fire_4", "fire_4", "fire_4"] if box_id == "energybox_1" else roll_chest()
+	var r: Dictionary = await _cloud().act("/v1/energy-chest/open" if box_id == "energybox_1" else "/v1/chest/open")
 	if not r.get("ok", false):
 		_srv_fail(r)
 		return []
@@ -975,7 +1109,7 @@ func _insert_random(made: Dictionary, at: int) -> void:
 	orders.insert(tail, made)
 
 ## 场上没有剧情单、声望却还不够升级时，重新发这一级的剧情单，保证永远能升级。
-## 声望是在交单动画飞完后才入账的，所以在 add_xp 和读档时检查。返回是否补了单。
+## 声望在统一领奖结算时入账，在 add_xp 和读档时检查。返回是否补了单。
 func _ensure_story() -> bool:
 	for o in orders:
 		if o is Dictionary and bool(o.get("story", false)):
@@ -1414,6 +1548,8 @@ func complete_order(oi: int) -> Array:
 			if row is Dictionary and bool(row.get("story", false)) and str(row.get("items", [])) != str(["seed_1"]):
 				# 旧存档的剧情单没有 si、而且这一级的已经全摆出来了，不再补发，升级后再按新规则（新手引导的草籽单不算）
 				story_after = maxi(story_after, int(row["si"]) if row.has("si") else 999)
+	SevenDay.record("orders", 1)
+	MergeEvent.on_order(o)
 	orders.remove_at(oi)
 	if craft:
 		_ensure_craft_order(false, dish)
@@ -1584,7 +1720,7 @@ func buy_pass_vip() -> bool:
 	if server_mode():
 		return await _pay_pass("vip")
 	pass_tier = 1
-	add_currency("energy", 150)
+	Rewards.grant([["fire_2", 150]])
 	return true
 
 ## 人民币买超级贵宾（¥68）：贵宾、超级两列奖励都能领，一次性 +10 积分。
@@ -1601,7 +1737,7 @@ func buy_pass_super() -> bool:
 		pass_super_bonus = true
 		pass_pts += 10
 	if from_zero:
-		add_currency("energy", 150)
+		Rewards.grant([["fire_2", 150]])
 	else:
 		dirty()
 		changed.emit()
@@ -1702,6 +1838,9 @@ func do_build(id: String) -> Dictionary:
 	return {"idx": st, "rewards": rewards}
 
 func open_pack() -> Array:
+	if level < Data.CARD_LEVEL:
+		if main: main.toast("典藏卡在 %d 级解锁" % Data.CARD_LEVEL)
+		return []
 	if server_mode():
 		var r: Dictionary = await _cloud().act("/v1/pack/open")
 		if not r.get("ok", false):
@@ -1722,6 +1861,7 @@ func open_pack() -> Array:
 		var key := "%d_%d" % [a, c]
 		cards[key] = int(cards.get(key, 0)) + 1
 		out.append([a, c])
+	SevenDay.record("cards", out.size())
 	cloud_mark()
 	dirty()
 	return out
@@ -1738,3 +1878,32 @@ func cards_total() -> int:
 	for a in Data.ALBUMS.size():
 		n += album_count(a)
 	return n
+
+var _shell_refresh_busy := false
+func refresh_shell() -> Dictionary:
+	if _shell_refresh_busy: return {"ok": false, "message": "正在刷新"}
+	_shell_refresh_busy = true
+	var result: Dictionary
+	if server_mode():
+		result = await _cloud().act("/v1/shop/shell/refresh")
+	elif spend("amber", Data.STORE_SHELL_REFRESH):
+		check_shell_period()
+		shell_bought = {}
+		result = {"ok": true}
+	else: result = {"ok": false, "message": "琥珀不够了！"}
+	_shell_refresh_busy = false
+	if result.get("ok", false):
+		dirty()
+		changed.emit()
+	return result
+
+func _merge_coin(merged: String, origin: int) -> void:
+	var uid := Crypto.new().generate_random_bytes(16).hex_encode()
+	var to := find_empty_near(origin) if not tutorial_on else -1
+	cloud_event({"id": uid, "type": "merge", "item": merged, "cell": to})
+	if to < 0: return
+	var roll := float(uid.sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
+	if roll >= clampf(float(Data.RULES.get("merge_coin_chance", 0.05)), 0, 1): return
+	var id := str(Data.RULES.get("merge_coin_item", "shell_1"))
+	Rewards.grant([[id, 1, "physical"]], Callable(), false, true, {"board_origin": to})
+	if is_instance_valid(main): main.board_screen.board.fly_in(origin, to, id)

@@ -6,7 +6,7 @@
 		{"level": 5, "rewards": [["fire_2", 70], ["chest_1", 1], ["basket_3", 1]]},
 		{"level": 6, "rewards": [["fire_2", 72], ["chest_1", 1], ["anvil_4", 1], ["amber_3", 5]]},
 		{"level": 7, "rewards": [["fire_2", 74], ["chest_1", 1], ["anvil_3", 1]]},
-		{"level": 8, "rewards": [["fire_2", 76], ["chest_1", 1], ["pack_1", 1], ["anvil_3", 1], ["amber_3", 5]]},
+		{"level": 8, "rewards": [["fire_2", 76], ["chest_1", 1], ["pack_1", 1], ["loom_4", 1], ["amber_3", 5]]},
 		{"level": 9, "rewards": [["fire_2", 78], ["chest_1", 1], ["pack_1", 1], ["basket_3", 1]]},
 		{"level": 10, "rewards": [["fire_2", 80], ["chest_1", 1], ["pack_1", 1], ["anvil_3", 1], ["amber_3", 5]]},
 		{"level": 11, "rewards": [["fire_2", 82], ["chest_1", 1], ["pack_1", 1], ["loom_4", 1]]},

@@ -67,7 +67,7 @@ class TransferCodeResp(Resp):
 
 class Event(Req):
     id: str = Field(min_length=1, max_length=64)
-    type: Literal["order", "bubble", "collect", "refund", "found"]
+    type: Literal["order", "bubble", "collect", "refund", "found", "merge"]
     order: dict[str, Any] | None = None
     cell: int | None = None
     item: str | None = Field(default=None, max_length=32)
@@ -100,6 +100,14 @@ class ActionResp(Resp):
     give: dict[str, Any] = Field(default_factory=dict)
 
 
+class MergeBubbleReq(Req):
+    item: str = Field(min_length=1, max_length=32)
+
+
+class BubbleBuyReq(Req):
+    uid: str = Field(pattern=r"^[a-f0-9]{32}$")
+
+
 class ShopBuyReq(Req):
     key: str = Field(pattern=r"^(deal|hot|shell)_\d{1,2}$")
     item: str = Field(default="", max_length=32)
@@ -124,7 +132,7 @@ class BuildReq(Req):
 
 
 class BookReq(Req):
-    item: str = Field(pattern=r"^[a-z0-9]{1,16}_\d{1,2}$")
+    item: str = Field(pattern=r"^[a-z0-9]{1,16}(?:_\d{1,2})?$")
 
 
 class LevelReq(Req):
@@ -148,3 +156,22 @@ class PayOrderResp(Resp):
     provider: str
     pay_params: dict[str, Any] = Field(default_factory=dict)
     state: dict[str, Any] | None = None
+
+
+class MergeEventReq(Req):
+    season: str = Field(min_length=3, max_length=80, pattern=r"^[a-z0-9_]+:[0-9]+$")
+    action: Literal["spawn", "drop", "recycle", "claim"]
+    view: int = Field(default=0, ge=0, le=1000)
+    from_cell: int = Field(default=-1, alias="from", ge=-1, le=10000)
+    to: int = Field(default=-1, ge=-1, le=10000)
+    cell: int = Field(default=-1, ge=-1, le=10000)
+
+
+class ChoiceChestReq(Req):
+    box: str = Field(pattern=r"^[a-z0-9]+_[0-9]+$")
+    option: int = Field(ge=0, le=2)
+
+
+class SevenDayClaimReq(Req):
+    entry: str = Field(pattern=r"^[a-z0-9_]{1,40}$")
+    stage: bool = False

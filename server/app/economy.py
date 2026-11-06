@@ -16,14 +16,15 @@ state 里：
 import json
 import math
 import random
+import secrets
 import time
 
 from .gamedata import CURRENCY, GameData
 
 SERVER_FIELDS = [
-    "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "inv_cap",
+    "ufo_offer", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "inv_cap",
     "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus",
-    "tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period",
+    "tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period", "hot_revision",
 ]
 
 
@@ -60,10 +61,10 @@ class Economy:
         st = {
             "amber": num(np.get("amber", 80)), "shells": num(np.get("shells", 0)), "level": num(np.get("level", 1)),
             "xp": num(np.get("xp", 0)), "energy_buys": 0, "deals_day": self.day(), "hot_bought": {}, "deals_bought": {},
-            "inv_cap": num(np.get("inv_cap", 5)), "pass_pts": 0, "pass_tier": 0, "pass_free": [], "pass_prem": [], "pass_super": [],
+            "inv_cap": num(self.gd.rules.get("storage_initial", np.get("inv_cap", 5))), "pass_pts": 0, "pass_tier": 0, "pass_free": [], "pass_prem": [], "pass_super": [],
             "pass_endless": 0, "pass_super_bonus": False, "tokens": 0, "token_claimed": 0,
             "builds": dict(np.get("builds", {"fire": 1})), "cards": {}, "book_claimed": {},
-            "shell_bought": {}, "shell_period": self.shell_period(),
+            "shell_bought": {}, "shell_period": self.shell_period(), "hot_revision": 0, "merge_events": {}, "ufo_offer": {}, "gm_activities": False,
         }
         st.update({"budget": self.gd.initial_board_units(), "credits": {"chest": 0, "pack": 0},
                    "energy_credit": 0, "rush_credit": 0, "max_lv": {}, "done": {}, "adopted": False,
@@ -78,7 +79,7 @@ class Economy:
     def adopt(self, st: dict, snap: dict) -> None:
         """账号的第一份快照（老存档第一次连上服务器）：服务器字段信一次客户端，额度按快照里的物品算。之后就以服务器为准。"""
         for k in SERVER_FIELDS:
-            if k in snap:
+            if k in snap and k not in ("merge_events", "seven_day", "ufo_offer", "gm_activities"):
                 st[k] = snap[k]
         st["amber"] = max(0, num(st.get("amber")))
         st["shells"] = max(0, num(st.get("shells")))
@@ -102,11 +103,15 @@ class Economy:
         return {k: st.get(k) for k in SERVER_FIELDS}
 
     def ensure_day(self, st: dict) -> None:
+        from . import seven_day
+        seven_day.login(self, st)
         d = self.day()
+        st.setdefault("hot_revision", 0)
         if st.get("deals_day") != d:
             st["deals_day"] = d
             st["energy_buys"] = 0
             st["hot_bought"] = {}
+            st["hot_revision"] = 0
             st["deals_bought"] = {}
         self.ensure_shell(st)
 
@@ -130,7 +135,7 @@ class Economy:
     def snapshot_items(self, snap: dict, open_only: bool = False) -> list:
         out = []
         for c in snap.get("board") or []:
-            if isinstance(c, dict) and c.get("id") and not (open_only and num(c.get("lock")) != 0):
+            if isinstance(c, dict) and num(c.get("lock")) != 3 and c.get("id") and not (open_only and num(c.get("lock")) != 0):
                 out.append(str(c["id"]))
         for s in (snap.get("stash") or []) + (snap.get("inv") or []):
             iid = str(s.get("id", "")) if isinstance(s, dict) else str(s)
@@ -150,9 +155,14 @@ class Economy:
         if budget and t in CURRENCY:
             b = st.setdefault("budget", {})
             b[t] = num(b.get(t, 0)) + self.gd.units(lv)
+        if credit and t == "choice":
+            key = "choice:" + iid
+            credits = st.setdefault("credits", {})
+            credits[key] = num(credits.get(key)) + 1
         if credit and t in ("chest", "pack"):
             c = st.setdefault("credits", {})
-            c[t] = num(c.get(t, 0)) + 1
+            key = "energybox" if iid == "energybox_1" else t
+            c[key] = num(c.get(key, 0)) + 1
 
     def give_item(self, st: dict, iid: str, out: dict) -> None:
         """发一件实物（放进暂存区 / 棋盘）。"""
@@ -162,11 +172,13 @@ class Economy:
     def grant(self, st: dict, rewards: list, out: dict) -> dict:
         """发一组 [id, n] 奖励（和客户端 Popups 的发奖规则一样：货币类是 n 点货币，其他是 n 件实物）。
         out 收集客户端要做的事：energy / rush（客户端自己加）、items（放暂存）、levels（升了哪几级）。"""
+        from . import seven_day
         for r in rewards or []:
             if not isinstance(r, (list, tuple)) or len(r) < 2:
                 continue
             iid, n = str(r[0]), max(1, num(r[1], 1))
             t = self.gd.type_of(iid)
+            if t in ("amber", "shell"): seven_day.record(self, st, t, n)
             if t == "amber":
                 st["amber"] = num(st.get("amber")) + n
             elif t == "shell":
@@ -187,6 +199,8 @@ class Economy:
         return out
 
     def add_xp(self, st: dict, n: int, out: dict) -> None:
+        from . import seven_day
+        seven_day.record(self, st, "xp", n)
         st["xp"] = num(st.get("xp")) + n
         while st["xp"] >= self.gd.xp_need(num(st.get("level"), 1)):
             st["xp"] -= self.gd.xp_need(num(st.get("level"), 1))
@@ -207,6 +221,9 @@ class Economy:
         if num(st.get(key)) < n:
             raise Reject("not_enough_" + kind, "琥珀不够" if kind == "amber" else "贝币不够")
         st[key] = num(st.get(key)) - n
+        if kind == "amber":
+            from . import seven_day
+            seven_day.record(self, st, "amber_spent", n)
 
     # ------------------------------------------------------------ 购买（花琥珀）
 
@@ -294,11 +311,13 @@ class Economy:
             raise Reject("bad_track", "没有这一栏", 400)
         return out
 
+    def storage_price(self, st: dict) -> int:
+        rules = self.gd.rules
+        return num(rules.get("storage_expand_price", 50)) + max(0, num(st.get("inv_cap"), 5) - num(rules.get("storage_initial", 5))) * num(rules.get("storage_expand_step", 10))
+
     def expand_storage(self, st: dict) -> dict:
         cap = num(st.get("inv_cap"), 5)
-        if cap >= num(self.gd.rules.get("inv_max", 10), 10):
-            raise Reject("storage_full", "储物洞已经最大")
-        self._spend(st, "amber", num(self.cfg.get("storage", {}).get("expand_price", 50)))
+        self._spend(st, "amber", self.storage_price(st))
         st["inv_cap"] = cap + 1
         return {}
 
@@ -308,7 +327,7 @@ class Economy:
         oid = str(old.get("id", ""))
         of = self.gd.flames(oid)
         if self.gd.chain(oid) == self.gd.chain(iid) and of > 0 and num(old.get("price")) > 0:
-            return max(2, int(round(float(old["price"]) * self.gd.flames(iid) / of)))
+            return max(2, int(math.floor(float(old["price"]) * self.gd.flames(iid) / of + 0.5)))
         sc = self.cfg.get("shop", {})
         per = float(sc.get("price_sub", 0.33)) if self.gd.is_sub(self.gd.chain(iid)) else float(sc.get("price_main", 0.6))
         return max(2, int(round(self.gd.flames(iid) * per)))
@@ -317,7 +336,10 @@ class Economy:
         out = [dict(d) for d in self.gd.store]
         for p in picks or []:
             k, iid = num(p.get("slot"), -1), str(p.get("id", ""))
-            if not (0 <= k < len(out)) or not self.gd.is_goods(str(out[k].get("id", ""))) or not self.gd.is_goods(iid):
+            if not (0 <= k < len(out)):
+                continue
+            old_id = str(out[k].get("id", ""))
+            if self.gd.chain(old_id) != self.gd.chain(iid) and not (self.gd.is_goods(old_id) and self.gd.is_goods(iid)):
                 continue
             if not self.gd.valid_item(iid):
                 continue
@@ -331,14 +353,14 @@ class Economy:
         """今天集市里卖的全部：每日特惠 + 热卖（琥珀）+ 贝币小摊（贝币）。每项 {key, id, price, stock, left, cur}。"""
         self.ensure_day(st)
         rows = []
-        for d in self.cfg.get("shop", {}).get("deals", []):
+        for d in self.gd.daily_deals:
             if num(st.get("level"), 1) >= num(d.get("min_level", 0)):
                 rows.append({"key": d["key"], "id": d["id"], "price": num(d["price"]), "stock": num(d["stock"]), "deal": True})
         for k, d in enumerate(self.hot_list(picks)):
             rows.append({"key": "hot_%d" % k, "id": str(d.get("id", "")), "price": num(d.get("price")),
                          "stock": num(d.get("stock")), "deal": False})
         for r in rows:
-            r["cur"] = "amber"
+            r["cur"] = next((d.get("currency", "amber") for d in self.gd.daily_deals if d["key"] == r["key"]), "amber")
             r["book"] = "deals_bought" if r["deal"] else "hot_bought"
         for k, d in enumerate(self.gd.store_shell):
             iid = str(d.get("id", ""))
@@ -351,6 +373,8 @@ class Economy:
         return rows
 
     def shop_buy(self, st: dict, picks: list, key: str, iid: str) -> dict:
+        if key.startswith("deal_"):
+            raise Reject("daily_endpoint", "请从每日商品入口领取")
         offer = next((r for r in self.offers(st, picks) if r["key"] == key), None)
         if offer is None or (iid and offer["id"] != iid):
             raise Reject("no_offer", "这件已经下架了")
@@ -363,6 +387,46 @@ class Economy:
         st[book_key] = book
         out: dict = {}
         self.give_item(st, offer["id"], out)
+        return out
+
+    def refresh_hot(self, st: dict) -> None:
+        self.ensure_day(st)
+        self._spend(st, "amber", 10)
+        st["hot_bought"] = {}
+        st["hot_revision"] = num(st.get("hot_revision")) + 1
+
+    def bubble_price(self, iid: str) -> int:
+        factor = 4.0 if self.gd.type_of(iid) == "gen" else (0.33 if self.gd.is_sub(self.gd.chain(iid)) else 0.6)
+        return max(2, int(math.floor(self.gd.flames(iid) * factor + 0.5)))
+
+    def merge_bubble(self, st: dict, iid: str) -> dict:
+        if not self.gd.valid_item(iid) or self.gd.lv(iid) < 2 or self.gd.type_of(iid) == "dish":
+            raise Reject("bad_item", "物品不能合成", 400)
+        if self.gd.lv(iid) < 5:
+            return {}
+        self._backfill_seen(st)
+        if not self._has_seen(st, iid):
+            raise Reject("not_seen", "还没有合成这件物品")
+        now = self.now()
+        offers = {k: v for k, v in st.get("merge_bubbles", {}).items() if float(v.get("expires", 0)) > now}
+        st["merge_bubbles"] = offers
+        if len(offers) >= 63 or self.rng.random() >= 0.15:
+            return {}
+        uid = secrets.token_hex(16)
+        offer = {"uid": uid, "item": iid, "expires": now + 60, "price": self.bubble_price(iid)}
+        offers[uid] = offer
+        return {"offer": offer}
+
+    def buy_merge_bubble(self, st: dict, uid: str) -> dict:
+        offer = (st.get("merge_bubbles") or {}).get(uid)
+        if not offer or float(offer.get("expires", 0)) <= self.now():
+            raise Reject("expired", "泡泡已经消失了")
+        if offer.get("paid"):
+            raise Reject("already_bought", "已经购买过了")
+        self._spend(st, "amber", num(offer["price"]))
+        offer["paid"] = True
+        out: dict = {}
+        self.give_item(st, str(offer["item"]), out)
         return out
 
     # ------------------------------------------------------------ 建造 / 宝箱 / 卡包 / 图鉴 / 等级奖励
@@ -408,7 +472,22 @@ class Economy:
             self.give_item(st, iid, out)
         return out
 
+    def choose_chest(self, st: dict, box: str, option: int) -> dict:
+        choices = self.gd.choice_chests.get(box, {}).get("choices", [])
+        key = "choice:" + box
+        credits = st.setdefault("credits", {})
+        if num(credits.get(key)) <= 0:
+            raise Reject("no_chest", "没有可以打开的自选宝箱")
+        if len(choices) != 3 or not 0 <= option < 3 or not self.gd.valid_item(str(choices[option])):
+            raise Reject("bad_choice", "选项无效", 400)
+        credits[key] -= 1
+        out = {}
+        self.give_item(st, str(choices[option]), out)
+        return out
+
     def open_pack(self, st: dict) -> dict:
+        if num(st.get("level"), 1) < self.gd.card_level():
+            raise Reject("locked", "典藏卡在 8 级解锁")
         cr = st.setdefault("credits", {})
         if num(cr.get("pack")) <= 0:
             raise Reject("no_pack", "没有可以打开的卡包")
@@ -424,6 +503,8 @@ class Economy:
             cards[key] = num(cards.get(key, 0)) + 1
             out["cards"].append([a, c])
         st["cards"] = cards
+        from . import seven_day
+        seven_day.record(self, st, "cards", len(out["cards"]))
         for a in range(len(albums)):
             if a not in before and self._album_full(cards, a) and not st["done"].get("album:%d" % a):
                 st["done"]["album:%d" % a] = True
@@ -436,7 +517,7 @@ class Economy:
         return all(num(cards.get("%d_%d" % (a, c), 0)) > 0 for c in range(9))
 
     def claim_book(self, st: dict, iid: str) -> dict:
-        if not self.gd.valid_item(iid) or iid in self.gd.dishes:
+        if not self.gd.valid_item(iid):
             raise Reject("bad_item", "没有这件物品", 400)
         self._backfill_seen(st)
         if not self._has_seen(st, iid):
@@ -506,6 +587,22 @@ class Economy:
 
     def apply_event(self, st: dict, ev: dict) -> dict:
         t = str(ev.get("type", ""))
+        if t == "merge":
+            import hashlib
+            from . import seven_day
+            iid = str(ev.get("item", ""))
+            if not self.gd.valid_item(iid) or self.gd.lv(iid) < 2:
+                raise Reject("invalid_merge", "无效合并", 400)
+            # Main board moves are client simulated. Never discard rapid legitimate
+            # merges just because their next snapshot has not arrived yet.
+            seven_day.record(self, st, "merges", 1)
+            roll = int(hashlib.sha256(str(ev["id"]).encode()).hexdigest()[:8], 16) / 4294967296
+            if 0 <= num(ev.get("cell"), -1) < int(self.gd.rules.get("cols", 7)) * int(self.gd.rules.get("rows", 9)):
+                if roll < min(1, max(0, float(self.gd.rules.get("merge_coin_chance", .05)))):
+                    out = {}
+                    self.give_item(st, str(self.gd.rules.get("merge_coin_item", "shell_1")), out)
+                    return out
+            return {}
         if t == "order":
             return self._ev_order(st, ev.get("order") if isinstance(ev.get("order"), dict) else {})
         if t == "bubble":
@@ -522,8 +619,10 @@ class Economy:
         """客户端刚发现一件新物品（合成出来 / 生产出来），还没等到下一次快照。
         只认：比这条链「有凭据的」最高等级（max_lv，含初始棋盘）最多高 1 级，或者 4 级以内（生产器能直接掉的）。
         记在 found 里，不抬高 max_lv：连发 found 也只能领先凭据 1 级，下一次快照同步后凭据才跟上。"""
-        if not self.gd.valid_item(iid) or iid in self.gd.dishes:
+        if not self.gd.valid_item(iid):
             raise Reject("bad_item", "没有这件物品", 400)
+        if iid in self.gd.dishes and num(st.get("level"), 1) < num(self.gd.dishes[iid].get("unlock", 1)):
+            raise Reject("locked", "还没有解锁这件订单成品")
         ch = self.gd.chain(iid)
         lv = self.gd.lv(iid)
         if lv > max(self._proven_lv(st, ch) + 1, int(self.cfg.get("found_free_lv", 4))):
@@ -615,8 +714,13 @@ class Economy:
         # 交得出去的东西一定在棋盘上出现过：合成出来、没等到下一次同步就交掉的物品也算见过（图鉴领奖、退款要用）
         for iid in o.get("items") or []:
             self._seen_item(st, str(iid), credit=False, budget=False)
+        from . import merge_event
+        merge_event.on_order(self, st, o)
+        from . import seven_day
+        seven_day.record(self, st, "orders", 1)
         rw = self._norm(o.get("rw") or {})
         out: dict = {}
+        seven_day.record(self, st, "shell", max(0, num(rw.get("shell"))))
         st["shells"] = num(st.get("shells")) + max(0, num(rw.get("shell")))
         if num(rw.get("xp")) > 0:
             self.add_xp(st, num(rw["xp"]), out)
@@ -663,6 +767,8 @@ class Economy:
         if num(st.get("refunds")) >= num(self.cfg.get("orders", {}).get("refund_max_per_sync", 60)):
             raise Reject("too_many_refunds", "两次同步之间退款太多")
         st["refunds"] = num(st.get("refunds")) + 1
+        from . import seven_day
+        seven_day.record(self, st, "shell", max(0, self.gd.value_of(iid)))
         st["shells"] = num(st.get("shells")) + max(0, self.gd.value_of(iid))
         return {}
 
@@ -769,4 +875,15 @@ class Economy:
             ids[at] = iid
             picks.append({"slot": at, "id": iid})
             n -= 1
+        return picks
+
+    def reroll_hot_all(self, previous: list) -> list:
+        picks = []
+        for k, base in enumerate(self.gd.store):
+            iid = str(base["id"])
+            ch = self.gd.chain(iid)
+            old = str(previous[k]["id"]) if k < len(previous) else iid
+            pool = [f"{ch}_{lv}" for lv in range(max(1, self.gd.lv(iid) - 1),
+                    min(self.gd.max_lv(ch), self.gd.lv(iid) + 1) + 1) if f"{ch}_{lv}" != old]
+            picks.append({"slot": k, "id": self.rng.choice(pool) if pool else iid})
         return picks

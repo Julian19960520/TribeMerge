@@ -1,6 +1,6 @@
 extends Control
 ## 棋盘订单栏里、主角卡左边的「篝火竞速」入口（参加与否都在）。
-## 没到 5 级：锁着，写「5级解锁」。没在比：一串香蕉 +「匹配」。比赛中：我的香蕉数、名次。比完：「领奖!」。
+## 没到 12 级：锁着，写「12级解锁」。没在比：一串香蕉 +「匹配」。比赛中：我的香蕉数、名次。比完：「领奖!」。
 ## 交付订单时 BoardScreen 调 fly_from()：香蕉从订单卡飞进这里。比完一局自动弹结算；领完奖弹「再来一局」。
 
 const RaceNet := preload("res://scripts/net/Race.gd")
@@ -12,6 +12,7 @@ const W := 104.0
 var race: Node
 var _btn: TButton
 var _bump := 0.0
+var _redraw_clock := 0.0
 ## 已经自动弹过结算的那局
 var _popped := ""
 
@@ -42,7 +43,10 @@ func _on_update() -> void:
 func _process(delta: float) -> void:
 	_bump = maxf(0.0, _bump - delta * 3.0)
 	if is_visible_in_tree():
-		_btn.queue_redraw()
+		_redraw_clock += delta
+		if _redraw_clock >= 1.0 or _bump > 0:
+			_redraw_clock = 0
+			_btn.queue_redraw()
 		if race.joined():
 			race.watch(self)
 
@@ -72,37 +76,15 @@ func fly_from(from: Vector2) -> void:
 			d.queue_free())
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	var r := Rect2(4, 16, sz.x - 8, sz.y - 24)
-	var k := 1.0 + 0.08 * sin(_bump * PI)
-	var lock: bool = not race.unlocked()
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 8), r.size), 18, 61, 0.0), Color(0, 0, 0, 0.3))
-	var b := Art.rrect(r, 18, 61, 1.0)
-	Art.dilate(ci, b, 3.0, Art.INK)
-	ci.draw_colored_polygon(b, Color("b9a58a") if lock else Color("ffe9a8"))
-	Art.dashed(ci, Art.rrect(r.grow(-6), 12, 62, 0.0), 8, 6, Color(0.65, 0.4, 0.2, 0.45), 2.0)
-	var f: Font = G.font_title if G.font_title else G.font_body
-	_txt(ci, f, "竞速", Vector2(sz.x * 0.5, 44), 22, Color("fff1c4"), 5)
-	# 香蕉堆
-	var c := Vector2(sz.x * 0.5, 108)
-	for i in 3:
-		Banana.draw(ci, c + Vector2((i - 1) * 16, 8 - absf(i - 1) * 2) * k, 50.0 * k, (i - 1) * 0.45 - 0.2)
-	if lock:
-		ci.draw_colored_polygon(Art.rrect(r, 18, 61, 0.0), Color(0.2, 0.15, 0.1, 0.35))
-		Paint.glyph(ci, "lock", c, 1.2)
-		_txt(ci, G.font_body, "%d级解锁" % race.unlock_level(), Vector2(sz.x * 0.5, 180), 18, Color.WHITE, 5)
-		return
-	var bot: String = "匹配"
-	var col := Color.WHITE
-	if race.ended():
-		bot = "领奖!"
-		col = Color("ffd23f")
-	elif race.matching():
-		bot = "匹配中" + ".".repeat(1 + (Time.get_ticks_msec() / 300) % 3)
+	var status := "匹配"
+	var detail := ""
+	if not race.unlocked(): status="%d级解锁" % race.unlock_level()
+	elif race.ended(): status="领奖" if int(race.pending_result().get("me",{}).get("place",0)) in [1,2,3] else "结算"
+	elif race.matching(): status="匹配中…"
 	elif race.racing():
-		var me: Dictionary = race.me()
-		bot = "%d" % int(race.score_of(me))
-		_txt(ci, G.font_body, "第%d名" % race.place_of(me), Vector2(sz.x * 0.5, 150), 18, Color("6b4a2a"))
-	_txt(ci, G.font_body, bot, Vector2(sz.x * 0.5, 184), 22 if bot.length() < 5 else 18, col, 5)
+		status="×%d" % int(race.score_of(race.me()))
+		detail="第%d名" % race.place_of(race.me())
+	EventEntryArt.paint(ci,sz,"res://assets/events/entries/banana.svg","香蕉竞速",status,detail,not race.unlocked(),race.ended())
 
 static func _txt(ci: CanvasItem, f: Font, s: String, c: Vector2, fs: int, col: Color, ol: int = 0) -> void:
 	if f == null:

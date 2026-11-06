@@ -33,7 +33,7 @@ window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/tribe_config/plugin.cfg")
+enabled=PackedStringArray("res://addons/tribe_config/plugin.cfg", "res://addons/item_export/plugin.cfg")
 
 [gui]
 

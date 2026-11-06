@@ -19,7 +19,7 @@ var _down := false
 func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_STOP
 	pivot_offset = size * 0.5
-	G.boil_tick.connect(queue_redraw)
+	G.boil_tick.connect(_on_boil)
 
 func _gui_input(e: InputEvent) -> void:
 	if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
@@ -68,3 +68,7 @@ func _draw() -> void:
 		draw_string(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
 	if extra.is_valid():
 		extra.call(self, size)
+
+func _on_boil() -> void:
+	if is_visible_in_tree():
+		queue_redraw()

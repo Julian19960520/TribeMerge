@@ -29,7 +29,7 @@ const MERGE_DELAY := 3.0
 const RETRY_SEC := 90.0
 const QUIT_WAIT := 2.0
 const DAY_OFFSET := 8 * 3600
-const SERVER_FIELDS := ["amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought",
+const SERVER_FIELDS := ["ufo_offer", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "hot_revision",
 	"inv_cap", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus",
 	"tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period"]
 
@@ -73,6 +73,7 @@ var _srv_tick := 0
 var _day := ""
 var _day_t := 0.0
 var _hot_day := ""
+var _hot_revision := 0
 var _hot_picks = null
 var _hot_busy := false
 var _hot_tried := ""
@@ -181,7 +182,7 @@ func mark() -> void:
 ## 客户端先生效、服务器随后结算的事件。ev = {"type": "order"/"bubble"/"collect"/"refund", ...}
 func event(ev: Dictionary) -> void:
 	var e := ev.duplicate(true)
-	e["id"] = _uuid()
+	e["id"] = str(e.get("id", _uuid()))
 	events.append(e)
 	if events.size() > 400:
 		events = events.slice(events.size() - 400)
@@ -249,11 +250,13 @@ func apply_state(st: Dictionary, minus: Array = []) -> void:
 				G.shells -= int(rw[1])
 	G.dirty()
 	G.changed.emit()
+	G.merge_event_changed.emit()
+	G.seven_day_changed.emit()
 
 # ================================================================ 对外：热卖
 
 func hot_for(day: String):
-	if _hot_day == day and _hot_picks is Array:
+	if _hot_day == day and _hot_revision == G.hot_revision and _hot_picks is Array:
 		return _hot_picks
 	return null
 
@@ -612,8 +615,7 @@ func _fetch_hot() -> void:
 	_hot_busy = false
 	_hot_tried = day
 	if int(r[0]) == 200 and r[1].get("picks") is Array:
-		_hot_day = str(r[1].get("day", day))
-		_hot_picks = r[1]["picks"]
+		accept_hot(str(r[1].get("day", day)), int(r[1].get("hot_revision", 0)), r[1]["picks"])
 		synced.emit("hot", true)
 	else:
 		synced.emit("hot", false)
@@ -733,3 +735,8 @@ func _say(text: String) -> void:
 	notice.emit(text)
 	if G.main != null and G.main.has_method("toast"):
 		G.main.toast(text)
+
+func accept_hot(day: String, revision: int, picks: Array) -> void:
+	_hot_day = day
+	_hot_revision = revision
+	_hot_picks = picks

@@ -23,13 +23,13 @@ static var _path := ""
 static func today() -> Array:
 	var cloud = _cloud()
 	var day: String = cloud.today() if cloud != null else Time.get_date_string_from_system()
-	var sig := _base_sig()
+	var sig := _base_sig() + ":" + str(G.hot_revision)
 	var picks = cloud.hot_for(day) if cloud != null else null
 	if picks is Array:
-		if _cache_day == day + sig + "@server" and not _cache.is_empty():
+		if _cache_day == day + sig + "@server" + JSON.stringify(picks) and not _cache.is_empty():
 			return _cache
 		_cache = from_picks(Data.STORE_HOT, picks)
-		_cache_day = day + sig + "@server"
+		_cache_day = day + sig + "@server" + JSON.stringify(picks)
 		_store({"day": day, "sig": sig, "list": _cache, "server": true})
 		return _cache
 	if cloud != null:
@@ -66,7 +66,9 @@ static func from_picks(base: Array, picks: Array) -> Array:
 			continue
 		var k := int(p.get("slot", -1))
 		var id := str(p.get("id", ""))
-		if k < 0 or k >= out.size() or not _is_goods(str(out[k].get("id", ""))) or not _is_goods(id):
+		if k < 0 or k >= out.size() or not Data.CHAINS.has(Data.chain(id)):
+			continue
+		if Data.chain(str(out[k]["id"])) != Data.chain(id) and not (_is_goods(str(out[k]["id"])) and _is_goods(id)):
 			continue
 		var lv := Data.lv(id)
 		if lv < 1 or lv > Data.max_lv(Data.chain(id)):
@@ -209,3 +211,25 @@ static func _store(d: Dictionary) -> void:
 	var f := FileAccess.open(_file(), FileAccess.WRITE)
 	if f != null:
 		f.store_string(JSON.stringify(d))
+
+## 花钻石刷新整组：每个货位都在其基础等级附近重新抽，排除该位置当前物品。
+static func reroll_all(previous: Array) -> Array:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	var picks: Array = []
+	for k in Data.STORE_HOT.size():
+		var base: Dictionary = Data.STORE_HOT[k]
+		var id := str(base["id"])
+		var ch := Data.chain(id)
+		var old := str(previous[k]["id"]) if k < previous.size() else id
+		var pool: Array = []
+		for lv in range(maxi(1, Data.lv(id) - 1), mini(Data.max_lv(ch), Data.lv(id) + 1) + 1):
+			var candidate := "%s_%d" % [ch, lv]
+			if candidate != old: pool.append(candidate)
+		picks.append({"slot": k, "id": pool[rng.randi_range(0, pool.size() - 1)] if not pool.is_empty() else id})
+	_cache = from_picks(Data.STORE_HOT, picks)
+	var day := G.today()
+	var sig := _base_sig() + ":" + str(G.hot_revision)
+	_cache_day = day + sig
+	_store({"day": day, "sig": sig, "list": _cache})
+	return _cache

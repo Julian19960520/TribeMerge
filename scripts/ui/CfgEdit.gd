@@ -1681,7 +1681,8 @@ func _rules() -> float:
 	y = _rule(d, y, "energy_price_step", "火种每次涨价", 0, 999)
 	y = _rule(d, y, "energy_price_max", "火种最高价格", 1, 999)
 	y = _rule(d, y, "token_step", "鼓换卡包", 1, 999)
-	y = _rule(d, y, "inv_max", "储物上限", 1, 50)
+	y = _rule(d, y, "storage_expand_price", "储物首次价格", 1, 999)
+	y = _rule(d, y, "storage_expand_step", "储物每格涨价", 1, 999)
 	return y + 20
 
 func _rule(d: Dictionary, y: float, key: String, label: String, lo: int, hi: int) -> float:

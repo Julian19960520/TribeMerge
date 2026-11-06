@@ -1,0 +1,110 @@
+{
+	"version": 1,
+	"seasons": [
+		{
+			"id": "moon_relics",
+			"title": "月石遗迹",
+			"entry_title": "月石遗迹",
+			"enabled": true,
+			"unlock_level": 10,
+			"start_utc": "2026-11-02T00:00:00",
+			"repeat_days": 7,
+			"duration_days": 7,
+			"theme": {
+				"entry_icon": "res://assets/events/entries/ruins.svg",
+				"background": "244c59",
+				"panel": "e9dfbc",
+				"tile": "e7e1c8",
+				"tile_alt": "d6d6b6",
+				"locked": "4e747d",
+				"accent": "8cdece",
+				"point_icon": "res://assets/events/moon/point.svg"
+			},
+			"board": {
+				"cols": 6,
+				"visible_rows": 7,
+				"total_rows": 16,
+				"reveal_rows": 3,
+				"seed": 73,
+				"locked_tiers": [
+					1,
+					1,
+					1,
+					2,
+					2,
+					3
+				],
+				"goal": "unlock_all"
+			},
+			"points": {
+				"order_thresholds": [
+					4,
+					8
+				],
+				"order_rewards": [
+					1,
+					2,
+					3
+				],
+				"spawn_cost": 1,
+				"spawn_tier": 1
+			},
+			"chain": [
+				{
+					"id": "moon_1",
+					"name": "月石碎片",
+					"icon": "res://assets/events/moon/relic_1.svg"
+				},
+				{
+					"id": "moon_2",
+					"name": "月石吊坠",
+					"icon": "res://assets/events/moon/relic_2.svg"
+				},
+				{
+					"id": "moon_3",
+					"name": "青铜月盘",
+					"icon": "res://assets/events/moon/relic_3.svg"
+				},
+				{
+					"id": "moon_4",
+					"name": "月纹玉环",
+					"icon": "res://assets/events/moon/relic_4.svg"
+				},
+				{
+					"id": "moon_5",
+					"name": "月辉王冠",
+					"icon": "res://assets/events/moon/relic_5.svg"
+				},
+				{
+					"id": "moon_6",
+					"name": "月光权杖",
+					"icon": "res://assets/events/moon/relic_6.svg"
+				},
+				{
+					"id": "moon_7",
+					"name": "月神雕像",
+					"icon": "res://assets/events/moon/relic_7.svg"
+				},
+				{
+					"id": "moon_8",
+					"name": "月神祭坛",
+					"icon": "res://assets/events/moon/relic_8.svg"
+				}
+			],
+			"rewards": [
+				[
+					"amber_3",
+					30
+				],
+				[
+					"fire_2",
+					100
+				],
+				[
+					"choice_1",
+					1
+				]
+			]
+		}
+	]
+}

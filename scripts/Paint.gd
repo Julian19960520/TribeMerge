@@ -22,7 +22,7 @@ static func button(ci: CanvasItem, r: Rect2, style: String, seed: int = 0, press
 	Art.dilate(ci, base, 3.0, Art.INK)
 	ci.draw_colored_polygon(base, cols[1])
 	var top_r := Rect2(r.position + Vector2(0, 7.0 - depth), r.size - Vector2(0, 7))
-	ci.draw_colored_polygon(Art.rrect(top_r, rad, seed + 1, 0.7), cols[0])
+	ci.draw_colored_polygon(Art.rrect(top_r, minf(rad, minf(top_r.size.x, top_r.size.y) * 0.5 - 2.0), seed + 1, 0.7), cols[0])
 	var hl := Rect2(top_r.position + Vector2(rad * 0.6, 5), Vector2(top_r.size.x - rad * 1.2, top_r.size.y * 0.26))
 	ci.draw_colored_polygon(Art.rrect(hl, hl.size.y * 0.5, seed + 2, 0.4), Color(cols[2], 0.75))
 	for i in 7:
@@ -124,8 +124,8 @@ static func plus_badge(ci: CanvasItem, c: Vector2, seed: int = 6) -> void:
 	ci.draw_line(c + Vector2(-6, 0), c + Vector2(6, 0), Color.WHITE, 4.0, true)
 	ci.draw_line(c + Vector2(0, -6), c + Vector2(0, 6), Color.WHITE, 4.0, true)
 
-static func badge_num(ci: CanvasItem, c: Vector2, seed: int = 7) -> void:
-	var b := Art.ell(c, Vector2(16, 16), seed, 0.02, 16)
+static func badge_num(ci: CanvasItem, c: Vector2, seed: int = 7, radius: float = 16.0) -> void:
+	var b := Art.ell(c, Vector2(radius, radius), seed, 0.02, 16)
 	Art.dilate(ci, b, 2.5, Art.INK)
 	ci.draw_colored_polygon(b, Art.CLAY)
 

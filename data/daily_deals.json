@@ -1,0 +1,66 @@
+[
+  {
+    "key": "deal_ad",
+    "id": "fire_2",
+    "price": 0,
+    "stock": 1,
+    "mode": "ad",
+    "rewards": [
+      [
+        "fire_2",
+        30
+      ]
+    ]
+  },
+  {
+    "key": "deal_energybox",
+    "id": "energybox_1",
+    "price": 300,
+    "currency": "shell",
+    "stock": 1,
+    "rewards": [
+      [
+        "energybox_1",
+        1
+      ]
+    ]
+  },
+  {
+    "key": "deal_member_1",
+    "id": "amber_3",
+    "price": 0,
+    "stock": 1,
+    "min_tier": 1,
+    "rewards": [
+      [
+        "amber_3",
+        100
+      ]
+    ]
+  },
+  {
+    "key": "deal_member_2",
+    "id": "amber_3",
+    "price": 0,
+    "stock": 1,
+    "min_tier": 1,
+    "rewards": [
+      [
+        "amber_3",
+        100
+      ]
+    ]
+  },
+  {
+    "key": "deal_2",
+    "id": "fire_4",
+    "price": 0,
+    "stock": 1,
+    "rewards": [
+      [
+        "fire_4",
+        15
+      ]
+    ]
+  }
+]

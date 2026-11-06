@@ -279,3 +279,23 @@ def test_claim_other_group_and_no_reward_place(client, monkeypatch, t0):
     res = race(p)["results"][0]
     r = p.post("/v1/race/claim", json={"group": gid})
     assert r.status_code == 200 and r.json()["rewards"] == (res["me"]["reward"] or [])
+
+
+def test_only_top_three_even_with_extra_config_and_legacy_reward(client, monkeypatch, t0):
+    # Extra configured rows and old persisted reward data must never pay 4th/5th.
+    set_race(monkeypatch, podium=5, rewards=[[["amber_3", 30]], [["amber_3", 15]], [["amber_3", 8]], [["amber_3", 5]], [["amber_3", 1]]])
+    p = P(client)
+    gid = p.post('/v1/race/join').json()['current']['group']['id']
+    goto(t0 + 7400)
+    result = race(p)['results'][0]
+    assert result['me']['place'] > 3 and result['me']['reward'] == []
+    from sqlalchemy import select
+    from app.models import RaceEntry
+    with db() as session:
+        entry = session.execute(select(RaceEntry).where(RaceEntry.group_id == gid, RaceEntry.account_id == p.id)).scalar_one()
+        entry.reward = [["amber_3", 999]]
+        session.commit()
+    assert race(p)['results'][0]['me']['reward'] == []
+    before = p.get('/v1/save').json()['state']['amber']
+    result = p.post('/v1/race/claim', {'group':gid}).json()
+    assert result['rewards'] == [] and result['state']['amber'] == before

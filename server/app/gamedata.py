@@ -21,7 +21,7 @@ def _load(path: Path, default):
 
 class GameData:
     FILES = ["chains", "lines", "dishes", "store", "rules", "story", "levels", "pass", "builds", "albums",
-             "board", "amber_packs", "people", "store_shell"]
+             "board", "amber_packs", "people", "store_shell", "merge_events", "choice_chests", "seven_day", "daily_deals", "ufo_offer"]
 
     def __init__(self, data_dir: str):
         self.dir = Path(data_dir)
@@ -47,6 +47,7 @@ class GameData:
             ss = g("store_shell", {})
             ss = ss if isinstance(ss, dict) else {}
             self.store_shell = [d for d in ss.get("items", []) if isinstance(d, dict)]
+            self.shell_refresh_amber = max(1, int(ss.get("refresh_amber", 5)))
             self.shell_refresh_hours = max(1, int(ss.get("refresh_hours", 8) or 8))
             self.rules = g("rules", {})
             self.story = {}
@@ -69,6 +70,11 @@ class GameData:
             self.board = g("board", {})
             self.amber_packs = g("amber_packs", [])
             self.people = g("people", [])
+            self.merge_events = g("merge_events", {"seasons": []})
+            self.seven_day = g("seven_day", {})
+            self.daily_deals = g("daily_deals", [])
+            self.ufo_offer = g("ufo_offer", {})
+            self.choice_chests = g("choice_chests", {})
             self._stamp = stamp
 
     # ------------------------------------------------------------ 物品

@@ -9,8 +9,12 @@ func _ready() -> void:
 	if mouse_filter == MOUSE_FILTER_STOP:
 		mouse_filter = MOUSE_FILTER_IGNORE
 	if boil:
-		G.boil_tick.connect(queue_redraw)
+		G.boil_tick.connect(_on_boil)
 
 func _draw() -> void:
 	if painter.is_valid():
 		painter.call(self, size)
+
+func _on_boil() -> void:
+	if is_visible_in_tree():
+		queue_redraw()

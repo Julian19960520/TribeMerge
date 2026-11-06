@@ -20,6 +20,9 @@ static func open() -> PopupBase:
 static func _build(p: PopupBase) -> void:
 	var r := R
 	Popups.frame(p, r, "部落排行", Art.AMBER)
+	if not G.server_mode():
+		UI.lbl(p.box, "本地试玩版\n在线排行榜暂未开放", Rect2(72, 500, 576, 180), 28, Art.INK)
+		return
 	var x0 := r.position.x + 30
 	var w := r.size.x - 60
 

@@ -1,6 +1,6 @@
 {
 	"_说明": "异步联机活动 · 篝火竞速。不限时：unlock_level 级以上随时匹配开一局，比完领奖再开下一局。调试时用环境变量 TRIBE_RACE_OVERRIDES 覆盖任意字段。",
-	"unlock_level": 5,
+	"unlock_level": 12,
 	"_duration_sec": "一局最长多久（从封组开赛算）；前 podium 名都到线会提前结束",
 	"duration_sec": 7200,
 	"_fill_sec": "假匹配：每局只有自己一个真人。点匹配后多久封组开赛（空位全补影子）",

@@ -5,9 +5,9 @@
 	},
 	"energy_buy": {"grant": 100},
 	"pass": {"vip_cny": 30, "super_cny": 68, "vip_energy": 150, "super_bonus_pts": 10, "endless_reward": [["chest_1", 1]]},
-	"storage": {"expand_price": 50},
 	"shop": {
 		"deals": [
+			{"key": "deal_2", "id": "fire_4", "price": 0, "stock": 1},
 			{"key": "deal_0", "id": "chest_1", "price": 10, "stock": 1},
 			{"key": "deal_1", "id": "pack_1", "price": 15, "stock": 1, "min_level": 8}
 		],

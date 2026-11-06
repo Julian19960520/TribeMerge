@@ -24,8 +24,10 @@
 	{"id": "shell", "name": "贝币", "type": "shell", "items": ["碎贝壳", "贝壳", "贝壳串", "贝壳堆", "贝壳篓", "珍珠贝"], "value": [0, 1, 5, 15, 40, 100]},
 	{"id": "amber", "name": "琥珀", "type": "amber", "items": ["琥珀屑", "琥珀粒", "琥珀块", "虫珀", "大琥珀", "琥珀之心"], "value": [0, 1, 5, 15, 40, 100]},
 	{"id": "sand", "name": "沙漏", "type": "sand", "items": ["玻璃沙泡", "沙漏芯", "盖板沙漏", "木框沙漏", "骨饰沙漏", "黄金沙漏"], "value": [0, 1, 5, 15, 40, 100]},
+	{"id": "choice", "name": "自选宝箱", "type": "choice", "items": ["自选宝箱"]},
 	{"id": "chest", "name": "藤编宝箱", "type": "chest", "items": ["藤编宝箱"]},
 	{"id": "pack", "name": "兽皮卡包", "type": "pack", "items": ["兽皮卡包"]},
 	{"id": "token", "name": "祭典鼓", "type": "token", "items": ["祭典鼓"]},
-	{"id": "xp", "name": "声望星", "type": "xp", "items": ["声望星"]}
+	{"id": "xp", "name": "声望星", "type": "xp", "items": ["声望星"]},
+	{"id": "energybox", "name": "体力宝箱", "type": "chest", "items": ["体力宝箱"]}
 ]

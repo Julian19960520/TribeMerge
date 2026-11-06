@@ -1,6 +1,6 @@
 """异步联机活动第一期：篝火竞速 + 影子对手（设计见 DESIGN.md「十三、异步联机活动」）。
 
-- 不限时：unlock_level（5）级以上随时点「匹配」开一局；一局结束、领完奖就可以再匹配下一局。
+- 不限时：unlock_level（12）级以上随时点「匹配」开一局；一局结束、领完奖就可以再匹配下一局。
 - 假匹配：每局只有自己一个真人，group_size-1 个影子按等级段（tier_levels 级一档）挑；客户端播几秒匹配动画。
   fill_sec（默认 0）后封组开赛（start），最长比 duration_sec。开赛前交的单不算。
 - 影子：优先回放同等级段真人最近 history_days 天的分数曲线（按开赛后的时间回放，按场次时长缩放）；没有就按等级生成一条。
@@ -210,7 +210,7 @@ def _settle(g: RaceGroup, ms: list[RaceEntry], c: dict) -> None:
         if m.shadow:  # 冻结影子的最终成绩
             m.score, m.finished_at, m.last_at = s, fin, last
         else:
-            m.reward = rewards[i] if i < len(rewards) else []
+            m.reward = rewards[i] if i < min(3, num(c.get("podium"), 3), len(rewards)) else []
     g.settled = True
 
 
@@ -228,7 +228,7 @@ def view(db: Session, g: RaceGroup, me: str, now: float, c: dict) -> dict:
 
 
 def _me(e: RaceEntry) -> dict:
-    return {"place": e.place, "reward": e.reward, "claimed": e.claimed, "score": round(e.score, 1), "capped": round(e.capped, 1),
+    return {"place": e.place, "reward": (e.reward or []) if 1 <= int(e.place or 0) <= 3 else [], "claimed": e.claimed, "score": round(e.score, 1), "capped": round(e.capped, 1),
             "joined_at": e.joined_at}
 
 
@@ -286,8 +286,8 @@ def latest(db: Session, aid: str) -> RaceEntry | None:
 
 def join(db: Session, acc: Account, st: dict, now: float, c: dict) -> RaceEntry:
     level = num(st.get("level"), 1)
-    if level < num(c.get("unlock_level"), 5):
-        raise Reject("race_locked", "%d 级解锁篝火竞速" % num(c.get("unlock_level"), 5))
+    if not st.get("gm_activities") and level < num(c.get("unlock_level"), 12):
+        raise Reject("race_locked", "%d 级解锁篝火竞速" % num(c.get("unlock_level"), 12))
     e = latest(db, acc.id)
     if e is not None:
         g0 = db.get(RaceGroup, e.group_id)
@@ -326,7 +326,7 @@ def claim(db: Session, econ: Economy, acc: Account, st: dict, gid: str, now: flo
     if e.claimed:
         raise Reject("already_claimed", "这场的奖励已经领过了")
     out: dict = {}
-    rw = e.reward or []
+    rw = (e.reward or []) if 1 <= int(e.place or 0) <= min(3, num(c.get("podium"), 3)) else []
     econ.grant(st, rw, out)
     title = None
     tc = c.get("title") or {}

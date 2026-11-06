@@ -1,12 +1,37 @@
 {
-	"_说明": "集市「贝币小摊」：用贝币买物品。比琥珀热卖差一点：等级低 1 级、不卖生产器 / 宝箱 / 火种，库存少，每 refresh_hours 小时按服务器时间刷新。价格 = 理论火苗 × 4 贝币（交单每理论火苗只给 3 贝币，买来交单会亏，防套利）。",
-	"refresh_hours": 8,
-	"items": [
-		{"id": "fruit_2", "price": 8, "stock": 3},
-		{"id": "tool_2", "price": 8, "stock": 3},
-		{"id": "cloth_2", "price": 8, "stock": 3},
-		{"id": "seed_1", "price": 52, "stock": 2},
-		{"id": "gem_1", "price": 52, "stock": 2},
-		{"id": "armor_1", "price": 52, "stock": 2}
-	]
+  "_说明": "集市「贝币小摊」：用贝币买物品。比琥珀热卖差一点：等级低 1 级、不卖生产器 / 宝箱 / 火种，库存少，每 refresh_hours 小时按服务器时间刷新。价格 = 理论火苗 × 4 贝币（交单每理论火苗只给 3 贝币，买来交单会亏，防套利）。",
+  "refresh_hours": 8,
+  "items": [
+    {
+      "id": "fruit_2",
+      "price": 8,
+      "stock": 3
+    },
+    {
+      "id": "tool_2",
+      "price": 8,
+      "stock": 3
+    },
+    {
+      "id": "cloth_2",
+      "price": 8,
+      "stock": 3
+    },
+    {
+      "id": "seed_1",
+      "price": 52,
+      "stock": 2
+    },
+    {
+      "id": "gem_1",
+      "price": 52,
+      "stock": 2
+    },
+    {
+      "id": "armor_1",
+      "price": 52,
+      "stock": 2
+    }
+  ],
+  "refresh_amber": 5
 }

@@ -285,6 +285,6 @@ func _press(i: int, card: Control, b: TButton) -> void:
 			b.queue_redraw()
 		return
 	var rw: Array = r.get("rewards", [])
-	Popups.grant_rewards(rw, func(k): return pts[k] if k < pts.size() else Vector2(360, 700))
+	Rewards.grant(rw, func(k): return pts[k] if k < pts.size() else Vector2(360, 700))
 	if Net.is_paid(s):
 		G.main.toast("演示版本：%s 礼包已到账" % Net.price_text(s))

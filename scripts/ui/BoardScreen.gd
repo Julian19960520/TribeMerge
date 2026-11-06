@@ -14,12 +14,19 @@ const HAMMER_W := 130.0
 const ROW_GAP := 4.0
 ## 篝火竞速入口的宽度（在主角卡左边）
 const RACE_W := 104.0
+const EVENT_W := 104.0
 const CHIP_ICON := {"shell": "shell_2", "pack": "pack_1", "token": "token_1"}
 
+var _bubble_offer: Control
+var _bubble_title: Label
+var _bubble_time: Label
+var _bubble_buy: TButton
 var board: Board
 var _orders: Scroller
 var _info_name: Label
 var _info_desc: Label
+var _info_visual: DrawBox
+var _info_action := {}
 var _info_btn: TButton
 var _del_btn: TButton
 var _del_lbl: Label
@@ -38,6 +45,8 @@ var _base_btn: TButton
 var _hammer_btn: TButton
 var _pouch: TButton
 var _race_entry: Control
+var _seven_entry: Control
+var _merge_event_entry: Control
 var _cards: Array[Control] = []
 var _cards_root: Control
 ## 订单在 _cards_root 内的右缘（含原来的 2px），滚动长度再叠上根节点目标 x
@@ -80,6 +89,14 @@ func _ready() -> void:
 	_race_entry.position = BASE_RECT.position
 	_race_entry.size = Vector2(RACE_W, BASE_RECT.size.y)
 	_orders.content.add_child(_race_entry)
+	_merge_event_entry = preload("res://scripts/ui/MergeEventEntry.gd").new()
+	_merge_event_entry.position = BASE_RECT.position
+	_merge_event_entry.size = Vector2(EVENT_W, BASE_RECT.size.y)
+	_orders.content.add_child(_merge_event_entry)
+	_seven_entry = preload("res://scripts/ui/SevenDayEntry.gd").new()
+	_seven_entry.position = BASE_RECT.position
+	_seven_entry.size = Vector2(EVENT_W, BASE_RECT.size.y)
+	_orders.content.add_child(_seven_entry)
 	_base_btn = UI.hit(_orders.content, BASE_RECT, func(): G.main.open("level"))
 	_base_btn.extra = _paint_hero
 	_lv_lbl = UI.lbl(_base_btn, "", Rect2(0, 140, BASE_RECT.size.x, 30), 18, Art.INK)
@@ -101,6 +118,7 @@ func _ready() -> void:
 	_info_name = UI.lbl(self, "", Rect2(196, 1300, 300, 46), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 7, Art.INK)
 	_info_desc = UI.lbl(self, "", Rect2(170, 1352, 300, 96), 21, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_CENTER)
 	_info_desc.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	_info_visual = UI.box(self, Rect2(170, 1352, 300, 96), _paint_item_action)
 	_info_btn = UI.hit(self, Rect2(150, 1300, 46, 46), _open_info)
 	_info_btn.extra = func(ci, sz): Paint.glyph(ci, "info", sz * 0.5, 1.2)
 	_del_btn = UI.btn(self, Rect2(486, 1360, 86, 80), "", "red", _on_delete)
@@ -110,6 +128,20 @@ func _ready() -> void:
 	var home := UI.btn(self, Rect2(604, 1330, 106, 110), "", "teal", func(): G.main.show_screen("home"))
 	home.extra = func(ci, sz): Paint.home_icon(ci, sz * 0.5 + Vector2(0, -2), 0.85)
 
+	add_child(preload("res://scripts/ui/UfoEntry.gd").new())
+	var gm := UI.btn(self, Rect2(12, 156, 68, 42), "GM", "teal", func():
+		if G.server_mode():
+			var result: Dictionary = await G._cloud().act("/v1/gm/activities")
+			if not result.get("ok", false):
+				G.main.toast(str(result.get("message", "当前环境未开放 GM")))
+				return
+		else: G.gm_activities = true
+		G.save_game()
+		G.merge_event_changed.emit()
+		G.changed.emit()
+		G.main.toast("月石遗迹、香蕉活动已解锁"), 21)
+	gm.name = "gm_activities"
+	_build_bubble_offer()
 	G.changed.connect(_refresh_hud)
 	G.orders_changed.connect(_build_orders)
 	G.board_changed.connect(_on_board_changed)
@@ -588,48 +620,21 @@ func _on_deliver(oi: int) -> void:
 	var who := int(o["who"])
 	G.complete_order(oi)
 	_race_entry.fly_from(card_pos)
+	_merge_event_entry.fly_from(card_pos)
 	board.select(-1)
 	Sfx.play("coin")
 	await get_tree().create_timer(0.35).timeout
 	var say := str(o.get("say", ""))
 	G.main.toast("%s：%s" % [Data.PEOPLE[who].get_slice(" ", 1), say if say != "" else Meme.line()])
-	var stash_c := stash_pos()
-	if rw.has("shell"):
-		var shell_n: int = rw["shell"]
-		G.main.fly("shell_2", card_pos, G.main.topbar.target("shell"), func(): G.add_currency("shell", shell_n), 60)
-	if rw.has("rewards") and rw["rewards"] is Array and not (rw["rewards"] as Array).is_empty():
-		var ids: Array = rw["rewards"]
-		var give_rewards := func():
-			for id in ids:
-				if str(id) != "":
-					G.stash_push(str(id))
-		G.main.fly(str(ids[0]), card_pos, stash_c, give_rewards, 70)
+	var rewards: Array = []
+	for pair in [["shell", "shell_2"], ["xp", "xp_1"], ["token", "token_1"]]:
+		if int(rw.get(pair[0], 0)) > 0:
+			rewards.append([pair[1], int(rw[pair[0]])])
+	if rw.get("rewards") is Array and not rw["rewards"].is_empty():
+		rewards.append_array(Rewards.items(rw["rewards"]))
 	elif int(rw.get("pack", 0)) > 0:
-		var pack_n: int = rw["pack"]
-		var give_pack := func():
-			for _j in pack_n:
-				G.stash_push("pack_1")
-		G.main.fly("pack_1", card_pos, stash_c, give_pack, 70)
-	if rw.has("token"):
-		var token_n: int = rw["token"]
-		var give_token := func():
-			var packs := G.add_tokens(token_n)
-			if packs <= 0:
-				return
-			for _j in packs:
-				G.stash.append("pack_1")
-			G.dirty()
-			G.changed.emit()
-			G.main.toast("祭典鼓攒满了，兽皮卡包已放入暂存区！")
-		G.main.fly("token_1", card_pos, stash_c, give_token, 60)
-	if rw.has("xp"):
-		var xp_n: int = rw["xp"]
-		G.main.fly("xp_1", card_pos, _base_btn.get_global_rect().get_center() + Vector2(0, 50), _give_xp.bind(xp_n), 60)
-
-func _give_xp(n: int) -> void:
-	if G.add_xp(n):
-		await get_tree().create_timer(0.4).timeout
-		G.main.open("levelup")
+		rewards.append(["pack_1", int(rw["pack"])])
+	Rewards.grant(rewards, func(_k): return card_pos)
 
 # ---------------------------------------------------------------- 交互
 
@@ -648,8 +653,7 @@ func _on_board_changed() -> void:
 	_refresh_hud()
 	if board != null and board.selected >= 0:
 		var id := str(G.board[board.selected]["id"])
-		if G.cooking(board.selected) or Data.is_dish(id):
-			_on_select(board.selected)
+		_on_select(board.selected)
 
 func _tribe_ready() -> bool:
 	var id := G.next_build_id()
@@ -657,7 +661,7 @@ func _tribe_ready() -> bool:
 
 func _cards_x() -> float:
 	var x := 0.0 if not G.stash.is_empty() else -(BASE_RECT.position.x - STASH_RECT.position.x)
-	x += RACE_W + ROW_GAP
+	x += RACE_W + EVENT_W * 2 + ROW_GAP * 3
 	if _tribe_ready():
 		x += HAMMER_W + ROW_GAP
 	return x
@@ -674,7 +678,9 @@ func _apply_row(animate: bool) -> void:
 	var open := not G.stash.is_empty()
 	var hammer := _tribe_ready()
 	var race_x := BASE_RECT.position.x if open else STASH_RECT.position.x
-	var base_x := race_x + RACE_W + ROW_GAP
+	var event_x := race_x + RACE_W + ROW_GAP
+	var seven_x := event_x + EVENT_W + ROW_GAP
+	var base_x := seven_x + EVENT_W + ROW_GAP
 	var hammer_x := base_x + BASE_RECT.size.x + ROW_GAP
 	var cards_x := _cards_x()
 	var stash_was := _stash_open
@@ -687,6 +693,8 @@ func _apply_row(animate: bool) -> void:
 		_stash_wrap.scale = Vector2.ONE if open else Vector2.ZERO
 		_stash_btn.mouse_filter = MOUSE_FILTER_STOP if open else MOUSE_FILTER_IGNORE
 		_race_entry.position.x = race_x
+		_merge_event_entry.position.x = event_x
+		_seven_entry.position.x = seven_x
 		_base_btn.position.x = base_x
 		_hammer_btn.visible = hammer
 		_hammer_btn.scale = Vector2.ONE
@@ -714,6 +722,8 @@ func _apply_row(animate: bool) -> void:
 	if hammer != hammer_was:
 		var hammer_dur := 0.22 if hammer else 0.16
 		_row_tween.tween_property(_hammer_btn, "scale", Vector2.ONE if hammer else Vector2.ZERO, hammer_dur).set_trans(Tween.TRANS_BACK if hammer else Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT if hammer else Tween.EASE_IN)
+	_row_tween.tween_property(_seven_entry, "position:x", seven_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_row_tween.tween_property(_merge_event_entry, "position:x", event_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_race_entry, "position:x", race_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_base_btn, "position:x", base_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_hammer_btn, "position:x", hammer_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -742,6 +752,7 @@ func _on_hammer() -> void:
 			G.main.open("build", id))
 
 func _refresh_hud() -> void:
+	_refresh_bubble_offer()
 	_inv_lbl.text = "%d/%d" % [G.inv.size(), G.inv_cap]
 	_lv_lbl.text = "阿焰 Lv.%d" % G.level
 	_xp_lbl.text = "%d/%d" % [G.xp, G.xp_need()]
@@ -757,6 +768,10 @@ func _refresh_hud() -> void:
 		c.queue_redraw()
 
 func _on_select(i: int) -> void:
+	_info_action = {}
+	_info_visual.hide()
+	_info_desc.show()
+	_refresh_bubble_offer()
 	var cooking := i >= 0 and G.cooking(i)
 	var has: bool = i >= 0 and G.board[i]["id"] != ""
 	# 选中沙漏或正在制作（能用沙漏加速）的东西时，顶栏第三格换成沙漏
@@ -789,7 +804,10 @@ func _on_select(i: int) -> void:
 		_info_btn.visible = c["lock"] != 2
 		_info_desc.position.x = 170
 		_info_desc.size.x = 300
-		if c["lock"] == 2:
+		if G.is_merge_bubble(i):
+			_info_name.text = Data.name_of(str(c["id"]))
+			_info_desc.text = "限时泡泡物品，购买后即可使用。"
+		elif c["lock"] == 2:
 			_info_name.text = "巨石"
 			_info_desc.text = "巨石挡路。在旁边合成后，石头崩开，里面的物品会被藤蔓缠住。"
 		elif Data.is_dish(c["id"]):
@@ -801,10 +819,7 @@ func _on_select(i: int) -> void:
 				_show_delete_btn(false)
 		else:
 			_info_name.text = "%s (Lv.%d)" % [Data.name_of(c["id"]), Data.lv(c["id"])]
-			if c["lock"] == 1:
-				_info_desc.text = "被藤蔓缠住了，拖一个相同的物品过来合成即可解开。"
-			else:
-				_info_desc.text = Data.describe(c["id"])
+			_set_item_action(str(c["id"]), int(c["lock"]) == 1)
 		if pending:
 			_show_undo_btn()
 		elif Data.is_dish(c["id"]):
@@ -940,6 +955,8 @@ func _clear_undo() -> void:
 	_del_btn.queue_redraw()
 
 func _on_activate(i: int) -> void:
+	if i < 0 or i >= G.board.size() or int(G.board[i]["lock"]) != 0:
+		return
 	if _guide_up() and not G.main._guide.allows_activate(i):
 		board.shake(i)
 		Sfx.play("deny")
@@ -1003,32 +1020,25 @@ func _on_activate(i: int) -> void:
 			board.select(-1)
 			Sfx.play("coin")
 			G.cloud_event({"type": "collect", "item": id})
-			G.main.fly(id, board.cell_global(i), G.main.topbar.target(kind), func(): G.add_currency(kind, v), 70)
+			Rewards.grant([[id, v]], func(_k): return board.cell_global(i))
+		"choice":
+			G.main.open("choice_chest", i)
 		"chest":
 			# 宝箱由服务器开：连不上就留在原地
-			var items: Array = await G.open_chest()
+			var items: Array = await G.open_chest(id)
 			if items.is_empty() or str(G.board[i]["id"]) != id:
 				return
 			G.board[i]["id"] = ""
-			var extra := 0
-			for it in items:
-				G.discover(it)
-				var to := G.find_empty_near(i)
-				if to < 0:
-					G.stash.append(it)
-					extra += 1
-					continue
-				G.board[to]["id"] = it
-				board.fly_in(i, to, it)
-			if extra > 0:
-				G.main.toast("放不下的 %d 个物品进了暂存区" % extra)
-				G.changed.emit()
+			Rewards.grant(Rewards.items(items), Callable(), true, true, {"board_origin": i})
 			board.burst(i)
 			board.select(-1)
 			Sfx.play("merge", 1.2)
 			G.dirty()
 			G.board_changed.emit()
 		"pack":
+			if G.level < Data.CARD_LEVEL:
+				G.main.toast("典藏卡在 %d 级解锁" % Data.CARD_LEVEL)
+				return
 			G.board[i]["id"] = ""
 			G.dirty()
 			G.board_changed.emit()
@@ -1068,6 +1078,9 @@ func _on_stash() -> void:
 	var id: String = G.stash.back()
 	match Data.type_of(id):
 		"pack":
+			if G.level < Data.CARD_LEVEL:
+				G.main.toast("典藏卡在 %d 级解锁" % Data.CARD_LEVEL)
+				return
 			G.stash.pop_back()
 			G.dirty()
 			G.changed.emit()
@@ -1080,7 +1093,7 @@ func _on_stash() -> void:
 			G.changed.emit()
 			Sfx.play("coin")
 			G.cloud_event({"type": "collect", "item": id})
-			G.main.fly(id, stash_pos(), G.main.topbar.target(kind), func(): G.add_currency(kind, v), 70)
+			Rewards.grant([[id, v]], func(_k): return stash_pos())
 		"chest":
 			_take_stash_chest()
 		_:
@@ -1100,34 +1113,14 @@ func _on_stash() -> void:
 
 ## 暂存区顶上的宝箱：先改完棋盘和暂存，再发一次信号
 func _take_stash_chest() -> void:
-	var got: Array = await G.open_chest()
-	if got.is_empty() or G.stash.is_empty() or Data.type_of(str(G.stash.back())) != "chest":
+	if G.stash.is_empty(): return
+	var id := str(G.stash.back())
+	var got: Array = await G.open_chest(id)
+	if got.is_empty() or G.stash.is_empty() or str(G.stash.back()) != id:
 		return
 	G.stash.pop_back()
-	var extra := 0
-	var placed := 0
-	for it in got:
-		G.discover(it)
-		var to := G.find_empty_near(G.idx(0, 0))
-		if to < 0:
-			G.stash.append(it)
-			extra += 1
-			continue
-		G.board[to]["id"] = it
-		var delay := placed * 0.14
-		_fly_stash_to(it, to, delay)
-		if delay <= 0.0:
-			Sfx.play("pop")
-		else:
-			get_tree().create_timer(delay).timeout.connect(func(_d := delay): Sfx.play("pop"))
-		placed += 1
-	if extra > 0:
-		G.main.toast("放不下的 %d 个物品进了暂存区" % extra)
+	Rewards.grant(Rewards.items(got), Callable(), true, true, {"board_origin": G.idx(0, 0), "from_stash": true})
 	Sfx.play("merge", 1.2)
-	G.dirty()
-	if placed > 0:
-		G.board_changed.emit()
-	G.changed.emit()
 
 ## 顶卡物品中心：和 _paint_stash 里 k==0 的那张一致，换到暂存区全局坐标
 func _stash_top_item_pos() -> Vector2:
@@ -1233,3 +1226,106 @@ func _guide_spawn(near_i: int) -> int:
 		if forced >= 0:
 			return forced
 	return G.find_empty_near(near_i)
+
+func _build_bubble_offer() -> void:
+	_bubble_offer = Control.new()
+	_bubble_offer.size = Vector2(300, 140)
+	_bubble_offer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_bubble_offer)
+	UI.box(_bubble_offer, Rect2(0, 0, 300, 124), func(ci, sz):
+		Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 20, 204, 0.5), Color("edfaff"), 3.0)
+		var tip_x := clampf(board.cell_center(board.selected).x + BOARD_POS.x - _bubble_offer.position.x, 18, 282) if board.selected >= 0 else 150.0
+		Art.fill(ci, PackedVector2Array([Vector2(tip_x - 12, 121), Vector2(tip_x + 12, 121), Vector2(tip_x, 139)]), Color("edfaff"), 2.0))
+	_bubble_title = UI.lbl(_bubble_offer, "", Rect2(10, 7, 280, 32), 22, Art.INK)
+	_bubble_time = UI.lbl(_bubble_offer, "", Rect2(10, 43, 108, 64), 22, Color("447a94"))
+	_bubble_buy = UI.btn(_bubble_offer, Rect2(126, 45, 160, 64), "", "green", Callable(), 25)
+	_bubble_buy.res = Art.AMBER_ICON
+	_bubble_buy.pressed.connect(func():
+		var at := board.selected
+		_bubble_buy.enabled = false
+		var r: Dictionary = await G.buy_bubble(at)
+		if not is_instance_valid(self): return
+		if r.get("ok", false):
+			board.pop(at)
+			board.burst(at)
+			Sfx.play("pop")
+		elif G.main:
+			G.main.toast(str(r.get("message", "购买失败")))
+		_refresh_bubble_offer())
+	_bubble_offer.hide()
+
+func _refresh_bubble_offer() -> void:
+	if _bubble_offer == null: return
+	var at := board.selected
+	_bubble_offer.visible = G.is_merge_bubble(at) and G.bubble_left(at) > 0
+	if not _bubble_offer.visible: return
+	var c: Dictionary = G.board[at]
+	var p := BOARD_POS + board.cell_center(at)
+	_bubble_offer.position = Vector2(clampf(p.x - 150, 8, 412), p.y - 194)
+	_bubble_title.text = "%s · Lv.%d" % [Data.name_of(str(c["id"])), Data.lv(str(c["id"]))]
+	_bubble_time.text = "%d秒
+后消失" % G.bubble_left(at)
+	_bubble_buy.text = str(int(c["bubble"]["price"])) + " 购买"
+	_bubble_buy.enabled = not G._bubble_busy.has(str(c["bubble"]["uid"]))
+	_bubble_buy.queue_redraw()
+	for child in _bubble_offer.get_children():
+		if child is DrawBox: child.queue_redraw()
+
+## 选中物品的简明操作说明。图标按产出配置绘制，不逐帧创建控件。
+func _set_item_action(id: String, tangled: bool = false) -> void:
+	var kind := Data.type_of(id)
+	var production := Data.gen_stats(id)
+	var next := Data.next_id(id)
+	if kind == "gen" and not production.is_empty() and not tangled:
+		var drops: Array = []
+		for drop in production["drops"]:
+			if not drops.has(str(drop["id"])):
+				drops.append(str(drop["id"]))
+		_info_action = {"mode": "produce", "items": drops}
+	elif kind in ["energy", "shell", "amber", "sand"] and Data.value_of(id) > 0 and not tangled:
+		var units := {"energy": "点体力", "shell": "个贝币", "amber": "个琥珀", "sand": "个沙漏"}
+		_info_desc.text = "点击获得%d%s" % [Data.value_of(id), units[kind]]
+	elif kind in ["item", "gen", "energy", "shell", "amber", "sand"] or tangled:
+		if next != "":
+			_info_action = {"mode": "merge", "items": [id, id, next]}
+		else:
+			_info_action = {"mode": "max", "items": [id]}
+	elif kind == "choice":
+		_info_desc.text = "点击选择1件物品"
+	elif kind == "chest":
+		_info_desc.text = "点击获得3个火种" if id == "energybox_1" else "点击获得3个随机物品"
+	elif kind == "pack":
+		_info_desc.text = "点击获得2张收藏卡" if G.level >= Data.CARD_LEVEL else "%d级解锁收藏卡" % Data.CARD_LEVEL
+	else:
+		_info_desc.text = Data.describe(id)
+	_info_visual.visible = not _info_action.is_empty()
+	_info_desc.visible = _info_action.is_empty()
+	_info_visual.queue_redraw()
+
+func _paint_item_action(ci: CanvasItem, sz: Vector2) -> void:
+	if _info_action.is_empty(): return
+	var mode := str(_info_action["mode"])
+	var items: Array = _info_action["items"]
+	if mode == "merge":
+		var y := sz.y * 0.5
+		for k in 3:
+			Art.item(ci, str(items[k]), Vector2(42 + k * 108, y), 78)
+		ci.draw_string(G.font_body, Vector2(84, y + 10), "+", HORIZONTAL_ALIGNMENT_CENTER, 24, 30, Art.INK)
+		ci.draw_string(G.font_body, Vector2(192, y + 10), "=", HORIZONTAL_ALIGNMENT_CENTER, 24, 30, Art.INK)
+	elif mode == "produce":
+		if items.size() <= 4:
+			ci.draw_string(G.font_body, Vector2(0, 25), "点击生产", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 23, Color("6b4a2a"))
+			var step := minf(68.0, sz.x / maxf(1.0, items.size()))
+			for k in items.size():
+				var x := sz.x * 0.5 + (k - (items.size() - 1) * 0.5) * step
+				Art.item(ci, str(items[k]), Vector2(x, 65), minf(64, step))
+		else:
+			ci.draw_string(G.font_body, Vector2(0, 39), "点击", HORIZONTAL_ALIGNMENT_CENTER, 54, 22, Color("6b4a2a"))
+			ci.draw_string(G.font_body, Vector2(0, 65), "生产", HORIZONTAL_ALIGNMENT_CENTER, 54, 22, Color("6b4a2a"))
+			var columns := ceili(items.size() / 2.0)
+			var step := 242.0 / columns
+			for k in items.size():
+				Art.item(ci, str(items[k]), Vector2(58 + (k % columns + 0.5) * step, 24 + (k / columns) * 48), minf(50, step))
+	else:
+		Art.item(ci, str(items[0]), Vector2(54, sz.y * 0.5), 78)
+		ci.draw_string(G.font_body, Vector2(102, sz.y * 0.5 + 9), "已达最高级", HORIZONTAL_ALIGNMENT_CENTER, 190, 24, Color("6b4a2a"))

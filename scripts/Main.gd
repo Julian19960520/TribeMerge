@@ -126,8 +126,24 @@ func _apply_screen() -> void:
 	topbar.set_sand_context(false)
 
 func open(name: String, arg = null) -> PopupBase:
+	if name in ["album", "pack"] and G.level < Data.CARD_LEVEL:
+		toast("典藏卡在 %d 级解锁" % Data.CARD_LEVEL)
+		return null
 	var p: PopupBase
 	match name:
+		"choice_chest":
+			p = preload("res://scripts/ui/ChoiceChestPopup.gd").new()
+			p.cell = int(arg)
+			p.box_id = G.cell_id(int(arg))
+		"ufo":
+			p = preload("res://scripts/ui/UfoPopup.gd").new()
+		"daily_ad":
+			p = preload("res://scripts/ui/DailyAdPopup.gd").new()
+		"seven_day":
+			p = preload("res://scripts/ui/SevenDayPopup.gd").new()
+		"merge_event":
+			p = preload("res://scripts/ui/MergeEventPopup.gd").new()
+			if arg is String: p.period_key = arg
 		"energy": p = Popups.energy()
 		"howto": p = Popups.howto()
 		"store": p = Popups.store()
