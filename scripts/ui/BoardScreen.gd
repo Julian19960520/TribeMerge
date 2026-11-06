@@ -117,7 +117,7 @@ func _ready() -> void:
 	UI.box(self, Rect2(140, 1300, 456, 170), _paint_info)
 	_info_name = UI.lbl(self, "", Rect2(196, 1300, 300, 46), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 7, Art.INK)
 	_info_desc = UI.lbl(self, "", Rect2(170, 1352, 300, 96), 21, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_CENTER)
-	_info_desc.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	_info_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_info_visual = UI.box(self, Rect2(170, 1352, 300, 96), _paint_item_action)
 	_info_btn = UI.hit(self, Rect2(150, 1300, 46, 46), _open_info)
 	_info_btn.extra = func(ci, sz): Paint.glyph(ci, "info", sz * 0.5, 1.2)
@@ -641,6 +641,11 @@ func _on_deliver(oi: int) -> void:
 func _process(_delta: float) -> void:
 	if board == null:
 		return
+	if _bubble_offer != null and _bubble_offer.visible:
+		if G.is_merge_bubble(board.selected) and G.bubble_left(board.selected) > 0:
+			_bubble_tick()
+		else:
+			_on_select(board.selected)
 	var i := board.selected
 	if i < 0 or not G.cooking(i):
 		return
@@ -773,7 +778,8 @@ func _on_select(i: int) -> void:
 	_info_desc.show()
 	_refresh_bubble_offer()
 	var cooking := i >= 0 and G.cooking(i)
-	var has: bool = i >= 0 and G.board[i]["id"] != ""
+	# 巨石下面不一定有物品，空石头也显示巨石说明
+	var has: bool = i >= 0 and (G.board[i]["id"] != "" or int(G.board[i]["lock"]) == 2)
 	# 选中沙漏或正在制作（能用沙漏加速）的东西时，顶栏第三格换成沙漏
 	var sand_ctx := cooking or (has and Data.CHAINS.has(Data.chain(str(G.board[i]["id"]))) and Data.chain(str(G.board[i]["id"])) == "sand")
 	if G.main != null and G.main.topbar != null:
@@ -787,7 +793,7 @@ func _on_select(i: int) -> void:
 		_info_desc.position.x = 170
 		_info_desc.size.x = 300
 		_info_name.text = "制作 %s" % Data.name_of(str(ck["dish"]))
-		_info_desc.text = "还要 %s。沙漏 %d，每份快 10 秒。" % [Board._sec_text(maxi(G.cook_left(i), 1)), G.rush]
+		_set_desc("还要 %s。沙漏 %d，每份快 10 秒。" % [Board._sec_text(maxi(G.cook_left(i), 1)), G.rush])
 		if pending:
 			_show_undo_btn()
 		else:
@@ -798,21 +804,21 @@ func _on_select(i: int) -> void:
 		_info_desc.position.x = 170
 		_info_desc.size.x = 300
 		_info_name.text = "%s (Lv.%d)" % [Data.name_of(_undo_id), Data.lv(_undo_id)]
-		_info_desc.text = Data.describe(_undo_id)
+		_set_desc(Data.describe(_undo_id))
 	elif has:
 		var c: Dictionary = G.board[i]
 		_info_btn.visible = c["lock"] != 2
 		_info_desc.position.x = 170
 		_info_desc.size.x = 300
 		if G.is_merge_bubble(i):
-			_info_name.text = Data.name_of(str(c["id"]))
-			_info_desc.text = "限时泡泡物品，购买后即可使用。"
+			_info_name.text = "%s (Lv.%d)" % [Data.name_of(str(c["id"])), Data.lv(str(c["id"]))]
+			_set_desc("用琥珀买下泡泡里的物品，\n倒计时结束泡泡就会消失。")
 		elif c["lock"] == 2:
 			_info_name.text = "巨石"
-			_info_desc.text = "巨石挡路。在旁边合成后，石头崩开，里面的物品会被藤蔓缠住。"
+			_set_desc("在旁边合成就能震碎巨石，\n里面的物品会被藤蔓缠住。")
 		elif Data.is_dish(c["id"]):
 			_info_name.text = Data.name_of(c["id"])
-			_info_desc.text = Data.describe(c["id"])
+			_set_desc(Data.describe(c["id"]))
 			if pending:
 				_show_undo_btn()
 			else:
@@ -830,9 +836,9 @@ func _on_select(i: int) -> void:
 		_info_btn.visible = false
 		_show_delete_btn(false)
 		_info_name.text = ""
-		_info_desc.text = "点击物品查看详情，拖动相同物品合成。"
 		_info_desc.position.x = 170
 		_info_desc.size.x = 410
+		_set_desc("点击物品查看详情，拖动相同物品合成。")
 	for d in get_children():
 		if d is DrawBox:
 			d.queue_redraw()
@@ -1227,18 +1233,18 @@ func _guide_spawn(near_i: int) -> int:
 			return forced
 	return G.find_empty_near(near_i)
 
+## 选中合成泡泡时，泡泡上方弹出的购买小卡：泡泡里的物品 + 名字等级 + 倒计时 + 琥珀买下
+const OFFER_W := 340.0
+const OFFER_H := 132.0
 func _build_bubble_offer() -> void:
 	_bubble_offer = Control.new()
-	_bubble_offer.size = Vector2(300, 140)
+	_bubble_offer.size = Vector2(OFFER_W, OFFER_H + 18)
 	_bubble_offer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_bubble_offer)
-	UI.box(_bubble_offer, Rect2(0, 0, 300, 124), func(ci, sz):
-		Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 20, 204, 0.5), Color("edfaff"), 3.0)
-		var tip_x := clampf(board.cell_center(board.selected).x + BOARD_POS.x - _bubble_offer.position.x, 18, 282) if board.selected >= 0 else 150.0
-		Art.fill(ci, PackedVector2Array([Vector2(tip_x - 12, 121), Vector2(tip_x + 12, 121), Vector2(tip_x, 139)]), Color("edfaff"), 2.0))
-	_bubble_title = UI.lbl(_bubble_offer, "", Rect2(10, 7, 280, 32), 22, Art.INK)
-	_bubble_time = UI.lbl(_bubble_offer, "", Rect2(10, 43, 108, 64), 22, Color("447a94"))
-	_bubble_buy = UI.btn(_bubble_offer, Rect2(126, 45, 160, 64), "", "green", Callable(), 25)
+	UI.box(_bubble_offer, Rect2(Vector2.ZERO, _bubble_offer.size), _paint_bubble_offer)
+	_bubble_title = UI.lbl(_bubble_offer, "", Rect2(112, 12, OFFER_W - 124, 34), 24, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
+	_bubble_time = UI.lbl(_bubble_offer, "", Rect2(140, 46, OFFER_W - 152, 28), 19, Color("2f6d93"), HORIZONTAL_ALIGNMENT_LEFT)
+	_bubble_buy = UI.btn(_bubble_offer, Rect2(112, 76, OFFER_W - 126, 46), "", "green", Callable(), 24)
 	_bubble_buy.res = Art.AMBER_ICON
 	_bubble_buy.pressed.connect(func():
 		var at := board.selected
@@ -1249,10 +1255,35 @@ func _build_bubble_offer() -> void:
 			board.pop(at)
 			board.burst(at)
 			Sfx.play("pop")
+			_on_select(at)
 		elif G.main:
 			G.main.toast(str(r.get("message", "购买失败")))
 		_refresh_bubble_offer())
 	_bubble_offer.hide()
+
+func _paint_bubble_offer(ci: CanvasItem, sz: Vector2) -> void:
+	var card := Rect2(0, 0, sz.x, OFFER_H)
+	var tip_x := 60.0
+	if board != null and board.selected >= 0:
+		tip_x = clampf(board.cell_center(board.selected).x + BOARD_POS.x - _bubble_offer.position.x, 26, sz.x - 26)
+	var body := Art.rrect(card, 22, 204, 0.5)
+	var tail := PackedVector2Array([Vector2(tip_x - 15, OFFER_H - 4), Vector2(tip_x + 15, OFFER_H - 4), Vector2(tip_x + 2, OFFER_H + 16)])
+	ci.draw_colored_polygon(Art.rrect(Rect2(card.position + Vector2(0, 7), card.size), 22, 204, 0.0), Color(0, 0, 0, 0.25))
+	Art.dilate(ci, body, 3.0, Art.INK)
+	Art.dilate(ci, tail, 3.0, Art.INK)
+	ci.draw_colored_polygon(body, Art.BONE)
+	ci.draw_colored_polygon(tail, Art.BONE)
+	Art.dashed(ci, Art.rrect(card.grow(-7), 16, 205, 0.0), 9, 6, Color(0.65, 0.4, 0.2, 0.35), 2.0)
+	# 左边：泡泡里的物品
+	var c := Vector2(58, OFFER_H * 0.5)
+	ci.draw_circle(c, 44, Color(0.62, 0.88, 1.0, 0.35))
+	var at := board.selected if board != null else -1
+	if at >= 0 and at < G.board.size() and str(G.board[at]["id"]) != "":
+		Art.item(ci, str(G.board[at]["id"]), c, 70, false)
+	ci.draw_arc(c, 44, 0, TAU, 40, Color(Board.BUBBLE_RIM, 0.9), 3.0, true)
+	ci.draw_arc(c, 37, PI * 1.08, PI * 1.42, 12, Color(1, 1, 1, 0.92), 5.0, true)
+	ci.draw_circle(c + Vector2(-13, -33), 3.2, Color.WHITE)
+	Paint.glyph(ci, "clock", Vector2(126, 60), 0.85)
 
 func _refresh_bubble_offer() -> void:
 	if _bubble_offer == null: return
@@ -1261,17 +1292,25 @@ func _refresh_bubble_offer() -> void:
 	if not _bubble_offer.visible: return
 	var c: Dictionary = G.board[at]
 	var p := BOARD_POS + board.cell_center(at)
-	_bubble_offer.position = Vector2(clampf(p.x - 150, 8, 412), p.y - 194)
-	_bubble_title.text = "%s · Lv.%d" % [Data.name_of(str(c["id"])), Data.lv(str(c["id"]))]
-	_bubble_time.text = "%d秒
-后消失" % G.bubble_left(at)
-	_bubble_buy.text = str(int(c["bubble"]["price"])) + " 购买"
+	_bubble_offer.position = Vector2(clampf(p.x - OFFER_W * 0.5, 8, 720 - OFFER_W - 8), p.y - 48 - _bubble_offer.size.y)
+	_bubble_title.text = "%s (Lv.%d)" % [Data.name_of(str(c["id"])), Data.lv(str(c["id"]))]
+	_bubble_tick()
+	_bubble_buy.text = "%d  买下" % int(c["bubble"]["price"])
 	_bubble_buy.enabled = not G._bubble_busy.has(str(c["bubble"]["uid"]))
 	_bubble_buy.queue_redraw()
 	for child in _bubble_offer.get_children():
 		if child is DrawBox: child.queue_redraw()
 
-## 选中物品的简明操作说明。图标按产出配置绘制，不逐帧创建控件。
+## 每帧只在秒数变化时改字
+func _bubble_tick() -> void:
+	var left := G.bubble_left(board.selected)
+	var text := "%d 秒后消失" % left
+	if _bubble_time.text != text:
+		_bubble_time.text = text
+		_bubble_time.label_settings.font_color = Art.CLAY if left <= 10 else Color("2f6d93")
+
+## 选中物品的简明操作说明（#11 #12）。图标按产出配置绘制，不逐帧创建控件。
+## merge：【物品】+【物品】=【下一级】；produce：点击生产【产物】…；collect：【图标】点击获得 x 个 xx；max：已达最高级。
 func _set_item_action(id: String, tangled: bool = false) -> void:
 	var kind := Data.type_of(id)
 	var production := Data.gen_stats(id)
@@ -1283,49 +1322,147 @@ func _set_item_action(id: String, tangled: bool = false) -> void:
 				drops.append(str(drop["id"]))
 		_info_action = {"mode": "produce", "items": drops}
 	elif kind in ["energy", "shell", "amber", "sand"] and Data.value_of(id) > 0 and not tangled:
-		var units := {"energy": "点体力", "shell": "个贝币", "amber": "个琥珀", "sand": "个沙漏"}
-		_info_desc.text = "点击获得%d%s" % [Data.value_of(id), units[kind]]
+		_info_action = {"mode": "collect", "items": [id], "n": Data.value_of(id), "unit": Rewards.unit(id)}
 	elif kind in ["item", "gen", "energy", "shell", "amber", "sand"] or tangled:
 		if next != "":
 			_info_action = {"mode": "merge", "items": [id, id, next]}
 		else:
 			_info_action = {"mode": "max", "items": [id]}
 	elif kind == "choice":
-		_info_desc.text = "点击选择1件物品"
+		_set_desc("点击打开，三件物品里挑一件。")
 	elif kind == "chest":
-		_info_desc.text = "点击获得3个火种" if id == "energybox_1" else "点击获得3个随机物品"
+		if id == "energybox_1":
+			var opens: Array = DailyShop.energy_chest_items()
+			_set_desc("点击打开，获得%d个%s。" % [opens.size(), Data.name_of(str(opens[0]))] if not opens.is_empty() else "点击打开，获得火种。")
+		else:
+			_set_desc("点击打开，获得3个随机物品。")
 	elif kind == "pack":
-		_info_desc.text = "点击获得2张收藏卡" if G.level >= Data.CARD_LEVEL else "%d级解锁收藏卡" % Data.CARD_LEVEL
+		_set_desc("点击获得2张收藏卡。" if G.level >= Data.CARD_LEVEL else "%d级解锁收藏卡。" % Data.CARD_LEVEL)
 	else:
-		_info_desc.text = Data.describe(id)
+		_set_desc(Data.describe(id))
 	_info_visual.visible = not _info_action.is_empty()
 	_info_desc.visible = _info_action.is_empty()
 	_info_visual.queue_redraw()
+
+## 纯文字说明：按词断行（不会把句号单独挤到下一行），放不下就缩小字号
+func _set_desc(text: String) -> void:
+	_info_desc.text = text
+	# 写死换行的文案按行排，不再自动折行；其余按词折行
+	var manual := text.contains("\n")
+	_info_desc.autowrap_mode = TextServer.AUTOWRAP_OFF if manual else TextServer.AUTOWRAP_WORD_SMART
+	var fs := 22
+	var f: Font = G.font_body
+	while fs > 16:
+		var fits := true
+		if manual:
+			for line in text.split("\n"):
+				fits = fits and f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= _info_desc.size.x - 4
+		else:
+			fits = f.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, _info_desc.size.x, fs).y <= _info_desc.size.y
+		if fits:
+			break
+		fs -= 1
+	_info_desc.label_settings.font_size = fs
+
+const HINT_INK := Color("6b4a2a")
+
+## 图标底下的浅色圆角托盘，让每个图标都有同样大小的“格子”
+static func _hint_plate(ci: CanvasItem, c: Vector2, s: float, seed: int, hot: bool = false) -> void:
+	var r := Rect2(c - Vector2(s, s) * 0.5, Vector2(s, s))
+	var plate := Art.rrect(r, s * 0.24, 400 + seed, 0.4)
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 3), r.size), s * 0.24, 400 + seed, 0.0), Color(0.42, 0.26, 0.12, 0.18))
+	ci.draw_colored_polygon(plate, Color("fff3d6") if hot else Color("f8ead0"))
+	Art.outline(ci, plate, 2.0, Color(0.55, 0.34, 0.16, 0.55 if not hot else 0.9))
+
+## 手绘的 + / = 号：白芯墨边，和标题字一个风格
+static func _hint_op(ci: CanvasItem, c: Vector2, op: String) -> void:
+	var bars: Array = []
+	if op == "+":
+		bars = [[c + Vector2(-10, 0), c + Vector2(10, 0)], [c + Vector2(0, -10), c + Vector2(0, 10)]]
+	else:
+		bars = [[c + Vector2(-10, -5), c + Vector2(10, -5)], [c + Vector2(-10, 5), c + Vector2(10, 5)]]
+	for b in bars:
+		ci.draw_line(b[0], b[1], Art.INK, 9.0, true)
+		ci.draw_circle(b[0], 4.5, Art.INK)
+		ci.draw_circle(b[1], 4.5, Art.INK)
+	for b in bars:
+		ci.draw_line(b[0], b[1], Art.BONE, 4.0, true)
+		ci.draw_circle(b[0], 2.0, Art.BONE)
+		ci.draw_circle(b[1], 2.0, Art.BONE)
+
+static func _hint_text(ci: CanvasItem, pos: Vector2, text: String, fs: int, col: Color = HINT_INK, outline := false) -> float:
+	var f: Font = G.font_title if outline else G.font_body
+	if outline:
+		ci.draw_string_outline(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 6, Art.INK)
+	ci.draw_string(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	return f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+
+static func _text_w(text: String, fs: int, title := false) -> float:
+	var f: Font = G.font_title if title else G.font_body
+	return f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+
+## 文字基线：让 fs 号字在 y 处垂直居中
+static func _mid_base(y: float, fs: int, title := false) -> float:
+	var f: Font = G.font_title if title else G.font_body
+	return y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
 
 func _paint_item_action(ci: CanvasItem, sz: Vector2) -> void:
 	if _info_action.is_empty(): return
 	var mode := str(_info_action["mode"])
 	var items: Array = _info_action["items"]
+	var y := sz.y * 0.5
 	if mode == "merge":
-		var y := sz.y * 0.5
+		# 3 个 78 托盘 + 2 个 33 运算符 = 300
+		var plate := 76.0
+		var op_w := (sz.x - plate * 3.0) * 0.5
 		for k in 3:
-			Art.item(ci, str(items[k]), Vector2(42 + k * 108, y), 78)
-		ci.draw_string(G.font_body, Vector2(84, y + 10), "+", HORIZONTAL_ALIGNMENT_CENTER, 24, 30, Art.INK)
-		ci.draw_string(G.font_body, Vector2(192, y + 10), "=", HORIZONTAL_ALIGNMENT_CENTER, 24, 30, Art.INK)
+			var cx := plate * 0.5 + k * (plate + op_w)
+			_hint_plate(ci, Vector2(cx, y), plate, k, k == 2)
+			Art.item(ci, str(items[k]), Vector2(cx, y), plate * 0.86, false)
+		_hint_op(ci, Vector2(plate + op_w * 0.5, y), "+")
+		_hint_op(ci, Vector2(plate * 2.0 + op_w * 1.5, y), "=")
 	elif mode == "produce":
-		if items.size() <= 4:
-			ci.draw_string(G.font_body, Vector2(0, 25), "点击生产", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 23, Color("6b4a2a"))
-			var step := minf(68.0, sz.x / maxf(1.0, items.size()))
-			for k in items.size():
-				var x := sz.x * 0.5 + (k - (items.size() - 1) * 0.5) * step
-				Art.item(ci, str(items[k]), Vector2(x, 65), minf(64, step))
-		else:
-			ci.draw_string(G.font_body, Vector2(0, 39), "点击", HORIZONTAL_ALIGNMENT_CENTER, 54, 22, Color("6b4a2a"))
-			ci.draw_string(G.font_body, Vector2(0, 65), "生产", HORIZONTAL_ALIGNMENT_CENTER, 54, 22, Color("6b4a2a"))
-			var columns := ceili(items.size() / 2.0)
-			var step := 242.0 / columns
-			for k in items.size():
-				Art.item(ci, str(items[k]), Vector2(58 + (k % columns + 0.5) * step, 24 + (k / columns) * 48), minf(50, step))
+		var label := "点击生产"
+		var fs := 22
+		var lw := _text_w(label, fs)
+		_hint_text(ci, Vector2(0, _mid_base(y, fs)), label, fs)
+		var x0 := lw + 8.0
+		var area := sz.x - x0
+		var n := items.size()
+		var rows := 1 if n <= 4 else 2
+		var cols := ceili(float(n) / float(rows))
+		var step := minf(area / float(cols), 62.0 if rows == 1 else 52.0)
+		var plate := step - 4.0
+		var row_h := sz.y / float(rows)
+		var used := step * float(cols)
+		for k in n:
+			var row := k / cols
+			var col := k % cols
+			# 第二行少一个时也居中
+			var in_row := cols if row < rows - 1 else n - cols * (rows - 1)
+			var cx := x0 + (area - used) * 0.5 + (float(col) + 0.5 + (cols - in_row) * 0.5) * step
+			var cy := row_h * (float(row) + 0.5)
+			_hint_plate(ci, Vector2(cx, cy), plate, k)
+			Art.item(ci, str(items[k]), Vector2(cx, cy), plate * 0.94, false)
+	elif mode == "collect":
+		var plate := 72.0
+		_hint_plate(ci, Vector2(plate * 0.5, y), plate, 3, true)
+		Art.item(ci, str(items[0]), Vector2(plate * 0.5, y), plate * 0.86, false)
+		var a := "点击获得"
+		var num := str(int(_info_action["n"]))
+		var b := str(_info_action["unit"])
+		var fa := 22
+		var fn := 32
+		var total := _text_w(a, fa) + 6.0 + _text_w(num, fn, true) + 4.0 + _text_w(b, fa)
+		var x := plate + maxf(10.0, (sz.x - plate - total) * 0.5)
+		x += _hint_text(ci, Vector2(x, _mid_base(y, fa)), a, fa) + 6.0
+		x += _hint_text(ci, Vector2(x, _mid_base(y, fn, true)), num, fn, Art.FIRE2, true) + 4.0
+		_hint_text(ci, Vector2(x, _mid_base(y, fa)), b, fa)
 	else:
-		Art.item(ci, str(items[0]), Vector2(54, sz.y * 0.5), 78)
-		ci.draw_string(G.font_body, Vector2(102, sz.y * 0.5 + 9), "已达最高级", HORIZONTAL_ALIGNMENT_CENTER, 190, 24, Color("6b4a2a"))
+		var plate := 76.0
+		_hint_plate(ci, Vector2(plate * 0.5, y), plate, 5, true)
+		Art.item(ci, str(items[0]), Vector2(plate * 0.5, y), plate * 0.86, false)
+		ci.draw_texture_rect(Board.MAX_CROWN, Rect2(plate - 30, y - plate * 0.5 - 8, 38, 30), false)
+		var t := "已达最高级"
+		var fs := 24
+		_hint_text(ci, Vector2(plate + (sz.x - plate - _text_w(t, fs)) * 0.5, _mid_base(y, fs)), t, fs)

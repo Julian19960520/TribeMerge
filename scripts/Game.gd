@@ -76,9 +76,6 @@ var hot_bought := {}
 var hot_revision := 0
 var _hot_refresh_busy := false
 var _bubble_busy := {}
-const MERGE_BUBBLE_CHANCE := 0.15
-const MERGE_BUBBLE_MIN_LEVEL := 5
-const MERGE_BUBBLE_SECONDS := 60.0
 ## 今天用琥珀买了几次火种。价格逐次上涨，零点清零。
 var energy_buys := 0
 var deals_bought := {}
@@ -671,8 +668,8 @@ func bubble_left(i: int) -> int:
 	return maxi(0, int(ceil(float(board[i]["bubble"].get("expires", 0)) - now()))) if is_merge_bubble(i) else 0
 
 func _maybe_spawn_bubble(id: String, near: int) -> void:
-	# 引导固定了每一步用到的格子，完成后才开始出现随机额外物品。
-	if tutorial_on or Data.lv(id) < MERGE_BUBBLE_MIN_LEVEL or find_empty_near(near) < 0:
+	# 引导固定了每一步用到的格子，完成后才开始出现随机额外物品。只有高级普通物品才有（Data.bubble_ok）。
+	if tutorial_on or not Data.bubble_ok(id) or find_empty_near(near) < 0:
 		return
 	var offer: Dictionary
 	if server_mode():
@@ -681,10 +678,11 @@ func _maybe_spawn_bubble(id: String, near: int) -> void:
 			return
 		offer = r.get("give", {}).get("offer", {})
 	else:
-		if rng.randf() >= MERGE_BUBBLE_CHANCE:
+		var rule := Data.bubble_rule()
+		if rng.randf() >= float(rule.get("chance", 0.1)):
 			return
 		offer = {"uid": "%s-%s" % [Time.get_ticks_usec(), rng.randi()], "item": id,
-			"expires": now() + MERGE_BUBBLE_SECONDS, "price": Data.bubble_price(id)}
+			"expires": now() + float(rule.get("seconds", 60)), "price": Data.bubble_price(id)}
 	if tutorial_on or offer.is_empty() or float(offer.get("expires", 0)) <= now():
 		return
 	var at := find_empty_near(near)
@@ -693,6 +691,8 @@ func _maybe_spawn_bubble(id: String, near: int) -> void:
 	board[at] = {"id": id, "lock": 3, "bubble": offer}
 	dirty()
 	board_changed.emit()
+	if is_instance_valid(main) and main.board_screen != null:
+		main.board_screen.board.fly_in(near, at, id)
 
 func _tick_bubbles() -> void:
 	var expired := false
@@ -719,7 +719,7 @@ func buy_bubble(i: int) -> Dictionary:
 	if server_mode():
 		result = await _cloud().act("/v1/merge/bubble/buy", {"uid": uid})
 	else:
-		result = {"ok": spend("amber", Data.bubble_price(str(board[i]["id"]))), "message": "琥珀不够了！"}
+		result = {"ok": spend("amber", int(offer.get("price", Data.bubble_price(str(board[i]["id"]))))), "message": "琥珀不够了！"}
 	_bubble_busy.erase(uid)
 	if result.get("ok", false):
 		board[i]["lock"] = 0
@@ -1002,7 +1002,7 @@ func roll_produce(gen_id: String) -> String:
 ## 打开一个宝箱：服务器抽（连不上返回 []，宝箱留着）；本地模式用 roll_chest
 func open_chest(box_id: String = "chest_1") -> Array:
 	if not server_mode():
-		return ["fire_4", "fire_4", "fire_4"] if box_id == "energybox_1" else roll_chest()
+		return DailyShop.energy_chest_items() if box_id == "energybox_1" else roll_chest()
 	var r: Dictionary = await _cloud().act("/v1/energy-chest/open" if box_id == "energybox_1" else "/v1/chest/open")
 	if not r.get("ok", false):
 		_srv_fail(r)
@@ -1903,7 +1903,8 @@ func _merge_coin(merged: String, origin: int) -> void:
 	cloud_event({"id": uid, "type": "merge", "item": merged, "cell": to})
 	if to < 0: return
 	var roll := float(uid.sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
-	if roll >= clampf(float(Data.RULES.get("merge_coin_chance", 0.05)), 0, 1): return
-	var id := str(Data.RULES.get("merge_coin_item", "shell_1"))
+	# 掷点用事件 id 的哈希，服务器按同一个 id 复算，结果一致
+	var id := Data.merge_coin_item(merged)
+	if id == "" or roll >= Data.merge_coin_chance(): return
 	Rewards.grant([[id, 1, "physical"]], Callable(), false, true, {"board_origin": to})
 	if is_instance_valid(main): main.board_screen.board.fly_in(origin, to, id)

@@ -1,6 +1,6 @@
 extends Control
 ## 棋盘订单栏里、主角卡左边的「篝火竞速」入口（参加与否都在）。
-## 没到 12 级：锁着，写「12级解锁」。没在比：一串香蕉 +「匹配」。比赛中：我的香蕉数、名次。比完：「领奖!」。
+## 画法在 EventEntryArt：香蕉串 + 赛旗，下面一个状态牌（等级锁 / 开赛 / 匹配中 / 名次 / 领奖）。
 ## 交付订单时 BoardScreen 调 fly_from()：香蕉从订单卡飞进这里。比完一局自动弹结算；领完奖弹「再来一局」。
 
 const RaceNet := preload("res://scripts/net/Race.gd")
@@ -76,15 +76,18 @@ func fly_from(from: Vector2) -> void:
 			d.queue_free())
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	var status := "匹配"
-	var detail := ""
-	if not race.unlocked(): status="%d级解锁" % race.unlock_level()
-	elif race.ended(): status="领奖" if int(race.pending_result().get("me",{}).get("place",0)) in [1,2,3] else "结算"
-	elif race.matching(): status="匹配中…"
+	# 一个状态牌：锁 → 等级；空闲 → 开赛；匹配中；比赛中 → 名次（金银铜底色）；比完 → 领奖 / 结算
+	var badge := {"text": "开赛", "style": "teal"}
+	var dot := false
+	if not race.unlocked(): badge = {"text": "%d级" % race.unlock_level(), "style": "lock"}
+	elif race.ended():
+		dot = int(race.pending_result().get("me", {}).get("place", 0)) in [1, 2, 3]
+		badge = {"text": "领奖" if dot else "结算", "style": "go"}
+	elif race.matching(): badge = {"text": "匹配中", "style": "time"}
 	elif race.racing():
-		status="×%d" % int(race.score_of(race.me()))
-		detail="第%d名" % race.place_of(race.me())
-	EventEntryArt.paint(ci,sz,"res://assets/events/entries/banana.svg","香蕉竞速",status,detail,not race.unlocked(),race.ended())
+		var place: int = race.place_of(race.me())
+		badge = {"text": "第%d名" % place, "style": ["gold", "silver", "bronze"][place - 1] if place in [1, 2, 3] else "num"}
+	EventEntryArt.paint(ci, sz, "race", "香蕉竞速", badge, not race.unlocked(), dot, _bump)
 
 static func _txt(ci: CanvasItem, f: Font, s: String, c: Vector2, fs: int, col: Color, ol: int = 0) -> void:
 	if f == null:

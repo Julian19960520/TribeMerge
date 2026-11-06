@@ -12,11 +12,19 @@
 			"duration_days": 7,
 			"theme": {
 				"entry_icon": "res://assets/events/entries/ruins.svg",
-				"background": "244c59",
+				"background": "1d3a4a",
+				"sky_top": "142636",
+				"sky_bottom": "2c5a63",
 				"panel": "e9dfbc",
-				"tile": "e7e1c8",
-				"tile_alt": "d6d6b6",
-				"locked": "4e747d",
+				"banner": "2f6377",
+				"tile": "e6d9b2",
+				"tile_alt": "d9c99c",
+				"recess": "2f5058",
+				"covered": "6e8d93",
+				"covered_alt": "7f9a97",
+				"vine": "7fae5a",
+				"glow": "bff3f0",
+				"locked": "3e6068",
 				"accent": "8cdece",
 				"point_icon": "res://assets/events/moon/point.svg"
 			},
@@ -26,19 +34,49 @@
 				"total_rows": 16,
 				"reveal_rows": 3,
 				"seed": 73,
-				"locked_tiers": [
-					1,
-					1,
-					1,
-					2,
-					2,
-					3
+				"layers": [
+					{
+						"rows": 2,
+						"tiers": [
+							1
+						]
+					},
+					{
+						"rows": 4,
+						"tiers": [
+							1,
+							1,
+							1,
+							2,
+							2
+						]
+					},
+					{
+						"rows": 4,
+						"tiers": [
+							1,
+							2,
+							2,
+							2,
+							3
+						]
+					},
+					{
+						"rows": 5,
+						"tiers": [
+							2,
+							2,
+							3,
+							3,
+							4
+						]
+					}
 				],
 				"goal": "unlock_all"
 			},
 			"points": {
 				"order_thresholds": [
-					4,
+					5,
 					8
 				],
 				"order_rewards": [
@@ -91,19 +129,71 @@
 					"icon": "res://assets/events/moon/relic_8.svg"
 				}
 			],
-			"rewards": [
-				[
-					"amber_3",
-					30
-				],
-				[
-					"fire_2",
-					100
-				],
-				[
-					"choice_1",
-					1
-				]
+			"milestones": [
+				{
+					"at": 15,
+					"rewards": [
+						[
+							"fire_2",
+							50
+						],
+						[
+							"chest_1",
+							1
+						]
+					]
+				},
+				{
+					"at": 35,
+					"rewards": [
+						[
+							"amber_3",
+							15
+						],
+						[
+							"pack_1",
+							1
+						]
+					]
+				},
+				{
+					"at": 60,
+					"rewards": [
+						[
+							"amber_3",
+							25
+						],
+						[
+							"energybox_1",
+							1
+						],
+						[
+							"chest_1",
+							1
+						]
+					]
+				},
+				{
+					"at": 90,
+					"rewards": [
+						[
+							"amber_3",
+							60
+						],
+						[
+							"fire_2",
+							150
+						],
+						[
+							"choice_1",
+							1
+						],
+						[
+							"pack_1",
+							1
+						]
+					]
+				}
 			]
 		}
 	]

@@ -47,6 +47,24 @@ static func candidate() -> Array:
 	while items.size()<mini(maximum,int(config().get("min_items",1))):items.append(filler)
 	return items
 
+## 礼包实际发放的全部物品：订单缺口 + 固定加赠（bonus_items）。服务器 ufo_offer.bundle 同一规则。
+static func bundle(items: Array) -> Array:
+	var out: Array = []
+	for id in items: out.append(str(id))
+	for id in config().get("bonus_items", []): out.append(str(id))
+	return out
+## 面板展示用：相同物品合并成 [id, 件数]，保持首次出现顺序
+static func grouped(ids: Array) -> Array:
+	var rows: Array = []
+	for id in ids:
+		var hit := false
+		for r in rows:
+			if r[0] == str(id):
+				r[1] = int(r[1]) + 1
+				hit = true
+				break
+		if not hit: rows.append([str(id), 1])
+	return rows
 static func active() -> bool:
 	var o: Dictionary = state()["offer"]
 	return not o.is_empty() and not bool(o.get("paid",false)) and G.now()<float(o["expires_at"])
@@ -117,7 +135,7 @@ static func buy(offer_id: String) -> Dictionary:
 			busy=false
 			return {"error":"支付尚未接通"}
 		o["paid"]=true
-		state()["deliveries"]["demo_"+offer_id]=o["items"].duplicate()
+		state()["deliveries"]["demo_"+offer_id]=bundle(o["items"])
 	_deliver()
 	G.save_game()
 	busy=false

@@ -1,1 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><ellipse cx="60" cy="106" rx="43" ry="7" fill="#3b2314" opacity=".2"/><g stroke="#3b2314" stroke-width="4" stroke-linejoin="round"><path d="M17 47q0-29 43-29t43 29v51H17Z" fill="#ad753b"/><path d="M17 47q0-29 43-29t43 29v10H17Z" fill="#6cb9ad"/><path d="M28 47q0-19 32-19t32 19M18 58h84" fill="none" stroke="#ffe3a0"/><path d="M27 59v38M93 59v38" fill="none" stroke="#e6bf75"/><path d="M50 50h20v30H50Z" fill="#f4d470"/><path d="m60 56 7 7-7 7-7-7Z" fill="#496f78"/></g><g fill="#fff1b7" stroke="#3b2314" stroke-width="2"><circle cx="41" cy="86" r="5"/><circle cx="60" cy="86" r="5"/><circle cx="79" cy="86" r="5"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+<!-- 自选宝箱：青色拱盖木箱，正面骨牌上嵌三颗不同的宝石＝三选一 -->
+<ellipse cx="60" cy="108" rx="46" ry="7" fill="#3b2314" opacity=".22"/>
+<g stroke="#3b2314" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+<path d="M15 56L105 56L103 101Q60 108 17 101Z" fill="#b97a3f"/>
+<path d="M18 74Q60 79 102 74M19 90Q60 95 101 90" fill="none" stroke="#7a4a22" stroke-width="3"/>
+<path d="M15 56L27 56L27 103L17 101ZM93 56L105 56L103 101L93 103Z" fill="#e6c98a" stroke-width="3.5"/>
+<path d="M12 58Q12 18 60 16Q108 18 108 58Z" fill="#4fa39a"/>
+<path d="M24 46Q30 26 60 24Q90 26 96 46" fill="none" stroke="#8fe0d4" stroke-width="5"/>
+<path d="M40 19Q38 38 39 57M80 19Q82 38 81 57" fill="none" stroke="#e6c98a" stroke-width="6"/>
+<path d="M40 19Q38 38 39 57M80 19Q82 38 81 57" fill="none" stroke="#3b2314" stroke-width="1.5" opacity=".35"/>
+<path d="M10 56L110 56L110 63L10 63Z" fill="#7a4a22" stroke-width="3.5"/>
+<path d="M30 68Q60 64 90 68L89 95Q60 99 31 95Z" fill="#fff7e6" stroke-width="3.5"/>
+<path d="M41 74L48 81L41 88L34 81Z" fill="#d8324a" stroke-width="3"/>
+<circle cx="60" cy="81" r="7" fill="#ffd23f" stroke-width="3"/>
+<path d="M79 74L87 88L71 88Z" fill="#72b23c" stroke-width="3"/>
+<path d="M54 52L66 52L66 66Q60 70 54 66Z" fill="#eaa53c" stroke-width="3"/>
+</g>
+<g fill="#fff">
+<path d="M39 78l2 -2l1 2z M57 78l3 -2l1 2z" opacity=".8"/>
+<circle cx="28" cy="35" r="2.5" opacity=".7"/>
+</g>
+<g fill="#fff1a0" stroke="#3b2314" stroke-width="2" stroke-linejoin="round">
+<path d="M104 18l3 -8l3 8l8 3l-8 3l-3 8l-3 -8l-8 -3z"/>
+<path d="M10 24l2 -5l2 5l5 2l-5 2l-2 5l-2 -5l-5 -2z"/>
+</g>
+</svg>

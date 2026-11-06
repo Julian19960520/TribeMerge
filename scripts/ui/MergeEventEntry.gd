@@ -22,10 +22,19 @@ func _process(delta: float) -> void:
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	var unlocked := MergeEvent.available(cfg)
 	var s := MergeEvent.state(cfg) if unlocked else {}
-	var ready := unlocked and MergeEvent.complete(cfg,s) and not bool(s["claimed"])
-	var status := ("领奖" if ready else "探索") if unlocked else ("筹备中" if cfg.is_empty() else "%d级解锁" % int(cfg["unlock_level"]))
-	var icon := str(cfg.get("theme",{}).get("entry_icon","res://assets/events/entries/ruins.svg"))
-	EventEntryArt.paint(ci,sz,icon,str(cfg.get("entry_title","月石遗迹")),status,"×%d" % int(s.get("points",0)) if unlocked else "",not unlocked,unlocked and (int(s.get("points",0))>0 or ready) and not bool(s.get("claimed",false)))
+	var ready := unlocked and MergeEvent.complete(cfg, s) and not bool(s["claimed"])
+	var badge := {"text": "×%d" % int(s.get("points", 0)), "style": "num"}
+	if ready: badge = {"text": "领奖", "style": "go"}
+	elif not unlocked: badge = {"text": "筹备中" if cfg.is_empty() else "%d级" % int(cfg["unlock_level"]), "style": "lock"}
+	elif float(cfg.get("ends_at", 0)) - G.now() < 86400: badge = {"text": _left(float(cfg["ends_at"]) - G.now()), "style": "time"}
+	# 默认的月石主题用程序手绘图；别的主题可以在配置里给自己的 entry_icon 贴图
+	var icon := str(cfg.get("theme", {}).get("entry_icon", ""))
+	var kind := "ruins" if icon == "" or icon.ends_with("/ruins.svg") else icon
+	EventEntryArt.paint(ci, sz, kind, str(cfg.get("entry_title", "月石遗迹")), badge, not unlocked, ready)
+
+static func _left(sec: float) -> String:
+	var t := maxi(0, int(sec))
+	return "%d时%02d分" % [t / 3600, t / 60 % 60] if t >= 3600 else "%d分%02d秒" % [t / 60, t % 60]
 
 func _txt(ci: CanvasItem, text: String, p: Vector2, fs: int, col: Color) -> void:
 	var w := G.font_title.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x

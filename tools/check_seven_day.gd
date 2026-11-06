@@ -23,12 +23,44 @@ func run() -> void:
 	g.spend("amber",5)
 	g.add_xp(30)
 	check(tasks.state()["stats"]["shell"] == 100 and tasks.state()["stats"]["amber"] == 10 and tasks.state()["stats"]["amber_spent"] == 5 and tasks.state()["stats"]["xp"] == 30,"income/spend/xp follow game transactions")
-	tasks.record("orders",180)
+	var cfg: Dictionary = tasks.config()
+	var all: Array = []
+	for day in cfg["days"]: all.append_array(day["tasks"])
+	var ids := {}
+	for t in all: ids[str(t["id"])] = true
+	check(ids.size() == 35,"35 unique task ids")
+	var logins_ok := true
+	for k in 7:
+		var first: Dictionary = cfg["days"][k]["tasks"][0]
+		logins_ok = logins_ok and str(first["metric"]) == "login_days" and int(first["target"]) == k + 1
+	check(logins_ok,"page N starts with login N days")
+	# 同一统计项的目标逐页变大；积分不随页数下降
+	var last := {}
+	var ramp_ok := true
+	var last_pts := 0
+	for day in cfg["days"]:
+		var page_max := 0
+		for t in day["tasks"]:
+			var m := str(t["metric"])
+			ramp_ok = ramp_ok and int(t["target"]) > int(last.get(m, 0))
+			last[m] = int(t["target"])
+			if m != "login_days": page_max = maxi(page_max, int(t["points"]))
+		ramp_ok = ramp_ok and page_max >= last_pts
+		last_pts = page_max
+	check(ramp_ok,"targets and points ramp from page 1 to 7")
+	var kinds := {}
+	for t in all: kinds[str(t["metric"])] = true
+	check(kinds.size() == 9,"all nine task types present")
+	var rewards_ok := true
+	for t in all + cfg["milestones"]:
+		for rw in t["rewards"]: rewards_ok = rewards_ok and load("res://scripts/Data.gd").CHAINS.has(load("res://scripts/Data.gd").chain(str(rw[0]))) and int(rw[1]) > 0
+	check(rewards_ok,"every reward id is a real item")
+	tasks.record("orders",75)
 	check(tasks.done(tasks.find_entry("d7_2",false)),"seventh page completes early without date gate")
-	var energy: int = g.energy
-	check((await tasks.claim("d7_2")).get("ok",false) and tasks.points() == 10,"individual later-page claim grants points")
-	check((await tasks.claim("d7_2")).has("error") and tasks.points() == 10,"duplicate claim blocked")
-	check((await tasks.claim("p100",true)).has("error"),"unreached milestone blocked")
+	var d7_pts := int(tasks.find_entry("d7_2",false)["points"])
+	check((await tasks.claim("d7_2")).get("ok",false) and tasks.points() == d7_pts,"individual later-page claim grants points")
+	check((await tasks.claim("d7_2")).has("error") and tasks.points() == d7_pts,"duplicate claim blocked")
+	check((await tasks.claim("p120",true)).has("error"),"unreached milestone blocked")
 	for metric in ["orders","merges","xp","cards","shell","amber","amber_spent"]: tasks.record(metric,10000)
 	tasks.record("paid_cents",3000)
 	check(not tasks.state()["stats"].has("paid_cents"),"offline purchase never fakes real payment")
@@ -36,9 +68,11 @@ func run() -> void:
 	for day in tasks.config()["days"]:
 		for t in day["tasks"]:
 			if tasks.done(t) and not tasks.got(t): await tasks.claim(str(t["id"]))
-	check(tasks.points() >= 300,"all milestones accessible without paid tasks")
-	check((await tasks.claim("p300",true)).get("ok",false) and g.stash.count("choice_1") == 2,"milestone rewards use shared delivery")
-	check((await tasks.claim("p300",true)).has("error"),"milestone pays once")
+	var top := int(cfg["milestones"][-1]["points"])
+	check(tasks.points() >= top,"all milestones accessible without paid tasks")
+	var chests: int = g.stash.count("choice_1")
+	check((await tasks.claim("p560",true)).get("ok",false) and g.stash.count("choice_1") == chests + 3,"milestone rewards use shared delivery")
+	check((await tasks.claim("p560",true)).has("error"),"milestone pays once")
 	var saved: Dictionary = g.seven_day.duplicate(true)
 	g.save_game()
 	g.seven_day = {}
@@ -75,7 +109,7 @@ func run() -> void:
 	main.show_screen("board",true)
 	var p = main.open("seven_day")
 	await process_frame
-	check(p.tabs.size() == 7 and p.stage_buttons.size() == 5,"panel renders seven bottom tabs and five milestones")
+	check(p.tabs.size() == 7 and p.stage_buttons.size() == cfg["milestones"].size(),"panel renders seven bottom tabs and every milestone")
 	p.page = 6; p._refresh()
 	check(p.tasks_root.get_child_count() > 0,"last page renders independently")
 	main.queue_free()

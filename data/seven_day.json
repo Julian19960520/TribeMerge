@@ -1,553 +1,680 @@
 {
-  "id": "seven_day_v1",
-  "title": "七日任务",
-  "points_per_task": 10,
-  "days": [
+ "id": "seven_day_v2",
+ "title": "七日任务",
+ "days": [
+  {
+   "day": 1,
+   "tasks": [
     {
-      "day": 1,
-      "tasks": [
-        {
-          "id": "d1_1",
-          "metric": "login_days",
-          "target": 1,
-          "title": "累计登录1天",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              15
-            ]
-          ]
-        },
-        {
-          "id": "d1_2",
-          "metric": "orders",
-          "target": 5,
-          "title": "完成5个订单",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              20
-            ]
-          ]
-        },
-        {
-          "id": "d1_3",
-          "metric": "merges",
-          "target": 20,
-          "title": "主棋盘合并20次",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              15
-            ]
-          ]
-        },
-        {
-          "id": "d1_4",
-          "metric": "xp",
-          "target": 3,
-          "title": "累计获得3经验",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              20
-            ]
-          ]
-        },
-        {
-          "id": "d1_5",
-          "metric": "shell",
-          "target": 100,
-          "title": "累计收集100贝币",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              15
-            ]
-          ]
-        }
+     "id": "d1_1",
+     "metric": "login_days",
+     "target": 1,
+     "title": "累计登录1天",
+     "points": 10,
+     "rewards": [
+      [
+       "fire_3",
+       50
       ]
+     ]
     },
     {
-      "day": 2,
-      "tasks": [
-        {
-          "id": "d2_3",
-          "metric": "login_days",
-          "target": 2,
-          "title": "累计登录2天",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              20
-            ]
-          ]
-        },
-        {
-          "id": "d2_1",
-          "metric": "orders",
-          "target": 15,
-          "title": "完成15个订单",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              20
-            ]
-          ]
-        },
-        {
-          "id": "d2_2",
-          "metric": "merges",
-          "target": 60,
-          "title": "主棋盘合并60次",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              40
-            ]
-          ]
-        },
-        {
-          "id": "d2_4",
-          "metric": "shell",
-          "target": 400,
-          "title": "累计收集400贝币",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              40
-            ]
-          ]
-        },
-        {
-          "id": "d2_5",
-          "metric": "amber",
-          "target": 10,
-          "title": "累计收集10琥珀",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              20
-            ]
-          ]
-        }
+     "id": "d1_2",
+     "metric": "orders",
+     "target": 8,
+     "title": "完成8个订单",
+     "points": 10,
+     "rewards": [
+      [
+       "shell_3",
+       200
       ]
+     ]
     },
     {
-      "day": 3,
-      "tasks": [
-        {
-          "id": "d3_1",
-          "metric": "login_days",
-          "target": 3,
-          "title": "累计登录3天",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              25
-            ]
-          ]
-        },
-        {
-          "id": "d3_2",
-          "metric": "orders",
-          "target": 30,
-          "title": "完成30个订单",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              60
-            ]
-          ]
-        },
-        {
-          "id": "d3_3",
-          "metric": "merges",
-          "target": 120,
-          "title": "主棋盘合并120次",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              25
-            ]
-          ]
-        },
-        {
-          "id": "d3_4",
-          "metric": "amber_spent",
-          "target": 20,
-          "title": "累计花费20琥珀",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              60
-            ]
-          ]
-        },
-        {
-          "id": "d3_5",
-          "metric": "paid_cents",
-          "target": 600,
-          "title": "累计支付6元",
-          "points": 10,
-          "rewards": [
-            [
-              "amber_3",
-              30
-            ]
-          ]
-        }
+     "id": "d1_3",
+     "metric": "merges",
+     "target": 150,
+     "title": "合成150次",
+     "points": 10,
+     "rewards": [
+      [
+       "fire_3",
+       40
       ]
+     ]
     },
     {
-      "day": 4,
-      "tasks": [
-        {
-          "id": "d4_3",
-          "metric": "login_days",
-          "target": 4,
-          "title": "累计登录4天",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              30
-            ]
-          ]
-        },
-        {
-          "id": "d4_1",
-          "metric": "orders",
-          "target": 50,
-          "title": "完成50个订单",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              30
-            ]
-          ]
-        },
-        {
-          "id": "d4_2",
-          "metric": "merges",
-          "target": 220,
-          "title": "主棋盘合并220次",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              80
-            ]
-          ]
-        },
-        {
-          "id": "d4_4",
-          "metric": "cards",
-          "target": 4,
-          "title": "累计获得4张卡片",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              80
-            ]
-          ]
-        },
-        {
-          "id": "d4_5",
-          "metric": "shell",
-          "target": 1600,
-          "title": "累计收集1600贝币",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              30
-            ]
-          ]
-        }
+     "id": "d1_4",
+     "metric": "xp",
+     "target": 8,
+     "title": "累计获得8经验",
+     "points": 10,
+     "rewards": [
+      [
+       "amber_2",
+       10
       ]
+     ]
     },
     {
-      "day": 5,
-      "tasks": [
-        {
-          "id": "d5_1",
-          "metric": "login_days",
-          "target": 5,
-          "title": "累计登录5天",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              35
-            ]
-          ]
-        },
-        {
-          "id": "d5_2",
-          "metric": "orders",
-          "target": 80,
-          "title": "完成80个订单",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              100
-            ]
-          ]
-        },
-        {
-          "id": "d5_3",
-          "metric": "merges",
-          "target": 350,
-          "title": "主棋盘合并350次",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              35
-            ]
-          ]
-        },
-        {
-          "id": "d5_4",
-          "metric": "cards",
-          "target": 10,
-          "title": "累计获得10张卡片",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              100
-            ]
-          ]
-        },
-        {
-          "id": "d5_5",
-          "metric": "amber",
-          "target": 40,
-          "title": "累计收集40琥珀",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              35
-            ]
-          ]
-        }
+     "id": "d1_5",
+     "metric": "shell",
+     "target": 600,
+     "title": "累计收集600贝币",
+     "points": 10,
+     "rewards": [
+      [
+       "chest_1",
+       1
       ]
-    },
-    {
-      "day": 6,
-      "tasks": [
-        {
-          "id": "d6_3",
-          "metric": "login_days",
-          "target": 6,
-          "title": "累计登录6天",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              40
-            ]
-          ]
-        },
-        {
-          "id": "d6_1",
-          "metric": "orders",
-          "target": 120,
-          "title": "完成120个订单",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              40
-            ]
-          ]
-        },
-        {
-          "id": "d6_2",
-          "metric": "merges",
-          "target": 500,
-          "title": "主棋盘合并500次",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              120
-            ]
-          ]
-        },
-        {
-          "id": "d6_4",
-          "metric": "amber_spent",
-          "target": 80,
-          "title": "累计花费80琥珀",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              120
-            ]
-          ]
-        },
-        {
-          "id": "d6_5",
-          "metric": "paid_cents",
-          "target": 3000,
-          "title": "累计支付30元",
-          "points": 10,
-          "rewards": [
-            [
-              "amber_3",
-              60
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "day": 7,
-      "tasks": [
-        {
-          "id": "d7_1",
-          "metric": "login_days",
-          "target": 7,
-          "title": "累计登录7天",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              45
-            ]
-          ]
-        },
-        {
-          "id": "d7_2",
-          "metric": "orders",
-          "target": 180,
-          "title": "完成180个订单",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              140
-            ]
-          ]
-        },
-        {
-          "id": "d7_3",
-          "metric": "merges",
-          "target": 750,
-          "title": "主棋盘合并750次",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              45
-            ]
-          ]
-        },
-        {
-          "id": "d7_4",
-          "metric": "cards",
-          "target": 20,
-          "title": "累计获得20张卡片",
-          "points": 10,
-          "rewards": [
-            [
-              "shell_3",
-              140
-            ]
-          ]
-        },
-        {
-          "id": "d7_5",
-          "metric": "shell",
-          "target": 6000,
-          "title": "累计收集6000贝币",
-          "points": 10,
-          "rewards": [
-            [
-              "fire_2",
-              45
-            ]
-          ]
-        }
-      ]
+     ]
     }
-  ],
-  "milestones": [
+   ]
+  },
+  {
+   "day": 2,
+   "tasks": [
     {
-      "id": "p50",
-      "points": 50,
-      "rewards": [
-        [
-          "fire_2",
-          50
-        ]
+     "id": "d2_1",
+     "metric": "login_days",
+     "target": 2,
+     "title": "累计登录2天",
+     "points": 10,
+     "rewards": [
+      [
+       "fire_3",
+       60
       ]
+     ]
     },
     {
-      "id": "p100",
-      "points": 100,
-      "rewards": [
-        [
-          "amber_3",
-          15
-        ]
+     "id": "d2_2",
+     "metric": "orders",
+     "target": 20,
+     "title": "完成20个订单",
+     "points": 15,
+     "rewards": [
+      [
+       "shell_4",
+       300
+      ],
+      [
+       "fire_3",
+       30
       ]
+     ]
     },
     {
-      "id": "p180",
-      "points": 180,
-      "rewards": [
-        [
-          "choice_1",
-          1
-        ]
+     "id": "d2_3",
+     "metric": "merges",
+     "target": 600,
+     "title": "合成600次",
+     "points": 15,
+     "rewards": [
+      [
+       "fire_3",
+       60
+      ],
+      [
+       "chest_1",
+       1
       ]
+     ]
     },
     {
-      "id": "p250",
-      "points": 250,
-      "rewards": [
-        [
-          "pack_1",
-          2
-        ]
+     "id": "d2_4",
+     "metric": "xp",
+     "target": 20,
+     "title": "累计获得20经验",
+     "points": 15,
+     "rewards": [
+      [
+       "amber_3",
+       15
       ]
+     ]
     },
     {
-      "id": "p300",
-      "points": 300,
-      "rewards": [
-        [
-          "choice_1",
-          2
-        ],
-        [
-          "amber_3",
-          50
-        ]
+     "id": "d2_5",
+     "metric": "amber",
+     "target": 10,
+     "title": "累计收集10琥珀",
+     "points": 15,
+     "rewards": [
+      [
+       "fire_4",
+       80
       ]
+     ]
     }
-  ]
+   ]
+  },
+  {
+   "day": 3,
+   "tasks": [
+    {
+     "id": "d3_1",
+     "metric": "login_days",
+     "target": 3,
+     "title": "累计登录3天",
+     "points": 10,
+     "rewards": [
+      [
+       "fire_4",
+       80
+      ]
+     ]
+    },
+    {
+     "id": "d3_2",
+     "metric": "orders",
+     "target": 35,
+     "title": "完成35个订单",
+     "points": 20,
+     "rewards": [
+      [
+       "shell_4",
+       500
+      ],
+      [
+       "chest_1",
+       1
+      ]
+     ]
+    },
+    {
+     "id": "d3_3",
+     "metric": "shell",
+     "target": 4500,
+     "title": "累计收集4500贝币",
+     "points": 20,
+     "rewards": [
+      [
+       "fire_4",
+       120
+      ]
+     ]
+    },
+    {
+     "id": "d3_4",
+     "metric": "amber_spent",
+     "target": 30,
+     "title": "累计花费30琥珀",
+     "points": 20,
+     "rewards": [
+      [
+       "amber_3",
+       15
+      ],
+      [
+       "chest_1",
+       1
+      ]
+     ]
+    },
+    {
+     "id": "d3_5",
+     "metric": "paid_cents",
+     "target": 600,
+     "title": "累计充值6元",
+     "points": 20,
+     "rewards": [
+      [
+       "amber_4",
+       60
+      ],
+      [
+       "choice_1",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "day": 4,
+   "tasks": [
+    {
+     "id": "d4_1",
+     "metric": "login_days",
+     "target": 4,
+     "title": "累计登录4天",
+     "points": 10,
+     "rewards": [
+      [
+       "fire_4",
+       80
+      ],
+      [
+       "amber_2",
+       10
+      ]
+     ]
+    },
+    {
+     "id": "d4_2",
+     "metric": "merges",
+     "target": 1500,
+     "title": "合成1500次",
+     "points": 20,
+     "rewards": [
+      [
+       "fire_4",
+       120
+      ],
+      [
+       "sand_3",
+       5
+      ]
+     ]
+    },
+    {
+     "id": "d4_3",
+     "metric": "xp",
+     "target": 42,
+     "title": "累计获得42经验",
+     "points": 20,
+     "rewards": [
+      [
+       "pack_1",
+       1
+      ],
+      [
+       "amber_3",
+       15
+      ]
+     ]
+    },
+    {
+     "id": "d4_4",
+     "metric": "cards",
+     "target": 6,
+     "title": "开卡包得6张卡",
+     "points": 20,
+     "rewards": [
+      [
+       "pack_1",
+       1
+      ]
+     ]
+    },
+    {
+     "id": "d4_5",
+     "metric": "amber",
+     "target": 25,
+     "title": "累计收集25琥珀",
+     "points": 20,
+     "rewards": [
+      [
+       "choice_1",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "day": 5,
+   "tasks": [
+    {
+     "id": "d5_1",
+     "metric": "login_days",
+     "target": 5,
+     "title": "累计登录5天",
+     "points": 10,
+     "rewards": [
+      [
+       "fire_4",
+       100
+      ]
+     ]
+    },
+    {
+     "id": "d5_2",
+     "metric": "orders",
+     "target": 55,
+     "title": "完成55个订单",
+     "points": 25,
+     "rewards": [
+      [
+       "shell_5",
+       800
+      ],
+      [
+       "chest_1",
+       1
+      ]
+     ]
+    },
+    {
+     "id": "d5_3",
+     "metric": "shell",
+     "target": 8000,
+     "title": "累计收集8000贝币",
+     "points": 25,
+     "rewards": [
+      [
+       "fire_4",
+       150
+      ]
+     ]
+    },
+    {
+     "id": "d5_4",
+     "metric": "cards",
+     "target": 12,
+     "title": "开卡包得12张卡",
+     "points": 25,
+     "rewards": [
+      [
+       "pack_1",
+       2
+      ]
+     ]
+    },
+    {
+     "id": "d5_5",
+     "metric": "amber_spent",
+     "target": 80,
+     "title": "累计花费80琥珀",
+     "points": 25,
+     "rewards": [
+      [
+       "amber_3",
+       30
+      ],
+      [
+       "chest_1",
+       1
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "day": 6,
+   "tasks": [
+    {
+     "id": "d6_1",
+     "metric": "login_days",
+     "target": 6,
+     "title": "累计登录6天",
+     "points": 10,
+     "rewards": [
+      [
+       "fire_4",
+       100
+      ],
+      [
+       "amber_2",
+       10
+      ]
+     ]
+    },
+    {
+     "id": "d6_2",
+     "metric": "merges",
+     "target": 2400,
+     "title": "合成2400次",
+     "points": 25,
+     "rewards": [
+      [
+       "fire_5",
+       200
+      ],
+      [
+       "sand_3",
+       10
+      ]
+     ]
+    },
+    {
+     "id": "d6_3",
+     "metric": "xp",
+     "target": 60,
+     "title": "累计获得60经验",
+     "points": 25,
+     "rewards": [
+      [
+       "pack_1",
+       1
+      ],
+      [
+       "chest_1",
+       1
+      ]
+     ]
+    },
+    {
+     "id": "d6_4",
+     "metric": "amber",
+     "target": 45,
+     "title": "累计收集45琥珀",
+     "points": 25,
+     "rewards": [
+      [
+       "choice_1",
+       2
+      ]
+     ]
+    },
+    {
+     "id": "d6_5",
+     "metric": "paid_cents",
+     "target": 3000,
+     "title": "累计充值30元",
+     "points": 25,
+     "rewards": [
+      [
+       "amber_5",
+       150
+      ],
+      [
+       "pack_1",
+       2
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "day": 7,
+   "tasks": [
+    {
+     "id": "d7_1",
+     "metric": "login_days",
+     "target": 7,
+     "title": "累计登录7天",
+     "points": 10,
+     "rewards": [
+      [
+       "fire_4",
+       120
+      ],
+      [
+       "amber_3",
+       20
+      ]
+     ]
+    },
+    {
+     "id": "d7_2",
+     "metric": "orders",
+     "target": 75,
+     "title": "完成75个订单",
+     "points": 30,
+     "rewards": [
+      [
+       "shell_5",
+       1200
+      ],
+      [
+       "chest_1",
+       2
+      ]
+     ]
+    },
+    {
+     "id": "d7_3",
+     "metric": "merges",
+     "target": 3000,
+     "title": "合成3000次",
+     "points": 30,
+     "rewards": [
+      [
+       "fire_5",
+       250
+      ],
+      [
+       "sand_3",
+       10
+      ]
+     ]
+    },
+    {
+     "id": "d7_4",
+     "metric": "cards",
+     "target": 20,
+     "title": "开卡包得20张卡",
+     "points": 30,
+     "rewards": [
+      [
+       "pack_1",
+       2
+      ],
+      [
+       "amber_3",
+       20
+      ]
+     ]
+    },
+    {
+     "id": "d7_5",
+     "metric": "shell",
+     "target": 12000,
+     "title": "累计收集12000贝币",
+     "points": 30,
+     "rewards": [
+      [
+       "choice_1",
+       2
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "milestones": [
+  {
+   "id": "p50",
+   "points": 50,
+   "title": "初来乍到",
+   "rewards": [
+    [
+     "fire_4",
+     100
+    ],
+    [
+     "chest_1",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "p120",
+   "points": 120,
+   "title": "站稳脚跟",
+   "rewards": [
+    [
+     "amber_3",
+     30
+    ],
+    [
+     "chest_1",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "p180",
+   "points": 180,
+   "title": "小有名气",
+   "rewards": [
+    [
+     "pack_1",
+     2
+    ],
+    [
+     "choice_1",
+     1
+    ]
+   ]
+  },
+  {
+   "id": "p280",
+   "points": 280,
+   "title": "部落能手",
+   "rewards": [
+    [
+     "fire_5",
+     300
+    ],
+    [
+     "sand_3",
+     5
+    ]
+   ]
+  },
+  {
+   "id": "p380",
+   "points": 380,
+   "title": "远近闻名",
+   "rewards": [
+    [
+     "amber_4",
+     60
+    ],
+    [
+     "pack_1",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "p460",
+   "points": 460,
+   "title": "猎场霸主",
+   "rewards": [
+    [
+     "choice_1",
+     2
+    ],
+    [
+     "chest_1",
+     2
+    ]
+   ]
+  },
+  {
+   "id": "p560",
+   "points": 560,
+   "title": "部落英雄",
+   "rewards": [
+    [
+     "amber_5",
+     150
+    ],
+    [
+     "choice_1",
+     3
+    ],
+    [
+     "pack_1",
+     3
+    ]
+   ],
+   "grand": true
+  }
+ ]
 }

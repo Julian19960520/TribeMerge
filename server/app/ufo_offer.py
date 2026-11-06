@@ -35,6 +35,11 @@ def candidate(e, snap):
     return items
 
 
+def bundle(e, items):
+    """Everything the pack delivers: missing order items + fixed bonus_items (same rule as client UfoOffer.bundle)."""
+    return [str(i) for i in items] + [str(i) for i in e.gd.ufo_offer.get('bonus_items', [])]
+
+
 def active(s):
     o = s.get('offer', {})
     return bool(o) and not o.get('paid') and clock.now() < o['expires_at']
@@ -72,7 +77,7 @@ def reviewed(e, st, snap, offer_id):
         raise Reject('ufo_expired', '飞碟已离开，下次再见')
     if candidate(e, snap) != s['offer']['items']:
         raise Reject('ufo_changed', '订单需求已变化，请重新打开礼包')
-    return list(s['offer']['items'])
+    return bundle(e, s['offer']['items'])
 
 
 def fulfil(e, st, order):

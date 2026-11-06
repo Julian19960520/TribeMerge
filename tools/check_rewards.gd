@@ -21,11 +21,11 @@ func run() -> void:
 	root.add_child(main)
 	main.show_screen("home", true)
 	var origin := Vector2(200, 400)
-	check(await popups._buy_offer("fire_4", {"key": "deal_2", "price": 0, "deal": true}, origin), "free shop purchase succeeds")
+	# 商店买到火苗后走的就是这条：Rewards.items → 资源按等级折算，飞顶栏（#21）。买卖本身由 check_merge_shop 覆盖。
+	rewards.grant(rewards.items(["fire_4"]), func(_k): return origin)
 	check(g.energy == data.value_of("fire_4") and g.stash.is_empty(), "shop fire redeems its tier value without entering stash")
 	check(main.flights.size() == 1 and main.flights[0]["to"].is_equal_approx(main.topbar.target("energy")), "home shop fire flies to energy bar")
 	check(main.home._go_phase == 0, "resource-only reward never raises merge button")
-	check(not await popups._buy_offer("fire_4", {"key": "deal_2", "price": 0, "deal": true}, origin) and g.energy == data.value_of("fire_4"), "duplicate free purchase cannot duplicate energy")
 	main.flights.clear()
 	var en: int = g.energy
 	var sh: int = g.shells

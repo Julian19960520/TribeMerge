@@ -48,14 +48,31 @@ static func fresh(c: Dictionary) -> Dictionary:
 	var cols := int(b["cols"])
 	var rows := int(b["total_rows"])
 	var cells: Array = []
-	var tiers: Array = b["locked_tiers"]
 	for row in rows:
 		for col in cols:
-			var depth := rows - 2 - row
-			var tier := int(tiers[(maxi(depth, 0) / 2 + col + int(b.get("seed", 0))) % tiers.size()])
-			if depth < 2: tier = 1
-			cells.append({"id": str(c["chain"][clampi(tier - 1, 0, c["chain"].size() - 2)]["id"]) if row < rows - 1 else "", "lock": 2 if row < rows - 1 else 0})
-	return {"rules_version": 2, "cells": cells, "points": 0, "earned": 0, "spent": 0, "discovered": {}, "min_view": rows - int(b["visible_rows"]), "view": rows - int(b["visible_rows"]), "claimed": false, "orders": 0}
+			if row == rows - 1:
+				cells.append({"id": "", "lock": 0})
+				continue
+			var tier := locked_tier(b, rows - 2 - row, col)
+			cells.append({"id": str(c["chain"][clampi(tier - 1, 0, c["chain"].size() - 2)]["id"]), "lock": 2})
+	return {"rules_version": 2, "cells": cells, "points": 0, "earned": 0, "spent": 0, "discovered": {}, "min_view": rows - int(b["visible_rows"]), "view": rows - int(b["visible_rows"]), "claimed": false, "got": [], "orders": 0}
+
+## Locked item tier at a depth (0 = row right above the open bottom row). Deeper layers hold higher relics.
+## Same integer hash as server/app/merge_event.py so both sides build identical boards.
+static func locked_tier(b: Dictionary, depth: int, col: int) -> int:
+	var seed := int(b.get("seed", 0))
+	if not b.has("layers"):
+		var old: Array = b["locked_tiers"]
+		return 1 if depth < 2 else int(old[(depth / 2 + col + seed) % old.size()])
+	var layers: Array = b["layers"]
+	var tiers: Array = layers[-1]["tiers"]
+	var acc := 0
+	for layer in layers:
+		acc += int(layer["rows"])
+		if depth < acc:
+			tiers = layer["tiers"]
+			break
+	return int(tiers[((depth * 131 + col * 71 + seed * 17) % 97) % tiers.size()])
 
 static func state(c: Dictionary) -> Dictionary:
 	var key := str(c.get("key", ""))
@@ -133,11 +150,49 @@ static func remaining(s: Dictionary) -> int:
 	return n
 
 static func complete(c: Dictionary, s: Dictionary) -> bool:
+	return progress(c, s) >= goal_total(c)
+
+## Goal size: covered cells for unlock_all, chain length for discover_all.
+static func goal_total(c: Dictionary) -> int:
+	if str(c["board"].get("goal", "unlock_all")) == "discover_all": return c["chain"].size()
+	return int(c["board"]["cols"]) * (int(c["board"]["total_rows"]) - 1)
+
+static func progress(c: Dictionary, s: Dictionary) -> int:
 	if str(c["board"].get("goal", "unlock_all")) == "discover_all":
+		var n := 0
 		for row in c["chain"]:
-			if not s["discovered"].has(str(row["id"])): return false
-		return true
-	return remaining(s) == 0
+			if s["discovered"].has(str(row["id"])): n += 1
+		return n
+	return goal_total(c) - remaining(s)
+
+## Progress milestones; the last one is the completion reward. Old configs with a bare `rewards` list get one milestone.
+static func milestones(c: Dictionary) -> Array:
+	if c.has("milestones"): return c["milestones"]
+	return [{"at": goal_total(c), "rewards": c.get("rewards", [])}]
+
+static func got(c: Dictionary, s: Dictionary) -> Array:
+	if s.has("got"): return s["got"]
+	var out: Array = []
+	if bool(s.get("claimed", false)):
+		for k in milestones(c).size(): out.append(k)
+	return out
+
+## Indexes of reached but unclaimed milestones.
+static func claimable(c: Dictionary, s: Dictionary) -> Array:
+	var out: Array = []
+	var have := got(c, s)
+	var p := progress(c, s)
+	var ms := milestones(c)
+	for k in ms.size():
+		if p >= mini(int(ms[k]["at"]), goal_total(c)) and not have.has(k): out.append(k)
+	return out
+
+static func claim_rewards(c: Dictionary, indexes: Array) -> Array:
+	var out: Array = []
+	var ms := milestones(c)
+	for k in indexes:
+		for rw in ms[int(k)]["rewards"]: out.append((rw as Array).duplicate())
+	return out
 
 static func _advance(c: Dictionary, s: Dictionary) -> void:
 	var cols := int(c["board"]["cols"])
@@ -218,9 +273,13 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		cells[at]["id"] = ""
 		result = {"kind": "recycle"}
 	elif action == "claim":
-		if bool(s["claimed"]) or not complete(c, s): return {"error": "奖励已领取，或尚未完成活动"}
-		s["claimed"] = true
-		result = {"kind": "claim", "rewards": c["rewards"].duplicate(true)}
+		var ready := claimable(c, s)
+		if ready.is_empty(): return {"error": "继续解锁遗迹，到达下一个宝箱即可领取"}
+		var have := got(c, s).duplicate()
+		have.append_array(ready)
+		s["got"] = have
+		if have.has(milestones(c).size() - 1): s["claimed"] = true
+		result = {"kind": "claim", "milestones": ready, "rewards": claim_rewards(c, ready)}
 	else: return {"error": "未知操作"}
 	return result
 
@@ -229,11 +288,11 @@ static func act(c: Dictionary, action: String, args: Dictionary = {}) -> Diction
 	if action != "claim" and not active(c): return {"error": "本期活动已结束"}
 	busy = true
 	var result: Dictionary
+	var minus: Array = claim_rewards(c, claimable(c, state(c))) if action == "claim" else []
 	if G.server_mode():
 		var body: Dictionary = args.duplicate()
 		body["season"] = str(c["key"])
 		body["action"] = action
-		var minus: Array = c["rewards"] if action == "claim" else []
 		var response: Dictionary = await G._cloud().act("/v1/merge-event/action", body, minus)
 		result = response.get("give", {}) if response.get("ok", false) else {"error": str(response.get("message", "连不上服务器"))}
 	else:
@@ -242,7 +301,8 @@ static func act(c: Dictionary, action: String, args: Dictionary = {}) -> Diction
 	if not result.has("error"):
 		_changed()
 		if action == "claim":
-			Rewards.grant(c["rewards"], Callable(), false)
-			if G.main: G.main.present_rewards(c["rewards"], false)
+			var rewards: Array = result.get("rewards", minus)
+			Rewards.grant(rewards, Callable(), false)
+			if G.main: G.main.present_rewards(rewards, false)
 		G.save_game()
 	return result

@@ -1,6 +1,7 @@
 extends SceneTree
 ## Offline texture bake. Requires a rendering display; never run by gameplay/export.
-## godot --path . --script tools/bake_board.gd -- --cloud-off --save=/tmp/board-bake.json
+## godot --path . --script tools/bake_board.gd -- --cloud-off --save=/tmp/board-bake.json [--dir=res://assets/board]
+const ROCK_SCALE := 1.08
 var art
 var draw_art
 func _initialize() -> void:
@@ -28,24 +29,30 @@ func run() -> void:
 	root.get_node("G").set_process(false)
 	draw_art = load("res://scripts/Art.gd")
 	art = load("res://tools/BoardBakeArt.gd")
-	DirAccess.make_dir_recursive_absolute("res://assets/board")
+	var dir := "res://assets/board"
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--dir="): dir = a.trim_prefix("--dir=")
+	DirAccess.make_dir_recursive_absolute(dir)
 	for phase in 4:
 		draw_art.boil = phase
-		await bake("res://assets/board/rocks_%d.png" % phase, Vector2i(1152, 896), func(ci, _sz):
+		await bake(dir + "/rocks_%d.png" % phase, Vector2i(1152, 896), func(ci, _sz):
 			for i in 63:
-				ci.draw_set_transform(Vector2((i % 9) * 128 + 16, (i / 9) * 128 + 16))
+				# 石头放大一点，几乎占满格子，挡路的感觉更明确
+				ci.draw_set_transform(Vector2((i % 9) * 128 + 16, (i / 9) * 128 + 16) + Vector2(48, 52) * (1.0 - ROCK_SCALE), 0.0, Vector2.ONE * ROCK_SCALE)
 				art.rock(ci, Rect2(0, 0, 96, 96), i))
-		await bake("res://assets/board/frame_%d.png" % phase, Vector2i(712, 904), func(ci, _sz):
+		await bake(dir + "/frame_%d.png" % phase, Vector2i(712, 904), func(ci, _sz):
 			ci.draw_set_transform(Vector2(20, 20))
 			art.frame(ci, Vector2(672, 864)))
-	await bake("res://assets/board/cracks.png", Vector2i(1152, 896), func(ci, _sz):
+	await bake(dir + "/cracks.png", Vector2i(1152, 896), func(ci, _sz):
 		for i in 63:
-			ci.draw_set_transform(Vector2((i % 9) * 128 + 16, (i / 9) * 128 + 16))
+			ci.draw_set_transform(Vector2((i % 9) * 128 + 16, (i / 9) * 128 + 16) + Vector2(48, 52) * (1.0 - ROCK_SCALE), 0.0, Vector2.ONE * ROCK_SCALE)
 			art.cracks(ci, Rect2(0, 0, 96, 96), i, 0.6))
-	await bake("res://assets/board/fragments.png", Vector2i(512, 64), func(ci, _sz):
+	await bake(dir + "/fragments.png", Vector2i(512, 64), func(ci, _sz):
 		for k in 8:
 			ci.draw_set_transform(Vector2(k * 64, 0))
 			art.fragment(ci, k))
-	await bake("res://assets/board/floor.png", Vector2i(96, 96), func(ci, _sz):
-		ci.draw_rect(Rect2(1.5, 1.5, 93, 93), Color.WHITE))
+	await bake(dir + "/floor.png", Vector2i(384, 96), func(ci, _sz):
+		for k in 4:
+			ci.draw_set_transform(Vector2(k * 96, 0))
+			art.floor_tile(ci, k))
 	quit()

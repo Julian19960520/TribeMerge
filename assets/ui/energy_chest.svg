@@ -1,1 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><g stroke="#322718" stroke-width="7" stroke-linejoin="round"><path d="M24 90Q22 43 55 42L149 42Q180 45 178 90L175 161Q97 189 26 158Z" fill="#b36d31"/><path d="M25 91Q100 114 176 91L175 124Q100 143 26 122Z" fill="#efba53"/><path d="M54 45L55 166M145 45L145 168" stroke="#f2d182" stroke-width="12"/><path d="M100 58C110 93 137 96 132 124C126 154 77 157 68 126C61 103 82 99 82 80L94 101Z" fill="#ef7031"/><path d="M101 105C120 122 119 142 100 143C80 142 87 125 101 105" fill="#ffe879" stroke-width="3"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+<!-- 体力宝箱：陶红木箱 + 赭黄拱盖，正面嵌火焰牌，盖缝里冒火星 -->
+<ellipse cx="60" cy="108" rx="46" ry="7" fill="#3b2314" opacity=".22"/>
+<g stroke="#3b2314" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+<path d="M44 20Q48 8 56 12Q54 4 62 2Q62 12 70 10Q74 16 68 22Z" fill="#ff7b22" stroke-width="3"/>
+<path d="M54 20Q57 13 62 15Q66 17 64 22Z" fill="#ffd23f" stroke="none"/>
+<path d="M15 56L105 56L103 101Q60 108 17 101Z" fill="#c0552d"/>
+<path d="M18 74Q60 79 102 74M19 90Q60 95 101 90" fill="none" stroke="#8f2e15" stroke-width="3"/>
+<path d="M15 56L27 56L27 103L17 101ZM93 56L105 56L103 101L93 103Z" fill="#e6c98a" stroke-width="3.5"/>
+<path d="M12 58Q12 22 60 20Q108 22 108 58Z" fill="#eaa53c"/>
+<path d="M24 47Q30 30 60 28Q90 30 96 47" fill="none" stroke="#ffd98a" stroke-width="5"/>
+<path d="M40 23Q38 40 39 57M80 23Q82 40 81 57" fill="none" stroke="#b9661a" stroke-width="6"/>
+<path d="M10 56L110 56L110 63L10 63Z" fill="#7a4a22" stroke-width="3.5"/>
+<path d="M40 66Q60 62 80 66L79 98Q60 102 41 98Z" fill="#fff7e6" stroke-width="3.5"/>
+<path d="M60 69C66 78 74 81 72 89C70 97 50 97 48 89C46 82 54 80 55 74L59 82Z" fill="#ff7b22" stroke-width="3"/>
+<path d="M60 83C66 88 65 94 60 94C55 94 55 88 60 83Z" fill="#ffd23f" stroke-width="2"/>
+</g>
+<g fill="#fff1a0" stroke="#3b2314" stroke-width="2" stroke-linejoin="round">
+<path d="M104 26l3 -8l3 8l8 3l-8 3l-3 8l-3 -8l-8 -3z"/>
+<circle cx="18" cy="30" r="3"/>
+<circle cx="30" cy="14" r="2.2"/>
+</g>
+</svg>

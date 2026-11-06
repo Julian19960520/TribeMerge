@@ -112,7 +112,7 @@ func _process(delta: float) -> void:
 			cooking = true
 		if not bubbled:
 			var rw = cell.get("rw", null)
-			if rw is Array and not rw.is_empty():
+			if (rw is Array and not rw.is_empty()) or int(cell.get("lock", 0)) == 3:
 				bubbled = true
 		if cooking and bubbled:
 			break
@@ -402,8 +402,14 @@ func _tap(i: int) -> void:
 		Sfx.play("tap")
 		select(i)
 		return
-	if c["id"] == "":
+	if c["id"] == "" and int(c["lock"]) != 2:
 		select(-1)
+		return
+	if int(c["lock"]) == 2:
+		# 巨石只能看说明，晃一下表示推不动
+		Sfx.play("tap")
+		shake(i)
+		select(i)
 		return
 	if (selected == i or Data.type_of(str(c["id"])) == "choice") and c["lock"] == 0:
 		pop(i)
@@ -488,7 +494,7 @@ func _draw_base(ci: CanvasItem) -> void:
 				col = ORDER_FULL
 			elif tone[i] == 1:
 				col = ORDER_PART
-		ci.draw_texture_rect(FLOOR_TILE, r, false, col)
+		ci.draw_texture_rect_region(FLOOR_TILE, r, _floor_region(i), col)
 	for i in G.board.size():
 		if int(G.board[i]["lock"]) == 2:
 			_paint_rock(ci, cell_rect(i), i)
@@ -639,8 +645,11 @@ static func _is_max_currency(id: String) -> bool:
 	var ch := Data.chain(id)
 	return ch in MAX_BADGE_CHAINS and Data.CHAINS.has(ch) and Data.lv(id) >= Data.max_lv(ch)
 
+## 皇冠贴在右下角，略微歪一点，像贴纸
 func _draw_max_badge(r: Rect2) -> void:
-	draw_texture_rect(MAX_CROWN, Rect2(r.end - Vector2(44, 34), Vector2(40, 30)), false)
+	draw_set_transform(r.end - Vector2(24, 21), 0.2, Vector2.ONE)
+	draw_texture_rect(MAX_CROWN, Rect2(-23, -18, 46, 36), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 static func _sec_text(sec: int) -> String:
 	sec = maxi(sec, 0)
@@ -699,6 +708,10 @@ func _draw_rock(r: Rect2, i: int) -> void:
 
 func _paint_rock(ci: CanvasItem, r: Rect2, i: int) -> void:
 	ci.draw_texture_rect_region(ROCK_FRAMES[Art.boil % 4], Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i))
+
+## floor.png 一行 4 块地砖，按格子错开取，避免整齐重复
+static func _floor_region(i: int) -> Rect2:
+	return Rect2(posmod(i * 7 + (i / G.COLS) * 3, 4) * 96, 0, 96, 96)
 
 static func _rock_region(i: int) -> Rect2:
 	var variant := posmod(i, 63)
@@ -962,15 +975,36 @@ func _guide_allows_drop(from_i: int, to_i: int) -> bool:
 		return true
 	return G.main._guide.allows_drop(from_i, to_i)
 
+## 合成泡泡（#08 #18）：物品裹在一颗会轻轻晃动的肥皂泡里，底下挂着倒计时小牌；最后 10 秒变红并加快晃动。
+const BUBBLE_RIM := Color("3f86b4")
 func _draw_merge_bubble(i: int, ctr: Vector2, sc: float) -> void:
-	Art.item(self, str(G.board[i]["id"]), ctr, ITEM * 0.83 * sc)
-	var radius := 43.0 * sc
-	draw_circle(ctr, radius, Color(0.45, 0.86, 1.0, 0.16))
-	draw_arc(ctr, radius, 0, TAU, 40, Color(0.7, 0.94, 1.0, 0.9), 2.5, true)
-	draw_arc(ctr + Vector2(1, 2), radius - 5, PI * 1.10, PI * 1.60, 15, Color(1, 1, 1, 0.85), 4.0, true)
-	draw_circle(ctr + Vector2(23, -22) * sc, 4.0, Color(1, 1, 1, 0.8))
-	var pos := ctr + Vector2(-37, 36)
 	var seconds := G.bubble_left(i)
+	var urgent := seconds <= 10
+	var ph := _t * (5.0 if urgent else 2.6) + float(i) * 0.9
+	var wob := Vector2(1.0 + 0.035 * sin(ph), 1.0 - 0.035 * sin(ph)) * sc
+	var c := ctr + Vector2(0, -4 + sin(ph * 0.5) * 1.5)
+	var radius := 40.0
+	draw_colored_polygon(Art.ell(ctr + Vector2(0, 38), Vector2(26, 5), i, 0.0, 14, 0.0, 0.0), Color(0.15, 0.3, 0.45, 0.16))
+	draw_set_transform(c, 0.0, wob)
+	draw_circle(Vector2.ZERO, radius, Color(0.62, 0.88, 1.0, 0.28))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Art.item(self, str(G.board[i]["id"]), c + Vector2(0, 2), ITEM * 0.74 * sc, false)
+	draw_set_transform(c, 0.0, wob)
+	# 泡泡下半圈有一点天蓝反光，上半圈是一条白色亮弧和一颗亮点
+	draw_arc(Vector2.ZERO, radius - 4.0, PI * 0.15, PI * 0.85, 18, Color(0.55, 0.85, 1.0, 0.55), 5.0, true)
+	draw_arc(Vector2.ZERO, radius, 0, TAU, 48, Color(BUBBLE_RIM, 0.9), 3.0, true)
+	draw_arc(Vector2.ZERO, radius - 7.0, PI * 1.08, PI * 1.42, 12, Color(1, 1, 1, 0.92), 5.0, true)
+	draw_circle(Vector2(-12, -30), 3.2, Color(1, 1, 1, 0.95))
+	draw_circle(Vector2(24, 20), 2.2, Color(1, 1, 1, 0.6))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# 倒计时小牌
 	var label := "%d:%02d" % [seconds / 60, seconds % 60]
-	draw_string_outline(G.font_body, pos, label, HORIZONTAL_ALIGNMENT_CENTER, 74, 20, 5, Art.INK)
-	draw_string(G.font_body, pos, label, HORIZONTAL_ALIGNMENT_CENTER, 74, 20, Color.WHITE)
+	var fs := 16
+	var f: Font = G.font_title
+	var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var pill := Rect2(ctr.x - tw * 0.5 - 7, ctr.y + 19, tw + 14, 21)
+	var shape := Art.rrect(pill, 10, i + 600, 0.3)
+	Art.dilate(self, shape, 2.0, Art.INK)
+	draw_colored_polygon(shape, Art.CLAY if urgent else Color("2f6d93"))
+	var base := pill.position.y + 10.5 + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
+	draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)

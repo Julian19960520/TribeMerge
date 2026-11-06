@@ -31,7 +31,7 @@ func _run() -> void:
 			out = a.trim_prefix("--out=")
 	g.tutorial_on = false
 	g.seen_tutorial = true
-	g.level = 4
+	g.level = 11
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	await create_timer(0.3).timeout
@@ -48,9 +48,9 @@ func _run() -> void:
 		var ms := []
 		for i in 5:
 			ms.append({"slot": i, "name": names[i], "avatar": avs[i], "level": 6, "score": sc[i],
-				"finished_at": (start + 3000) if sc[i] >= 300 else null, "last_at": start, "place": null, "me": i == 0})
+				"finished_at": (start + 3000) if sc[i] >= 150 else null, "last_at": start, "place": null, "me": i == 0})
 		return {"id": "g0123456789abcdef", "session": "g0123456789abcdef", "start": start, "end": start + 7200, "ended_at": null,
-			"target": 300, "size": 5, "state": state, "members": ms}
+			"target": 150, "size": 5, "state": state, "members": ms}
 	var base := {"ok": true, "current": null, "results": [], "title": null, "rules": rules}
 	race._absorb(base.duplicate(true))
 	race.ok = true
@@ -66,7 +66,7 @@ func _run() -> void:
 	await create_timer(2.5).timeout
 	_shot("board_locked")
 	# 2) 5 级：入口「匹配」，开始面板
-	g.level = 6
+	g.level = 13
 	race.updated.emit()
 	await create_timer(0.5).timeout
 	_shot("board_idle")
@@ -89,10 +89,10 @@ func _run() -> void:
 	# 4) 比赛中：两次快照（第二次触发插值）
 	race._match_until = -1
 	var i2: Dictionary = base.duplicate(true)
-	i2["current"] = {"group": mk.call([150, 180, 131, 90, 40], "running"), "me": {"score": 150}}
+	i2["current"] = {"group": mk.call([64, 88, 71, 45, 22], "running"), "me": {"score": 64}}
 	race._absorb(i2)
 	var i3: Dictionary = base.duplicate(true)
-	i3["current"] = {"group": mk.call([168, 212, 141, 118, 40], "running"), "me": {"score": 168}}
+	i3["current"] = {"group": mk.call([86, 103, 79, 58, 22], "running"), "me": {"score": 86}}
 	race._absorb(i3)
 	race.updated.emit()
 	await create_timer(0.4).timeout
@@ -108,17 +108,18 @@ func _run() -> void:
 		await create_timer(0.3).timeout
 		_shot("board_fly")
 	await create_timer(0.6).timeout
+	race._disp.clear()
 	p = RP.open()
 	await create_timer(2.0).timeout
 	_shot("panel_race")
 	p.close()
 	await create_timer(0.4).timeout
 	# 5) 结算：第 1 名
-	var gr: Dictionary = mk.call([300, 300, 261, 300, 77], "ended")
+	var gr: Dictionary = mk.call([150, 150, 131, 150, 77], "ended")
 	var places := [1, 2, 4, 3, 5]
 	for k in 5:
 		gr["members"][k]["place"] = places[k]
-	var res := {"group": gr, "me": {"place": 1, "reward": rules["rewards"][0], "claimed": false, "score": 300}}
+	var res := {"group": gr, "me": {"place": 1, "reward": race.rules()["rewards"][0], "claimed": false, "score": 150}}
 	var i5: Dictionary = base.duplicate(true)
 	i5["current"] = {"group": gr, "me": res["me"]}
 	i5["results"] = [res]

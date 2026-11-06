@@ -79,6 +79,12 @@ def gen_curve(rng: random.Random, level: int, dur: int, target: int, sh: dict) -
     t = rng.uniform(0.0, 0.06) * nominal
     s = 0.0
     pts: list = []
+    # 开局一波：满体力先交几单
+    opening = (float(sh.get("opening", 0)) + float(sh.get("opening_per_level", 0)) * level) * rng.uniform(0.6, 1.3)
+    while s < opening and s < target:
+        t += rng.uniform(40.0, 160.0) * nominal / 7200.0
+        s += max(1.0, round(avg * rng.uniform(0.4, 1.7)))
+        pts.append([int(t * dur / nominal), float(min(s, target))])
     while True:
         gap = rng.expovariate(1.0 / mean_gap)
         if rng.random() < 0.07:  # 歇一会儿

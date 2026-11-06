@@ -517,7 +517,7 @@ static func producers_of(ch: String) -> Array:
 	return [pid]
 
 static func describe(id: String) -> String:
-	if id == "energybox_1": return "打开获得3个火种，每个可领取15点体力，也可继续合成。"
+	if id == "energybox_1": return "打开获得3个熊熊大火，每个可领取40点体力，也可继续合成。"
 	if DISHES.has(id):
 		var d: Dictionary = DISHES[id]
 		var bits: PackedStringArray = []
@@ -606,7 +606,35 @@ static func build_unlock(b: Dictionary) -> int:
 static func daily_deals(_level: int) -> Array:
 	return JSON.parse_string(FileAccess.get_file_as_string("res://data/daily_deals.json"))
 
-## 掉率越低的副产物越贵；生产器碎片另有稀有度倍率。
+## 合成泡泡（规则在 rules.json merge_bubble，服务器 Economy 同一套算法）：
+## 只有普通物品链、理论火苗（稀有度）≥ min_flames 的高级物品才可能出泡泡。
+static func bubble_rule() -> Dictionary:
+	var r = RULES.get("merge_bubble", {})
+	return r if r is Dictionary else {}
+
+static func bubble_ok(id: String) -> bool:
+	if id == "" or DISHES.has(id) or not CHAINS.has(chain(id)) or type_of(id) != "item":
+		return false
+	return OrderRoll.flames(id) >= float(bubble_rule().get("min_flames", 32))
+
+## 价格 = k × 理论火苗^exp，按 step 取整：稀有度越高越贵，但越高级折扣越大。
 static func bubble_price(id: String) -> int:
-	var factor := 4.0 if type_of(id) == "gen" else (0.33 if OrderRoll.is_sub(chain(id)) else 0.6)
-	return maxi(2, int(round(OrderRoll.flames(id) * factor)))
+	var r := bubble_rule()
+	var raw := float(r.get("price_k", 0.6)) * pow(maxf(OrderRoll.flames(id), 1.0), float(r.get("price_exp", 0.8)))
+	var step := maxf(1.0, float(r.get("price_step", 5)))
+	var p := int(round(raw / step) * step)
+	return clampi(p, int(r.get("price_min", 5)), int(r.get("price_max", 300)))
+
+## 合成掉贝币：合成结果越高级，掉的贝币物品越大（rules.json merge_coin.tiers = [[最低等级, 物品], ...]）。
+static func merge_coin_item(merged: String) -> String:
+	var r = RULES.get("merge_coin", {})
+	var out := ""
+	if r is Dictionary:
+		for t in r.get("tiers", []):
+			if t is Array and t.size() >= 2 and lv(merged) >= int(t[0]):
+				out = str(t[1])
+	return out
+
+static func merge_coin_chance() -> float:
+	var r = RULES.get("merge_coin", {})
+	return clampf(float(r.get("chance", 0.0)), 0.0, 1.0) if r is Dictionary else 0.0

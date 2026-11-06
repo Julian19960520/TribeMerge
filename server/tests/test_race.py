@@ -8,7 +8,7 @@ import pytest
 
 from conftest import Player, ev
 
-BASE = {"duration_sec": 7200, "fill_sec": 60, "unlock_level": 5}
+BASE = {"duration_sec": 7200, "fill_sec": 60, "unlock_level": 5, "target": 300}
 
 
 def set_race(monkeypatch, **kw):
@@ -194,7 +194,7 @@ def test_first_to_target_wins_and_race_ends(client, monkeypatch, t0):
     deliver(a, 5)  # 结束后不再算分
     assert race(a)["results"][0]["me"]["score"] == 300
     res = race(a)["results"][0]
-    assert res["me"]["place"] == 1 and res["me"]["reward"][0] == ["amber_3", 30]
+    assert res["me"]["place"] == 1 and res["me"]["reward"][0] == ["amber_3", 20]
     assert sorted(r.place for r in entries(gid)) == [1, 2, 3, 4, 5]
 
 
@@ -254,8 +254,8 @@ def test_claim_idempotent_and_title(client, monkeypatch, t0):
     amber0 = p.get("/v1/save").json()["state"]["amber"]
     r1 = p.post("/v1/race/claim", json={"group": gid}, key="k-claim-1")
     assert r1.status_code == 200, r1.text
-    assert r1.json()["place"] == 1 and r1.json()["state"]["amber"] == amber0 + 30
-    assert r1.json()["give"]["energy"] == 100 and r1.json()["give"]["items"] == ["pack_1"]
+    assert r1.json()["place"] == 1 and r1.json()["state"]["amber"] == amber0 + 20
+    assert r1.json()["give"]["energy"] == 80 and r1.json()["give"]["items"] == ["pack_1"]
     assert r1.json()["title"]["name"] == "篝火王"
     # 同一个幂等键重试：同样的结果，不重复发
     r2 = p.post("/v1/race/claim", json={"group": gid}, key="k-claim-1")
@@ -263,7 +263,7 @@ def test_claim_idempotent_and_title(client, monkeypatch, t0):
     # 换一个键：已经领过
     r3 = p.post("/v1/race/claim", json={"group": gid})
     assert r3.status_code == 409 and r3.json()["error"] == "already_claimed"
-    assert p.get("/v1/save").json()["state"]["amber"] == amber0 + 30
+    assert p.get("/v1/save").json()["state"]["amber"] == amber0 + 20
     info = race(p)
     assert info["results"] == [] and info["title"]["id"] == "race_champ"
     # 称号限时

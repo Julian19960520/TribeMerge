@@ -67,8 +67,11 @@ def test_board_actions_and_claim(player):
         for cell in merge_event.state(st,c)['cells']: cell['lock'] = 0
     mutate(player,finish)
     r = player.post(path, dict(base, action='claim'), key='reward-once')
-    assert r.status_code == 200 and r.json()['give']['items'] == ['choice_1']
-    assert r.json()['state']['amber'] == 110
+    rewards = [rw for m in c['milestones'] for rw in m['rewards']]
+    amber = sum(n for iid, n in rewards if iid.startswith('amber_'))
+    assert r.status_code == 200 and r.json()['give']['milestones'] == [0, 1, 2, 3]
+    assert sorted(r.json()['give']['items']) == sorted(i for i, n in rewards if not i.split('_')[0] in ('amber', 'fire', 'shell') for _ in range(n))
+    assert r.json()['state']['amber'] == 80 + amber
     assert player.post(path, dict(base, action='claim'), key='reward-once').json() == r.json()
     assert player.post(path, dict(base, action='claim')).status_code == 409
     assert player.post(path, dict(base, action='spawn')).status_code == 409
@@ -93,7 +96,7 @@ def test_choice_chest_one_choice_only(player):
     assert player.post('/v1/chest/choose', {'box':'choice_1','option':1}).json()['error'] == 'no_chest'
     mutate(player, lambda st: economy().give_item(st, 'choice_1', {}))
     r = player.post('/v1/chest/choose', {'box':'choice_1','option':1}, key='choose-once')
-    assert r.status_code == 200 and r.json()['give']['items'] == ['shell_4']
+    assert r.status_code == 200 and r.json()['give']['items'] == ['amber_4']
     assert player.post('/v1/chest/choose', {'box':'choice_1','option':1}, key='choose-once').json() == r.json()
     assert player.post('/v1/chest/choose', {'box':'choice_1','option':0}).json()['error'] == 'no_chest'
     assert player.post('/v1/chest/choose', {'box':'choice_1','option':3}).status_code == 422
@@ -184,3 +187,41 @@ def test_three_state_migration_and_no_repeated_reveal(player):
     assert s['cells'][84]['lock'] == 1
     assert merge_event.reveal_neighbors(s['cells'],84,6) == [78]
     assert s['cells'][78]['lock'] == 1 and s['cells'][72]['lock'] == 2
+
+
+def test_milestones_pay_in_steps_and_once(player):
+    from app import merge_event
+    c = config()
+    ms = c['milestones']
+    assert [m['at'] for m in ms] == sorted(m['at'] for m in ms) and ms[-1]['at'] == merge_event.goal_total(c) == 90
+    path = '/v1/merge-event/action'
+    base = {'season': c['key'], 'view': 9}
+    def unlock(n):
+        def fn(st):
+            st['level'] = 10
+            s = merge_event.state(st, c)
+            for tile in [t for t in s['cells'][::-1] if t['lock']][:n]:
+                tile['lock'] = 0
+        return fn
+    mutate(player, unlock(ms[0]['at'] - 1))
+    assert player.post(path, dict(base, action='claim')).json()['error'] == 'not_completed'
+    mutate(player, unlock(1))
+    r = player.post(path, dict(base, action='claim')).json()
+    assert r['give']['milestones'] == [0] and r['state']['merge_events'][c['key']]['got'] == [0]
+    assert not r['state']['merge_events'][c['key']]['claimed']
+    assert player.post(path, dict(base, action='claim')).json()['error'] == 'not_completed'
+    # The board keeps playing after a mid-way chest.
+    assert player.post(path, dict(base, action='spawn')).json()['error'] == 'not_enough_points'
+
+
+def test_layers_put_higher_relics_deeper():
+    from app import merge_event
+    c = config()
+    s = merge_event.fresh(c)
+    chain = [i['id'] for i in c['chain']]
+    rows = [[chain.index(s['cells'][r * 6 + k]['id']) + 1 for k in range(6)] for r in range(15)]
+    assert all(t == 1 for t in rows[14] + rows[13])
+    assert max(max(r) for r in rows[:5]) > max(max(r) for r in rows[9:])
+    old = dict(c, board=dict(c['board'], locked_tiers=[1, 1, 1, 2, 2, 3]))
+    old['board'].pop('layers')
+    assert len(merge_event.fresh(old)['cells']) == 96

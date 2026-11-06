@@ -13,8 +13,8 @@
   "craft_level": 3,
   "rank_server": "http://127.0.0.1:8765",
   "rank_top": 50,
-  "merge_coin_chance": 0.05,
-  "merge_coin_item": "shell_1",
+  "merge_coin": {"chance": 0.04, "tiers": [[2, "shell_2"], [6, "shell_3"], [10, "shell_4"]]},
+  "merge_bubble": {"chance": 0.1, "min_flames": 32, "seconds": 60, "price_k": 0.6, "price_exp": 0.8, "price_step": 5, "price_min": 5, "price_max": 300},
   "storage_initial": 5,
   "storage_expand_price": 50,
   "storage_expand_step": 10

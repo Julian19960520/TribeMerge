@@ -49,33 +49,38 @@ func _run() -> void:
 	check(await g.claim_book("salad") == 1 and await g.claim_book("salad") == 0, "dish discovery reward is claimable only once")
 	g.board = []
 	for i in 63: g.board.append({"id": "", "lock": 0})
-	g.board[0]["id"] = "fruit_4"
-	g.board[1]["id"] = "fruit_4"
+	g.board[0]["id"] = "fruit_5"
+	g.board[1]["id"] = "fruit_5"
 	for seed_value in 100:
 		g.rng.seed = seed_value
-		if g.rng.randf() < 0.15:
+		if g.rng.randf() < float(data.bubble_rule()["chance"]):
 			g.rng.seed = seed_value
 			break
 	var chance_state: int = g.rng.state
-	g._maybe_spawn_bubble("fruit_3", 1)
-	check(not g.is_merge_bubble(2), "low-level merge never creates bubble")
-	g.tutorial_on = true
 	g._maybe_spawn_bubble("fruit_5", 1)
+	check(not g.is_merge_bubble(2), "low-level merge never creates bubble")
+	for iid in ["basket_6", "shell_5", "amber_5", "fire_5", "chest_1"]:
+		check(not data.bubble_ok(iid), "%s never bubbles" % iid)
+	check(data.bubble_ok("fruit_6") and data.bubble_ok("seed_3") and not data.bubble_ok("seed_2"), "high tier is judged by rarity (theoretical flames)")
+	check(data.bubble_price("fruit_6") == 10 and data.bubble_price("fruit_9") == 50 and data.bubble_price("fruit_14") == 300, "bubble price curve matches server")
+	check(data.merge_coin_item("fruit_2") == "shell_2" and data.merge_coin_item("fruit_6") == "shell_3" and data.merge_coin_item("fruit_10") == "shell_4", "merge coin grows with merged level")
+	g.tutorial_on = true
+	g._maybe_spawn_bubble("fruit_6", 1)
 	check(not g.is_merge_bubble(2), "tutorial never creates bubble")
 	g.tutorial_on = false
 	g.rng.state = chance_state
 	check(g.try_drop(0, 1) == "merge", "normal merge succeeds")
-	check(g.board[1]["id"] == "fruit_5" and g.is_merge_bubble(0) and g.board[0]["id"] == "fruit_5", "bonus copies merged result in nearest vacant cell")
+	check(g.board[1]["id"] == "fruit_6" and g.is_merge_bubble(0) and g.board[0]["id"] == "fruit_6", "bonus copies merged result in nearest vacant cell")
 	check(g.bubble_left(0) > 58 and g.bubble_left(0) <= 60, "bubble starts with 60 real seconds")
-	g.board[2]["id"] = "fruit_5"
+	g.board[2]["id"] = "fruit_6"
 	check(g.try_drop(2, 0) == "" and g.try_drop(0, 3) == "", "unpaid bubble cannot merge or move")
-	check(g.board_has("fruit_5", [1, 2]) == -1, "unpaid bubble cannot satisfy order inventory")
-	check(data.bubble_price("seed_5") > data.bubble_price("fruit_5") and data.bubble_price("fruit_6") > data.bubble_price("fruit_5"), "price increases with rarity and level")
+	check(g.board_has("fruit_6", [1, 2]) == -1, "unpaid bubble cannot satisfy order inventory")
+	check(data.bubble_price("seed_5") > data.bubble_price("fruit_6") and data.bubble_price("fruit_7") > data.bubble_price("fruit_6"), "price increases with rarity and level")
 	g.amber = 0
 	r = await g.buy_bubble(0)
 	check(not r.get("ok", false) and g.is_merge_bubble(0), "failed bubble purchase preserves item")
 	g.amber = 100
-	var price: int = data.bubble_price("fruit_5")
+	var price: int = data.bubble_price("fruit_6")
 	r = await g.buy_bubble(0)
 	check(r.get("ok", false) and g.board[0]["lock"] == 0 and g.amber == 100 - price, "purchase unlocks item and charges once")
 	r = await g.buy_bubble(0)

@@ -395,14 +395,40 @@ class Economy:
         st["hot_bought"] = {}
         st["hot_revision"] = num(st.get("hot_revision")) + 1
 
+    # 合成泡泡 / 合成掉贝币：规则在 data/rules.json（merge_bubble / merge_coin），客户端 Data.gd 同一套算法
+    def bubble_rule(self) -> dict:
+        r = self.gd.rules.get("merge_bubble", {})
+        return r if isinstance(r, dict) else {}
+
+    def bubble_ok(self, iid: str) -> bool:
+        if not self.gd.valid_item(iid) or self.gd.type_of(iid) != "item":
+            return False
+        return self.gd.flames(iid) >= float(self.bubble_rule().get("min_flames", 32))
+
     def bubble_price(self, iid: str) -> int:
-        factor = 4.0 if self.gd.type_of(iid) == "gen" else (0.33 if self.gd.is_sub(self.gd.chain(iid)) else 0.6)
-        return max(2, int(math.floor(self.gd.flames(iid) * factor + 0.5)))
+        """k × 理论火苗^exp，按 step 取整，夹在 [price_min, price_max]。"""
+        r = self.bubble_rule()
+        raw = float(r.get("price_k", .6)) * max(self.gd.flames(iid), 1.0) ** float(r.get("price_exp", .8))
+        step = max(1.0, float(r.get("price_step", 5)))
+        p = int(math.floor(raw / step + 0.5) * step)
+        return min(int(r.get("price_max", 300)), max(int(r.get("price_min", 5)), p))
+
+    def merge_coin_item(self, merged: str) -> str:
+        r = self.gd.rules.get("merge_coin", {})
+        out = ""
+        for t in (r.get("tiers", []) if isinstance(r, dict) else []):
+            if isinstance(t, (list, tuple)) and len(t) >= 2 and self.gd.lv(merged) >= int(t[0]):
+                out = str(t[1])
+        return out
+
+    def merge_coin_chance(self) -> float:
+        r = self.gd.rules.get("merge_coin", {})
+        return min(1.0, max(0.0, float(r.get("chance", 0)))) if isinstance(r, dict) else 0.0
 
     def merge_bubble(self, st: dict, iid: str) -> dict:
         if not self.gd.valid_item(iid) or self.gd.lv(iid) < 2 or self.gd.type_of(iid) == "dish":
             raise Reject("bad_item", "物品不能合成", 400)
-        if self.gd.lv(iid) < 5:
+        if st.get("tutorial_on") or not self.bubble_ok(iid):
             return {}
         self._backfill_seen(st)
         if not self._has_seen(st, iid):
@@ -410,10 +436,11 @@ class Economy:
         now = self.now()
         offers = {k: v for k, v in st.get("merge_bubbles", {}).items() if float(v.get("expires", 0)) > now}
         st["merge_bubbles"] = offers
-        if len(offers) >= 63 or self.rng.random() >= 0.15:
+        rule = self.bubble_rule()
+        if len(offers) >= 63 or self.rng.random() >= float(rule.get("chance", .1)):
             return {}
         uid = secrets.token_hex(16)
-        offer = {"uid": uid, "item": iid, "expires": now + 60, "price": self.bubble_price(iid)}
+        offer = {"uid": uid, "item": iid, "expires": now + float(rule.get("seconds", 60)), "price": self.bubble_price(iid)}
         offers[uid] = offer
         return {"offer": offer}
 
@@ -598,9 +625,10 @@ class Economy:
             seven_day.record(self, st, "merges", 1)
             roll = int(hashlib.sha256(str(ev["id"]).encode()).hexdigest()[:8], 16) / 4294967296
             if 0 <= num(ev.get("cell"), -1) < int(self.gd.rules.get("cols", 7)) * int(self.gd.rules.get("rows", 9)):
-                if roll < min(1, max(0, float(self.gd.rules.get("merge_coin_chance", .05)))):
+                coin = self.merge_coin_item(iid)
+                if coin and roll < self.merge_coin_chance():
                     out = {}
-                    self.give_item(st, str(self.gd.rules.get("merge_coin_item", "shell_1")), out)
+                    self.give_item(st, coin, out)
                     return out
             return {}
         if t == "order":

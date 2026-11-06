@@ -6,4 +6,6 @@ func _ready() -> void:
 	btn.extra = _paint
 	G.seven_day_changed.connect(func(): btn.queue_redraw())
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	EventEntryArt.paint(ci,sz,"res://assets/events/entries/seven.svg","七日任务","领奖" if SevenDay.ready() else "成长","%d分" % SevenDay.points(),false,SevenDay.ready())
+	var ready := SevenDay.ready()
+	var badge := {"text": "领奖", "style": "go"} if ready else {"text": "%d/%d" % [SevenDay.claimed_count(), SevenDay.task_count()], "style": "num"}
+	EventEntryArt.paint(ci, sz, "seven", "七日任务", badge, false, ready)

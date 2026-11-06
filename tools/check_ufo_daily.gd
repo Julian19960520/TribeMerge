@@ -41,9 +41,11 @@ func run() -> void:
 
 	check(ad_result.get("ok",false) and g.energy==30,"completed ad gives exactly thirty energy")
 	check((await daily.claim("deal_energybox")).get("ok",false) and g.shells==0 and g.stash==["energybox_1"],"three hundred shells buys physical energy chest")
-	check(await g.open_chest("energybox_1")==["fire_4","fire_4","fire_4"],"energy chest contains only fire")
+	check(await g.open_chest("energybox_1")==["fire_5","fire_5","fire_5"],"energy chest contains only fire")
 	g.pass_tier=1
 	check((await daily.claim("deal_member_1")).get("ok",false) and g.amber==100,"first member item pays exactly one hundred")
+	check(not (await daily.claim("deal_member_2")).get("ok",false) and g.amber==100,"second member item needs super VIP")
+	g.pass_tier=2
 	check((await daily.claim("deal_member_2")).get("ok",false) and g.amber==200,"second member item is independently claimable")
 	check(not (await daily.claim("deal_member_1")).get("ok",false) and g.amber==200,"member reward cannot replay")
 	check((await daily.claim("deal_2")).get("ok",false) and not g.has_free_daily(),"all free rewards clear red dot")
@@ -58,9 +60,9 @@ func run() -> void:
 	var deadline: float=offer["expires_at"]
 	ufo.local_visit()
 	check(g.ufo_offer["offer"]["expires_at"]==deadline,"visits do not extend deadline")
-	check((await ufo.buy(offer["id"])).get("ok",false) and g.stash==["fruit_3","fruit_4","tool_3"],"UFO delivers missing physical items")
+	check((await ufo.buy(offer["id"])).get("ok",false) and g.stash==["fruit_3","fruit_4","tool_3"]+ufo.config()["bonus_items"],"UFO delivers missing physical items plus bonus")
 	ufo._deliver()
-	check(not (await ufo.buy(offer["id"])).get("ok",false) and g.stash.size()==3,"receipt prevents double delivery")
+	check(not (await ufo.buy(offer["id"])).get("ok",false) and g.stash.size()==3+ufo.config()["bonus_items"].size(),"receipt prevents double delivery")
 	g.ufo_offer={"next_at":0,"offer":{},"deliveries":{}};ufo.local_visit()
 	g.ufo_offer["offer"]["expires_at"]=g.now()-1
 	check(not (await ufo.buy(g.ufo_offer["offer"]["id"])).get("ok",false),"expired offer cannot buy")

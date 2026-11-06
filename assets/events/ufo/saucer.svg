@@ -1,16 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160">
-<g stroke="#382a20" stroke-width="5" stroke-linejoin="round">
-<path d="M78 117L59 150 120 139 183 150 163 117" fill="#b7f3b2" opacity=".65" stroke="none"/>
-<path d="M68 83C60 8 180 4 176 83Z" fill="#b9e5e1"/>
-<path d="M78 68C78 33 159 29 162 70L159 90 82 89Z" fill="#87bb5d"/>
-<path d="M92 51Q101 48 109 65Q93 70 92 51M146 49Q132 49 129 65Q145 67 146 49" fill="#382a20" stroke-width="2"/>
-<path d="M113 77Q121 82 129 75" fill="none" stroke-width="3"/>
-<path d="M84 37Q93 20 116 21" fill="none" stroke="white" opacity=".7"/>
-<path d="M23 90Q117 52 216 90L207 109Q120 139 31 109Z" fill="#bd8750"/>
-<path d="M20 88Q121 57 220 88L220 99Q125 124 20 100Z" fill="#e7c68b"/>
-<path d="M33 90Q120 70 203 89" fill="none" stroke="#fff0c5" stroke-width="4"/>
-<circle cx="62" cy="104" r="7" fill="#6dc6b5" stroke-width="3"/>
-<circle cx="119" cy="110" r="7" fill="#f5d559" stroke-width="3"/>
-<circle cx="177" cy="104" r="7" fill="#6dc6b5" stroke-width="3"/>
-<path d="M210 42L215 29 220 42 233 47 220 52 215 65 210 52 197 47Z" fill="#fff0a0" stroke-width="3"/>
-</g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="170" viewBox="0 0 240 170">
+<!-- 外星补给飞碟：玻璃罩里的小绿人 + 兽骨色碟身 + 一圈灯 -->
+<g stroke="#3b2314" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+<!-- 天线 -->
+<path d="M100 40Q94 22 84 14M140 40Q147 22 157 15" fill="none" stroke-width="4"/>
+<circle cx="83" cy="13" r="7" fill="#ffd23f" stroke-width="3.5"/>
+<circle cx="158" cy="14" r="7" fill="#ff7b22" stroke-width="3.5"/>
+<!-- 玻璃罩（后半） -->
+<path d="M62 96C58 44 88 28 120 28S184 44 178 96Z" fill="#bfeee6"/>
+<!-- 小绿人 -->
+<path d="M84 96C80 66 96 46 120 46S160 66 156 96Z" fill="#8cc63f"/>
+<path d="M90 92C88 74 98 60 110 56" fill="none" stroke="#c3ea7a" stroke-width="5"/>
+<path d="M95 70Q96 58 109 62Q115 72 104 78Q96 79 95 70Z" fill="#2a1a10" stroke-width="2.5"/>
+<path d="M145 70Q144 58 131 62Q125 72 136 78Q144 79 145 70Z" fill="#2a1a10" stroke-width="2.5"/>
+<circle cx="102" cy="66" r="3.2" fill="#fff" stroke="none"/>
+<circle cx="138" cy="66" r="3.2" fill="#fff" stroke="none"/>
+<path d="M110 84Q120 92 130 84" fill="none" stroke-width="3.5"/>
+<ellipse cx="96" cy="84" rx="5" ry="3" fill="#f39a7a" stroke="none" opacity=".7"/>
+<ellipse cx="144" cy="84" rx="5" ry="3" fill="#f39a7a" stroke="none" opacity=".7"/>
+<!-- 玻璃高光 -->
+<path d="M76 70Q78 46 102 36" fill="none" stroke="#ffffff" stroke-width="6" opacity=".75"/>
+<path d="M160 52Q166 60 167 70" fill="none" stroke="#ffffff" stroke-width="4" opacity=".55"/>
+<!-- 碟身下层 -->
+<path d="M18 104Q120 74 222 104L208 128Q120 156 32 128Z" fill="#b97a3f"/>
+<path d="M40 128Q120 148 200 128" fill="none" stroke="#7a4a22" stroke-width="4"/>
+<!-- 碟身上层（兽骨色环） -->
+<path d="M14 100Q120 66 226 100Q228 112 214 116Q120 138 26 116Q12 112 14 100Z" fill="#f1e2c0"/>
+<path d="M32 98Q120 76 208 98" fill="none" stroke="#fffaf0" stroke-width="5"/>
+<!-- 灯 -->
+<circle cx="46" cy="112" r="7" fill="#ffd23f" stroke-width="3"/>
+<circle cx="82" cy="120" r="7" fill="#4fb3a6" stroke-width="3"/>
+<circle cx="120" cy="123" r="7" fill="#ff7b22" stroke-width="3"/>
+<circle cx="158" cy="120" r="7" fill="#4fb3a6" stroke-width="3"/>
+<circle cx="194" cy="112" r="7" fill="#ffd23f" stroke-width="3"/>
+<!-- 底部发光口 -->
+<path d="M96 140Q120 158 144 140Z" fill="#c3ea7a" stroke-width="4"/>
+</g>
+<path d="M44 109a3 3 0 1 1 0 .1M118 120a3 3 0 1 1 0 .1M192 109a3 3 0 1 1 0 .1" fill="#fff" opacity=".8"/>
+</svg>

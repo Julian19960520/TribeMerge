@@ -24,9 +24,10 @@ def test_claim_early_individual_and_milestones(player):
     assert player.post('/v1/seven-day/claim',{'entry':'d7_2'},key='claim-seven').json()==r.json()
     assert player.post('/v1/seven-day/claim',{'entry':'d7_2'}).json()['error']=='already_claimed'
     assert player.post('/v1/seven-day/claim',{'entry':'p50','stage':True}).json()['error']=='not_completed'
-    for key in ['d1_2','d2_1','d3_2','d4_1']:
+    # d7_2 alone is 30 points; two early order tasks (10 + 15) push past the first 50-point stage
+    for key in ['d1_2','d2_2']:
         assert player.post('/v1/seven-day/claim',{'entry':key}).status_code==200
-    assert player.post('/v1/seven-day/claim',{'entry':'p50','stage':True}).json()['give']['energy']==50
+    assert player.post('/v1/seven-day/claim',{'entry':'p50','stage':True}).json()['give']['energy']==100
     assert player.post('/v1/seven-day/claim',{'entry':'p50','stage':True}).json()['error']=='already_claimed'
 
 
@@ -51,10 +52,10 @@ def test_order_merge_and_refill_counters(player):
 
 def test_merge_drop_budget_and_retry(player):
     import hashlib
-    nonce=next(str(i) for i in range(1000) if int(hashlib.sha256(str(i).encode()).hexdigest()[:8],16)/4294967296 < .05)
+    nonce=next(str(i) for i in range(1000) if int(hashlib.sha256(str(i).encode()).hexdigest()[:8],16)/4294967296 < .04)
     event={'id':nonce,'type':'merge','item':'fruit_2','cell':0}
     r=player.post('/v1/events',{'events':[event]}).json()
-    assert r['events'][0]['give']['items']==['shell_1']
+    assert r['events'][0]['give']['items']==['shell_2']
     from app.services import economy
     before=mutate(player,lambda st:st['budget'].get('shell',0))
     r=player.post('/v1/events',{'events':[event]}).json()
@@ -79,17 +80,31 @@ def test_configuration_has_35_tasks_and_free_path(client):
     tasks=[t for d in cfg['days'] for t in d['tasks']]
     assert len({t['id'] for t in tasks})==35
     assert sum(t['points'] for t in tasks if t['metric']!='paid_cents') >= max(m['points'] for m in cfg['milestones'])
+    # every page opens with "login N days", and each metric's target grows page by page
+    assert [d['tasks'][0]['metric'] for d in cfg['days']]==['login_days']*7
+    assert [d['tasks'][0]['target'] for d in cfg['days']]==list(range(1,8))
+    last={}
+    for d in cfg['days']:
+        for t in d['tasks']:
+            assert t['target']>last.get(t['metric'],0)
+            last[t['metric']]=t['target']
+    assert set(last)=={'login_days','orders','merges','xp','cards','shell','amber','amber_spent','paid_cents'}
+    gd=gamedata()
+    for t in tasks+cfg['milestones']:
+        for rid,n in t['rewards']:
+            assert gd.valid_item(rid) and n>0
 
 
 def test_card_counts_and_verified_payment_callback_once(player):
     from app.services import economy
     def packs(st):
         st['level']=8
-        economy().give_item(st,'pack_1',{})
-        economy().give_item(st,'pack_1',{})
+        for _ in range(3): economy().give_item(st,'pack_1',{})
     mutate(player,packs)
     assert player.post('/v1/pack/open').json()['state']['seven_day']['stats']['cards']==2
     assert player.post('/v1/pack/open').json()['state']['seven_day']['stats']['cards']==4
+    assert player.post('/v1/seven-day/claim',{'entry':'d4_4'}).json()['error']=='not_completed'
+    assert player.post('/v1/pack/open').json()['state']['seven_day']['stats']['cards']==6
     assert player.post('/v1/seven-day/claim',{'entry':'d4_4'}).status_code==200
     order=player.post('/v1/payments/orders',{'pack':0,'provider':'mock'}).json()
     # Exercise the verified callback boundary without performing any real payment.

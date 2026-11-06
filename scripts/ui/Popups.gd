@@ -188,18 +188,20 @@ static func store() -> PopupBase:
 	UI.btn(root, Rect2(430, 396, 240, 80), "激活", "green", func(): G.main.open("pass_buy"), 38)
 	section(root, "每日特惠", 516, Color("ffd23f"))
 	G._check_day()
+	# 每日特惠一排 5 张（顺序固定：广告 → 贝币买体力宝箱 → 贵宾琥珀 → 超级贵宾琥珀 → 免费体力）
 	var deals := Data.daily_deals(G.level)
+	var dn := maxi(1, deals.size())
+	var dw := (660.0 - (dn - 1) * 10.0) / dn
 	for k in deals.size():
-		var d: Dictionary = deals[k]
-		var x := 30.0 + (k % 3) * 226.0
-		_daily_card(root, Rect2(x, 560 + (k / 3) * 270, 208, 250), d)
-	var tl := UI.lbl(root, "", Rect2(160, 1096, 400, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	tl.text = "刷新倒计时：%s" % G.fmt_time(G.secs_to_midnight())
-	section(root, "热卖", 1150, Color("ffd23f"))
+		_daily_card(root, Rect2(30.0 + k * (dw + 10.0), 566, dw, 236), deals[k], k)
+	var clocks: Array = []
+	clocks.append(_refresh_bar(root, Rect2(30, 818, 660, 66), Color("6c492e"), "明天 0 点上新", func(): return [G.secs_to_midnight(), 86400], "", 0, Callable()))
+	section(root, "热卖", 904, Color("ffd23f"))
 	var hot_root := Control.new()
 	hot_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(hot_root)
 	var hot_state := {"sig": ""}
+	var hot_y := 948.0
 	var draw_hot := func():
 		var hot: Array = HotDeals.today()
 		var sig := G.today() + ":" + str(G.hot_revision) + JSON.stringify(hot)
@@ -210,31 +212,26 @@ static func store() -> PopupBase:
 			child.queue_free()
 		for k in hot.size():
 			var d: Dictionary = hot[k]
-			_store_card(hot_root, Rect2(30.0 + (k % 3) * 226.0, 1194.0 + (k / 3) * 270.0, 208, 250), d, "hot_%d" % k, false)
+			_store_card(hot_root, Rect2(30.0 + (k % 3) * 226.0, hot_y + (k / 3) * 270.0, 208, 250), d, "hot_%d" % k, false)
 	draw_hot.call()
-	var y := 1194.0 + ceilf(float(Data.STORE_HOT.size()) / 3.0) * 270.0
-	UI.box(root, Rect2(30, y, 660, 88), func(ci, sz):
-		Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 16, 125, 0.5), Color("6c492e"), 2.5))
-	var hot_clock := UI.lbl(root, "", Rect2(44, y + 10, 390, 68), 23, Color.WHITE)
-	var reroll := UI.btn(root, Rect2(448, y + 12, 226, 64), "10 刷新", "green", Callable(), 26)
-	reroll.res = Art.AMBER_ICON
-	reroll.pressed.connect(func():
-		reroll.enabled = false
+	var y := hot_y + ceilf(float(Data.STORE_HOT.size()) / 3.0) * 270.0 - 6.0
+	var hot_bar: Array = []
+	hot_bar.append(_refresh_bar(root, Rect2(30, y, 660, 86), Color("6c492e"), "热卖刷新", func(): return [G.secs_to_midnight(), 86400], "刷新", 10, func():
+		var rb: TButton = hot_bar[0]["btn"]
+		rb.enabled = false
 		var result: Dictionary = await G.refresh_hot()
-		if not is_instance_valid(reroll): return
-		reroll.enabled = true
+		if not is_instance_valid(rb): return
+		rb.enabled = true
+		rb.queue_redraw()
 		if result.get("ok", false):
 			draw_hot.call()
+			Sfx.play("pop")
 		else:
-			G.main.toast(str(result.get("message", "刷新失败"))))
-	var tick := func():
-		tl.text = "刷新倒计时：%s" % G.fmt_time(G.secs_to_midnight())
-		hot_clock.text = "刷新倒计时  %s" % G.fmt_time(G.secs_to_midnight())
-		draw_hot.call()
-	tick.call()
-	live(p, G.changed, tick)
-	y += 110.0
-	# 贝币小摊：用贝币买低一级的普通货，库存少，每 8 小时按服务器时间刷新
+			G.main.toast(str(result.get("message", "刷新失败")))))
+	clocks.append(hot_bar[0])
+	live(p, G.changed, func(): draw_hot.call())
+	y += 108.0
+	# 贝币小摊：用贝币买低一级的普通货，库存少，每 8 小时按服务器时间补货；花少量琥珀可立即补货
 	G.check_shell_period()
 	section(root, "贝币小摊", y, Color("bfe3ff"))
 	var sy := y + 44.0
@@ -244,20 +241,27 @@ static func store() -> PopupBase:
 		_shell_card(root, Rect2(30.0 + (k % 3) * 226.0, sy, 208, 250), d, "shell_%d" % k)
 	if not Data.STORE_SHELL.is_empty():
 		sy += 264.0
-		UI.box(root, Rect2(30, sy, 660, 88), func(ci, sz):
-			Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 16, 126, 0.5), Color("405f70"), 2.5))
-		var stl := UI.lbl(root, "", Rect2(44, sy + 10, 390, 68), 23, Color.WHITE)
-		stl.text = "刷新倒计时：%s" % G.fmt_time(G.shell_secs_left())
-		live(p, G.changed, func(): stl.text = "刷新倒计时：%s" % G.fmt_time(G.shell_secs_left()))
-		var shell_reroll := UI.btn(root, Rect2(448, sy + 12, 226, 64), "%d 刷新" % Data.STORE_SHELL_REFRESH, "green", Callable(), 26)
-		shell_reroll.res = Art.AMBER_ICON
-		shell_reroll.pressed.connect(func():
-			shell_reroll.enabled = false
+		var shell_bar: Array = []
+		shell_bar.append(_refresh_bar(root, Rect2(30, sy, 660, 86), Color("405f70"), "小摊补货", func(): return [G.shell_secs_left(), Data.STORE_SHELL_HOURS * 3600], "补货", Data.STORE_SHELL_REFRESH, func():
+			var rb: TButton = shell_bar[0]["btn"]
+			rb.enabled = false
 			var result: Dictionary = await G.refresh_shell()
-			if not is_instance_valid(shell_reroll): return
-			shell_reroll.enabled = true
-			if not result.get("ok", false): G.main.toast(str(result.get("message", "刷新失败"))))
-		y = sy + 110.0
+			if not is_instance_valid(rb): return
+			rb.enabled = true
+			rb.queue_redraw()
+			if result.get("ok", false): Sfx.play("pop")
+			else: G.main.toast(str(result.get("message", "补货失败")))))
+		clocks.append(shell_bar[0])
+		y = sy + 108.0
+	# 倒计时每秒走一次（不靠 G.changed，静止时也在走）
+	var ticker := Timer.new()
+	ticker.wait_time = 1.0
+	ticker.autostart = true
+	p.add_child(ticker)
+	var tick := func():
+		for c in clocks: _tick_bar(c)
+	ticker.timeout.connect(tick)
+	tick.call()
 	section(root, "琥珀", y, Color("ffd23f"))
 	y += 48.0
 	for k in Data.AMBER_PACKS.size():
@@ -267,33 +271,106 @@ static func store() -> PopupBase:
 	sc.set_length(y - 128.0)
 	return p
 
-static func _daily_card(parent: Control, r: Rect2, d: Dictionary) -> void:
+## 每日特惠的一张小卡。边框颜色按类型：广告青、贝币蓝、会员紫、免费绿；会员卡顶上挂档位签。
+static func _daily_card(parent: Control, r: Rect2, d: Dictionary, k: int) -> void:
 	var key := str(d["key"])
-	var member := int(d.get("min_tier",0)) > 0
-	UI.box(parent, r, func(ci, sz):
-		Art.fill(ci,Art.rrect(Rect2(Vector2.ZERO,sz),20,105,.5),Art.OCHRE,3)
-		Art.fill(ci,Art.rrect(Rect2(10,10,sz.x-20,158),14,106,.4),Art.BONE,1)
-		Art.item(ci,str(d["id"]),Vector2(sz.x/2,84),100))
-	UI.hit(parent,Rect2(r.position+Vector2(8,8),Vector2(192,118)),func():G.main.open("item_info",str(d["id"])))
-	var title := "会员 · 100琥珀" if member else ("30体力" if key=="deal_ad" else ("体力宝箱" if key=="deal_energybox" else "免费火种"))
-	UI.lbl(parent,title,Rect2(r.position+Vector2(0,128),Vector2(r.size.x,36)),23,Art.INK)
-	var b := UI.btn(parent,Rect2(r.position+Vector2(14,178),Vector2(180,64)),"","green",Callable(),27)
+	var tier := int(d.get("min_tier", 0))
+	var member := tier > 0
+	var ad := str(d.get("mode", "")) == "ad"
+	var paid := int(d["price"]) > 0
+	var col: Color = Color("4fa39a") if ad else (Color("6f9fb8") if paid else (Color("8a5bb8") if member else Color("7fb43a")))
+	var state := {"claimed": false}
+	var card := UI.box(parent, r, func(ci, sz):
+		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 18, 3, 0.0), Color(0, 0, 0, 0.3))
+		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, 105 + k, 0.8)
+		Art.dilate(ci, b, 3.0, Art.INK)
+		ci.draw_colored_polygon(b, col)
+		var ir := Rect2(7, 7, sz.x - 14, 122)
+		ci.draw_colored_polygon(Art.rrect(ir, 13, 110 + k, 0.5), Art.BONE)
+		ci.draw_colored_polygon(Art.ell(Vector2(sz.x * 0.5, 110), Vector2(32, 6), 115 + k, 0.0, 14), Color(0, 0, 0, 0.1))
+		Art.item(ci, str(d["id"]), Vector2(sz.x * 0.5, 72), 86)
+		if member or ad:
+			var tw := 100.0 if tier >= 2 else 64.0
+			var t := Art.rrect(Rect2(sz.x * 0.5 - tw * 0.5, -13, tw, 28), 12, 120 + k, 0.4)
+			Art.dilate(ci, t, 2.5, Art.INK)
+			ci.draw_colored_polygon(t, Color("2a7469") if ad else (Color("f4c542") if tier >= 2 else Color("e0cdf5")))
+		if state["claimed"]:
+			ci.draw_colored_polygon(Art.rrect(ir, 13, 110 + k, 0.0), Color(0.25, 0.18, 0.1, 0.35))
+			var cc := Vector2(sz.x * 0.5, 72)
+			ci.draw_circle(cc, 26, Art.INK)
+			ci.draw_circle(cc, 23, Art.MOSS)
+			Paint.check_mark(ci, cc, 1.2))
+	if member:
+		UI.lbl(parent, str(d.get("badge", "会员")), Rect2(r.position.x, r.position.y - 13, r.size.x, 28), 17, Color("4a2266") if tier < 2 else Color("5a3300"), HORIZONTAL_ALIGNMENT_CENTER)
+	elif ad:
+		UI.lbl(parent, "广告", Rect2(r.position.x, r.position.y - 13, r.size.x, 28), 17, Color.WHITE)
+	UI.hit(parent, Rect2(r.position + Vector2(6, 6), Vector2(r.size.x - 12, 120)), func(): G.main.open("item_info", str(d["id"])))
+	UI.lbl(parent, str(d.get("title", Data.name_of(str(d["id"])))), Rect2(r.position + Vector2(0, 132), Vector2(r.size.x, 32)), 21, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
+	var b := UI.btn(parent, Rect2(r.position + Vector2(7, 170), Vector2(r.size.x - 14, 58)), "", "green", Callable(), 22)
+	b.name = "daily_" + key
 	var refresh := func():
-		var claimed := G.deals_day==G.today() and int(G.deals_bought.get(key,0))>=int(d["stock"])
-		b.text="已领取" if claimed else ("开通会员" if member and G.pass_tier<int(d["min_tier"]) else ("看广告" if key=="deal_ad" else ("300" if int(d["price"])>0 else "免费领取")))
-		b.res="shell_2" if not claimed and int(d["price"])>0 else ""
-		b.enabled=not claimed
-		b.style="grey" if claimed else ("orange" if member else "green")
+		var claimed := G.deals_day == G.today() and int(G.deals_bought.get(key, 0)) >= int(d["stock"])
+		var locked := member and G.pass_tier < tier
+		state["claimed"] = claimed
+		card.queue_redraw()
+		if claimed: b.text = "已领取"
+		elif locked: b.text = "开通"
+		elif ad: b.text = "看广告"
+		elif paid: b.text = str(int(d["price"]))
+		else: b.text = "领取"
+		b.res = ("shell_2" if str(d.get("currency", "amber")) == "shell" else Art.AMBER_ICON) if paid and not claimed else ""
+		b.enabled = not claimed
+		b.style = "grey" if claimed else ("orange" if locked else ("teal" if ad else "green"))
 		b.queue_redraw()
 	refresh.call()
-	live(b,G.changed,refresh)
+	live(b, G.changed, refresh)
 	b.pressed.connect(func():
-		if member and G.pass_tier<int(d["min_tier"]):G.main.open("pass_buy");return
-		if key=="deal_ad":G.main.open("daily_ad");return
-		b.enabled=false
-		var result: Dictionary=await DailyShop.claim(key,b.get_global_rect().get_center()-Vector2(0,100))
-		if not result.get("ok",false):G.main.toast(str(result.get("message","领取失败")))
-		if is_instance_valid(b):refresh.call())
+		if member and G.pass_tier < tier:
+			G.main.open("pass_buy")
+			return
+		if ad:
+			G.main.open("daily_ad")
+			return
+		b.enabled = false
+		var result: Dictionary = await DailyShop.claim(key, b.get_global_rect().get_center() - Vector2(0, 100))
+		if not result.get("ok", false): G.main.toast(str(result.get("message", "领取失败")))
+		if is_instance_valid(b): refresh.call())
+
+## 刷新倒计时条：左边沙漏 + 标题 + 「07:12:33」+ 本轮剩余进度槽；右边可选的琥珀刷新按钮。
+## left_fn 返回 [剩余秒数, 一轮总秒数]。返回的字典交给 _tick_bar 每秒更新。
+static func _refresh_bar(root: Control, r: Rect2, col: Color, title: String, left_fn: Callable, btn_text: String, cost: int, cb: Callable) -> Dictionary:
+	var st := {"t": 0.0}
+	var has_btn := btn_text != ""
+	var bar_w := r.size.x - (262.0 if has_btn else 110.0)
+	var bar := UI.box(root, r, func(ci, sz):
+		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 6), sz), 18, 3, 0.0), Color(0, 0, 0, 0.28))
+		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, 125 + int(r.position.y) % 7, 0.6)
+		Art.dilate(ci, b, 3.0, Art.INK)
+		ci.draw_colored_polygon(b, col)
+		ci.draw_colored_polygon(Art.rrect(Rect2(6, 5, sz.x - 12, sz.y * 0.4), 12, 126, 0.3), Color(1, 1, 1, 0.08))
+		Art.item(ci, "sand_3", Vector2(42, sz.y * 0.5), minf(60.0, sz.y - 8.0), false)
+		var tr := Rect2(80, sz.y - 22, bar_w, 12)
+		ci.draw_colored_polygon(Art.rrect(tr, 6, 127, 0.0), Color(0, 0, 0, 0.35))
+		var f: float = clampf(float(st["t"]), 0.0, 1.0)
+		if f > 0.01:
+			ci.draw_colored_polygon(Art.rrect(Rect2(tr.position, Vector2(maxf(12.0, tr.size.x * f), tr.size.y)), 6, 128, 0.0), Color("ffd23f")))
+	var small := r.size.y < 80.0
+	var ty := r.position.y + (6.0 if small else 10.0)
+	UI.lbl(root, title, Rect2(r.position.x + 80, ty, 220, 32), 20, Color(1, 1, 1, 0.85), HORIZONTAL_ALIGNMENT_LEFT)
+	var time := UI.lbl(root, "", Rect2(r.position.x + 80, ty - 2, bar_w, 36), 26 if small else 30, Color.WHITE, HORIZONTAL_ALIGNMENT_RIGHT, 5, Art.INK)
+	var out := {"time": time, "fn": left_fn, "bar": bar, "st": st, "btn": null}
+	if has_btn:
+		var rb := UI.btn(root, Rect2(r.end.x - 170, r.position.y + 11, 158, r.size.y - 22), "%d %s" % [cost, btn_text], "green", cb, 24)
+		rb.res = Art.AMBER_ICON
+		out["btn"] = rb
+	return out
+
+static func _tick_bar(c: Dictionary) -> void:
+	var t: Array = (c["fn"] as Callable).call()
+	var left := maxi(0, int(t[0]))
+	(c["time"] as Label).text = "%02d:%02d:%02d" % [left / 3600, (left % 3600) / 60, left % 60]
+	c["st"]["t"] = float(left) / maxf(1.0, float(t[1]))
+	(c["bar"] as DrawBox).queue_redraw()
 
 static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> void:
 	# 礼包越大，堆的六边琥珀越多

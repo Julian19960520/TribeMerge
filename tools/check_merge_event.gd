@@ -21,7 +21,12 @@ func run() -> void:
 	var cells: Array = s["cells"]
 	check(cells.size() == 96 and ev.remaining(s) == 90, "initial 16x6 board locks everything except bottom row")
 	check(ev.local_action(c,s,"spawn",{"view":9}).has("error") and s["spent"] == 0, "zero-point spawn cannot produce items")
-	check(ev.on_order({"items":["fruit_1"]}) == 1 and ev.on_order({"items":["fruit_4"]}) == 2 and ev.on_order({"items":["fruit_8"]}) == 3, "orders award exactly 1 to 3 based on configured difficulty")
+	var top_tier := 0
+	var low_tier := 0
+	for k in 30: top_tier = maxi(top_tier, c["chain"].find(ev.item(c, str(cells[k]["id"]))) + 1)
+	for k in range(60, 90): low_tier = maxi(low_tier, c["chain"].find(ev.item(c, str(cells[k]["id"]))) + 1)
+	check(top_tier > low_tier and cells[84]["id"] == "moon_1" and cells[78]["id"] == "moon_1", "deeper rows hold higher relics; the first two rows start at tier 1")
+	check(ev.on_order({"items":["fruit_1"]}) == 1 and ev.on_order({"items":["fruit_5"]}) == 2 and ev.on_order({"items":["fruit_8"]}) == 3, "orders award exactly 1 to 3 based on configured difficulty")
 	var r: Dictionary = ev.local_action(c,s,"spawn",{"view":9})
 	check(r.get("kind") == "spawn" and s["points"] == 5, "bubble consumes one point and fills nearest free cell")
 	var from: int = r["to"]
@@ -57,17 +62,38 @@ func run() -> void:
 	var next: Dictionary = ev.current(float(c["ends_at"]) + 1)
 	check(next["key"] != c["key"] and ev.state(next)["points"] == 0 and s["points"] == 3, "new period isolates all points and progress")
 	check((await ev.act(c,"claim")).has("error"), "cannot claim unfinished board")
+	var ms: Array = ev.milestones(c)
+	check(ms.size() >= 3 and int(ms[-1]["at"]) == ev.goal_total(c), "milestones end at the full 90-cell goal")
+	var opened := 0
+	for tile in s["cells"]:
+		if opened < int(ms[0]["at"]) and int(tile["lock"]) != 0 and tile != s["cells"][0]:
+			tile["lock"] = 0
+			opened += 1
+	opened = 0
+	for k in range(s["cells"].size() - 1, -1, -1):
+		if int(s["cells"][k]["lock"]) == 0: opened += 1
+	var stash_before: int = g.stash.size()
+	var first: Dictionary = await ev.act(c,"claim")
+	check(not first.has("error") and first["milestones"] == [0] and not s["claimed"] and g.stash.size() > stash_before, "first milestone chest pays mid-way and the board stays open")
+	check((await ev.act(c,"claim")).has("error"), "a milestone pays once")
 	for tile in s["cells"]: tile["lock"] = 0
 	var amber: int = g.amber
 	var energy: int = g.energy
-	check(not (await ev.act(c,"claim")).has("error"), "completed event grants rewards")
-	check(g.amber == amber + 30 and g.energy == energy + 100 and g.stash.count("choice_1") == 1, "event pays configured currencies and choice chest")
-	check((await ev.act(c,"claim")).has("error") and g.amber == amber + 30, "event completion pays once")
+	var want_amber := 0
+	var want_energy := 0
+	for k in range(1, ms.size()):
+		for rw in ms[k]["rewards"]:
+			if str(rw[0]).begins_with("amber"): want_amber += int(rw[1])
+			if str(rw[0]).begins_with("fire"): want_energy += int(rw[1])
+	var rest: Dictionary = await ev.act(c,"claim")
+	check(not rest.has("error") and rest["milestones"].size() == ms.size() - 1 and s["claimed"], "completed event grants every remaining milestone at once")
+	check(g.amber == amber + want_amber and g.energy == energy + want_energy and g.stash.count("choice_1") == 1, "event pays configured currencies and choice chest")
+	check((await ev.act(c,"claim")).has("error") and g.amber == amber + want_amber, "event completion pays once")
 	for k in g.board.size(): g.board[k] = {"id":"fruit_1","lock":0}
 	g.board[20]["id"] = "choice_1"
 	check((await choice.choose(20,"choice_1",4)).has("error") and g.board[20]["id"] == "choice_1", "invalid choice retains chest")
 	energy = g.energy
-	check((await choice.choose(20,"choice_1",0)).get("id") == "fire_4" and g.board[20]["id"] == "fire_4" and g.energy == energy, "choice replaces original cell even when board is full; resource remains physical")
+	check((await choice.choose(20,"choice_1",0)).get("id") == "fire_5" and g.board[20]["id"] == "fire_5" and g.energy == energy, "choice replaces original cell even when board is full; resource remains physical")
 	check((await choice.choose(20,"choice_1",1)).has("error"), "used chest cannot choose again")
 	g.board[20]["id"] = "choice_1"
 	var main = load("res://main.tscn").instantiate()

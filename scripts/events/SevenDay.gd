@@ -37,6 +37,22 @@ static func points() -> int:
 		for task in day["tasks"]:
 			if got(task): total += int(task["points"])
 	return total
+static func task_count() -> int:
+	var n := 0
+	for day in config()["days"]: n += day["tasks"].size()
+	return n
+static func claimed_count() -> int:
+	var n := 0
+	for day in config()["days"]:
+		for task in day["tasks"]:
+			if got(task): n += 1
+	return n
+static func stage_got(stage: Dictionary) -> bool: return state()["stages"].has(str(stage["id"]))
+static func stage_ready(stage: Dictionary) -> bool: return points() >= int(stage["points"]) and not stage_got(stage)
+static func day_done(day: int) -> bool:
+	for task in config()["days"][day]["tasks"]:
+		if not got(task): return false
+	return true
 static func ready(day := -1) -> bool:
 	var days: Array = config()["days"]
 	for k in days.size():

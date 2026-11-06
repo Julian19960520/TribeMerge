@@ -1,13 +1,15 @@
 {
+  "_说明": "外星补给（飞碟限时礼包）。客户端 scripts/events/UfoOffer.gd 与服务器 server/app/ufo_offer.py 读同一份。礼包 = 订单还缺的普通物品（min_items～max_items 件，不够用同产线低一级补足）+ bonus_items 固定加赠。估值（琥珀当量 AE，见 gift_chain.json）：bonus 熊熊大火 40 体力 ≈ 16 + 大琥珀 40 琥珀 = 40，订单物品约 20～50，合计约 80～110 AE ≈ ¥6 档（1 元 ≈ 15 AE）；卖 ¥3。",
   "enabled": true,
-  "first_delay_sec": 60,
-  "interval_sec": 300,
-  "duration_sec": 60,
-  "retry_sec": 15,
+  "first_delay_sec": 180,
+  "interval_sec": 1200,
+  "duration_sec": 180,
+  "retry_sec": 60,
+  "min_items": 3,
   "max_items": 3,
+  "bonus_items": ["fire_5", "amber_5"],
   "price_cny": 3,
   "original_price_cny": 6,
   "demo_purchase": true,
-  "icon": "res://assets/events/ufo/saucer.svg",
-  "min_items": 3
+  "icon": "res://assets/events/ufo/saucer.svg"
 }

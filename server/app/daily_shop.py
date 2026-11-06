@@ -46,6 +46,12 @@ def energy_chest(e, st):
         raise Reject('no_chest', '没有可以打开的体力宝箱')
     credits['energybox'] -= 1
     out = {}
-    for _ in range(3):
-        e.give_item(st, 'fire_4', out)
+    for iid in energy_chest_items(e):
+        e.give_item(st, iid, out)
     return out
+
+
+def energy_chest_items(e):
+    """体力宝箱开出的东西：daily_deals.json 里 deal_energybox 的 opens（客户端 Game.open_chest 同一份）。"""
+    row = next((d for d in e.gd.daily_deals if d.get('key') == 'deal_energybox'), {})
+    return [str(i) for i in row.get('opens', ['fire_4', 'fire_4', 'fire_4'])]

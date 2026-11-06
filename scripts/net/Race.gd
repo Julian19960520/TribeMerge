@@ -81,7 +81,7 @@ func fetch() -> void:
 	_last_ms = Time.get_ticks_msec()
 	if not G.server_mode():
 		LocalRace.tick()
-		info=LocalRace.state()
+		_absorb(LocalRace.state())
 		ok=true
 		updated.emit()
 		return
@@ -270,7 +270,7 @@ func _on_order(_items: Array) -> void:
 	_my_dash_ms = Time.get_ticks_msec()
 	if not G.server_mode():
 		LocalRace.order(_items)
-		info=LocalRace.state()
+		_absorb(LocalRace.state())
 		updated.emit()
 		return
 	# 比赛中把交单事件 3 秒内单独交掉（不等 60 秒的快照合并），对手那边看到的进度更及时
@@ -293,7 +293,8 @@ func _flush_events() -> void:
 func join() -> Dictionary:
 	if not G.server_mode():
 		var r:=LocalRace.join()
-		info=LocalRace.state()
+		_disp.clear()
+		_absorb(LocalRace.state())
 		if r.get("ok",false):_match_until=Time.get_ticks_msec()+int(MATCH_SEC*1000)
 		updated.emit()
 		return r
@@ -313,7 +314,7 @@ func join() -> Dictionary:
 func claim(res: Dictionary) -> Dictionary:
 	if not G.server_mode():
 		var r:=LocalRace.claim(str(res.get("group",{}).get("id","")))
-		info=LocalRace.state()
+		_absorb(LocalRace.state())
 		updated.emit()
 		return r
 	var c := _cloud()

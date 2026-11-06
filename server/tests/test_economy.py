@@ -106,7 +106,7 @@ def test_shop_deal_chest_then_open(client, player):
     assert player.post("/v1/daily/claim", {"key": "deal_energybox"}).json()["error"] == "sold_out"
     assert player.post("/v1/chest/open").json()["error"] == "no_chest"
     r = player.post("/v1/energy-chest/open")
-    assert r.status_code == 200 and r.json()["give"]["items"] == ["fire_4"] * 3
+    assert r.status_code == 200 and r.json()["give"]["items"] == ["fire_5"] * 3
     assert player.post("/v1/energy-chest/open").json()["error"] == "no_chest"
 
 

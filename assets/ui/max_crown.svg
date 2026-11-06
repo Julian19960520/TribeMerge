@@ -1,6 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="80" height="60" viewBox="0 0 80 60">
-  <path d="M13 49 7 16 25 28 40 7 55 28 73 16 67 49Z" fill="#f7bd42" stroke="#49301e" stroke-width="5" stroke-linejoin="round"/>
-  <path d="m15 21 11 13L40 14l14 20 11-9-4 15H19Z" fill="#ffe89b"/>
-  <path d="M13 43h54l-1 10H14Z" fill="#e8992d" stroke="#49301e" stroke-width="4" stroke-linejoin="round"/>
-  <path d="m40 29 6 6-6 6-6-6Z" fill="#e9563f" stroke="#49301e" stroke-width="2.5" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="76" viewBox="0 0 96 76">
+  <!-- 最高级皇冠：贴纸白边 + 墨线 + 两色金 + 宝石，和物品图标同一套手绘风格 -->
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g stroke="#fff7e6" stroke-width="15" fill="#fff7e6">
+      <path d="M15 58 9 21 30 35 48 12 66 35 87 21 81 58Z"/>
+      <circle cx="9" cy="19" r="6"/><circle cx="48" cy="10" r="6"/><circle cx="87" cy="19" r="6"/>
+    </g>
+    <path d="M15 58 9 21 30 35 48 12 66 35 87 21 81 58Z" fill="#f6b42c" stroke="#3b2314" stroke-width="5.5"/>
+    <path d="M16 46 13 28 30 40 48 19 66 40 83 28 80 46Z" fill="#ffd23f"/>
+    <path d="M22 33 30 40 41 27" fill="none" stroke="#fff3b8" stroke-width="4"/>
+    <path d="M14 50h68l-2 12H16Z" fill="#e08a24" stroke="#3b2314" stroke-width="5"/>
+    <path d="M20 54h56" stroke="#f6b42c" stroke-width="3"/>
+    <circle cx="9" cy="19" r="5.5" fill="#ffd23f" stroke="#3b2314" stroke-width="4"/>
+    <circle cx="48" cy="10" r="5.5" fill="#ffd23f" stroke="#3b2314" stroke-width="4"/>
+    <circle cx="87" cy="19" r="5.5" fill="#ffd23f" stroke="#3b2314" stroke-width="4"/>
+    <path d="M48 31 56 40 48 49 40 40Z" fill="#d8324a" stroke="#3b2314" stroke-width="3.5"/>
+    <path d="M45 36 48 33" stroke="#ffd0d6" stroke-width="2.5"/>
+    <circle cx="27" cy="56" r="4" fill="#4fa39a" stroke="#3b2314" stroke-width="2.5"/>
+    <circle cx="69" cy="56" r="4" fill="#4fa39a" stroke="#3b2314" stroke-width="2.5"/>
+  </g>
 </svg>

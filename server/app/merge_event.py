@@ -26,17 +26,33 @@ def definition(config, key):
     return next((dict(c, key=key) for c in config.get('seasons', []) if c['id'] == prefix), {})
 
 
+def locked_tier(b, depth, col):
+    """Locked item tier at a depth (0 = row above the open bottom row). Same hash as MergeEvent.gd."""
+    seed = b.get('seed', 0)
+    if 'layers' not in b:
+        old = b['locked_tiers']
+        return 1 if depth < 2 else old[(depth // 2 + col + seed) % len(old)]
+    tiers, acc = b['layers'][-1]['tiers'], 0
+    for layer in b['layers']:
+        acc += layer['rows']
+        if depth < acc:
+            tiers = layer['tiers']
+            break
+    return tiers[((depth * 131 + col * 71 + seed * 17) % 97) % len(tiers)]
+
+
 def fresh(c):
     b = c['board']
     cols, rows = b['cols'], b['total_rows']
     cells = []
     for row in range(rows):
         for col in range(cols):
-            depth = rows - 2 - row
-            tiers = b['locked_tiers']
-            tier = tiers[(max(0, depth) // 2 + col + b.get('seed', 0)) % len(tiers)] if depth >= 2 else 1
-            cells.append({'id': c['chain'][min(max(0, tier - 1), len(c['chain']) - 2)]['id'] if row < rows - 1 else '', 'lock': 2 if row < rows - 1 else 0})
-    return dict(rules_version=2, cells=cells, points=0, earned=0, spent=0, discovered={}, min_view=rows-b['visible_rows'], view=rows-b['visible_rows'], claimed=False, orders=0)
+            if row == rows - 1:
+                cells.append({'id': '', 'lock': 0})
+                continue
+            tier = locked_tier(b, rows - 2 - row, col)
+            cells.append({'id': c['chain'][min(max(0, tier - 1), len(c['chain']) - 2)]['id'], 'lock': 2})
+    return dict(rules_version=2, cells=cells, points=0, earned=0, spent=0, discovered={}, min_view=rows-b['visible_rows'], view=rows-b['visible_rows'], claimed=False, got=[], orders=0)
 
 
 def state(st, c):
@@ -69,10 +85,36 @@ def on_order(econ, st, order):
     s['orders'] += 1
 
 
-def complete(c, s):
+def goal_total(c):
     if c['board'].get('goal') == 'discover_all':
-        return all(i['id'] in s['discovered'] for i in c['chain'])
-    return all(x['lock'] == 0 for x in s['cells'])
+        return len(c['chain'])
+    return c['board']['cols'] * (c['board']['total_rows'] - 1)
+
+
+def progress(c, s):
+    if c['board'].get('goal') == 'discover_all':
+        return sum(i['id'] in s['discovered'] for i in c['chain'])
+    return goal_total(c) - sum(1 for x in s['cells'] if x['lock'])
+
+
+def complete(c, s):
+    return progress(c, s) >= goal_total(c)
+
+
+def milestones(c):
+    """Progress milestones; the last one is the completion reward. Old configs with a bare `rewards` list get one."""
+    return c.get('milestones') or [{'at': goal_total(c), 'rewards': c.get('rewards', [])}]
+
+
+def got(c, s):
+    if 'got' in s:
+        return s['got']
+    return list(range(len(milestones(c)))) if s.get('claimed') else []
+
+
+def claimable(c, s):
+    have, p = got(c, s), progress(c, s)
+    return [k for k, m in enumerate(milestones(c)) if p >= min(m['at'], goal_total(c)) and k not in have]
 
 
 def neighbors(i, cols, count):
@@ -180,10 +222,14 @@ def action(econ, st, req):
         cells[i]['id'] = ''
         return {'kind':'recycle'}
     if req.action == 'claim':
-        if s['claimed'] or not complete(c,s):
-            raise Reject('already_claimed' if s['claimed'] else 'not_completed', '奖励已领取，或尚未完成活动')
-        s['claimed'] = True
-        out = {'kind':'claim','rewards':c['rewards']}
-        econ.grant(st,c['rewards'],out)
+        ready = claimable(c, s)
+        if not ready:
+            raise Reject('already_claimed' if s['claimed'] else 'not_completed', '继续解锁遗迹，到达下一个宝箱即可领取')
+        s['got'] = got(c, s) + ready
+        if len(milestones(c)) - 1 in s['got']:
+            s['claimed'] = True
+        rewards = [list(r) for k in ready for r in milestones(c)[k]['rewards']]
+        out = {'kind': 'claim', 'milestones': ready, 'rewards': rewards}
+        econ.grant(st, rewards, out)
         return out
     raise Reject('invalid_action','未知操作',400)

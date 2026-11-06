@@ -41,19 +41,19 @@ def test_level_eight_card_gate(client):
 
 def test_bubble_quote_purchase_and_expiry(player, monkeypatch):
     monkeypatch.setattr(random.SystemRandom, 'random', lambda _: 0.0)
-    snap = player.snapshot(board=[{'id': 'fruit_5', 'lock': 0}] + [{'id': '', 'lock': 0} for _ in range(62)])
+    snap = player.snapshot(board=[{'id': 'fruit_6', 'lock': 0}] + [{'id': '', 'lock': 0} for _ in range(62)])
     assert player.put(snap).status_code == 200
-    r = player.post('/v1/merge/bubble', {'item': 'fruit_5'}, key='merged-once')
+    r = player.post('/v1/merge/bubble', {'item': 'fruit_6'}, key='merged-once')
     assert r.status_code == 200
     offer = r.json()['give']['offer']
-    assert offer['item'] == 'fruit_5' and offer['price'] == 10
-    assert player.post('/v1/merge/bubble', {'item': 'fruit_5'}, key='merged-once').json()['give']['offer'] == offer
+    assert offer['item'] == 'fruit_6' and offer['price'] == 10
+    assert player.post('/v1/merge/bubble', {'item': 'fruit_6'}, key='merged-once').json()['give']['offer'] == offer
     bought = player.post('/v1/merge/bubble/buy', {'uid': offer['uid']}, key='buy-once')
     assert bought.status_code == 200 and bought.json()['state']['amber'] == 70
-    assert bought.json()['give']['items'] == ['fruit_5']
+    assert bought.json()['give']['items'] == ['fruit_6']
     assert player.post('/v1/merge/bubble/buy', {'uid': offer['uid']}, key='buy-once').json() == bought.json()
     assert player.post('/v1/merge/bubble/buy', {'uid': offer['uid']}).status_code == 409
-    offer = player.post('/v1/merge/bubble', {'item': 'fruit_5'}).json()['give']['offer']
+    offer = player.post('/v1/merge/bubble', {'item': 'fruit_6'}).json()['give']['offer']
     from app import clock
     clock.offset += 61
     expired = player.post('/v1/merge/bubble/buy', {'uid': offer['uid']})
@@ -66,7 +66,28 @@ def test_unpaid_bubbles_do_not_grant_currency_budget(player):
     snap = player.snapshot(board=[{'id': 'amber_5', 'lock': 3, 'bubble': {'expires': 1}}])
     assert e.snapshot_items(snap) == []
     assert e.bubble_price('seed_3') > e.bubble_price('fruit_3')
-    assert e.bubble_price('basket_3') > e.bubble_price('fruit_3')
+
+
+def test_bubble_rule_high_items_only_and_price_curve():
+    from app.services import economy
+    e = economy()
+    # 普通物品链、理论火苗 >= 32 才有泡泡；生产器、货币、宝箱不出
+    assert e.bubble_ok('fruit_6') and not e.bubble_ok('fruit_5')
+    assert e.bubble_ok('seed_3') and not e.bubble_ok('seed_2')
+    for iid in ('basket_6', 'shell_5', 'amber_5', 'fire_5', 'chest_1'):
+        assert not e.bubble_ok(iid)
+    prices = [e.bubble_price('fruit_%d' % lv) for lv in range(6, 15)]
+    assert prices == [10, 15, 30, 50, 90, 155, 265, 300, 300]
+    assert all(p % 5 == 0 for p in prices) and prices == sorted(prices)
+    # 越高级每火苗越便宜
+    assert prices[0] / e.gd.flames('fruit_6') > prices[5] / e.gd.flames('fruit_11')
+
+
+def test_merge_coin_tiers_follow_merged_level():
+    from app.services import economy
+    e = economy()
+    assert e.merge_coin_chance() == 0.04
+    assert [e.merge_coin_item(i) for i in ('fruit_2', 'fruit_5', 'fruit_6', 'fruit_9', 'fruit_10', 'tool_14')] ==         ['shell_2', 'shell_2', 'shell_3', 'shell_3', 'shell_4', 'shell_4']
 
 
 def test_refresh_changes_every_hot_slot_without_snapshot(player):
@@ -93,9 +114,10 @@ def test_crafted_item_codex_reward_once(player):
 def test_no_bubbles_for_low_items_or_tutorial(player, monkeypatch):
     monkeypatch.setattr(random.SystemRandom, 'random', lambda _: 0.0)
     assert player.post('/v1/merge/bubble', {'item': 'fruit_3'}).json()['give'] == {}
-    snap = player.snapshot(tutorial_on=True, board=[{'id': 'fruit_5', 'lock': 0}])
-    assert player.put(snap).status_code == 200
     assert player.post('/v1/merge/bubble', {'item': 'fruit_5'}).json()['give'] == {}
+    snap = player.snapshot(tutorial_on=True, board=[{'id': 'fruit_6', 'lock': 0}])
+    assert player.put(snap).status_code == 200
+    assert player.post('/v1/merge/bubble', {'item': 'fruit_6'}).json()['give'] == {}
 
 
 def test_shop_resource_direct_credit_cannot_redeem_twice(player):

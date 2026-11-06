@@ -7,6 +7,11 @@ static func offer(key: String) -> Dictionary:
 	for d in Data.daily_deals(G.level):
 		if str(d["key"]) == key: return d
 	return {}
+## 体力宝箱开出的东西（deal_energybox 的 opens，服务器 daily_shop.energy_chest_items 同一份）
+static func energy_chest_items() -> Array:
+	var out: Array = []
+	for id in offer("deal_energybox").get("opens", ["fire_4", "fire_4", "fire_4"]): out.append(str(id))
+	return out
 static func can_claim(d: Dictionary) -> bool:
 	return not d.is_empty() and G.pass_tier >= int(d.get("min_tier",0)) and (G.deals_day != G.today() or int(G.deals_bought.get(d["key"],0)) < int(d["stock"]))
 static func start_ad() -> bool:

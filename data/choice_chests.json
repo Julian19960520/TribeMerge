@@ -1,7 +1,8 @@
 {
 	"choice_1": {
 		"title": "自选宝箱",
-		"choices": ["fire_4", "shell_4", "amber_3"],
+		"_说明": "棋盘上点开三选一，选中的物品替换宝箱所在格。三项按琥珀当量（AE，见 gift_chain.json：琥珀 1、体力 0.4、宝箱 15）做到价值相近、用途不同：熊熊大火 40 体力 ≈ 16 AE（现在缺体力）、虫珀 15 琥珀 = 15 AE（攒琥珀）、藤编宝箱 3 件随机物品 ≈ 15 AE（赌一把）。服务器 economy.choose_chest 读同一份。",
+		"choices": ["fire_5", "amber_4", "chest_1"],
 		"icon": "res://assets/ui/choice_chest.svg"
 	}
 }
