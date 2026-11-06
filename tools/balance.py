@@ -370,6 +370,17 @@ INTRO = {
 
 
 LAST_SAYS = set()
+LAST_ITEMS = set()
+SUB_CHAINS = {l["sub"] for l in LINES}
+
+
+def item_flames(x):
+    """理论火苗：主产物 2^(等级-1)，副产物再除以平均掉率（和 OrderRoll.gd 一致）。"""
+    ch, lv = x.rsplit("_", 1)
+    f = 2 ** (int(lv) - 1)
+    if ch in SUB_CHAINS:
+        f = f * 100.0 / sub_avg_percent(ch)
+    return f
 
 
 def story_for(L, rows_by_level, rng):
@@ -382,7 +393,10 @@ def story_for(L, rows_by_level, rng):
         need -= 1
     fresh = [l for l in LINES if l["unlock"] <= L <= l["unlock"] + 2]
     chains = [l["main"] for l in open_lines(L) if product_open(L, l["main"])]
+    subs = [l["sub"] for l in open_lines(L) if product_open(L, l["sub"])]
     out = []
+    # 同一级、上一级已经要过的物品尽量不再要，免得订单栏里全是同一两种东西
+    recent = set(LAST_ITEMS)
     k_n = len(shares)
     xps = [need // k_n] * k_n
     for i in range(need % k_n):
@@ -390,7 +404,7 @@ def story_for(L, rows_by_level, rng):
     for i, s in enumerate(shares):
         f = total_f * s
         if f <= 24:
-            n = 1
+            n = 1 if L == 1 else rng.choice([1, 2])
         elif f <= 80:
             n = rng.choice([1, 2, 2])
         else:
@@ -398,10 +412,15 @@ def story_for(L, rows_by_level, rng):
         # 在 n 件物品的组合里找理论火苗最接近目标的；第一件优先用刚开放的产线
         first = fresh[0]["main"] if fresh else None
         picks = [first if (first and k == 0) else rng.choice(chains) for k in range(n)]
+        # 副产物开放后，多件订单里偶尔换一件副产物，颜色、外形都和主产物不一样
+        if subs and n >= 2 and rng.random() < 0.5:
+            picks[-1] = rng.choice(subs)
         best = None
-        for combo in itertools.product(*[range(2, max_lv(c) - 1) for c in picks]):
-            got = sum(2 ** (lv - 1) for lv in combo)
+        for combo in itertools.product(*[range(1 if c in subs else 2, (4 if c in subs else max_lv(c) - 1)) for c in picks]):
+            its = [f"{c}_{lv}" for c, lv in zip(picks, combo)]
+            got = sum(item_flames(x) for x in its)
             err = abs(got - f) / f
+            err += 0.45 * sum(1 for x in its if x in recent) + 0.3 * (len(its) - len(set(its)))
             if best is None or err < best[0] - 1e-9:
                 best = (err, combo)
         items = [f"{c}_{lv}" for c, lv in zip(picks, best[1])]
@@ -421,7 +440,8 @@ def story_for(L, rows_by_level, rng):
                 alt = [c for c in chains if c != ch]
                 items[k] = f"{rng.choice(alt) if alt else ch}_{lv + (0 if alt else 1)}"
             items.sort(key=lambda x: -int(x.rsplit("_", 1)[1]))
-        flames = sum(2 ** (int(x.rsplit("_", 1)[1]) - 1) for x in items)
+        flames = round(sum(item_flames(x) for x in items))
+        recent.update(items)
         lead = items[0].rsplit("_", 1)[0]
         opened = [l for l in LINES if l["unlock"] == L]
         if i == 0 and opened:
@@ -440,6 +460,8 @@ def story_for(L, rows_by_level, rng):
         out.append(o)
     LAST_SAYS.clear()
     LAST_SAYS.update(o["say"] for o in out)
+    LAST_ITEMS.clear()
+    LAST_ITEMS.update(x for o in out for x in o["items"])
     return out
 
 
@@ -486,7 +508,7 @@ def run():
         r["new_xp_need"] = r["new_xp_supply"]
         sl = story[L - 1]["orders"]
         r["story_items"] = [o["items"] for o in sl]
-        r["story_order_taps"] = [round(sum(2 ** (int(x.rsplit("_", 1)[1]) - 1) for x in o["items"]) * KNOBS["waste"] / r["eff"]) for o in sl]
+        r["story_order_taps"] = [round(sum(item_flames(x) for x in o["items"]) * KNOBS["waste"] / r["eff"]) for o in sl]
 
     cum = 0.0
     for r in rows:
