@@ -505,13 +505,7 @@ func _check_plain() -> void:
 	_finish()
 
 func _grant_normal_orders() -> void:
-	var skip: Array = [["seed_1"]] if _gave_seed_order else []
-	G._add_story_orders(skip)
-	if G._random_left() == 0:
-		G._add_random_batch()
-	if not G._has_craft_order():
-		G._ensure_craft_order(false)
-	G.orders_changed.emit()
+	G.refill_orders()
 
 func _place() -> void:
 	var bust_sz := Vector2(200, 292)

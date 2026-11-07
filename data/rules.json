@@ -4,6 +4,7 @@
   "max_energy": 100,
   "regen_sec": 120,
   "random_orders": 4,
+  "order_cap_at": [1, 1, 4, 10, 20],
   "token_step": 10,
   "xp_base": 3,
   "xp_div": 2,

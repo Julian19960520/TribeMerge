@@ -55,7 +55,7 @@ static func fresh(c: Dictionary) -> Dictionary:
 				continue
 			var tier := locked_tier(b, rows - 2 - row, col)
 			cells.append({"id": str(c["chain"][clampi(tier - 1, 0, c["chain"].size() - 2)]["id"]), "lock": 2})
-	return {"rules_version": 2, "cells": cells, "points": 0, "earned": 0, "spent": 0, "discovered": {}, "min_view": rows - int(b["visible_rows"]), "view": rows - int(b["visible_rows"]), "claimed": false, "got": [], "orders": 0}
+	return {"rules_version": 3, "cells": cells, "points": 0, "earned": 0, "spent": 0, "discovered": {}, "min_view": rows - int(b["visible_rows"]), "view": rows - int(b["visible_rows"]), "claimed": false, "got": [], "orders": 0}
 
 ## Locked item tier at a depth (0 = row right above the open bottom row). Deeper layers hold higher relics.
 ## Same integer hash as server/app/merge_event.py so both sides build identical boards.
@@ -84,17 +84,19 @@ static func state(c: Dictionary) -> Dictionary:
 	return G.merge_events[key]
 
 static func migrate(c: Dictionary, s: Dictionary) -> bool:
-	if int(s.get("rules_version", 1)) >= 2: return false
-	var cells: Array = s["cells"]
-	var cols := int(c["board"]["cols"])
-	for k in cells.size():
-		if int(cells[k]["lock"]) != 1: continue
-		var frontier := false
-		for neighbor in MergeGrid.neighbors(k, cols, cells.size()):
-			if int(cells[neighbor]["lock"]) == 0: frontier = true
-		if not frontier: cells[k]["lock"] = 2
-	s["rules_version"] = 2
-	s["min_view"] = int(s["view"])
+	if int(s.get("rules_version", 1)) >= 3: return false
+	if int(s.get("rules_version", 1)) < 2:
+		var cells: Array = s["cells"]
+		var cols := int(c["board"]["cols"])
+		for k in cells.size():
+			if int(cells[k]["lock"]) != 1: continue
+			var frontier := false
+			for neighbor in MergeGrid.neighbors(k, cols, cells.size()):
+				if int(cells[neighbor]["lock"]) == 0: frontier = true
+			if not frontier: cells[k]["lock"] = 2
+	s["rules_version"] = 3
+	# Existing exploration never moves backwards. Newly earned steps may wait for room.
+	_advance(c, s)
 	return true
 
 static func next_id(c: Dictionary, id: String) -> String:
@@ -194,19 +196,29 @@ static func claim_rewards(c: Dictionary, indexes: Array) -> Array:
 		for rw in ms[int(k)]["rewards"]: out.append((rw as Array).duplicate())
 	return out
 
+static func unlocked_tier(c: Dictionary, s: Dictionary) -> int:
+	var tier := 0
+	for k in c["chain"].size():
+		if s["discovered"].has(str(c["chain"][k]["id"])): tier = k + 1
+	return tier
+
+static func advance_target(c: Dictionary, s: Dictionary) -> int:
+	var rows := 0
+	var tier := unlocked_tier(c, s)
+	for stage in c["board"].get("advance_by_tier", []):
+		if tier >= int(stage["tier"]): rows += maxi(0, int(stage["rows"]))
+	return maxi(0, int(c["board"]["total_rows"]) - int(c["board"]["visible_rows"]) - rows)
+
 static func _advance(c: Dictionary, s: Dictionary) -> void:
 	var cols := int(c["board"]["cols"])
 	var rows := int(c["board"]["visible_rows"])
 	var cells: Array = s["cells"]
-	while int(s["view"]) > 0:
+	var target := advance_target(c, s)
+	while int(s["view"]) > target:
 		var view := int(s["view"])
-		var ready := true
-		for col in cols:
-			if int(cells[view * cols + col]["lock"]) != 0: ready = false
-		if not ready: break
 		var shifted := false
 		# Preserve every outgoing item, and never strand an uncleared lower cell.
-		for step in range(mini(view, int(c["board"]["reveal_rows"])), 0, -1):
+		for step in range(mini(view - target, int(c["board"]["reveal_rows"])), 0, -1):
 			var next_view := view - step
 			var next_end := (next_view + rows) * cols
 			var outgoing: Array = []
@@ -217,7 +229,8 @@ static func _advance(c: Dictionary, s: Dictionary) -> void:
 				if str(cells[k]["id"]) != "": outgoing.append(k)
 			for k in range(next_view * cols, next_end):
 				if int(cells[k]["lock"]) == 0 and str(cells[k]["id"]) == "": slots.append(k)
-			if not clear or outgoing.size() > slots.size(): continue
+			# Keep room to place and merge a fresh pair after the camera advances.
+			if not clear or outgoing.size() + 2 > slots.size(): continue
 			slots.reverse()
 			for k in outgoing.size():
 				cells[slots[k]]["id"] = cells[outgoing[k]]["id"]
@@ -266,7 +279,6 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		s["discovered"][str(cells[b]["id"])] = true
 		if locked: s["discovered"][under] = true
 		result = {"kind": kind, "from": a, "to": b, "id": id, "under": under, "unlocked": locked, "revealed": revealed}
-		_advance(c, s)
 	elif action == "recycle":
 		var at := int(args.get("cell", -1))
 		if at < lo or at >= hi or int(cells[at]["lock"]) != 0 or str(cells[at]["id"]) == "": return {"error": "请选择一个未锁定的物品"}
@@ -281,6 +293,9 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		if have.has(milestones(c).size() - 1): s["claimed"] = true
 		result = {"kind": "claim", "milestones": ready, "rewards": claim_rewards(c, ready)}
 	else: return {"error": "未知操作"}
+	if action in ["drop", "spawn", "recycle"]:
+		_advance(c, s)
+		result["advance_rows"] = view - int(s["view"])
 	return result
 
 static func act(c: Dictionary, action: String, args: Dictionary = {}) -> Dictionary:

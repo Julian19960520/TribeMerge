@@ -20,3 +20,13 @@ python tools/export_web.py /path/to/godot
 Web 版打包 Noto Sans CJK SC 字体，授权见 `assets/fonts/OFL.txt`。
 
 部署身份保存在 `.openai/hosting.json`。GitHub 的 origin 保持不变。
+
+## 自动演算与活动
+
+`/simulation.html` 提供自动玩家的时间轴。报告由 `tools/sim/run.py --publish-report`
+生成，随游戏导出一起发布；它不读取浏览器里的玩家存档。配置与无限循环说明见
+`tools/sim/README.md`。
+
+双人竞速在浏览器试玩版使用模拟对手，按实际交单获得积分，先达目标者获胜。
+目标积分、解锁等级、胜负奖励及 2/5/8/12 胜的累计奖励在 `data/duel_race.json` 配置。
+桌面服务器也实现了权威积分和防重复领奖，但当前网页发布不包含真人匹配服务。

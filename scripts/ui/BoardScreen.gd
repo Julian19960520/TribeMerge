@@ -39,12 +39,14 @@ var _lv_lbl: Label
 var _stash_btn: TButton
 var _stash_wrap: Control
 var _stash_open := false
+var _stash_busy := false
 var _hammer_on := false
 var _row_tween: Tween
 var _base_btn: TButton
 var _hammer_btn: TButton
 var _pouch: TButton
 var _race_entry: Control
+var _duel_entry: Control
 var _seven_entry: Control
 var _merge_event_entry: Control
 var _cards: Array[Control] = []
@@ -97,6 +99,9 @@ func _ready() -> void:
 	_seven_entry.position = BASE_RECT.position
 	_seven_entry.size = Vector2(EVENT_W, BASE_RECT.size.y)
 	_orders.content.add_child(_seven_entry)
+	_duel_entry = preload("res://scripts/ui/DuelEntry.gd").new()
+	_duel_entry.size = Vector2(EVENT_W, BASE_RECT.size.y)
+	_orders.content.add_child(_duel_entry)
 	_base_btn = UI.hit(_orders.content, BASE_RECT, func(): G.main.open("level"))
 	_base_btn.extra = _paint_hero
 	_lv_lbl = UI.lbl(_base_btn, "", Rect2(0, 140, BASE_RECT.size.x, 30), 18, Art.INK)
@@ -186,9 +191,14 @@ func _paint_stash(ci: CanvasItem, sz: Vector2) -> void:
 	ci.draw_colored_polygon(tb, Color("8a5a32"))
 	Art.dashed(ci, Art.rrect(tray.grow(-6), 12, 42, 0.0), 8, 6, Color(1, 0.85, 0.6, 0.45), 2.0)
 	var shown := mini(n, 4)
+	var top := G.stash_claim_index()
+	var order: Array[int] = []
+	if top >= 0: order.append(top)
+	for i in range(n - 1, -1, -1):
+		if i != top: order.append(i)
 	for j in shown:
 		var k := shown - 1 - j
-		var id: String = G.stash[n - 1 - k]
+		var id: String = G.stash[order[k]]
 		var off := Vector2(float(k) * 5.0, -float(k) * 9.0)
 		var rot := (Art.srnd(n - k) - 0.5) * 0.14 if k > 0 else 0.0
 		var cr := Rect2(Vector2(16, 44) + off, Vector2(sz.x - 36, 124))
@@ -206,9 +216,12 @@ func _paint_stash(ci: CanvasItem, sz: Vector2) -> void:
 		var t := str(n)
 		ci.draw_string_outline(G.font_body, Vector2(sz.x - 34, 42), t, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, 5, Art.INK)
 		ci.draw_string(G.font_body, Vector2(sz.x - 34, 42), t, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, Color.WHITE)
-		var bob := 4.0 * sin(Time.get_ticks_msec() / 200.0)
-		var arr := Art.poly([Vector2(sz.x * 0.5 - 16, sz.y - 30 + bob), Vector2(sz.x * 0.5 + 16, sz.y - 30 + bob), Vector2(sz.x * 0.5, sz.y - 8 + bob)], 3)
-		Art.fill(ci, arr, Art.MOSS, 3.0)
+		if top < 0:
+			ci.draw_string(G.font_body, Vector2(0, sz.y - 14), "%d级开启" % Data.CARD_LEVEL, HORIZONTAL_ALIGNMENT_CENTER, sz.x, 20, Art.BONE)
+		else:
+			var bob := 4.0 * sin(Time.get_ticks_msec() / 200.0)
+			var arr := Art.poly([Vector2(sz.x * 0.5 - 16, sz.y - 30 + bob), Vector2(sz.x * 0.5 + 16, sz.y - 30 + bob), Vector2(sz.x * 0.5, sz.y - 8 + bob)], 3)
+			Art.fill(ci, arr, Art.MOSS, 3.0)
 
 static func _rot_about(pts: PackedVector2Array, a: float, c: Vector2) -> PackedVector2Array:
 	var out := PackedVector2Array()
@@ -366,14 +379,12 @@ func _build_orders() -> void:
 		order.append(oi)
 		gap.append(_order_missing(oi))
 	order.sort_custom(func(a: int, b: int) -> bool:
+		var xa: bool = int(G.orders[a]["rw"].get("xp",0)) > 0
+		var xb: bool = int(G.orders[b]["rw"].get("xp",0)) > 0
+		if xa != xb: return xa
 		var sa := gap[a] == 0
 		var sb := gap[b] == 0
-		if sa != sb:
-			return sa
-		var xa: bool = G.orders[a]["rw"].has("xp") and int(G.orders[a]["rw"]["xp"]) > 0
-		var xb: bool = G.orders[b]["rw"].has("xp") and int(G.orders[b]["rw"]["xp"]) > 0
-		if xa != xb:
-			return xa
+		if sa != sb: return sa
 		if gap[a] == gap[b]:
 			return a < b
 		return gap[a] < gap[b]
@@ -666,7 +677,7 @@ func _tribe_ready() -> bool:
 
 func _cards_x() -> float:
 	var x := 0.0 if not G.stash.is_empty() else -(BASE_RECT.position.x - STASH_RECT.position.x)
-	x += RACE_W + EVENT_W * 2 + ROW_GAP * 3
+	x += RACE_W + EVENT_W * 3 + ROW_GAP * 4
 	if _tribe_ready():
 		x += HAMMER_W + ROW_GAP
 	return x
@@ -685,7 +696,8 @@ func _apply_row(animate: bool) -> void:
 	var race_x := BASE_RECT.position.x if open else STASH_RECT.position.x
 	var event_x := race_x + RACE_W + ROW_GAP
 	var seven_x := event_x + EVENT_W + ROW_GAP
-	var base_x := seven_x + EVENT_W + ROW_GAP
+	var duel_x := seven_x + EVENT_W + ROW_GAP
+	var base_x := duel_x + EVENT_W + ROW_GAP
 	var hammer_x := base_x + BASE_RECT.size.x + ROW_GAP
 	var cards_x := _cards_x()
 	var stash_was := _stash_open
@@ -700,6 +712,7 @@ func _apply_row(animate: bool) -> void:
 		_race_entry.position.x = race_x
 		_merge_event_entry.position.x = event_x
 		_seven_entry.position.x = seven_x
+		_duel_entry.position.x = duel_x
 		_base_btn.position.x = base_x
 		_hammer_btn.visible = hammer
 		_hammer_btn.scale = Vector2.ONE
@@ -727,6 +740,7 @@ func _apply_row(animate: bool) -> void:
 	if hammer != hammer_was:
 		var hammer_dur := 0.22 if hammer else 0.16
 		_row_tween.tween_property(_hammer_btn, "scale", Vector2.ONE if hammer else Vector2.ZERO, hammer_dur).set_trans(Tween.TRANS_BACK if hammer else Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT if hammer else Tween.EASE_IN)
+	_row_tween.tween_property(_duel_entry, "position:x", duel_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_seven_entry, "position:x", seven_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_merge_event_entry, "position:x", event_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_race_entry, "position:x", race_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -831,7 +845,7 @@ func _on_select(i: int) -> void:
 		elif Data.is_dish(c["id"]):
 			_show_delete_btn(false)
 		else:
-			_show_delete_btn(c["lock"] == 0)
+			_show_delete_btn(c["lock"] == 0 and Data.type_of(str(c["id"])) != "gen")
 	else:
 		_info_btn.visible = false
 		_show_delete_btn(false)
@@ -901,6 +915,7 @@ func _on_delete() -> void:
 	if i < 0 or G.board[i]["lock"] != 0 or G.board[i]["id"] == "":
 		return
 	var id: String = G.board[i]["id"]
+	if Data.type_of(id) == "gen": return
 	if Data.is_dish(id):
 		G.main.toast("做好的食物要交给订单")
 		Sfx.play("deny")
@@ -1078,21 +1093,26 @@ func _on_drop_outside(i: int, gp: Vector2) -> void:
 		tw.tween_property(_pouch, "scale", Vector2.ONE, 0.15)
 
 func _on_stash() -> void:
+	if _stash_busy: return
 	if G.stash.is_empty():
 		G.main.toast("奖励、购买和放不下的物品会暂存在这里")
 		return
-	var id: String = G.stash.back()
+	var index := G.stash_claim_index()
+	if index < 0:
+		G.main.toast("卡包已保留，%d级开启" % Data.CARD_LEVEL)
+		return
+	var id: String = G.stash[index]
 	match Data.type_of(id):
 		"pack":
 			if G.level < Data.CARD_LEVEL:
 				G.main.toast("典藏卡在 %d 级解锁" % Data.CARD_LEVEL)
 				return
-			G.stash.pop_back()
+			G.stash.remove_at(index)
 			G.dirty()
 			G.changed.emit()
 			G.main.open("pack")
 		"energy", "shell", "amber", "sand" when Data.value_of(id) > 0:
-			G.stash.pop_back()
+			G.stash.remove_at(index)
 			var kind := Data.type_of(id)
 			var v := Data.value_of(id)
 			G.dirty()
@@ -1101,14 +1121,16 @@ func _on_stash() -> void:
 			G.cloud_event({"type": "collect", "item": id})
 			Rewards.grant([[id, v]], func(_k): return stash_pos())
 		"chest":
-			_take_stash_chest()
+			_stash_busy = true
+			await _take_stash_chest(index)
+			_stash_busy = false
 		_:
 			var to := G.find_empty_near(G.idx(0, 0))
 			if to < 0:
 				G.main.toast("棋盘满了！")
 				Sfx.play("deny")
 				return
-			G.stash.pop_back()
+			G.stash.remove_at(index)
 			G.board[to]["id"] = id
 			G.discover(id)
 			G.dirty()
@@ -1118,13 +1140,13 @@ func _on_stash() -> void:
 			G.changed.emit()
 
 ## 暂存区顶上的宝箱：先改完棋盘和暂存，再发一次信号
-func _take_stash_chest() -> void:
-	if G.stash.is_empty(): return
-	var id := str(G.stash.back())
+func _take_stash_chest(index: int) -> void:
+	if index < 0 or index >= G.stash.size(): return
+	var id := str(G.stash[index])
 	var got: Array = await G.open_chest(id)
-	if got.is_empty() or G.stash.is_empty() or str(G.stash.back()) != id:
+	if got.is_empty() or index >= G.stash.size() or str(G.stash[index]) != id:
 		return
-	G.stash.pop_back()
+	G.stash.remove_at(index)
 	Rewards.grant(Rewards.items(got), Callable(), true, true, {"board_origin": G.idx(0, 0), "from_stash": true})
 	Sfx.play("merge", 1.2)
 

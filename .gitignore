@@ -2,3 +2,7 @@
 shots/
 *.log
 dist/
+tools/sim/results/
+tools/sim/report*.json
+tools/sim/report*.jsonl
+__pycache__/

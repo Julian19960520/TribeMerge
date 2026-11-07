@@ -175,3 +175,8 @@ class ChoiceChestReq(Req):
 class SevenDayClaimReq(Req):
     entry: str = Field(pattern=r"^[a-z0-9_]{1,40}$")
     stage: bool = False
+
+
+class DuelActionReq(Req):
+    action: Literal["join", "refresh", "claim", "milestone"]
+    milestone: int = Field(default=0, ge=0, le=12)

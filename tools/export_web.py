@@ -72,3 +72,9 @@ html = html.replace('<script src="index.js"></script>', bootstrap + '<script src
 assert bootstrap in html, "Godot HTML shell changed"
 page.write_text(html)
 print("Web export ready:", dist)
+# The simulator report is a separate lightweight page; it does not load the game engine.
+import shutil
+for name in ("simulation.html", "simulation-events.js", "simulation-report.json.gz"):
+    source = root / "web" / name
+    if source.exists():
+        shutil.copyfile(source, dist / name)

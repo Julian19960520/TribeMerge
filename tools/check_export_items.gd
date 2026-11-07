@@ -63,6 +63,18 @@ func check() -> void:
 			quit(1)
 			return
 	print("PASS: %d activity/chest textures loaded from export" % extra_paths.size())
+	var moon = load("res://scripts/ui/MoonArt.gd")
+	for key in moon.NAMES:
+		var tex: Texture2D = moon.texture(key)
+		if tex == null or tex.get_image().get_used_rect().size == Vector2i.ZERO:
+			push_error("Missing moon prerender: " + str(key))
+			quit(1)
+			return
+	if moon.texture("tiles").get_size() != Vector2(512, 3072):
+		push_error("Moon tile atlas dimensions changed")
+		quit(1)
+		return
+	print("PASS: 11 baked moon textures and 96 tile regions exported")
 	for config_path in ["res://data/daily_deals.json", "res://data/ufo_offer.json", "res://data/race.json"]:
 		if not FileAccess.file_exists(config_path):
 			push_error("Missing feature config: "+config_path)

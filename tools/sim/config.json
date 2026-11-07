@@ -1,0 +1,17 @@
+{
+  "seed": 20261107,
+  "runs": 1,
+  "cycle_days": 14,
+  "max_actions": 150000,
+  "action_seconds": 2,
+  "start_utc": "2026-11-02T00:00:00",
+  "story_first": true,
+  "play_events": true,
+  "use_storage": true,
+  "expand_storage": false,
+  "max_storage": 20,
+  "wait_energy_batch": 10,
+  "delete_max_level": 10,
+  "stop_level": 40,
+  "main_story_max_level": 0
+}

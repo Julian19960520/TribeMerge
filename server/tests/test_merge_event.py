@@ -157,6 +157,7 @@ def test_auto_scroll_preserves_items_and_unfinished_cells(player):
     s = merge_event.fresh(c)
     for k in range(54,96):
         s['cells'][k] = {'id':'', 'lock':0}
+    s['discovered']['moon_4'] = True
     s['cells'][95]['id'] = 'moon_4'
     s['cells'][80]['id'] = 'moon_3'
     before = Counter(x['id'] for x in s['cells'] if x['id'])
@@ -167,6 +168,7 @@ def test_auto_scroll_preserves_items_and_unfinished_cells(player):
     assert {'moon_3','moon_4'} <= {x['id'] for x in s['cells'][36:78]}
     # A covered outgoing cell must remain reachable; only shift the safe bottom row.
     s = merge_event.fresh(c)
+    s['discovered']['moon_4'] = True
     for k in range(54,60): s['cells'][k] = {'id':'','lock':0}
     merge_event.advance(c,s)
     assert s['view'] == 8 and s['cells'][84]['lock'] == 2

@@ -22,6 +22,7 @@ import time
 from .gamedata import CURRENCY, GameData
 
 SERVER_FIELDS = [
+    "duel_race",
     "ufo_offer", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "inv_cap",
     "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus",
     "tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period", "hot_revision",
@@ -79,7 +80,7 @@ class Economy:
     def adopt(self, st: dict, snap: dict) -> None:
         """账号的第一份快照（老存档第一次连上服务器）：服务器字段信一次客户端，额度按快照里的物品算。之后就以服务器为准。"""
         for k in SERVER_FIELDS:
-            if k in snap and k not in ("merge_events", "seven_day", "ufo_offer", "gm_activities"):
+            if k in snap and k not in ("duel_race", "merge_events", "seven_day", "ufo_offer", "gm_activities"):
                 st[k] = snap[k]
         st["amber"] = max(0, num(st.get("amber")))
         st["shells"] = max(0, num(st.get("shells")))
@@ -744,6 +745,8 @@ class Economy:
             self._seen_item(st, str(iid), credit=False, budget=False)
         from . import merge_event
         merge_event.on_order(self, st, o)
+        from . import duel_race
+        duel_race.on_order(self, st, o)
         from . import seven_day
         seven_day.record(self, st, "orders", 1)
         rw = self._norm(o.get("rw") or {})

@@ -1,24 +1,20 @@
 extends PopupBase
 ## 月石遗迹活动面板：月夜遗迹背景；顶部是带里程碑宝箱的探索进度；中间是活动棋盘；
-## 底部是 8 件遗物陈列、积分气泡（点一下投放 1 件月石碎片）、积分来源说明与选中物品信息。
+## 底部保留遗物产线进度和居中的放置按钮。
 var cfg: Dictionary
 var period_key := ""
 var board: MergeEventBoard
 var progress: Label
 var timer: Label
 var points: Label
-var selection: Label
-var selection_hint: Label
 var spawn_btn: TButton
 var claim_btn: TButton
 var collection: DrawBox
 var track: DrawBox
-var earn: DrawBox
-var info: DrawBox
 var fx: Fx
 var _clock := 0.0
+var _decor_clock := 0.0
 var _t := 0.0
-var _info_id := ""
 var _known: Dictionary = {}
 var _node_x: Array = []
 
@@ -38,6 +34,7 @@ func _ready() -> void:
 		close()
 		return
 	_known = MergeEvent.state(cfg)["discovered"].duplicate()
+	MoonArt.warm()
 	_build()
 	G.merge_event_changed.connect(_refresh)
 	_refresh()
@@ -47,7 +44,7 @@ func _c(key: String, fallback: String) -> Color:
 
 func _build() -> void:
 	Popups.frame(self, PANEL, str(cfg["title"]), _c("banner", "2f6377"), "")
-	var scene := UI.box(box, SCENE, _paint_scene)
+	var scene := UI.box(box, SCENE, _paint_scene, false)
 	box.move_child(scene, 1)
 	# 背景盖住了横幅下沿：在背景之上、标题文字之下再画一次横幅。
 	var br := Rect2(PANEL.get_center().x - 180, PANEL.position.y - 34, 360, 78)
@@ -70,7 +67,7 @@ func _build() -> void:
 # ---------------------------------------------------------------- 顶部：探索进度与里程碑
 
 func _build_track() -> void:
-	track = UI.box(box, TRACK, _paint_track)
+	track = UI.box(box, TRACK, _paint_track, false)
 	UI.lbl(box, "遗迹探索", Rect2(TRACK.position.x + 22, TRACK.position.y + 8, 200, 34), 24, CREAM, HORIZONTAL_ALIGNMENT_LEFT, 0, INK, true)
 	progress = UI.lbl(box, "", Rect2(TRACK.end.x - 250, TRACK.position.y + 8, 228, 34), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_RIGHT, 5, INK, true)
 	var ms := MergeEvent.milestones(cfg)
@@ -86,12 +83,7 @@ func _build_track() -> void:
 
 func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 	var s := MergeEvent.state(cfg)
-	var base := Art.rrect(Rect2(Vector2.ZERO, sz), 20, 404, 0.6)
-	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 6), sz), 20, 405, 0.0), Color(0, 0, 0, 0.3))
-	Art.dilate(ci, base, 3.0, INK)
-	ci.draw_colored_polygon(base, Color("24404a"))
-	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(6, 6), Vector2(sz.x - 12, sz.y * 0.42)), 15, 406, 0.3), Color(1, 1, 1, 0.05))
-	Art.dashed(ci, Art.rrect(Rect2(Vector2(7, 7), sz - Vector2(14, 14)), 15, 407, 0.0), 10, 7, Color(_c("glow", "bff3f0"), 0.28), 2.0)
+	MoonArt.panel(ci, "track", sz)
 	var o := TRACK.position
 	var bar := Rect2(BAR.position - o, BAR.size)
 	var total := float(MergeEvent.goal_total(cfg))
@@ -157,73 +149,24 @@ func _build_board() -> void:
 	board.size = Vector2(int(cfg["board"]["cols"]), int(cfg["board"]["visible_rows"])) * cell_size
 	board.position = Vector2((720 - board.size.x) / 2, 418)
 	var frame_r := Rect2(board.position, board.size).grow(10)
-	UI.box(box, frame_r, func(ci, sz):
-		var outer := Art.rrect(Rect2(Vector2.ZERO, sz), 18, 501, 0.6)
-		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 18, 502, 0.0), Color(0, 0, 0, 0.35))
-		Art.dilate(ci, outer, 3.0, INK)
-		ci.draw_colored_polygon(outer, Color("4f6c72"))
-		for k in 18:
-			var p := Vector2(Art.srnd(k * 3 + 7) * sz.x, (0.0 if k % 2 == 0 else sz.y - 5.0) + Art.srnd(k) * 5.0)
-			ci.draw_circle(p, 1.5 + Art.srnd(k + 9) * 2.0, Color(0, 0, 0, 0.18)))
+	UI.box(box, frame_r, func(ci, sz): MoonArt.panel(ci, "frame", sz), false)
 	box.add_child(board)
-	UI.box(box, Rect2(frame_r.position - Vector2(10, 18), Vector2(frame_r.size.x + 20, 60)), _paint_corner_vines)
-	board.selection_changed.connect(func(_id, _locked): _show_cell(board.selected))
+	UI.box(box, Rect2(frame_r.position - Vector2(10, 18), Vector2(frame_r.size.x + 20, 60)), _paint_corner_vines, false)
 	board.action_finished.connect(func(_r): _refresh())
 
 func _paint_corner_vines(ci: CanvasItem, sz: Vector2) -> void:
-	var leaf := _c("vine", "7fae5a")
-	for side in 2:
-		var dir := 1.0 if side == 0 else -1.0
-		var x0 := 12.0 if side == 0 else sz.x - 12.0
-		var pts := PackedVector2Array()
-		for k in 9:
-			var t := float(k) / 8.0
-			pts.append(Vector2(x0 + dir * t * 120.0, 22 + sin(t * 5.0 + side) * 7.0 + t * t * 6.0))
-		ci.draw_polyline(pts, INK, 6.0, true)
-		ci.draw_polyline(pts, leaf.darkened(0.3), 3.0, true)
-		for k in [1, 3, 5, 7]:
-			var c: Vector2 = pts[k] + Vector2(0, -7 if k % 4 == 1 else 8)
-			var e := Art.ell(c, Vector2(9, 5), 520 + k + side * 9, 0.02, 10, 0.5 * dir * (1 if k % 4 == 1 else -1), 0.4)
-			Art.fill(ci, e, leaf if k % 4 == 1 else leaf.lightened(0.12), 1.8, INK)
-
-# ---------------------------------------------------------------- 底部：遗物陈列、积分气泡、说明
+	MoonArt.panel(ci, "corners", sz)
 
 func _build_bottom() -> void:
-	collection = UI.box(box, SHELF, _paint_collection)
+	collection = UI.box(box, SHELF, _paint_collection, false)
 	var chain: Array = cfg["chain"]
 	var gap := (SHELF.size.x - 24) / chain.size()
 	for k in chain.size():
 		UI.hit(box, Rect2(SHELF.position.x + 12 + gap * k, SHELF.position.y, gap, SHELF.size.y), _show_relic.bind(k))
-	earn = UI.box(box, Rect2(56, 1192, 200, 166), _paint_earn)
-	UI.lbl(box, "主棋盘交订单", Rect2(56, 1200, 200, 30), 21, CREAM)
-	UI.lbl(box, "+1~3", Rect2(150, 1236, 120, 56), 38, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 6, INK, true)
-	UI.lbl(box, "订单越难 积分越多", Rect2(56, 1302, 200, 26), 17, Color("a9cfcb"))
-	UI.lbl(box, "1 积分 = 1 块碎片", Rect2(56, 1326, 200, 26), 17, Color("a9cfcb"))
 	spawn_btn = UI.hit(box, Rect2(BUBBLE.x - 76, BUBBLE.y - 78, 152, 164), func(): board.spawn())
 	spawn_btn.extra = _paint_spawn
-	points = UI.lbl(spawn_btn, "", Rect2(16, 122, 120, 38), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, INK, true)
-	info = UI.box(box, Rect2(464, 1192, 200, 166), _paint_info)
-	selection = UI.lbl(box, "", Rect2(468, 1284, 192, 32), 22, CREAM, HORIZONTAL_ALIGNMENT_CENTER, 0, INK, true)
-	selection_hint = UI.lbl(box, "", Rect2(468, 1316, 192, 34), 17, Color("a9cfcb"))
-	_show_cell(-1)
-
-func _card(ci: CanvasItem, sz: Vector2, seed: int, glow: float = 0.0) -> void:
-	var r := Art.rrect(Rect2(Vector2.ZERO, sz), 18, seed, 0.6)
-	if glow > 0.0: Art.dilate(ci, r, 7.0, Color(1, 0.9, 0.5, glow))
-	Art.dilate(ci, r, 3.0, INK)
-	ci.draw_colored_polygon(r, Color("1e3842"))
-	Art.dashed(ci, Art.rrect(Rect2(Vector2(6, 6), sz - Vector2(12, 12)), 13, seed + 1, 0.0), 9, 6, Color(_c("glow", "bff3f0"), 0.22), 1.8)
-
-func _paint_earn(ci: CanvasItem, sz: Vector2) -> void:
-	var s := MergeEvent.state(cfg)
-	var hungry := int(s["points"]) < int(cfg["points"]["spawn_cost"]) and MergeEvent.active(cfg)
-	_card(ci, sz, 601, (0.35 + 0.3 * sin(_t * 4.0)) if hungry else 0.0)
-	# 订单小卡 → 积分
-	var tk := Rect2(16, 46, 40, 50)
-	Art.fill(ci, Art.rrect(tk, 6, 610, 0.4), Color("f6e7c8"), 2.4, INK)
-	for k in 3: ci.draw_line(tk.position + Vector2(8, 14 + k * 11), tk.position + Vector2(32, 14 + k * 11), Color(0.4, 0.27, 0.12, 0.55), 2.0)
-	Paint.check_mark(ci, tk.position + Vector2(34, 44), 0.7)
-	ci.draw_texture_rect(MergeEvent.texture(str(cfg["theme"]["point_icon"])), Rect2(56, 52, 40, 40), false)
+	spawn_btn.name = "moon_place_button"
+	points = UI.lbl(spawn_btn, "", Rect2(4, 122, 144, 38), 23, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, INK, true)
 
 func _paint_spawn(ci: CanvasItem, sz: Vector2) -> void:
 	var s := MergeEvent.state(cfg)
@@ -231,81 +174,19 @@ func _paint_spawn(ci: CanvasItem, sz: Vector2) -> void:
 	var c := Vector2(sz.x / 2, 72)
 	if can:
 		ci.draw_circle(c, 70 + 4 * sin(_t * 3.0), Color(_c("glow", "bff3f0"), 0.18))
-	ci.draw_circle(c + Vector2(0, 6), 62, Color(0, 0, 0, 0.25))
-	var ring := Art.ell(c, Vector2(62, 62), 620, 0.02, 30)
-	Art.dilate(ci, ring, 3.5, INK)
-	var bub := _c("accent", "8cdece") if can else Color("6b8487")
-	ci.draw_colored_polygon(ring, Color(bub, 0.92))
-	ci.draw_colored_polygon(Art.ell(c + Vector2(4, 6), Vector2(54, 52), 621, 0.02, 26), Color(bub.darkened(0.25), 0.7))
-	ci.draw_colored_polygon(Art.ell(c + Vector2(-2, -2), Vector2(52, 50), 622, 0.02, 26), Color(bub.lightened(0.18), 0.9))
-	ci.draw_arc(c + Vector2(-4, -4), 46, PI * 1.08, PI * 1.5, 14, Color(1, 1, 1, 0.85), 6, true)
-	ci.draw_circle(c + Vector2(30, -32), 5, Color(1, 1, 1, 0.8))
+	MoonArt.panel(ci, "spawn_on" if can else "spawn_off", sz)
 	var bob := sin(_t * 2.5) * 3.0 if can else 0.0
 	MergeEvent.draw_item(ci, cfg, str(cfg["chain"][int(cfg["points"]["spawn_tier"]) - 1]["id"]), c + Vector2(0, bob - 2), 78, Color.WHITE if can else Color(0.7, 0.75, 0.78, 0.8))
-	var pill := Rect2(Vector2(20, 124), Vector2(112, 36))
-	Art.fill(ci, Art.rrect(pill, 18, 623, 0.3), Color("10232a"), 2.5, INK)
-	ci.draw_texture_rect(MergeEvent.texture(str(cfg["theme"]["point_icon"])), Rect2(pill.position + Vector2(-8, -4), Vector2(44, 44)), false)
-	if can: Paint.plus_badge(ci, c + Vector2(46, 38))
-
-func _paint_info(ci: CanvasItem, sz: Vector2) -> void:
-	_card(ci, sz, 640)
-	var c := Vector2(sz.x / 2, 52)
-	if _info_id != "":
-		ci.draw_circle(c, 40, Color(_c("glow", "bff3f0"), 0.14))
-		var known: bool = MergeEvent.state(cfg)["discovered"].has(_info_id)
-		MergeEvent.draw_item(ci, cfg, _info_id, c, 80, Color.WHITE if known else Color(0.06, 0.14, 0.18, 0.9))
-	else:
-		# 两件碎片 → 箭头 → 吊坠：示意合成
-		var a := str(cfg["chain"][0]["id"])
-		MergeEvent.draw_item(ci, cfg, a, c + Vector2(-62, 4), 46)
-		MergeEvent.draw_item(ci, cfg, a, c + Vector2(-26, 4), 46)
-		Art.fill(ci, Art.poly([c + Vector2(2, -6), c + Vector2(18, 4), c + Vector2(2, 14)], 641, 0.3), CREAM, 2.0, INK)
-		MergeEvent.draw_item(ci, cfg, str(cfg["chain"][1]["id"]), c + Vector2(52, 0), 60)
-
-func _show_cell(i: int) -> void:
-	if not is_instance_valid(selection): return
-	var s := MergeEvent.state(cfg)
-	if i < 0 or i >= s["cells"].size():
-		_info_id = ""
-		selection.text = "两件相同合成"
-		selection_hint.text = "在石板旁合成可揭开它"
-	else:
-		var c: Dictionary = s["cells"][i]
-		var lock := int(c["lock"])
-		if lock == 2:
-			_info_id = ""
-			selection.text = "藤蔓石板"
-			selection_hint.text = "在旁边合成即可揭开"
-		else:
-			_info_id = str(c["id"])
-			if _info_id == "":
-				selection.text = "空地"
-				selection_hint.text = "积分投放会落到这里"
-			else:
-				var row := MergeEvent.item(cfg, _info_id)
-				selection.text = str(row.get("name", ""))
-				var tier: int = cfg["chain"].find(row) + 1
-				if lock == 1: selection_hint.text = "拖入同样的%s解锁" % str(row.get("name", ""))
-				elif MergeEvent.next_id(cfg, _info_id) == "": selection_hint.text = "第 %d 级 · 最高级" % tier
-				else: selection_hint.text = "第 %d 级 · 合成得%s" % [tier, str(MergeEvent.item(cfg, MergeEvent.next_id(cfg, _info_id)).get("name", ""))]
-	info.queue_redraw()
 
 func _show_relic(k: int) -> void:
 	var row: Dictionary = cfg["chain"][k]
-	_info_id = str(row["id"])
-	var known: bool = MergeEvent.state(cfg)["discovered"].has(_info_id)
-	selection.text = str(row["name"]) if known else "？？？"
-	selection_hint.text = ("第 %d 级遗物" % (k + 1)) if known else "第 %d 级 · 合成后揭晓" % (k + 1)
-	info.queue_redraw()
+	var known: bool = MergeEvent.state(cfg)["discovered"].has(str(row["id"]))
+	G.main.toast((str(row["name"]) if known else "未发现遗物") + " · %d级" % (k + 1))
 
 func _paint_collection(ci: CanvasItem, sz: Vector2) -> void:
 	var chain: Array = cfg["chain"]
 	var s := MergeEvent.state(cfg)
-	var ledge := Art.rrect(Rect2(Vector2(0, 8), sz - Vector2(0, 8)), 16, 701, 0.6)
-	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 14), sz - Vector2(0, 8)), 16, 702, 0.0), Color(0, 0, 0, 0.3))
-	Art.dilate(ci, ledge, 3.0, INK)
-	ci.draw_colored_polygon(ledge, Color("5b787d"))
-	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(6, 12), Vector2(sz.x - 12, 10)), 5, 703, 0.0), Color(1, 1, 1, 0.12))
+	MoonArt.panel(ci, "shelf", sz)
 	var gap := (sz.x - 24) / chain.size()
 	var top := -1
 	for k in chain.size():
@@ -327,39 +208,13 @@ func _paint_collection(ci: CanvasItem, sz: Vector2) -> void:
 # ---------------------------------------------------------------- 月夜遗迹背景
 
 func _paint_scene(ci: CanvasItem, sz: Vector2) -> void:
-	var r := Art.rrect(Rect2(Vector2.ZERO, sz), 18, 801, 0.4)
-	ci.draw_colored_polygon(r, _c("sky_top", "142636"))
-	var bands := 10
-	for k in bands:
-		var t := float(k) / bands
-		ci.draw_rect(Rect2(6, 8 + sz.y * t, sz.x - 12, sz.y / bands + 1), Color(_c("sky_top", "142636").lerp(_c("sky_bottom", "2c5a63"), t), 0.9))
-	# 月亮（藏在进度板后面露出一角）与星星
-	var moon := Vector2(sz.x - 70, 46)
-	for k in 3: ci.draw_circle(moon, 64 + k * 22, Color(_c("glow", "bff3f0"), 0.07))
-	ci.draw_circle(moon, 46, Color("f4f6dc"))
-	ci.draw_circle(moon + Vector2(14, -8), 9, Color("dfe4c6"))
-	ci.draw_circle(moon + Vector2(-16, 12), 6, Color("dfe4c6"))
-	for k in 36:
-		var p := Vector2(16 + Art.srnd(k * 3 + 1) * (sz.x - 32), 14 + Art.srnd(k * 7 + 2) * (sz.y - 28))
-		var tw := 0.35 + 0.35 * sin(_t * (1.5 + Art.srnd(k) * 2.0) + k)
-		ci.draw_circle(p, 1.2 + Art.srnd(k + 11) * 1.6, Color(0.85, 1, 0.95, tw))
-	# 底部远处的断柱剪影
-	var sil := Color(_c("sky_top", "142636"), 0.75)
-	var base_y := sz.y - 8
-	for k in 7:
-		var x := 20 + k * (sz.x - 40) / 6.0
-		var h := 90 + Art.srnd(k * 5) * 110
-		var w := 26 + Art.srnd(k * 9) * 18
-		ci.draw_colored_polygon(Art.poly([Vector2(x - w / 2, base_y), Vector2(x - w / 2 + 3, base_y - h), Vector2(x - w / 2 + w * 0.4, base_y - h - 10 * Art.srnd(k)), Vector2(x + w / 2, base_y - h + 6), Vector2(x + w / 2, base_y)], 810 + k, 0.4), sil)
-	Art.outline(ci, r, 2.5, Color(INK, 0.9))
-
-# ---------------------------------------------------------------- 状态刷新
+	MoonArt.panel(ci, "scene", sz)
 
 func _refresh() -> void:
 	if not is_instance_valid(board): return
 	var s := MergeEvent.state(cfg)
 	progress.text = "%d / %d" % [MergeEvent.progress(cfg, s), MergeEvent.goal_total(cfg)]
-	points.text = "×%d" % int(s["points"])
+	points.text = "放置 ×%d" % int(s["points"])
 	spawn_btn.enabled = MergeEvent.active(cfg) and not bool(s["claimed"])
 	claim_btn.enabled = true
 	for id in s["discovered"]:
@@ -370,16 +225,18 @@ func _refresh() -> void:
 			if k > 0 and is_instance_valid(fx):
 				fx.add("banner", Vector2(360, 520), {"id": str(id), "text": "新遗物 · " + str(row.get("name", ""))})
 				Sfx.play("fanfare")
-	for d in [spawn_btn, collection, track, earn, info]: d.queue_redraw()
+	for d in [spawn_btn, collection, track]: d.queue_redraw()
 	_tick()
 
 func _process(delta: float) -> void:
 	_t += delta
 	_clock += delta
-	if is_instance_valid(spawn_btn):
+	_decor_clock += delta
+	if _decor_clock >= 0.05 and is_instance_valid(spawn_btn) and is_visible_in_tree():
+		_decor_clock = fmod(_decor_clock, 0.05)
 		spawn_btn.queue_redraw()
-		earn.queue_redraw()
-		if not MergeEvent.claimable(cfg, MergeEvent.state(cfg)).is_empty() or Engine.get_process_frames() % 3 == 0: track.queue_redraw()
+		track.queue_redraw()
+		collection.queue_redraw()
 	if _clock >= 1:
 		_clock = 0
 		_tick()

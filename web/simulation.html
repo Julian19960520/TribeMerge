@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TribeMerge · 自动玩家时间轴</title>
+<style>
+:root{--bg:#111b20;--panel:#1b292e;--line:#35454b;--text:#f3ebd9;--muted:#a5b6b6;--gold:#e9bb69;--green:#83c6a3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,"Microsoft YaHei",sans-serif}main{display:grid;grid-template-columns:minmax(0,1fr) minmax(310px,360px);gap:16px;max-width:1920px;margin:auto;padding:16px}small,.muted{color:var(--muted)}button,select,input{font:inherit;color:var(--text);border:1px solid var(--line);border-radius:9px;background:#24363c;padding:9px 14px}button{cursor:pointer}button:hover{border-color:var(--gold)}button:disabled{opacity:.4;cursor:default}.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.order-legend{display:flex;gap:14px;flex-wrap:wrap}.panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;align-self:start}#timeline,#curve{width:100%;display:block;touch-action:none}#timeline{height:245px;cursor:crosshair}.timeline-scroll{max-height:65vh;overflow-y:auto;overscroll-behavior:contain;margin-top:14px}#curve{height:140px}#range{width:100%;padding:0;accent-color:var(--gold)}.detail h2{font-size:22px;margin:6px 0;overflow-wrap:anywhere}.badge{display:inline-block;font-size:12px;border-radius:20px;padding:3px 10px;background:#364b51}.values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:20px 0 0}.value{padding:10px;background:#111e23;border-radius:7px;overflow-wrap:anywhere}.value strong{display:block;font-size:21px}.plus{color:var(--green)}.minus{color:#ed977e}#milestones{display:flex;overflow:auto;gap:10px;padding-top:14px}.mile{flex:0 0 auto;text-align:left;border-color:#5e705b}.mile b{display:block;color:var(--green)}#status{color:var(--gold)}#status:empty{display:none}.empty{padding:30px;color:var(--muted)}#run[hidden]{display:none}@media(max-width:1000px){main{grid-template-columns:1fr;padding:12px}.panel{padding:16px}.values{grid-template-columns:repeat(auto-fit,minmax(100px,1fr))}}
+</style></head><body><main>
+<section class="panel"><div class="toolbar"><b>游戏内时间</b><span id="window" class="muted"></span><button id="zoomIn">＋ 放大</button><button id="zoomOut">－ 缩小</button><button id="reset">全程</button><select id="run" aria-label="模拟轮次" hidden></select><button id="download">下载记录</button><span id="status" role="status">正在加载…</span></div><div class="order-legend"><small style="color:#f3c66d">● 带经验订单</small><small style="color:#70b7d6">● 无经验订单</small></div><div class="timeline-scroll"><canvas id="timeline" aria-label="各类事件时间轴，点击选择事件，滚轮缩放，拖动平移"></canvas></div><input aria-label="时间轴平移" id="range" type="range" min="0" max="1000" value="0"><small>点击事件查看详情 · 滚轮缩放 · 拖动平移 · 等待时段显示为连续色带</small><div class="toolbar" style="margin-top:14px"><b>资源与进度</b><select id="metric" aria-label="资源与进度指标"><option value="level">玩家等级</option><option value="energy">体力</option><option value="coins">贝币</option><option value="gems">琥珀 · 现有</option><option value="amber_earned">琥珀 · 累计获得</option><option value="sand">沙漏 · 现有</option><option value="sand_earned">沙漏 · 累计获得</option><option value="empty">棋盘空格</option><option value="parts">部落部件</option><option value="moon">月石进度</option><option value="duel_wins">双人竞速胜场</option></select></div><canvas id="curve" aria-label="所选指标随游戏内时间变化的曲线"></canvas><div id="milestones"></div></section>
+<section class="panel detail" id="detail" aria-label="事件详情"><div class="empty">点击时间轴上的事件，查看当时的资源与进度。</div></section>
+</main><script src="simulation-events.js"></script><script>
+'use strict';
+const $=id=>document.getElementById(id);
+const {names,colors,category:eventCategory,matches:eventMatches,lanes:eventLanes}=SimulationEvents;
+const PLOT_LEFT=108,PLOT_RIGHT=12;
+const stateNames={level:'等级',xp:'经验',energy:'体力',coins:'贝币',gems:'现有琥珀',sand:'现有沙漏',amber_earned:'累计获得琥珀',sand_earned:'累计获得沙漏',empty:'棋盘空格',storage:'储物洞',stash:'暂存物品',parts:'部落部件',moon:'月石解锁',cards:'典藏卡',duel_wins:'双人竞速胜场',orders:'当前订单'};
+let productionLines=[],productionLabel='折合一级份数';
+const baseMetrics=[...$('metric').options].map(option=>({key:option.value,label:option.textContent}));
+let report,rows=[],selected=null,run=1,duration=1,left=0,span=1,hits=[],drag=null;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const time=SimulationEvents.formatTime,eventTitle=SimulationEvents.eventTitle;
+async function decode(buffer,gz){return JSON.parse(gz?await new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'))).text():new TextDecoder().decode(buffer))}
+function load(data){if(data.schema!==1||!Array.isArray(data.events)||!data.runs?.length)throw Error('演算记录无效');report=data;configureProductionLines(data);$('run').innerHTML=data.runs.map(r=>`<option value="${r.run}">第 ${r.run} 轮</option>`).join('');$('run').hidden=data.runs.length<2;run=data.runs[0].run;$('status').textContent='';setRun()}
+function configureProductionLines(data){
+  const equivalent=data.production_counting==='level1_equivalent';
+  productionLabel=equivalent?'折合一级份数':'总等级（旧口径）';
+  productionLines=Array.isArray(data.production_lines)?data.production_lines.filter(line=>typeof line.metric==='string'&&typeof line.name==='string'):[];
+  for(const key of Object.keys(stateNames))if(key.startsWith('gen_total_')||key.startsWith('gen_max_'))delete stateNames[key];
+  const previous=$('metric').value;
+  $('metric').replaceChildren();
+  for(const {key,label} of baseMetrics){const option=document.createElement('option');option.value=key;option.textContent=label;$('metric').append(option)}
+  if(productionLines.length){
+    const group=document.createElement('optgroup');group.label='各产线生产器 · '+productionLabel;
+    for(const line of productionLines){
+      stateNames[line.metric]=line.name+'生产器'+productionLabel;
+      const option=document.createElement('option');option.value=line.metric;option.textContent=line.name+' · '+productionLabel;group.append(option);
+      if(typeof line.max_metric==='string'){
+        stateNames[line.max_metric]=line.name+'生产器最高等级';
+        const highest=document.createElement('option');highest.value=line.max_metric;highest.textContent=line.name+' · 最高等级';group.append(highest);
+      }
+    }
+    $('metric').append(group);
+  }
+  if([...$('metric').options].some(option=>option.value===previous))$('metric').value=previous;
+}
+function setRun(){run=Number($('run').value);rows=report.events.filter(e=>e.run===run);duration=Math.max(1,rows.at(-1)?.time||1);left=0;span=duration;selected=null;$('milestones').innerHTML='';for(const e of rows.filter(e=>['level','milestone','bottleneck'].includes(e.category))){const b=document.createElement('button');b.className='mile';b.innerHTML=`<small>${time(e.time)}</small><b>${esc(eventTitle(e))}</b>`;b.onclick=()=>focusEvent(e);$('milestones').append(b)}if(rows.length)choose(rows[0]);draw()}
+function choose(e){selected=e;$('detail').innerHTML=`<span class="badge" style="color:${colors[eventCategory(e)]}">${names[eventCategory(e)]}</span><small>　第 ${e.run} 轮 / ${time(e.time)}</small><h2 style="color:${e.category==='order'?colors[eventCategory(e)]:'inherit'}">${esc(eventTitle(e))}</h2><div class="values">${Object.entries(e.state).map(([k,v])=>`<div class="value"><small>${esc(stateNames[k]||k)}</small><strong>${v} ${e.delta[k]?`<small class="${e.delta[k]>0?'plus':'minus'}">${e.delta[k]>0?'+':''}${e.delta[k]}</small>`:''}</strong></div>`).join('')}</div>`}
+function focusEvent(e){choose(e);left=Math.max(0,Math.min(duration-span,e.time-span*.4));draw()}
+function canvas(id){const c=$(id),r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;const ctx=c.getContext('2d');ctx.scale(d,d);return [ctx,r.width,r.height]}
+function draw(){
+  if(!report)return;
+  left=Math.max(0,Math.min(duration-span,left));
+  $('window').textContent=`${time(left)} — ${time(left+span)}`;
+  $('range').value=duration===span?0:left/(duration-span)*1000;
+  $('range').disabled=duration===span;
+  const lanes=eventLanes(rows), laneByKey=new Map();
+  lanes.forEach((lane,index)=>lane.keys.forEach(key=>laneByKey.set(key,index)));
+  $('timeline').style.height=`${Math.max(88,lanes.length*30+52)}px`;
+  const [ctx,w,h]=canvas('timeline'),plot=w-PLOT_LEFT-PLOT_RIGHT;
+  const x=t=>PLOT_LEFT+(t-left)/span*plot;
+  ctx.font='12px system-ui';hits=[];
+  lanes.forEach((lane,index)=>{
+    const y=27+index*30;ctx.fillStyle='#a5b6b6';ctx.fillText(lane.label,0,y+4);
+    ctx.strokeStyle='#35454b';ctx.beginPath();ctx.moveTo(PLOT_LEFT,y);ctx.lineTo(w,y);ctx.stroke();
+  });
+  ctx.save();ctx.beginPath();ctx.rect(PLOT_LEFT,0,plot,h);ctx.clip();
+  for(const e of rows){
+    const from=e.category==='wait'?(e.detail.from??e.time):e.time;
+    if(e.time<left||from>left+span||!eventMatches(e))continue;
+    const key=eventCategory(e),lane=laneByKey.get(key);if(lane===undefined)continue;
+    const px=x(e.time),y=27+lane*30;ctx.fillStyle=colors[key];
+    if(e.category==='wait'){
+      const x1=x(from);ctx.globalAlpha=.55;ctx.fillRect(x1,y-6,Math.max(2,px-x1),12);ctx.globalAlpha=1;
+      hits.push({e,x:Math.max(PLOT_LEFT,x1),end:px,y});
+    }else{
+      ctx.beginPath();ctx.arc(px,y,['level','bottleneck'].includes(key)?5:3,0,Math.PI*2);ctx.fill();hits.push({e,x:px,end:px,y});
+    }
+  }
+  if(selected){const px=x(selected.time);ctx.strokeStyle='#fff';ctx.beginPath();ctx.moveTo(px,12);ctx.lineTo(px,h-25);ctx.stroke()}
+  ctx.restore();ctx.fillStyle='#a5b6b6';
+  const labelWidth=Math.max(ctx.measureText(time(left)).width,ctx.measureText(time(left+span)).width);
+  const tickCount=Math.max(1,Math.min(5,Math.floor(plot/(labelWidth+20))));
+  for(let j=0;j<tickCount;j++){
+    const t=left+span*(tickCount===1?0:j/(tickCount-1)),label=time(Math.floor(t)),width=ctx.measureText(label).width;
+    ctx.fillText(label,Math.max(PLOT_LEFT,Math.min(w-PLOT_RIGHT-width,x(t)-width/2)),h-8);
+  }
+  drawCurve();
+}
+function drawCurve(){const [ctx,w,h]=canvas('curve'),key=$('metric').value;const inView=rows.filter(e=>e.time>=left&&e.time<=left+span),prior=rows.findLast(e=>e.time<left);if(prior)inView.unshift({...prior,time:left});if(!inView.length)return;if(!inView.some(e=>Number.isFinite(e.state[key]))){ctx.fillStyle='#a5b6b6';ctx.font='14px system-ui';ctx.fillText('这份记录未包含该指标',PLOT_LEFT,40);return}let max=1;for(const e of inView)max=Math.max(max,e.state[key]||0);ctx.strokeStyle='#e9bb69';ctx.lineWidth=1.5;ctx.beginPath();let prevY=null;for(const e of inView){let x=PLOT_LEFT+(e.time-left)/span*(w-PLOT_LEFT-PLOT_RIGHT),y=h-22-(e.state[key]||0)/max*(h-40);if(prevY!==null)ctx.lineTo(x,prevY);else ctx.moveTo(x,y);ctx.lineTo(x,y);prevY=y}ctx.stroke();ctx.fillStyle='#a5b6b6';ctx.font='12px system-ui';ctx.fillText(max.toLocaleString(),0,20);ctx.fillText('0',28,h-20)}
+function zoom(f,at=.5){const next=Math.min(duration,Math.max(60,span*f));left+=(span-next)*at;span=next;draw()}
+$('zoomIn').onclick=()=>zoom(.5);$('zoomOut').onclick=()=>zoom(2);$('reset').onclick=()=>{span=duration;left=0;draw()};$('range').oninput=()=>{left=Number($('range').value)/1000*(duration-span);draw()};$('run').onchange=setRun;$('metric').onchange=drawCurve;$('timeline').onwheel=e=>{e.preventDefault();zoom(e.deltaY>0?1.4:1/1.4,Math.max(0,Math.min(1,(e.offsetX-PLOT_LEFT)/($('timeline').clientWidth-PLOT_LEFT-PLOT_RIGHT))))};$('timeline').onpointerdown=e=>{drag={x:e.clientX,left};$('timeline').setPointerCapture(e.pointerId)};$('timeline').onpointermove=e=>{if(drag){left=drag.left-(e.clientX-drag.x)/($('timeline').clientWidth-PLOT_LEFT-PLOT_RIGHT)*span;draw()}};$('timeline').onpointerup=e=>{if(drag&&Math.abs(e.clientX-drag.x)<5){let nearest=null,dist=18;for(const hit of hits){let dx=e.offsetX<Math.min(hit.x,hit.end)?Math.min(hit.x,hit.end)-e.offsetX:e.offsetX>Math.max(hit.x,hit.end)?e.offsetX-Math.max(hit.x,hit.end):0;let d=Math.hypot(dx,e.offsetY-hit.y);if(d<dist){dist=d;nearest=hit.e}}if(nearest){choose(nearest);draw()}}drag=null};$('timeline').onpointercancel=()=>drag=null;
+$('download').onclick=()=>{if(!report)return;const u=URL.createObjectURL(new Blob([JSON.stringify(SimulationEvents.compactReport(report,[...$('metric').options].map(option=>({key:option.value,label:option.textContent}))),null,2)+'\n'],{type:'application/json;charset=utf-8'}));let a=document.createElement('a');a.href=u;a.download='TribeMerge-timeline.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+new ResizeObserver(draw).observe($('timeline'));fetch('simulation-report.json.gz').then(r=>{if(!r.ok)throw Error('无法获取演算文件');return r.arrayBuffer()}).then(b=>decode(b,true)).then(load).catch(e=>$('status').textContent='加载失败：'+e.message);
+</script></body></html>

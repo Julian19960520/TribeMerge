@@ -21,7 +21,7 @@ def _load(path: Path, default):
 
 class GameData:
     FILES = ["chains", "lines", "dishes", "store", "rules", "story", "levels", "pass", "builds", "albums",
-             "board", "amber_packs", "people", "store_shell", "merge_events", "choice_chests", "seven_day", "daily_deals", "ufo_offer"]
+             "board", "amber_packs", "people", "store_shell", "merge_events", "choice_chests", "seven_day", "daily_deals", "ufo_offer", "duel_race"]
 
     def __init__(self, data_dir: str):
         self.dir = Path(data_dir)
@@ -74,6 +74,7 @@ class GameData:
             self.seven_day = g("seven_day", {})
             self.daily_deals = g("daily_deals", [])
             self.ufo_offer = g("ufo_offer", {})
+            self.duel_race = g("duel_race", {})
             self.choice_chests = g("choice_chests", {})
             self._stamp = stamp
 
@@ -147,7 +148,8 @@ class GameData:
 
     def rewards_for_level(self, level: int) -> list:
         if level in self.level_rewards:
-            return [list(r) for r in self.level_rewards[level]]
+            return [list(r) for r in self.level_rewards[level]
+                    if level >= self.card_level() or self.type_of(str(r[0])) != "pack"]
         out = [["fire_2", 30 + level * 10], ["chest_1", 1]]
         if level >= self.card_level():
             out.append(["pack_1", 1])

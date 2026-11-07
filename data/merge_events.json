@@ -72,7 +72,21 @@
 						]
 					}
 				],
-				"goal": "unlock_all"
+				"goal": "unlock_all",
+				"advance_by_tier": [
+					{
+						"tier": 4,
+						"rows": 3
+					},
+					{
+						"tier": 5,
+						"rows": 3
+					},
+					{
+						"tier": 6,
+						"rows": 3
+					}
+				]
 			},
 			"points": {
 				"order_thresholds": [

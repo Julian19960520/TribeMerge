@@ -52,17 +52,19 @@ def fresh(c):
                 continue
             tier = locked_tier(b, rows - 2 - row, col)
             cells.append({'id': c['chain'][min(max(0, tier - 1), len(c['chain']) - 2)]['id'], 'lock': 2})
-    return dict(rules_version=2, cells=cells, points=0, earned=0, spent=0, discovered={}, min_view=rows-b['visible_rows'], view=rows-b['visible_rows'], claimed=False, got=[], orders=0)
+    return dict(rules_version=3, cells=cells, points=0, earned=0, spent=0, discovered={}, min_view=rows-b['visible_rows'], view=rows-b['visible_rows'], claimed=False, got=[], orders=0)
 
 
 def state(st, c):
     s = st.setdefault('merge_events', {}).setdefault(c['key'], fresh(c))
-    if s.get('rules_version', 1) < 2:
+    version = s.get('rules_version', 1)
+    if version < 2:
         for k, tile in enumerate(s['cells']):
             if tile['lock'] == 1 and not any(s['cells'][n]['lock'] == 0 for n in neighbors(k, c['board']['cols'], len(s['cells']))):
                 tile['lock'] = 2
-        s['rules_version'] = 2
-        s['min_view'] = s['view']
+    if version < 3:
+        s['rules_version'] = 3
+        advance(c, s)
     return s
 
 
@@ -131,15 +133,24 @@ def reveal_neighbors(cells, at, cols):
     return revealed
 
 
+def unlocked_tier(c, s):
+    return max([k + 1 for k, row in enumerate(c['chain']) if row['id'] in s['discovered']] or [0])
+
+
+def advance_target(c, s):
+    tier = unlocked_tier(c, s)
+    rows = sum(max(0, stage['rows']) for stage in c['board'].get('advance_by_tier', []) if tier >= stage['tier'])
+    return max(0, c['board']['total_rows'] - c['board']['visible_rows'] - rows)
+
+
 def advance(c, s):
     cols, rows = c['board']['cols'], c['board']['visible_rows']
     cells = s['cells']
-    while s['view'] > 0:
+    target = advance_target(c, s)
+    while s['view'] > target:
         view = s['view']
-        if any(cells[view*cols+k]['lock'] for k in range(cols)):
-            break
         shifted = False
-        for step in range(min(view, c['board']['reveal_rows']), 0, -1):
+        for step in range(min(view-target, c['board']['reveal_rows']), 0, -1):
             next_view = view-step
             next_end = (next_view+rows)*cols
             retiring = list(range(next_end, (view+rows)*cols))
@@ -147,7 +158,8 @@ def advance(c, s):
                 continue
             outgoing = [k for k in retiring if cells[k]['id']]
             slots = [k for k in range(next_view*cols, next_end) if not cells[k]['lock'] and not cells[k]['id']][::-1]
-            if len(outgoing) > len(slots):
+            # Keep room to place and merge a fresh pair after advancing.
+            if len(outgoing) + 2 > len(slots):
                 continue
             for source, dest in zip(outgoing, slots):
                 cells[dest]['id'], cells[source]['id'] = cells[source]['id'], ''
@@ -190,7 +202,8 @@ def action(econ, st, req):
         s['points'] -= cost
         s['spent'] += cost
         s['discovered'][iid] = True
-        return {'kind':'spawn', 'to':to, 'id':iid}
+        advance(c, s)
+        return {'kind':'spawn', 'to':to, 'id':iid, 'advance_rows':view-s['view']}
     if req.action == 'drop':
         a,b = req.from_cell, req.to
         if a == b or not lo <= a < hi or not lo <= b < hi or not cells[a]['id'] or cells[a]['lock']:
@@ -214,13 +227,14 @@ def action(econ, st, req):
             ca['id'],cb['id'] = under,iid
         revealed = reveal_neighbors(cells, b, cols) if kind == 'merge' else []
         advance(c, s)
-        return dict(kind=kind, **{'from':a}, to=b, id=iid, under=under, unlocked=locked, revealed=revealed)
+        return dict(kind=kind, **{'from':a}, to=b, id=iid, under=under, unlocked=locked, revealed=revealed, advance_rows=view-s['view'])
     if req.action == 'recycle':
         i = req.cell
         if not lo <= i < hi or cells[i]['lock'] or not cells[i]['id']:
             raise Reject('invalid_cell', '请选择未锁定物品')
         cells[i]['id'] = ''
-        return {'kind':'recycle'}
+        advance(c, s)
+        return {'kind':'recycle', 'advance_rows':view-s['view']}
     if req.action == 'claim':
         ready = claimable(c, s)
         if not ready:

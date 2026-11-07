@@ -558,3 +558,11 @@ def ufo_order(payload: dict, request: Request, auth: Auth = Depends(current), db
     idem_put(db, auth.id, key, "ufo.order", 200, resp)
     db.commit()
     return resp
+
+
+from .schemas import DuelActionReq
+
+@router.post("/duel/action", response_model=ActionResp)
+def duel_action(req: DuelActionReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    from . import duel_race
+    return _action(request, auth, db, "duel." + req.action, lambda e, st: duel_race.action(e, st, req))

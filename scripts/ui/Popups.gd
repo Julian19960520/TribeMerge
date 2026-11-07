@@ -196,41 +196,7 @@ static func store() -> PopupBase:
 		_daily_card(root, Rect2(30.0 + k * (dw + 10.0), 566, dw, 236), deals[k], k)
 	var clocks: Array = []
 	clocks.append(_refresh_bar(root, Rect2(30, 818, 660, 66), Color("6c492e"), "明天 0 点上新", func(): return [G.secs_to_midnight(), 86400], "", 0, Callable()))
-	section(root, "热卖", 904, Color("ffd23f"))
-	var hot_root := Control.new()
-	hot_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(hot_root)
-	var hot_state := {"sig": ""}
-	var hot_y := 948.0
-	var draw_hot := func():
-		var hot: Array = HotDeals.today()
-		var sig := G.today() + ":" + str(G.hot_revision) + JSON.stringify(hot)
-		if sig == str(hot_state["sig"]): return
-		hot_state["sig"] = sig
-		for child in hot_root.get_children():
-			hot_root.remove_child(child)
-			child.queue_free()
-		for k in hot.size():
-			var d: Dictionary = hot[k]
-			_store_card(hot_root, Rect2(30.0 + (k % 3) * 226.0, hot_y + (k / 3) * 270.0, 208, 250), d, "hot_%d" % k, false)
-	draw_hot.call()
-	var y := hot_y + ceilf(float(Data.STORE_HOT.size()) / 3.0) * 270.0 - 6.0
-	var hot_bar: Array = []
-	hot_bar.append(_refresh_bar(root, Rect2(30, y, 660, 86), Color("6c492e"), "热卖刷新", func(): return [G.secs_to_midnight(), 86400], "刷新", 10, func():
-		var rb: TButton = hot_bar[0]["btn"]
-		rb.enabled = false
-		var result: Dictionary = await G.refresh_hot()
-		if not is_instance_valid(rb): return
-		rb.enabled = true
-		rb.queue_redraw()
-		if result.get("ok", false):
-			draw_hot.call()
-			Sfx.play("pop")
-		else:
-			G.main.toast(str(result.get("message", "刷新失败")))))
-	clocks.append(hot_bar[0])
-	live(p, G.changed, func(): draw_hot.call())
-	y += 108.0
+	var y := 904.0
 	# 贝币小摊：用贝币买低一级的普通货，库存少，每 8 小时按服务器时间补货；花少量琥珀可立即补货
 	G.check_shell_period()
 	section(root, "贝币小摊", y, Color("bfe3ff"))
@@ -253,6 +219,41 @@ static func store() -> PopupBase:
 			else: G.main.toast(str(result.get("message", "补货失败")))))
 		clocks.append(shell_bar[0])
 		y = sy + 108.0
+	section(root, "热卖", y, Color("ffd23f"))
+	var hot_root := Control.new()
+	hot_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(hot_root)
+	var hot_state := {"sig": ""}
+	var hot_y := y + 44.0
+	var draw_hot := func():
+		var hot: Array = HotDeals.today()
+		var sig := G.today() + ":" + str(G.hot_revision) + JSON.stringify(hot)
+		if sig == str(hot_state["sig"]): return
+		hot_state["sig"] = sig
+		for child in hot_root.get_children():
+			hot_root.remove_child(child)
+			child.queue_free()
+		for k in hot.size():
+			var d: Dictionary = hot[k]
+			_store_card(hot_root, Rect2(30.0 + (k % 3) * 226.0, hot_y + (k / 3) * 270.0, 208, 250), d, "hot_%d" % k, false)
+	draw_hot.call()
+	y = hot_y + ceilf(float(Data.STORE_HOT.size()) / 3.0) * 270.0 - 6.0
+	var hot_bar: Array = []
+	hot_bar.append(_refresh_bar(root, Rect2(30, y, 660, 86), Color("6c492e"), "热卖刷新", func(): return [G.secs_to_midnight(), 86400], "刷新", 10, func():
+		var rb: TButton = hot_bar[0]["btn"]
+		rb.enabled = false
+		var result: Dictionary = await G.refresh_hot()
+		if not is_instance_valid(rb): return
+		rb.enabled = true
+		rb.queue_redraw()
+		if result.get("ok", false):
+			draw_hot.call()
+			Sfx.play("pop")
+		else:
+			G.main.toast(str(result.get("message", "刷新失败")))))
+	clocks.append(hot_bar[0])
+	live(p, G.changed, func(): draw_hot.call())
+	y += 108.0
 	# 倒计时每秒走一次（不靠 G.changed，静止时也在走）
 	var ticker := Timer.new()
 	ticker.wait_time = 1.0
@@ -813,6 +814,29 @@ static func _dish_info(id: String) -> PopupBase:
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return p
 
+## Center each row independently; all related items navigate through the popup stack.
+static func _info_item_grid(parent: Control, entries: Array, top: float, center_x: float) -> float:
+	var columns := 4
+	var pitch := 112.0
+	var tile := 96.0
+	for k in entries.size():
+		var entry: Dictionary = entries[k]
+		var item_id := str(entry["id"])
+		var row := k / columns
+		var count := mini(columns, entries.size() - row * columns)
+		var x := center_x + (float(k % columns) - float(count - 1) * 0.5) * pitch - tile * 0.5
+		var y := top + row * 126.0
+		var hit := UI.hit(parent, Rect2(x, y, tile, tile), func(): G.main.open("item_info", item_id))
+		hit.name = "related_" + item_id
+		hit.extra = func(ci, sz):
+			var shape := Art.rrect(Rect2(Vector2(3, 3), sz - Vector2(6, 6)), 16, 191, 0.0)
+			ci.draw_colored_polygon(shape, Color("ecd9b3"))
+			Art.outline(ci, shape, 2.0, Color(0.6, 0.4, 0.2, 0.35))
+			Art.item(ci, item_id, sz * 0.5, 76)
+		if entry.has("p"):
+			UI.lbl(parent, "%s%%" % str(entry["p"]), Rect2(x, y + 96, tile, 26), 18, Color("7a5a3a"))
+	return top + ceilf(float(entries.size()) / columns) * 126.0
+
 static func item_info(id: String) -> PopupBase:
 	if Data.is_dish(id):
 		return _dish_info(id)
@@ -833,9 +857,10 @@ static func item_info(id: String) -> PopupBase:
 	var x0 := r.position.x + (r.size.x - (step * float(cols - 1) + cell_w)) * 0.5 + half
 	var y0 := r.position.y + 100.0
 	var lower_y := y0 + float(int((maxi(items.size(), 1) - 1) / cols) + 1) * pitch + 4.0
-	var lower := Control.new()
-	lower.position = Vector2(0, lower_y)
-	lower.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var lower_scroll := Scroller.new()
+	lower_scroll.position = Vector2(0, lower_y)
+	lower_scroll.size = Vector2(720, maxf(80, r.end.y - lower_y - 24))
+	var lower := lower_scroll.content
 	var cells: Array[DrawBox] = []
 	var rebuild := func():
 		for child in lower.get_children():
@@ -857,27 +882,19 @@ static func item_info(id: String) -> PopupBase:
 			else:
 				section(lower, "产出", y)
 				var drops: Array = st["drops"]
-				for k in drops.size():
-					var d: Dictionary = drops[k]
-					var col := k % cols
-					var row := int(k / cols)
-					var cx := x0 + float(col) * step
-					var cy := y + 72.0 + float(row) * pitch
-					UI.icon(lower, str(d["id"]), Vector2(cx, cy), 62)
-					UI.lbl(lower, str(d["p"]), Rect2(cx - 36, cy + 32, 72, 26), 18, Color("7a5a3a"))
-				y += float(int((drops.size() + cols - 1) / cols)) * pitch + 12.0
-				var cost := "每次生产消耗 1 火种"
+				y = _info_item_grid(lower, drops, y + 48, r.get_center().x)
 				if st.has("charges"):
-					cost = "满储 %d 次，用完 %d 分钟后回满" % [st["charges"], st["refill"]]
-				UI.lbl(lower, cost, Rect2(r.position.x, y, r.size.x, 36), 22, Color("7a5a3a"))
+					UI.lbl(lower, "满储 %d 次，用完 %d 分钟后回满" % [st["charges"], st["refill"]], Rect2(r.position.x, y, r.size.x, 36), 22, Color("7a5a3a"))
+					y += 40
 		elif t == "item":
 			section(lower, "获取途径：", y)
-			var prods := Data.producers_of(ch)
-			for k in prods.size():
-				UI.icon(lower, prods[k], Vector2(r.get_center().x + (float(k) - (prods.size() - 1) * 0.5) * 120, y + 100), 96)
+			var sources: Array = []
+			for source in Data.producers_of(ch): sources.append({"id":source})
+			y = _info_item_grid(lower, sources, y + 48, r.get_center().x)
 		else:
 			section(lower, "获取途径：", y)
 			UI.lbl(lower, "生产器随机掉落、开启宝箱、升级奖励", Rect2(r.position.x, y + 60, r.size.x, 60), 24, Color("7a5a3a"))
+		lower_scroll.set_length(maxf(y + 24, 220))
 	var buys: Array = []
 	var refresh_buys := func() -> void:
 		for b in buys:
@@ -893,7 +910,7 @@ static func item_info(id: String) -> PopupBase:
 			var b := Art.rrect(Rect2(4, 4, sz.x - 8, sz.y - 8), 16, 190 + lv, 0.6)
 			var cur: bool = slot_id == str(state["id"])
 			var owned := _board_count(slot_id)
-			var seen := G.discovered.has(slot_id) or owned > 0
+			var seen := cur or G.discovered.has(slot_id) or owned > 0
 			ci.draw_colored_polygon(b, Color("a8d86a") if cur else Color("ecd9b3"))
 			Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.35))
 			if seen:
@@ -937,7 +954,7 @@ static func item_info(id: String) -> PopupBase:
 					for cell_box in cells:
 						cell_box.queue_redraw())
 			buys.append(buy)
-	p.box.add_child(lower)
+	p.box.add_child(lower_scroll)
 	rebuild.call()
 	if str(c.get("type", "")) == "item":
 		var prods: Array = Data.producers_of(ch)

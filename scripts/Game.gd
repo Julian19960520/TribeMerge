@@ -19,6 +19,8 @@ var REGEN_SEC := 120
 const SAVE_PATH := "user://tribe_save_v17.json"
 ## 实际读写的存档路径。测试可以用 `-- --save=user://xxx.json` 换掉，不碰真实存档
 var save_path := SAVE_PATH
+## Headless balance simulation only. Negative keeps the normal clock/save path.
+var simulation_time := -1.0
 ## 启动时读到了本地存档（false = 没存档、新开了一局，云存档会试着从服务器恢复）
 var loaded_save := false
 var RANDOM_ORDERS := 4
@@ -28,6 +30,7 @@ var main: Node = null
 var ufo_offer: Dictionary = {}
 var ufo_receipts: Array = []
 var local_race: Dictionary = {}
+var duel_race: Dictionary = {}
 var gm_activities := false
 var seven_day: Dictionary = {}
 signal seven_day_changed
@@ -52,6 +55,8 @@ var discovered := {}
 ## 图鉴里已经领过奖的物品。新发现的还没领，格子上是礼物。
 var book_claimed := {}
 var orders: Array = []
+var story_done: Dictionary = {}
+var pending_orders: Array = []
 ## 刚做完的格子，棋盘下一帧播合成爆开
 var cooked_pop: Array = []
 var builds := {}
@@ -158,6 +163,7 @@ func _process(delta: float) -> void:
 
 ## 服务器时间（Cloud 按服务器给的差值换算）；没有 Cloud 时用本机时间。体力回复、冷却、制作计时都用它。
 func now() -> float:
+	if simulation_time >= 0: return simulation_time
 	var c = get_node_or_null("/root/Cloud")
 	return c.server_now() if c != null else Time.get_unix_time_from_system()
 
@@ -192,6 +198,7 @@ static func fmt_time(sec: int) -> String:
 
 ## 到北京时间零点还有几秒（按服务器时间，连不上时按本机时间）
 func secs_to_midnight() -> int:
+	if simulation_time >= 0: return 86400 - int(simulation_time + 28800) % 86400
 	var c = get_node_or_null("/root/Cloud")
 	if c != null:
 		return c.secs_to_midnight()
@@ -200,6 +207,7 @@ func secs_to_midnight() -> int:
 
 ## 今天的日期：服务器的北京时间日期（Cloud），连不上时按本机时间
 func today() -> String:
+	if simulation_time >= 0: return Time.get_datetime_string_from_unix_time(int(simulation_time + 28800)).split("T")[0]
 	var c = get_node_or_null("/root/Cloud")
 	return c.today() if c != null else Time.get_date_string_from_system()
 
@@ -232,6 +240,8 @@ func set_server_field(k: String, v) -> void:
 			gm_activities = bool(v)
 		"seven_day":
 			seven_day = Data.ConfigFiles.ints(v) if v is Dictionary else {}
+		"duel_race":
+			duel_race = v.duplicate(true) if v is Dictionary else {}
 		"merge_events":
 			merge_events = Data.ConfigFiles.ints(v) if v is Dictionary else {}
 		"hot_bought", "deals_bought", "book_claimed", "shell_bought":
@@ -293,9 +303,9 @@ func _check_day() -> void:
 	SevenDay.login()
 	# 等云存档拿到服务器时间（或确认连不上）再判断，免得改了本机时间先把每日次数清掉
 	var c = get_node_or_null("/root/Cloud")
-	if c == null or not c.clock_ready:
+	if simulation_time < 0 and (c == null or not c.clock_ready):
 		return
-	var d: String = c.today()
+	var d: String = today()
 	if d != deals_day:
 		deals_day = d
 		deals_bought = {}
@@ -327,6 +337,7 @@ func new_game() -> void:
 	ufo_offer = {}
 	ufo_receipts = []
 	local_race = {}
+	duel_race = {}
 	gm_activities = false
 	seven_day = {}
 	merge_events = {}
@@ -342,6 +353,8 @@ func new_game() -> void:
 	player_id = "TRB" + str(rng.randi_range(10000000, 99999999))
 	seen_tutorial = false
 	tutorial_on = true
+	story_done = {}
+	pending_orders = []
 	deals_bought.clear()
 	hot_bought.clear()
 	hot_revision = 0
@@ -384,6 +397,7 @@ func _init_board() -> void:
 			discover(k["id"])
 
 func save_game() -> void:
+	if simulation_time >= 0: return # Simulator owns its reports/checkpoints; never writes a player save.
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(save_dict()))
@@ -391,9 +405,9 @@ func save_game() -> void:
 ## 整份存档。本地存档和云存档快照都用它。
 func save_dict() -> Dictionary:
 	return {
-		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "local_race": local_race, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "shells": shells, "amber": amber, "rush": rush,
+		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "local_race": local_race, "duel_race": duel_race, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "shells": shells, "amber": amber, "rush": rush,
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
-		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "builds": builds, "cards": cards,
+		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "story_done": story_done, "pending_orders": pending_orders, "builds": builds, "cards": cards,
 		"stash": stash, "tokens": tokens, "token_claimed": token_claimed, "settings": settings, "hot_bought": hot_bought, "hot_revision": hot_revision,
 		"deals_bought": deals_bought, "deals_day": deals_day, "shell_bought": shell_bought, "shell_period": shell_period, "energy_buys": energy_buys, "player_id": player_id,
 		"seen_tutorial": seen_tutorial, "tutorial_on": tutorial_on,
@@ -412,6 +426,7 @@ func load_game() -> bool:
 		return false
 	ufo_offer = d.get("ufo_offer", {}) if d.get("ufo_offer", {}) is Dictionary else {}
 	ufo_receipts = d.get("ufo_receipts", []) if d.get("ufo_receipts", []) is Array else []
+	duel_race = d.get("duel_race", {}) if d.get("duel_race", {}) is Dictionary else {}
 	local_race = d.get("local_race", {}) if d.get("local_race", {}) is Dictionary else {}
 	gm_activities = bool(d.get("gm_activities", false))
 	seven_day = Data.ConfigFiles.ints(d.get("seven_day", {})) if d.get("seven_day", {}) is Dictionary else {}
@@ -436,6 +451,8 @@ func load_game() -> bool:
 	discovered = d["discovered"]
 	book_claimed = d.get("book_claimed", {})
 	orders = d["orders"]
+	story_done = d.get("story_done", {}) if d.get("story_done", {}) is Dictionary else {}
+	pending_orders = d.get("pending_orders", []) if d.get("pending_orders", []) is Array else []
 	for o in orders:
 		o["who"] = int(o["who"])
 		for k in o["rw"]:
@@ -484,10 +501,16 @@ func load_game() -> bool:
 			pass_super.append(int(x))
 	pass_endless = int(d.get("pass_endless", 0))
 	pass_super_bonus = bool(d.get("pass_super_bonus", false))
-	_ensure_craft_order(false)
-	if not tutorial_on:
-		_ensure_story()
 	_reconcile_cooks()
+	if not tutorial_on:
+		# Legacy saves had no completion ledger; infer preceding displayed rows.
+		if not d.has("story_done"):
+			var first := 999
+			for o in orders:
+				if o.get("story", false) and o.has("si"): first = mini(first, int(o["si"]))
+			if first < 999:
+				for si in first: story_done["%d:%d" % [level, si]] = true
+		refill_orders()
 	return true
 
 func reset_game() -> void:
@@ -760,10 +783,7 @@ func add_xp(n: int) -> bool:
 		level += 1
 		up = true
 		cloud_mark()
-		_add_story_orders()
-		if not tutorial_on:
-			_add_random_batch()
-			_ensure_craft_order(false)
+		if not tutorial_on: refill_orders()
 		orders_changed.emit()
 	if not up and not tutorial_on and _ensure_story():
 		orders_changed.emit()
@@ -776,6 +796,13 @@ func stash_push(id: String) -> void:
 	stash.append(id)
 	dirty()
 	changed.emit()
+
+## 旧存档或其他奖励里的未解锁卡包保留，但不挡住其余物品。
+func stash_claim_index() -> int:
+	for i in range(stash.size() - 1, -1, -1):
+		if level >= Data.CARD_LEVEL or Data.type_of(str(stash[i])) != "pack":
+			return i
+	return -1
 
 ## 返回这次攒满换到的兽皮卡包数量。卡包另开全屏领奖，不在这里塞进暂存。
 func add_tokens(n: int) -> int:
@@ -1027,6 +1054,34 @@ func roll_chest() -> Array:
 
 # ---------------------------------------------------------------- 订单
 
+## Shared slots: active crafts are protected, experience orders take remaining priority.
+func _trim_orders() -> void:
+	while orders.size() > Data.order_total(level):
+		var remove := -1
+		for i in range(orders.size()-1, -1, -1):
+			var o: Dictionary = orders[i]
+			if not o.get("story",false) and str(o.get("phase","need")) not in ["cook","ready"]:
+				remove=i
+				break
+		if remove<0:
+			for i in range(orders.size()-1,-1,-1):
+				if orders[i].get("story",false):
+					remove=i
+					pending_orders.push_front(orders[i])
+					break
+		if remove<0: break # Only possible for legacy saves with multiple active crafts.
+		orders.remove_at(remove)
+
+func refill_orders() -> void:
+	if tutorial_on: return
+	_trim_orders()
+	_add_story_orders()
+	_trim_orders()
+	_ensure_craft_order(false)
+	_add_random_batch()
+	dirty()
+	orders_changed.emit()
+
 func _is_random_order(o: Dictionary) -> bool:
 	return not bool(o.get("story", false)) and str(o.get("kind", "")) != "craft"
 
@@ -1037,7 +1092,7 @@ func _random_left() -> int:
 			n += 1
 	return n
 
-## 随机订单常驻 RANDOM_ORDERS 张，每张占一个难度位（slot）：0 号最简单，最后一号最难。
+## 随机订单填补总上限的空位，每张占一个难度位（slot）。
 ## 交掉一张就在原位补一张同难度位的新单，不用等一整批做完。
 func _random_slots_taken() -> Dictionary:
 	var taken := {}
@@ -1046,9 +1101,9 @@ func _random_slots_taken() -> Dictionary:
 			taken[int(o["slot"])] = true
 	return taken
 
-## 当前等级场上最多几张随机单，按 Data.random_cap 的曲线逐级变多，不超过 RANDOM_ORDERS。
+## 随机订单只能占据经验订单和制作订单之外的剩余位置。
 func random_cap() -> int:
-	return clampi(Data.random_cap(level), 0, maxi(0, RANDOM_ORDERS))
+	return _random_left() + maxi(0, Data.order_total(level) - orders.size())
 
 ## 制作订单从这一级开放（rules.json 的 craft_level）。
 func craft_level() -> int:
@@ -1108,16 +1163,12 @@ func _insert_random(made: Dictionary, at: int) -> void:
 			break
 	orders.insert(tail, made)
 
-## 场上没有剧情单、声望却还不够升级时，重新发这一级的剧情单，保证永远能升级。
+## 按已完成记录补齐订单，不能重复发放已完成的经验配置行。
 ## 声望在统一领奖结算时入账，在 add_xp 和读档时检查。返回是否补了单。
 func _ensure_story() -> bool:
-	for o in orders:
-		if o is Dictionary and bool(o.get("story", false)):
-			return false
-	if xp >= xp_need():
-		return false
-	_add_story_orders()
-	return true
+	var old := str(orders)
+	refill_orders()
+	return old != str(orders)
 
 ## 随机订单：不给声望，奖励贝币，偶尔有卡包 / 祭典鼓。target 是这单的目标火苗。
 func _make_order(target: int = -1, avoid: Array = []) -> Dictionary:
@@ -1208,9 +1259,9 @@ func _craft_order(d: Dictionary) -> Dictionary:
 		"uid": "c%d" % rng.randi(),
 	}
 
-## 场上始终留着一单制作。新局替换最后一张随机单，读档则补一张。
+## 经验订单之后有空位时，保留一单制作；正在制作的订单不挤掉。
 func _ensure_craft_order(replace: bool, avoid: String = "") -> void:
-	if _has_craft_order() or level < craft_level():
+	if _has_craft_order() or level < craft_level() or orders.size() >= Data.order_total(level):
 		return
 	var made := _craft_order(_pick_dish(avoid))
 	if made.is_empty():
@@ -1223,7 +1274,7 @@ func _ensure_craft_order(replace: bool, avoid: String = "") -> void:
 	orders.append(made)
 	dirty()
 
-## 发这一级的剧情单。场上同时最多 Data.story_cap 张，按 story.json 的顺序一张张放出来：
+## 经验订单按 story.json 顺序优先占用共享订单位：
 ## after 是已经放出过的最大序号（交单时传入），只发它后面的。行里记 si（序号），交单时据此放下一张。
 func _add_story_orders(skip: Array = [], after: int = -1) -> void:
 	var at := 0
@@ -1232,12 +1283,21 @@ func _add_story_orders(skip: Array = [], after: int = -1) -> void:
 			at += 1
 	## 只和场上的剧情单比重复；和随机单撞了也照发，不然这一级的声望会不够
 	var listed: Array = orders.filter(func(o): return o is Dictionary and bool(o.get("story", false)))
-	var room := Data.story_cap(level) - listed.size()
+	var protected := 0
+	for o in orders:
+		if str(o.get("kind", "")) == "craft" and str(o.get("phase", "need")) in ["cook", "ready"]: protected += 1
+	var room := maxi(0, Data.order_total(level) - listed.size() - protected)
+	while room > 0 and not pending_orders.is_empty():
+		var row: Dictionary = pending_orders.pop_front()
+		orders.insert(at, row)
+		listed.append(row)
+		at += 1
+		room -= 1
 	var list := Data.story_orders(level)
 	for si in list.size():
 		if room <= 0:
 			break
-		if si <= after:
+		if si <= after or story_done.has("%d:%d" % [level, si]):
 			continue
 		var s: Dictionary = list[si]
 		var items: Array = s["items"]
@@ -1254,11 +1314,12 @@ func _add_story_orders(skip: Array = [], after: int = -1) -> void:
 			for _i in int(s["pack"]):
 				packs.append("pack_1")
 			rw["rewards"] = packs
-		var row := {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true, "si": si}
+		var row := {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true, "si": si, "story_level": level}
 		if str(s.get("say", "")) != "":
 			row["say"] = str(s["say"])
 		orders.insert(at, row)
 		at += 1
+	_trim_orders()
 
 func _story_listed(items: Array, rows: Array) -> bool:
 	for row in rows:
@@ -1540,23 +1601,13 @@ func complete_order(oi: int) -> Array:
 	for k in cells:
 		board[k]["id"] = ""
 		board[k].erase("ck")
-	var dish := str(o.get("dish", ""))
-	# 交的是剧情单：记下这一级已经放出过的最大序号，交完后补下一张
-	var story_after := -1
-	if bool(o.get("story", false)):
-		for row in orders:
-			if row is Dictionary and bool(row.get("story", false)) and str(row.get("items", [])) != str(["seed_1"]):
-				# 旧存档的剧情单没有 si、而且这一级的已经全摆出来了，不再补发，升级后再按新规则（新手引导的草籽单不算）
-				story_after = maxi(story_after, int(row["si"]) if row.has("si") else 999)
+	if o.get("story",false) and o.has("si"):
+		story_done["%d:%d" % [int(o.get("story_level",level)),int(o["si"])]] = true
 	SevenDay.record("orders", 1)
 	MergeEvent.on_order(o)
+	DuelRace.on_order(o)
 	orders.remove_at(oi)
-	if craft:
-		_ensure_craft_order(false, dish)
-	elif _is_random_order(o):
-		_add_random_batch(oi)
-	elif not tutorial_on:
-		_add_story_orders([], story_after)
+	if not tutorial_on: refill_orders()
 	pass_pts += 2 if pass_tier >= 2 else 1
 	cloud_mark()
 	dirty()
@@ -1898,7 +1949,7 @@ func refresh_shell() -> Dictionary:
 	return result
 
 func _merge_coin(merged: String, origin: int) -> void:
-	var uid := Crypto.new().generate_random_bytes(16).hex_encode()
+	var uid := ("sim-%s-%s" % [int(now()*1000000), rng.randi()]) if simulation_time >= 0 else Crypto.new().generate_random_bytes(16).hex_encode()
 	var to := find_empty_near(origin) if not tutorial_on else -1
 	cloud_event({"id": uid, "type": "merge", "item": merged, "cell": to})
 	if to < 0: return

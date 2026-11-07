@@ -44,8 +44,29 @@ func run() -> void:
 	var scroll: Dictionary=s.duplicate(true)
 	for k in range(54,96):scroll["cells"][k]={"lock":0,"id":""}
 	scroll["cells"][95]["id"]="moon_3"
+	scroll["discovered"]["moon_4"]=true
 	ev._advance(c,scroll)
 	check(scroll["view"]==6 and scroll["cells"][95]["id"]=="" and scroll["cells"].slice(36,78).any(func(v):return v["id"]=="moon_3"), "automatic scroll carries lower items into the new visible area")
+	var stages: Dictionary=ev.fresh(c)
+	for cell in stages["cells"]: cell["lock"]=0; cell["id"]=""
+	stages["discovered"]["moon_3"]=true
+	ev._advance(c,stages)
+	check(stages["view"]==9,"clear rows alone cannot advance before tier unlock")
+	for tier in [4,5,6]:
+		stages["discovered"]["moon_%d"%tier]=true
+		ev._advance(c,stages)
+		check(stages["view"]==9-(tier-3)*3,"tier %d advances configured three rows"%tier)
+		ev._advance(c,stages)
+		check(stages["view"]==9-(tier-3)*3,"same tier cannot advance twice")
+	var delayed: Dictionary=ev.fresh(c)
+	delayed["discovered"]["moon_4"]=true
+	for k in [88,89]: delayed["cells"][k]={"lock":0,"id":""}
+	ev._advance(c,delayed)
+	check(delayed["view"]==8 and delayed["cells"][84]["lock"]==2,"uncleared lower cells remain reachable with pending advancement")
+	for cell in delayed["cells"].slice(72,90): cell["lock"]=0; cell["id"]=""
+	delayed["cells"][89]["id"]="moon_8"
+	ev.local_action(c,delayed,"recycle",{"cell":89,"view":8})
+	check(delayed["view"]==6,"later action spends pending advancement without a new tier")
 	var legacy: Dictionary=ev.fresh(c)
 	legacy.erase("rules_version")
 	for k in 90:legacy["cells"][k]["lock"]=1
@@ -99,6 +120,15 @@ func run() -> void:
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	main.show_screen("board",true)
+	var bs=main.board_screen
+	for id in ["basket_1","basket_3","fruit_1"]:
+		g.board[0]={"id":id,"lock":0}
+		bs.board.selected=0
+		bs._on_select(0)
+		check(bs._del_btn.visible==(id=="fruit_1"),"discard visibility for "+id)
+		if id!="fruit_1":
+			bs._on_delete()
+			check(g.board[0]["id"]==id,"generator cannot be discarded by direct callback")
 	var p = main.open("choice_chest",20)
 	check(p.options.size() == 3, "chest UI exposes exactly three choices")
 	p.close()

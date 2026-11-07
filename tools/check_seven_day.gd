@@ -90,9 +90,10 @@ func run() -> void:
 	g.board[0]["id"] = "fruit_1"
 	g.board[1]["id"] = "fruit_1"
 	var data = load("res://scripts/Data.gd")
-	data.RULES["merge_coin_chance"] = 1.0
+	var coin_config: Dictionary = data.RULES["merge_coin"].duplicate(true)
+	data.RULES["merge_coin"]["chance"] = 1.0
 	var merged_before: int = tasks.state()["stats"]["merges"]
-	check(g.try_drop(0,1) == "merge" and g.board[0]["id"] == "shell_1","successful merge drops physical coin in nearest free cell")
+	check(g.try_drop(0,1) == "merge" and g.board[0]["id"] == data.merge_coin_item("fruit_2"),"successful merge drops configured physical coin in nearest free cell")
 	check(tasks.state()["stats"]["merges"] == merged_before+1,"merge counted exactly once")
 	check(g.try_drop(1,1) == "" and tasks.state()["stats"]["merges"] == merged_before+1,"failed drag gives no task progress")
 	g.board[2]["id"] = "fruit_1"; g.board[3]["id"] = "fruit_1"
@@ -100,10 +101,11 @@ func run() -> void:
 	g.try_drop(2,3)
 	check(g.board[2]["id"] == "","tutorial has no bonus coin")
 	g.tutorial_on = false
-	data.RULES["merge_coin_chance"] = 0.0
+	data.RULES["merge_coin"]["chance"] = 0.0
 	g.board[4]["id"] = "fruit_1"; g.board[5]["id"] = "fruit_1"
 	g.try_drop(4,5)
 	check(g.board[4]["id"] == "","zero configured probability yields no bonus")
+	data.RULES["merge_coin"] = coin_config
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	main.show_screen("board",true)

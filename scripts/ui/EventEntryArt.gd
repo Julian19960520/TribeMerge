@@ -32,6 +32,13 @@ static func paint(ci: CanvasItem, sz: Vector2, kind: String, title: String, badg
 	ci.draw_set_transform(c, 0.0, Vector2(s, s))
 	_grey = locked
 	match kind:
+		"duel":
+			for side in 2:
+				var x := -23.0 if side==0 else 23.0
+				ci.draw_circle(Vector2(x,-55),29,Art.INK)
+				ci.draw_circle(Vector2(x,-55),25,_c(Art.MOSS if side==0 else Art.CLAY))
+				Paint.bust(ci,Vector2(x,-52),42)
+			text(ci,"VS",Vector2(0,-12),24,Color("ffd23f"))
 		"race": _race(ci)
 		"ruins": _ruins(ci)
 		"seven": _seven(ci)

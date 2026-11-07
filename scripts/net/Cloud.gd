@@ -29,7 +29,7 @@ const MERGE_DELAY := 3.0
 const RETRY_SEC := 90.0
 const QUIT_WAIT := 2.0
 const DAY_OFFSET := 8 * 3600
-const SERVER_FIELDS := ["ufo_offer", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "hot_revision",
+const SERVER_FIELDS := ["duel_race", "ufo_offer", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "hot_revision",
 	"inv_cap", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus",
 	"tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period"]
 

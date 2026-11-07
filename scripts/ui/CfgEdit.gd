@@ -1673,7 +1673,7 @@ func _rules() -> float:
 	y = _rule(d, y, "rows", "行数", 1, 20)
 	y = _rule(d, y, "max_energy", "火种上限", 1, 9999)
 	y = _rule(d, y, "regen_sec", "恢复秒数", 1, 9999)
-	y = _rule(d, y, "random_orders", "随机订单张数", 0, 12)
+	y = _order_capacity_rules(d, y)
 	y = _rule(d, y, "craft_level", "制作单开放等级", 1, 40)
 	y = _rule(d, y, "xp_base", "升级声望起点", 1, 99)
 	y = _rule(d, y, "xp_div", "每几级声望+1", 1, 20)
@@ -1684,6 +1684,25 @@ func _rules() -> float:
 	y = _rule(d, y, "storage_expand_price", "储物首次价格", 1, 999)
 	y = _rule(d, y, "storage_expand_step", "储物每格涨价", 1, 999)
 	return y + 20
+
+func _order_capacity_rules(d: Dictionary, y: float) -> float:
+	if not d.get("order_cap_at") is Array: d["order_cap_at"] = [1, 1, 4, 10, 20]
+	var caps: Array = d["order_cap_at"]
+	_h(_root, "最大订单数", 24, y, 280, 22)
+	_num_field(_root, Rect2(320, y, 150, 48), caps.size(), 1, 12, func(n):
+		while caps.size() < n: caps.append(1 if caps.is_empty() else mini(99, int(caps.back()) + 5))
+		caps.resize(n)
+		_touch(Files.RULES)
+		_rerender())
+	y += 68
+	for i in caps.size():
+		var index := i
+		_h(_root, "第 %d 单开放等级" % (i + 1), 24, y, 280, 22)
+		_num_field(_root, Rect2(320, y, 150, 48), int(caps[i]), 1, 99, func(n):
+			caps[index] = n
+			_touch(Files.RULES))
+		y += 68
+	return y
 
 func _rule(d: Dictionary, y: float, key: String, label: String, lo: int, hi: int) -> float:
 	_stepper(_root, 24, y, label, int(d.get(key, 0)), lo, hi, func(n):
@@ -2332,6 +2351,7 @@ func _save() -> void:
 	_refresh_save()
 	Data.reload()
 	G._apply_rules()
+	if paths.has(Files.RULES) or paths.has(Files.STORY): G.refill_orders()
 	var toast := "已写入%s" % "、".join(wrote)
 	if board_saved:
 		toast += "。新棋盘要重新开始才换上。"
@@ -2344,7 +2364,15 @@ func _save() -> void:
 
 func _validate(path: String) -> String:
 	var seen := {}
-	if path == Files.CHAINS:
+	if path == Files.RULES:
+		var caps = _pages[path].get("order_cap_at", [1, 1, 4, 10, 20])
+		if not caps is Array or caps.is_empty(): return "至少保留一个订单位"
+		var previous := 1
+		if int(caps[0]) != 1: return "第一个订单位应在 1 级开放"
+		for at in caps:
+			if int(at) < previous: return "订单位开放等级应从低到高"
+			previous = int(at)
+	elif path == Files.CHAINS:
 		for c in _pages[Files.CHAINS]:
 			var id := str(c.get("id", "")).strip_edges()
 			c["id"] = id

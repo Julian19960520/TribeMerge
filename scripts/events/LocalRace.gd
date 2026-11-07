@@ -121,7 +121,8 @@ static func join() -> Dictionary:
 	if not cur.is_empty() and cur.get("group", {}).get("state", "") != "ended":
 		return {"ok": true}  # 这一局还没比完：还是这一局
 	var rng := RandomNumberGenerator.new()
-	rng.randomize()
+	if G.simulation_time >= 0: rng.seed = G.rng.randi()
+	else: rng.randomize()
 	var now := G.now()
 	var dur := float(rl.get("duration_sec", 14400))
 	var tg := float(rl.get("target", 150))

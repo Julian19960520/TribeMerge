@@ -202,33 +202,9 @@ static func pass_need(index: int) -> int:
 	return maxi(1, int(PASS_LEVELS[i].get("need", 8)))
 
 ## 剧情订单在 data/story.json。只有它们给声望。每一级的剧情声望加起来正好等于升到下一级要的声望。
-## 表里没写的等级（超过 40 级）按公式生成，同样保证声望够用。
+## 配置以外不补造经验订单，空位由随机订单填充。
 static func story_orders(level: int) -> Array:
-	if STORY.has(level):
-		return STORY[level]
-	var r := RandomNumberGenerator.new()
-	r.seed = level * 7919
-	var out := []
-	var top: int = 2 + level / 2
-	var chains := order_chains(level)
-	var need := xp_need(level)
-	for i in 3:
-		var items := []
-		var n := 1 + r.randi() % 3
-		var shell := 0
-		for k in n:
-			var ch: String = chains[r.randi() % chains.size()]
-			var l := r.randi_range(3, mini(top, max_lv(ch) - 2))
-			items.append("%s_%d" % [ch, l])
-			shell += 4 * int(pow(2, l - 1))
-		var xp_i := need / 3 + (1 if i >= 3 - need % 3 else 0)
-		var o := {"who": r.randi() % PEOPLE.size(), "items": items, "xp": xp_i, "shell": shell}
-		if i == 1 and level >= CARD_LEVEL:
-			o["rewards"] = ["pack_1"]
-		if i == 2:
-			o["token"] = 2 + level / 2
-		out.append(o)
-	return out
+	return STORY.get(level, [])
 
 ## 升到下一级要的声望 = xp_base + (等级 - 1) / xp_div，在 data/rules.json 里调。
 static func xp_need(level: int) -> int:
@@ -268,7 +244,10 @@ static func random_diff(level: int, curve: int) -> int:
 ## 升到 level 时获得的奖励。配置里写了就用配置，没写的等级仍按原来的公式。
 static func level_rewards(level: int) -> Array:
 	if LEVEL_REWARDS.has(level):
-		return (LEVEL_REWARDS[level] as Array).duplicate(true)
+		var rewards := (LEVEL_REWARDS[level] as Array).duplicate(true)
+		if level < CARD_LEVEL:
+			rewards = rewards.filter(func(rw): return type_of(str(rw[0])) != "pack")
+		return rewards
 	return default_level_rewards(level)
 
 static func default_level_rewards(level: int) -> Array:
@@ -292,8 +271,7 @@ static func default_level_rewards(level: int) -> Array:
 	return out
 
 ## 订单栏逐级变多：数组里第 k 个数是「第 k+1 张从几级开始」。可在 rules.json 里改。
-## 剧情单：1 级 1 张，2 级 2 张，10 级 3 张。一级的剧情单不会一次全摆出来，交一张补下一张。
-## 随机单：1 级 1 张，4 级 2 张，15 级 3 张，20 级 4 张（不超过 random_orders）。
+## order_cap_at：每个元素代表一个新订单位开放的等级；经验订单优先填满这些位置。
 static func _cap_at(key: String, fallback: Array, level: int, limit: int) -> int:
 	var at = RULES.get(key, fallback)
 	if not (at is Array):
@@ -304,15 +282,15 @@ static func _cap_at(key: String, fallback: Array, level: int, limit: int) -> int
 			n += 1
 	return mini(n, limit)
 
+## One total capacity shared by experience, random and crafting orders.
+static func order_total(level: int) -> int:
+	return maxi(1, _cap_at("order_cap_at", [1, 1, 4, 10, 20], level, 99))
+
 static func story_cap(level: int) -> int:
-	return maxi(1, _cap_at("story_cap_at", [1, 2, 10], level, 99))
+	return order_total(level)
 
 static func random_cap(level: int) -> int:
-	return _cap_at("random_cap_at", [1, 4, 15, 20], level, int(RULES.get("random_orders", 4)))
-
-## 这一级订单栏一共几张：剧情 + 随机 + 制作（制作单从 craft_level 起常驻 1 张）
-static func order_total(level: int) -> int:
-	return story_cap(level) + random_cap(level) + (1 if level >= int(RULES.get("craft_level", 3)) else 0)
+	return order_total(level)
 
 ## 升到这一级时新开放的东西，给升级弹窗用。每条一句。
 static func level_unlocks(level: int) -> Array:
