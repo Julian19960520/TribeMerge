@@ -11,7 +11,7 @@ def clean(value):
 
 
 def check(path):
-    d = json.loads(Path(path).read_text())
+    d = json.loads(Path(path).read_text(encoding='utf-8'))
     assert d['runs'] and d['events']
     lines = d.get('production_lines', [])
     metrics = [line['metric'] for line in lines]
@@ -70,7 +70,7 @@ def check(path):
         assert run['finish_reason'] != 'invariant_failed'
         save_path = Path(path).with_name(Path(path).stem + '-run%d-save.json' % run['run'])
         if lines and save_path.exists():
-            state = json.loads(save_path.read_text())
+            state = json.loads(save_path.read_text(encoding='utf-8'))
             owned = [cell['id'] for cell in state['board'] if cell['lock'] == 0]
             owned += state.get('inv', []) + state.get('stash', [])
             for line in lines:

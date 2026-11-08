@@ -11,7 +11,7 @@ signal updated
 
 const POLL := 30.0
 const DASH := 0.7
-const MATCH_SEC := 3.0
+const MATCH_SEC := 1.5
 
 ## 最近一次 GET /v1/race 的结果（schedule / current / results / title / rules）
 var info := {}

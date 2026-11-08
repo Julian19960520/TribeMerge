@@ -21,7 +21,7 @@ def _load(path: Path, default):
 
 class GameData:
     FILES = ["chains", "lines", "dishes", "store", "rules", "story", "levels", "pass", "builds", "albums",
-             "board", "amber_packs", "people", "store_shell", "merge_events", "choice_chests", "seven_day", "daily_deals", "ufo_offer", "duel_race"]
+             "board", "amber_packs", "people", "store_shell", "merge_events", "choice_chests", "seven_day", "daily_deals", "ufo_offer", "duel_race", "offers"]
 
     def __init__(self, data_dir: str):
         self.dir = Path(data_dir)
@@ -65,6 +65,7 @@ class GameData:
                     [str(r[0]), max(1, int(r[1]))] for r in row.get("rewards", []) if isinstance(r, list) and len(r) >= 2 and str(r[0])
                 ]
             self.pass_levels = g("pass", {"levels": []}).get("levels", [])
+            self.pass_season = g("pass", {}).get("season") or {}
             self.builds = [b for b in g("builds", []) if isinstance(b, dict)]
             self.albums = g("albums", [])
             self.board = g("board", {})
@@ -74,6 +75,7 @@ class GameData:
             self.seven_day = g("seven_day", {})
             self.daily_deals = g("daily_deals", [])
             self.ufo_offer = g("ufo_offer", {})
+            self.offers = g("offers", {})
             self.duel_race = g("duel_race", {})
             self.choice_chests = g("choice_chests", {})
             self._stamp = stamp
@@ -113,6 +115,45 @@ class GameData:
         if isinstance(v, list) and 1 <= lv <= len(v):
             return int(v[lv - 1])
         return 0
+
+    def craft_sand(self, dish: str) -> str:
+        """制作单附送的沙漏（和 Data.craft_sand 一致）：按菜的制作秒数取 rules.craft_sand 里最后一个够得着的档。"""
+        d = self.dishes.get(dish)
+        if not d:
+            return ""
+        secs = int(d.get("secs", 0) or 0)
+        out = ""
+        for t in self.rules.get("craft_sand", []) or []:
+            if isinstance(t, (list, tuple)) and len(t) >= 2 and secs >= int(t[0]):
+                out = str(t[1])
+        return out
+
+    def merge_sand_item(self, merged: str, level: int) -> str:
+        """合成掉沙漏（和 Data.merge_sand_item 一致）：只有普通物品，且部落等级够 min_level。"""
+        r = self.rules.get("merge_sand", {})
+        if not isinstance(r, dict) or level < int(r.get("min_level", 1)) or self.type_of(merged) != "item":
+            return ""
+        out = ""
+        for t in r.get("tiers", []) or []:
+            if isinstance(t, (list, tuple)) and len(t) >= 2 and self.lv(merged) >= int(t[0]):
+                out = str(t[1])
+        return out
+
+    def merge_sand_chance(self) -> float:
+        r = self.rules.get("merge_sand", {})
+        return min(1.0, max(0.0, float(r.get("chance", 0)))) if isinstance(r, dict) else 0.0
+
+    def egen_stats(self, iid: str) -> dict:
+        """体力生产器（type "egen"）：和客户端 Data.egen_stats 一样读 prod[0]。不是 egen 或没配好返回 {}。"""
+        if self.type_of(iid) != "egen" or not self.valid_item(iid):
+            return {}
+        prod = self.chains[self.chain(iid)].get("prod") or []
+        slot = prod[0] if prod and isinstance(prod[0], dict) else {}
+        drops = [str(d.get("id", "")) for d in slot.get("drops", []) or []
+                 if isinstance(d, dict) and str(d.get("id", "")) and int(d.get("p", 0) or 0) > 0]
+        if not drops:
+            return {}
+        return {"drops": drops, "charges": int(slot.get("charges", 24)), "refill": int(slot.get("refill_min", 720))}
 
     @staticmethod
     def units(lv: int) -> int:

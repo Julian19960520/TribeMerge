@@ -81,6 +81,11 @@ def test_tutorial_and_seed_orders(client, player):
     assert r.json()["state"]["shells"] == 75 and r.json()["state"]["xp"] == 1
 
 
+def fire_part_cost(idx):
+    from app.services import economy
+    return next(b for b in economy().gd.builds if b["id"] == "fire")["parts"][idx]["cost"]
+
+
 def test_build_spends_shells_and_ranks(client, player):
     assert player.post("/v1/build", json={"area": "fire"}).json()["error"] == "not_enough_shell"
     player.put(player.snapshot(), events=[ev("order", order=STORY0), ev("order", order=STORY1),
@@ -89,7 +94,7 @@ def test_build_spends_shells_and_ranks(client, player):
     r = player.post("/v1/build", json={"area": "fire"})
     assert r.status_code == 200, r.text
     j = r.json()
-    assert j["state"]["builds"]["fire"] == 2 and j["state"]["shells"] == 540 - 340 and j["give"]["idx"] == 1
+    assert j["state"]["builds"]["fire"] == 2 and j["state"]["shells"] == 540 - fire_part_cost(1) and j["give"]["idx"] == 1
     # 部件奖励 [["basket_3",1],["fire_2",15],["amber_2",1]]：货币类按点数发（同客户端），其他是实物
     assert j["give"]["items"] == ["basket_3"] and j["give"]["energy"] == 15 and j["state"]["amber"] == 81
     top = client.get("/v1/rank/top", headers={"Authorization": "Bearer " + player.token}).json()
@@ -264,3 +269,29 @@ def test_found_chain_cannot_skip_levels(client, player):
     player.put(player.snapshot(stash=["pot_4"]))
     assert player.post("/v1/events", json={"events": [ev("found", item="pot_5")]}).json()["events"][0]["ok"]
     assert not player.post("/v1/events", json={"events": [ev("found", item="pot_6")]}).json()["events"][0]["ok"]
+
+
+def test_pass_season_rollover(client, player):
+    from app import clock
+    from app.services import economy
+    player.put(player.snapshot(), events=[ev("order", order={"who": 2, "items": ["fruit_3"], "rw": {"shell": 12}, "story": False}) for _ in range(8)])
+    order, paid = buy_pass(player, "vip")
+    st = paid.json()["state"]
+    season = st["pass_season"]
+    assert st["pass_tier"] == 1 and st["pass_pts"] == 8
+    assert player.post("/v1/pass/claim", json={"track": "free", "level": 1}).status_code == 200
+    # 下一季：积分、已领、贵宾全部清零；上季没领的奖励（第 1 档贵宾）领不到了
+    pending = player.post("/v1/pass/order", json={"tier": "super"})
+    clock.offset = economy().pass_secs_left() + 5
+    r = player.post("/v1/pass/claim", json={"track": "prem", "level": 1})
+    st = r.json()["state"]
+    assert r.json()["error"] == "not_reached"
+    assert st["pass_season"] == str(int(season) + 1) and st["pass_tier"] == 0 and st["pass_pts"] == 0
+    assert st["pass_free"] == [] and st["pass_prem"] == [] and st["pass_super"] == [] and not st["pass_super_bonus"]
+    # 上季下的超级贵宾单在新一季付款：开通的是新一季（从零买超级，送积分）
+    paid = player.post("/v1/payments/mock/%s/pay" % pending.json()["order_id"])
+    st = paid.json()["state"]
+    assert st["pass_tier"] == 2 and st["pass_season"] == str(int(season) + 1) and st["pass_pts"] == 10
+    # 同一季内不再清零
+    player.put(player.snapshot(), events=[ev("order", order={"who": 2, "items": ["fruit_3"], "rw": {"shell": 12}, "story": False})])
+    assert player.post("/v1/pass/claim", json={"track": "super", "level": 1}).json()["state"]["pass_tier"] == 2

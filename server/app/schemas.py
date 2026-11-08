@@ -67,10 +67,11 @@ class TransferCodeResp(Resp):
 
 class Event(Req):
     id: str = Field(min_length=1, max_length=64)
-    type: Literal["order", "bubble", "collect", "refund", "found", "merge"]
+    type: Literal["order", "bubble", "collect", "refund", "found", "merge", "egen"]
     order: dict[str, Any] | None = None
     cell: int | None = None
     item: str | None = Field(default=None, max_length=32)
+    gen: str | None = Field(default=None, max_length=32)  # egen：点的是哪台体力生产器
 
 
 class SaveReq(Req):

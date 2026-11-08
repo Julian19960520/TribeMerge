@@ -45,6 +45,8 @@ func _ready() -> void:
 
 	# 部落礼包占用原每日特惠位置。
 	add_child(preload("res://scripts/ui/GiftChainCard.gd").new())
+	# 赶大集（付费限时礼包）在部落礼包下面，只在这期进行中显示
+	add_child(preload("res://scripts/ui/SpreeCard.gd").new())
 
 	var gear := UI.btn(self, Rect2(626, 150, 80, 80), "", "teal", func(): G.main.open("settings"))
 	gear.is_round = true
@@ -159,7 +161,7 @@ func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
 
 func _process(_d: float) -> void:
 	if _event_lbl and Engine.get_process_frames() % 30 == 0:
-		_event_lbl.text = G.fmt_time(G.event_left())
+		_event_lbl.text = G.fmt_time(G.pass_secs_left())
 
 func _build_spots() -> void:
 	var signature := str(G.level) + ":" + str(G.shells) + ":" + JSON.stringify(G.builds)

@@ -245,6 +245,7 @@ static func crystal_det(ci: CanvasItem, c: Vector2, w: float, h: float, ang: flo
 	var a := c + Vector2(0, 0).rotated(ang)
 	var b := c + Vector2(0, -h).rotated(ang)
 	var t := c + Vector2(0, -h - w * 1.3).rotated(ang)
+	ci.draw_colored_polygon(poly(rot_pts([Vector2(0, 0), Vector2(0, -h), Vector2(0, -h - w * 1.3), Vector2(w, -h), Vector2(w, 0)], ang, c), s), Color(0, 0, 0, 0.13))
 	ln(ci, a, b, 1.4, Color(col.darkened(0.4), 0.7), s)
 	ln(ci, b, t, 1.4, Color(col.darkened(0.4), 0.7), s + 1)
 	ci.draw_colored_polygon(poly(rot_pts([Vector2(-w * 0.7, -2), Vector2(-w * 0.7, -h + 2), Vector2(-w * 0.2, -h - 1), Vector2(-w * 0.2, -2)], ang, c), s), Color(1, 1, 1, 0.3))

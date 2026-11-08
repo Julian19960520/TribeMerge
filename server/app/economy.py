@@ -17,14 +17,15 @@ import json
 import math
 import random
 import secrets
+import datetime
 import time
 
 from .gamedata import CURRENCY, GameData
 
 SERVER_FIELDS = [
     "duel_race",
-    "ufo_offer", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "inv_cap",
-    "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus",
+    "ufo_offer", "offers", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "inv_cap",
+    "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season",
     "tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period", "hot_revision",
 ]
 
@@ -63,9 +64,9 @@ class Economy:
             "amber": num(np.get("amber", 80)), "shells": num(np.get("shells", 0)), "level": num(np.get("level", 1)),
             "xp": num(np.get("xp", 0)), "energy_buys": 0, "deals_day": self.day(), "hot_bought": {}, "deals_bought": {},
             "inv_cap": num(self.gd.rules.get("storage_initial", np.get("inv_cap", 5))), "pass_pts": 0, "pass_tier": 0, "pass_free": [], "pass_prem": [], "pass_super": [],
-            "pass_endless": 0, "pass_super_bonus": False, "tokens": 0, "token_claimed": 0,
+            "pass_endless": 0, "pass_super_bonus": False, "pass_season": self.pass_season(), "tokens": 0, "token_claimed": 0,
             "builds": dict(np.get("builds", {"fire": 1})), "cards": {}, "book_claimed": {},
-            "shell_bought": {}, "shell_period": self.shell_period(), "hot_revision": 0, "merge_events": {}, "ufo_offer": {}, "gm_activities": False,
+            "shell_bought": {}, "shell_period": self.shell_period(), "hot_revision": 0, "merge_events": {}, "ufo_offer": {}, "offers": {}, "gm_activities": False,
         }
         st.update({"budget": self.gd.initial_board_units(), "credits": {"chest": 0, "pack": 0},
                    "energy_credit": 0, "rush_credit": 0, "max_lv": {}, "done": {}, "adopted": False,
@@ -80,7 +81,7 @@ class Economy:
     def adopt(self, st: dict, snap: dict) -> None:
         """账号的第一份快照（老存档第一次连上服务器）：服务器字段信一次客户端，额度按快照里的物品算。之后就以服务器为准。"""
         for k in SERVER_FIELDS:
-            if k in snap and k not in ("duel_race", "merge_events", "seven_day", "ufo_offer", "gm_activities"):
+            if k in snap and k not in ("duel_race", "merge_events", "seven_day", "ufo_offer", "offers", "gm_activities"):
                 st[k] = snap[k]
         st["amber"] = max(0, num(st.get("amber")))
         st["shells"] = max(0, num(st.get("shells")))
@@ -115,6 +116,7 @@ class Economy:
             st["hot_revision"] = 0
             st["deals_bought"] = {}
         self.ensure_shell(st)
+        self.ensure_pass_season(st)
 
     # 贝币小摊每 refresh_hours 小时（按服务器时间、东八区零点对齐）换一轮，换轮时已购清零
     def shell_period(self) -> str:
@@ -124,6 +126,28 @@ class Economy:
     def shell_secs_left(self) -> int:
         span = self.gd.shell_refresh_hours * 3600
         return span - int(self.now() + self.utc_offset * 3600) % span
+
+    # 通行证赛季：从 season.start（东八区零点）起每 season.days 天一季，和客户端 Game.pass_season_now 一致
+    def _pass_season_span(self) -> int:
+        return max(1, int(self.gd.pass_season.get("days", 35))) * 86400
+
+    def _pass_season_offset(self) -> int:
+        start = datetime.datetime.strptime(str(self.gd.pass_season.get("start", "2026-11-02")), "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
+        return int(self.now()) + self.utc_offset * 3600 - int(start.timestamp())
+
+    def pass_season(self) -> str:
+        return str(self._pass_season_offset() // self._pass_season_span())
+
+    def pass_secs_left(self) -> int:
+        return self._pass_season_span() - self._pass_season_offset() % self._pass_season_span()
+
+    def ensure_pass_season(self, st: dict) -> None:
+        """换季：积分、已领档位、贵宾档位全部清零，上季没领的奖励作废。"""
+        s = self.pass_season()
+        if st.get("pass_season") == s:
+            return
+        st.update({"pass_season": s, "pass_pts": 0, "pass_tier": 0, "pass_free": [], "pass_prem": [], "pass_super": [],
+                   "pass_endless": 0, "pass_super_bonus": False})
 
     def ensure_shell(self, st: dict) -> None:
         p = self.shell_period()
@@ -256,6 +280,7 @@ class Economy:
         return "¥%d" % self.pass_cny(st, tier)
 
     def check_pass_tier(self, st: dict, tier: str) -> None:
+        self.ensure_pass_season(st)
         if tier not in ("vip", "super"):
             raise Reject("bad_tier", "没有这个档位", 400)
         if num(st.get("pass_tier")) >= (1 if tier == "vip" else 2):
@@ -265,7 +290,7 @@ class Economy:
         """付款成功后开通。贵宾送火种；超级贵宾一次性加积分，从没买过直接买超级也送火种。"""
         pc = self.cfg.get("pass", {})
         out: dict = {}
-        self.check_pass_tier(st, tier)
+        self.check_pass_tier(st, tier)  # 先换季：上季下的单在新一季付款，开通的是新一季
         cur = num(st.get("pass_tier"))
         if tier == "vip":
             st["pass_tier"] = 1
@@ -631,6 +656,13 @@ class Economy:
                     out = {}
                     self.give_item(st, coin, out)
                     return out
+                # 掉沙漏：掷点落在 [贝币概率, 贝币概率 + 沙漏概率)（客户端 Game._merge_coin 同一套）
+                sand = self.gd.merge_sand_item(iid, num(st.get("level"), 1))
+                lo = self.merge_coin_chance() if coin else 0.0
+                if sand and lo <= roll < lo + self.gd.merge_sand_chance():
+                    out = {}
+                    self.give_item(st, sand, out)
+                    return out
             return {}
         if t == "order":
             return self._ev_order(st, ev.get("order") if isinstance(ev.get("order"), dict) else {})
@@ -642,7 +674,29 @@ class Economy:
             return self._ev_refund(st, str(ev.get("item", "")))
         if t == "found":
             return self._ev_found(st, str(ev.get("item", "")))
+        if t == "egen":
+            return self._ev_egen(st, str(ev.get("gen", "")), str(ev.get("item", "")))
         raise Reject("bad_event", "未知事件", 400)
+
+    def _ev_egen(self, st: dict, gid: str, iid: str) -> dict:
+        """点一下体力生产器（不耗体力）。按账号记一批用了几次：用满 charges 次后 refill 分钟内不再认；
+        产物必须在掉落表里，认了就把它记进货币额度，之后才能收取。"""
+        es = self.gd.egen_stats(gid)
+        if not es:
+            raise Reject("bad_item", "这不是体力生产器", 400)
+        if iid not in es["drops"]:
+            raise Reject("bad_item", "体力生产器不会掉这件", 400)
+        now = self.now()
+        rec = st.get("egen") if isinstance(st.get("egen"), dict) else {}
+        used = num(rec.get("u"))
+        slack = num(self.cfg.get("check", {}).get("future_slack_sec", 120))
+        if used >= es["charges"]:
+            if now - float(rec.get("t", 0) or 0) < es["refill"] * 60 - slack:
+                raise Reject("egen_resting", "体力生产器还在休息")
+            used = 0
+        st["egen"] = {"u": used + 1, "t": now}
+        self._seen_item(st, iid, credit=False, budget=True)
+        return {}
 
     def _ev_found(self, st: dict, iid: str) -> dict:
         """客户端刚发现一件新物品（合成出来 / 生产出来），还没等到下一次快照。
@@ -713,15 +767,21 @@ class Economy:
                 if si < 0 or num(rw.get("xp")) > self.gd.xp_need(level) or num(rw.get("shell")) > cap or rw.get("rewards"):
                     raise Reject("bad_order", "剧情单奖励超出范围")
             return "story:%d:%d" % (level, si)
-        if num(rw.get("xp")) > 0 or rw.get("rewards"):
+        craft = str(o.get("kind", "")) == "craft"
+        if num(rw.get("xp")) > 0:
             raise Reject("bad_order", "普通单不发声望和实物")
+        if rw.get("rewards"):
+            # 制作单只能附送一件沙漏，档位由菜的制作时长决定
+            sand = self.gd.craft_sand(str(o.get("dish", ""))) if craft else ""
+            if not sand or [str(x) for x in rw.get("rewards") or []] != [sand]:
+                raise Reject("bad_order", "普通单不发声望和实物")
         oc = self.cfg.get("orders", {})
         if num(rw.get("token")) > num(oc.get("token_max_per_item", 3)) * len(items):
             raise Reject("bad_order", "祭典鼓超出范围")
         if num(rw.get("pack")) > (1 if level >= self.gd.card_level() else 0):
             raise Reject("bad_order", "卡包超出范围")
         if not listed:
-            if str(o.get("kind", "")) == "craft":
+            if craft:
                 cap = 4 + sum(4 * self.gd.units(self.gd.lv(x)) for x in items)
             else:
                 cap = math.ceil(float(oc.get("pay_per_flame", 3.0)) * sum(self.gd.flames(x) for x in items)) + 4 * len(items) + 2

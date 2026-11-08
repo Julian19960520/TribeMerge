@@ -19,5 +19,8 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	var badge:={"text":"开赛","style":"teal"}
 	if not DuelRace.unlocked(): badge={"text":"%d级"%int(DuelRace.config()["unlock_level"]),"style":"lock"}
 	elif DuelRace.pending(): badge={"text":"领奖","style":"go"}
-	elif not m.is_empty() and m["status"]=="running": badge={"text":"%d/%d"%[m["me"],m["target"]],"style":"num"}
+	elif not m.is_empty() and m["status"]=="running":
+		var me:=int(m.get("me",0))
+		var op:=int(m.get("opponent",0))
+		badge={"text":"%d:%d"%[me,op],"style":"gold" if me>op else ("bronze" if me<op else "num")}
 	EventEntryArt.paint(ci,sz,"duel","双人竞速",badge,not DuelRace.unlocked(),DuelRace.pending())

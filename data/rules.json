@@ -1,22 +1,94 @@
 {
-  "cols": 7,
-  "rows": 9,
-  "max_energy": 100,
-  "regen_sec": 120,
-  "random_orders": 4,
-  "order_cap_at": [1, 1, 4, 10, 20],
-  "token_step": 10,
-  "xp_base": 3,
-  "xp_div": 2,
-  "energy_price": 20,
-  "energy_price_step": 10,
-  "energy_price_max": 60,
-  "craft_level": 3,
-  "rank_server": "http://127.0.0.1:8765",
-  "rank_top": 50,
-  "merge_coin": {"chance": 0.04, "tiers": [[2, "shell_2"], [6, "shell_3"], [10, "shell_4"]]},
-  "merge_bubble": {"chance": 0.1, "min_flames": 32, "seconds": 60, "price_k": 0.6, "price_exp": 0.8, "price_step": 5, "price_min": 5, "price_max": 300},
-  "storage_initial": 5,
-  "storage_expand_price": 50,
-  "storage_expand_step": 10
+	"cols": 7,
+	"rows": 9,
+	"max_energy": 100,
+	"regen_sec": 120,
+	"random_orders": 4,
+	"order_cap_at": [
+		1,
+		1,
+		4,
+		10,
+		20
+	],
+	"token_step": 10,
+	"xp_base": 3,
+	"xp_div": 4,
+	"energy_price": 20,
+	"energy_price_step": 10,
+	"energy_price_max": 60,
+	"craft_level": 3,
+	"rank_server": "http://127.0.0.1:8765",
+	"rank_top": 50,
+	"merge_coin": {
+		"chance": 0.04,
+		"tiers": [
+			[
+				2,
+				"shell_2"
+			],
+			[
+				6,
+				"shell_3"
+			],
+			[
+				10,
+				"shell_4"
+			]
+		]
+	},
+	"merge_bubble": {
+		"chance": 0.1,
+		"min_flames": 32,
+		"seconds": 60,
+		"price_k": 0.6,
+		"price_exp": 0.8,
+		"price_step": 5,
+		"price_min": 5,
+		"price_max": 300
+	},
+	"storage_initial": 5,
+	"storage_expand_price": 50,
+	"storage_expand_step": 10,
+	"craft_cap_at": [
+		3,
+		16
+	],
+	"rush_sec": 60,
+	"craft_sand": [
+		[
+			0,
+			"sand_2"
+		],
+		[
+			300,
+			"sand_3"
+		],
+		[
+			1800,
+			"sand_4"
+		],
+		[
+			7200,
+			"sand_5"
+		]
+	],
+	"merge_sand": {
+		"chance": 0.03,
+		"min_level": 3,
+		"tiers": [
+			[
+				2,
+				"sand_1"
+			],
+			[
+				7,
+				"sand_2"
+			],
+			[
+				10,
+				"sand_3"
+			]
+		]
+	}
 }

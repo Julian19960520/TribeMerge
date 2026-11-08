@@ -63,7 +63,7 @@ func run() -> void:
 	for side in 2:
 		var pile=p.find_child("duel_banana_pile_%d"%side,true,false)
 		var person=p.find_child("duel_character_%d"%side,true,false)
-		check(pile.position.y+pile.size.y<person.position.y,"banana pile above character %d"%side)
+		check(person.position.y+person.size.y<pile.position.y,"character portrait above banana pile %d"%side)
 	p.find_child("duel_action",true,false).pressed.emit()
 	await create_timer(0.3).timeout
 	p=main.open("duel")

@@ -1,30 +1,52 @@
 {
  "knobs": {
   "levels": 40,
-  "day_taps": 450,
-  "days": [
+  "taps": [
    [
-    5,
-    0.25
+    1,
+    75
    ],
    [
-    10,
-    0.5
+    4,
+    200
+   ],
+   [
+    8,
+    260
+   ],
+   [
+    12,
+    380
+   ],
+   [
+    15,
+    820
    ],
    [
     20,
-    1.0
+    1050
+   ],
+   [
+    25,
+    1400
    ],
    [
     30,
-    1.5
+    2050
+   ],
+   [
+    35,
+    2450
    ],
    [
     40,
-    2.0
+    2950
    ]
   ],
-  "story_share": 0.45,
+  "day_taps": 1350,
+  "story_share": 0.8,
+  "xp2_from": 6,
+  "xp2_every": 5,
   "waste": 1.15,
   "easy_a": 12,
   "easy_b": 0.5,
@@ -37,9 +59,54 @@
    1.0
   ],
   "xp_base": 3,
-  "xp_div": 2,
-  "fire_a": 60,
-  "fire_b": 2,
+  "xp_div": 4,
+  "fire_a": 5,
+  "fire_b": 3,
+  "emberpot_level": 12,
+  "craft_level": 3,
+  "craft_cap_at": [
+   3,
+   16
+  ],
+  "rush_sec": 60,
+  "sand_a": 3,
+  "sand_div": 3,
+  "craft_sand": [
+   [
+    0,
+    "sand_2"
+   ],
+   [
+    300,
+    "sand_3"
+   ],
+   [
+    1800,
+    "sand_4"
+   ],
+   [
+    7200,
+    "sand_5"
+   ]
+  ],
+  "merge_sand": {
+   "chance": 0.03,
+   "min_level": 3,
+   "tiers": [
+    [
+     2,
+     "sand_1"
+    ],
+    [
+     7,
+     "sand_2"
+    ],
+    [
+     10,
+     "sand_3"
+    ]
+   ]
+  },
   "build_share": 0.85,
   "build_span": 7,
   "seed": 20261104
@@ -47,8 +114,8 @@
  "rows": [
   {
    "level": 1,
-   "days": 0.25,
-   "taps": 112,
+   "days": 0.083,
+   "taps": 75,
    "eff": 1.0,
    "gens": {
     "basket": 4
@@ -63,10 +130,10 @@
    ],
    "easy_f": 11,
    "hard_f": 56,
-   "story_taps": 51,
-   "story_f": 44,
-   "income": 338,
-   "cum_coins": 338,
+   "story_taps": 60,
+   "story_f": 52,
+   "income": 248,
+   "cum_coins": 248,
    "cum_cost": 0,
    "built": [],
    "xp_need": 3,
@@ -90,12 +157,12 @@
     18,
     39
    ],
-   "cum_days": 0.25
+   "cum_days": 0.08
   },
   {
    "level": 2,
-   "days": 0.25,
-   "taps": 176,
+   "days": 0.083,
+   "taps": 200,
    "eff": 1.0,
    "gens": {
     "basket": 4
@@ -110,14 +177,13 @@
    ],
    "easy_f": 11,
    "hard_f": 59,
-   "story_taps": 79,
-   "story_f": 69,
-   "income": 530,
-   "cum_coins": 867,
-   "cum_cost": 780,
+   "story_taps": 160,
+   "story_f": 139,
+   "income": 661,
+   "cum_coins": 909,
+   "cum_cost": 370,
    "built": [
-    "柴火堆",
-    "树桩凳"
+    "柴火堆"
    ],
    "xp_need": 3,
    "old_easy_taps": 55.2,
@@ -129,28 +195,29 @@
    "new_xp_need": 6,
    "story_items": [
     [
-     "fruit_4",
-     "fruit_3"
-    ],
-    [
+     "fruit_6",
      "fruit_5"
     ],
     [
-     "fruit_5",
+     "fruit_6",
      "fruit_4"
+    ],
+    [
+     "fruit_7",
+     "fruit_2"
     ]
    ],
    "story_order_taps": [
-    14,
-    18,
-    28
+    55,
+    46,
+    76
    ],
-   "cum_days": 0.5
+   "cum_days": 0.17
   },
   {
    "level": 3,
-   "days": 0.25,
-   "taps": 178,
+   "days": 0.083,
+   "taps": 200,
    "eff": 1.1,
    "gens": {
     "basket": 5
@@ -165,47 +232,48 @@
    ],
    "easy_f": 13,
    "hard_f": 69,
-   "story_taps": 80,
-   "story_f": 77,
-   "income": 589,
-   "cum_coins": 1456,
-   "cum_cost": 1240,
+   "story_taps": 160,
+   "story_f": 153,
+   "income": 727,
+   "cum_coins": 1636,
+   "cum_cost": 1610,
    "built": [
+    "树桩凳",
     "浆果丛"
    ],
-   "xp_need": 4,
+   "xp_need": 3,
    "old_easy_taps": 62.7,
    "old_hard_taps": 125.5,
    "old_avg_taps": 94.1,
    "old_xp_supply": 13,
    "old_xp_need": 9,
-   "new_xp_supply": 10,
-   "new_xp_need": 10,
+   "new_xp_supply": 9,
+   "new_xp_need": 9,
    "story_items": [
-    [
-     "fruit_5",
-     "fruit_2"
-    ],
-    [
-     "fruit_6",
-     "fruit_2"
-    ],
     [
      "fruit_6",
      "fruit_3"
+    ],
+    [
+     "fruit_6",
+     "fruit_4"
+    ],
+    [
+     "fruit_5",
+     "seed_3"
     ]
    ],
    "story_order_taps": [
-    19,
-    36,
-    38
+    38,
+    42,
+    69
    ],
-   "cum_days": 0.75
+   "cum_days": 0.25
   },
   {
    "level": 4,
-   "days": 0.25,
-   "taps": 180,
+   "days": 0.083,
+   "taps": 200,
    "eff": 1.1,
    "gens": {
     "basket": 5
@@ -220,46 +288,45 @@
    ],
    "easy_f": 13,
    "hard_f": 73,
-   "story_taps": 81,
-   "story_f": 78,
-   "income": 596,
-   "cum_coins": 2052,
-   "cum_cost": 1720,
+   "story_taps": 160,
+   "story_f": 153,
+   "income": 727,
+   "cum_coins": 2363,
+   "cum_cost": 2270,
    "built": [
     "兽皮大鼓"
    ],
-   "xp_need": 4,
+   "xp_need": 3,
    "old_easy_taps": 75.3,
    "old_hard_taps": 150.5,
    "old_avg_taps": 112.9,
    "old_xp_supply": 17,
    "old_xp_need": 14,
-   "new_xp_supply": 14,
-   "new_xp_need": 14,
+   "new_xp_supply": 12,
+   "new_xp_need": 12,
    "story_items": [
     [
-     "fruit_4",
-     "seed_1"
+     "fruit_7",
+     "fruit_2"
     ],
     [
-     "fruit_5",
-     "fruit_4"
+     "fruit_7"
     ],
     [
      "fruit_6"
     ]
    ],
    "story_order_taps": [
-    22,
-    25,
+    69,
+    67,
     33
    ],
-   "cum_days": 1.0
+   "cum_days": 0.33
   },
   {
    "level": 5,
-   "days": 0.25,
-   "taps": 182,
+   "days": 0.083,
+   "taps": 260,
    "eff": 1.1,
    "gens": {
     "basket": 5
@@ -274,46 +341,51 @@
    ],
    "easy_f": 14,
    "hard_f": 77,
-   "story_taps": 82,
-   "story_f": 79,
-   "income": 602,
-   "cum_coins": 2654,
-   "cum_cost": 2210,
+   "story_taps": 208,
+   "story_f": 199,
+   "income": 945,
+   "cum_coins": 3308,
+   "cum_cost": 2930,
    "built": [
     "部落图腾"
    ],
-   "xp_need": 5,
+   "xp_need": 4,
    "old_easy_taps": 87.8,
    "old_hard_taps": 175.6,
    "old_avg_taps": 131.7,
    "old_xp_supply": 22,
    "old_xp_need": 20,
-   "new_xp_supply": 19,
-   "new_xp_need": 19,
+   "new_xp_supply": 16,
+   "new_xp_need": 16,
    "story_items": [
     [
      "fruit_5"
     ],
     [
-     "fruit_5",
+     "fruit_7",
      "fruit_3"
     ],
     [
-     "fruit_2",
-     "seed_2"
+     "fruit_6",
+     "fruit_4"
+    ],
+    [
+     "fruit_6",
+     "fruit_5"
     ]
    ],
    "story_order_taps": [
     17,
-    21,
-    29
+    71,
+    42,
+    50
    ],
-   "cum_days": 1.25
+   "cum_days": 0.42
   },
   {
    "level": 6,
-   "days": 0.5,
-   "taps": 297,
+   "days": 0.083,
+   "taps": 260,
    "eff": 1.05,
    "gens": {
     "basket": 5,
@@ -329,48 +401,51 @@
    ],
    "easy_f": 14,
    "hard_f": 77,
-   "story_taps": 134,
-   "story_f": 122,
-   "income": 936,
-   "cum_coins": 3589,
-   "cum_cost": 3190,
+   "story_taps": 208,
+   "story_f": 190,
+   "income": 902,
+   "cum_coins": 4210,
+   "cum_cost": 3590,
    "built": [
-    "酋长大屋",
     "草篓架"
    ],
-   "xp_need": 5,
+   "xp_need": 4,
    "old_easy_taps": 105.1,
    "old_hard_taps": 210.3,
    "old_avg_taps": 157.7,
    "old_xp_supply": 27,
    "old_xp_need": 27,
-   "new_xp_supply": 24,
-   "new_xp_need": 24,
+   "new_xp_supply": 20,
+   "new_xp_need": 20,
    "story_items": [
     [
      "tool_6",
+     "tool_5"
+    ],
+    [
+     "tool_7",
+     "fruit_2"
+    ],
+    [
+     "tool_6"
+    ],
+    [
+     "fruit_7",
      "tool_2"
-    ],
-    [
-     "tool_5",
-     "tool_4"
-    ],
-    [
-     "tool_3",
-     "seed_3"
     ]
    ],
    "story_order_taps": [
-    37,
-    26,
-    61
+    53,
+    72,
+    35,
+    72
    ],
-   "cum_days": 1.75
+   "cum_days": 0.5
   },
   {
    "level": 7,
-   "days": 0.5,
-   "taps": 299,
+   "days": 0.083,
+   "taps": 260,
    "eff": 1.15,
    "gens": {
     "basket": 6,
@@ -386,52 +461,57 @@
    ],
    "easy_f": 16,
    "hard_f": 88,
-   "story_taps": 135,
-   "story_f": 135,
-   "income": 1032,
-   "cum_coins": 4621,
-   "cum_cost": 4450,
+   "story_taps": 208,
+   "story_f": 208,
+   "income": 988,
+   "cum_coins": 5198,
+   "cum_cost": 4360,
    "built": [
-    "晒果草席",
-    "种子陶罐"
+    "酋长大屋"
    ],
-   "xp_need": 6,
+   "xp_need": 4,
    "old_easy_taps": 108.0,
    "old_hard_taps": 216.0,
    "old_avg_taps": 162.0,
    "old_xp_supply": 32,
    "old_xp_need": 35,
-   "new_xp_supply": 30,
-   "new_xp_need": 30,
+   "new_xp_supply": 24,
+   "new_xp_need": 24,
    "story_items": [
     [
      "fruit_6",
-     "tool_2"
+     "tool_4"
     ],
     [
      "tool_7",
-     "fruit_2"
+     "tool_3"
     ],
     [
      "tool_6",
-     "seed_2"
+     "fruit_4"
+    ],
+    [
+     "tool_6",
+     "fruit_5"
     ]
    ],
    "story_order_taps": [
-    34,
-    66,
-    58
+    40,
+    68,
+    40,
+    48
    ],
-   "cum_days": 2.25
+   "cum_days": 0.58
   },
   {
    "level": 8,
-   "days": 0.5,
-   "taps": 301,
-   "eff": 1.2,
+   "days": 0.083,
+   "taps": 260,
+   "eff": 1.1,
    "gens": {
     "basket": 6,
-    "anvil": 5
+    "anvil": 4,
+    "loom": 4
    },
    "easy_taps": 16.0,
    "hard_taps": 92.0,
@@ -441,52 +521,58 @@
     57.8,
     92.0
    ],
-   "easy_f": 17,
-   "hard_f": 96,
-   "story_taps": 135,
-   "story_f": 141,
-   "income": 1084,
-   "cum_coins": 5705,
-   "cum_cost": 5260,
+   "easy_f": 15,
+   "hard_f": 88,
+   "story_taps": 208,
+   "story_f": 199,
+   "income": 945,
+   "cum_coins": 6143,
+   "cum_cost": 6050,
    "built": [
-    "河卵石堆"
+    "晒果草席",
+    "种子陶罐"
    ],
-   "xp_need": 6,
-   "old_easy_taps": 115.0,
-   "old_hard_taps": 230.0,
-   "old_avg_taps": 172.5,
+   "xp_need": 4,
+   "old_easy_taps": 125.5,
+   "old_hard_taps": 250.9,
+   "old_avg_taps": 188.2,
    "old_xp_supply": 37,
    "old_xp_need": 44,
-   "new_xp_supply": 36,
-   "new_xp_need": 36,
+   "new_xp_supply": 28,
+   "new_xp_need": 28,
    "story_items": [
-    [
-     "tool_4",
-     "gem_2"
-    ],
     [
      "tool_5"
     ],
     [
-     "fruit_7",
-     "tool_3"
+     "tool_2",
+     "seed_2"
+    ],
+    [
+     "tool_7",
+     "tool_2"
+    ],
+    [
+     "tool_7"
     ]
    ],
    "story_order_taps": [
-    32,
-    15,
-    65
+    17,
+    28,
+    69,
+    67
    ],
-   "cum_days": 2.75
+   "cum_days": 0.66
   },
   {
    "level": 9,
-   "days": 0.5,
-   "taps": 303,
-   "eff": 1.2,
+   "days": 0.083,
+   "taps": 380,
+   "eff": 1.1,
    "gens": {
     "basket": 6,
-    "anvil": 5
+    "anvil": 4,
+    "loom": 4
    },
    "easy_taps": 16.5,
    "hard_taps": 96.0,
@@ -496,52 +582,58 @@
     60.2,
     96.0
    ],
-   "easy_f": 17,
-   "hard_f": 100,
-   "story_taps": 136,
-   "story_f": 142,
-   "income": 1091,
-   "cum_coins": 6795,
-   "cum_cost": 6120,
+   "easy_f": 16,
+   "hard_f": 92,
+   "story_taps": 304,
+   "story_f": 291,
+   "income": 1381,
+   "cum_coins": 7524,
+   "cum_cost": 6910,
    "built": [
-    "小苗圃"
+    "河卵石堆"
    ],
-   "xp_need": 7,
-   "old_easy_taps": 126.5,
-   "old_hard_taps": 253.0,
-   "old_avg_taps": 189.7,
+   "xp_need": 5,
+   "old_easy_taps": 138.0,
+   "old_hard_taps": 276.0,
+   "old_avg_taps": 207.0,
    "old_xp_supply": 42,
    "old_xp_need": 54,
-   "new_xp_supply": 43,
-   "new_xp_need": 43,
+   "new_xp_supply": 33,
+   "new_xp_need": 33,
    "story_items": [
     [
-     "tool_6",
-     "fruit_3"
+     "cloth_4",
+     "seed_3"
     ],
     [
-     "tool_7"
+     "cloth_6",
+     "gem_1"
     ],
     [
-     "seed_3",
-     "tool_2"
+     "cloth_7"
+    ],
+    [
+     "cloth_8",
+     "gem_2"
     ]
    ],
    "story_order_taps": [
-    34,
     61,
-    51
+    47,
+    67,
+    161
    ],
-   "cum_days": 3.25
+   "cum_days": 0.75
   },
   {
    "level": 10,
-   "days": 0.5,
-   "taps": 305,
-   "eff": 1.2,
+   "days": 0.083,
+   "taps": 380,
+   "eff": 1.133,
    "gens": {
     "basket": 6,
-    "anvil": 5
+    "anvil": 5,
+    "loom": 4
    },
    "easy_taps": 17.0,
    "hard_taps": 100.0,
@@ -551,49 +643,53 @@
     62.7,
     100.0
    ],
-   "easy_f": 18,
-   "hard_f": 104,
-   "story_taps": 137,
-   "story_f": 143,
-   "income": 1098,
-   "cum_coins": 7893,
-   "cum_cost": 7890,
+   "easy_f": 17,
+   "hard_f": 99,
+   "story_taps": 304,
+   "story_f": 300,
+   "income": 1423,
+   "cum_coins": 8947,
+   "cum_cost": 8650,
    "built": [
     "敲石砧",
-    "大果树"
+    "小苗圃"
    ],
-   "xp_need": 7,
-   "old_easy_taps": 138.0,
-   "old_hard_taps": 276.0,
-   "old_avg_taps": 207.0,
+   "xp_need": 5,
+   "old_easy_taps": 146.1,
+   "old_hard_taps": 292.2,
+   "old_avg_taps": 219.2,
    "old_xp_supply": 47,
    "old_xp_need": 65,
-   "new_xp_supply": 50,
-   "new_xp_need": 50,
+   "new_xp_supply": 38,
+   "new_xp_need": 38,
    "story_items": [
     [
-     "fruit_6",
-     "tool_3"
+     "cloth_7"
     ],
     [
-     "fruit_7",
-     "fruit_2"
+     "tool_6",
+     "cloth_5"
     ],
     [
-     "tool_7"
+     "cloth_6"
+    ],
+    [
+     "cloth_3",
+     "gem_3"
     ]
    ],
    "story_order_taps": [
-    34,
-    63,
-    61
+    65,
+    49,
+    32,
+    56
    ],
-   "cum_days": 3.75
+   "cum_days": 0.83
   },
   {
    "level": 11,
-   "days": 1.0,
-   "taps": 532,
+   "days": 0.083,
+   "taps": 380,
    "eff": 1.133,
    "gens": {
     "basket": 6,
@@ -610,46 +706,53 @@
    ],
    "easy_f": 17,
    "hard_f": 102,
-   "story_taps": 239,
-   "story_f": 236,
-   "income": 1809,
-   "cum_coins": 9702,
-   "cum_cost": 8780,
+   "story_taps": 304,
+   "story_f": 300,
+   "income": 1423,
+   "cum_coins": 10370,
+   "cum_cost": 9670,
    "built": [
-    "燧石坑"
+    "大果树"
    ],
-   "xp_need": 8,
+   "xp_need": 5,
    "old_easy_taps": 158.3,
    "old_hard_taps": 316.6,
    "old_avg_taps": 237.4,
    "old_xp_supply": 52,
    "old_xp_need": 77,
-   "new_xp_supply": 58,
-   "new_xp_need": 58,
+   "new_xp_supply": 43,
+   "new_xp_need": 43,
    "story_items": [
     [
-     "cloth_7"
+     "tool_7",
+     "fruit_3"
     ],
     [
-     "cloth_6",
-     "tool_6"
+     "fruit_7",
+     "cloth_2"
     ],
     [
-     "cloth_5",
+     "fruit_6",
      "seed_3"
+    ],
+    [
+     "cloth_8",
+     "fruit_2",
+     "seed_1"
     ]
    ],
    "story_order_taps": [
-    65,
-    65,
-    69
+    69,
+    67,
+    83,
+    145
    ],
-   "cum_days": 4.75
+   "cum_days": 0.91
   },
   {
    "level": 12,
-   "days": 1.0,
-   "taps": 534,
+   "days": 0.083,
+   "taps": 380,
    "eff": 1.167,
    "gens": {
     "basket": 6,
@@ -666,48 +769,52 @@
    ],
    "easy_f": 18,
    "hard_f": 110,
-   "story_taps": 240,
-   "story_f": 244,
-   "income": 1869,
-   "cum_coins": 11571,
-   "cum_cost": 11230,
+   "story_taps": 304,
+   "story_f": 308,
+   "income": 1465,
+   "cum_coins": 11835,
+   "cum_cost": 10750,
    "built": [
-    "石器架",
-    "磨石台"
+    "晒草垛"
    ],
-   "xp_need": 8,
+   "xp_need": 5,
    "old_easy_taps": 165.6,
    "old_hard_taps": 331.2,
    "old_avg_taps": 248.4,
    "old_xp_supply": 57,
    "old_xp_need": 90,
-   "new_xp_supply": 66,
-   "new_xp_need": 66,
+   "new_xp_supply": 48,
+   "new_xp_need": 48,
    "story_items": [
     [
-     "cloth_4",
-     "gem_3"
+     "tool_7"
     ],
     [
-     "cloth_7",
-     "gem_1"
+     "tool_6",
+     "tool_4"
     ],
     [
-     "tool_8",
-     "cloth_2"
+     "fruit_7",
+     "fruit_4"
+    ],
+    [
+     "fruit_8",
+     "fruit_5",
+     "tool_2"
     ]
    ],
    "story_order_taps": [
-    59,
-    76,
-    128
+    63,
+    39,
+    71,
+    144
    ],
-   "cum_days": 5.75
+   "cum_days": 1.0
   },
   {
    "level": 13,
-   "days": 1.0,
-   "taps": 536,
+   "days": 0.333,
+   "taps": 820,
    "eff": 1.167,
    "gens": {
     "basket": 6,
@@ -724,50 +831,63 @@
    ],
    "easy_f": 19,
    "hard_f": 114,
-   "story_taps": 241,
-   "story_f": 245,
-   "income": 1876,
-   "cum_coins": 13447,
-   "cum_cost": 12740,
+   "story_taps": 656,
+   "story_f": 666,
+   "income": 3161,
+   "cum_coins": 14996,
+   "cum_cost": 14530,
    "built": [
-    "晒草垛"
+    "燧石坑",
+    "编草架",
+    "石器架"
    ],
-   "xp_need": 9,
+   "xp_need": 6,
    "old_easy_taps": 177.4,
    "old_hard_taps": 354.9,
    "old_avg_taps": 266.1,
    "old_xp_supply": 62,
    "old_xp_need": 104,
-   "new_xp_supply": 75,
-   "new_xp_need": 75,
+   "new_xp_supply": 54,
+   "new_xp_need": 54,
    "story_items": [
     [
-     "cloth_6"
+     "tool_8",
+     "cloth_3"
     ],
     [
-     "cloth_5",
-     "gem_2"
+     "fruit_6",
+     "armor_3"
+    ],
+    [
+     "cloth_7",
+     "tool_5"
     ],
     [
      "cloth_8",
+     "tool_3"
+    ],
+    [
+     "tool_9",
      "seed_1"
     ]
    ],
    "story_order_taps": [
-    32,
-    41,
-    139
+    130,
+    82,
+    79,
+    130,
+    265
    ],
-   "cum_days": 6.75
+   "cum_days": 1.33
   },
   {
    "level": 14,
-   "days": 1.0,
-   "taps": 538,
-   "eff": 1.233,
+   "days": 0.333,
+   "taps": 820,
+   "eff": 1.167,
    "gens": {
     "basket": 6,
-    "anvil": 6,
+    "anvil": 5,
     "loom": 5
    },
    "easy_taps": 19.0,
@@ -778,53 +898,67 @@
     72.3,
     116.0
    ],
-   "easy_f": 20,
-   "hard_f": 124,
-   "story_taps": 242,
-   "story_f": 260,
-   "income": 1991,
-   "cum_coins": 15438,
-   "cum_cost": 14270,
+   "easy_f": 19,
+   "hard_f": 118,
+   "story_taps": 656,
+   "story_f": 666,
+   "income": 3161,
+   "cum_coins": 18157,
+   "cum_cost": 17120,
    "built": [
-    "黑曜石矿"
+    "染缸",
+    "磨石台"
    ],
-   "xp_need": 9,
-   "old_easy_taps": 179.0,
-   "old_hard_taps": 358.1,
-   "old_avg_taps": 268.5,
+   "xp_need": 6,
+   "old_easy_taps": 189.3,
+   "old_hard_taps": 378.5,
+   "old_avg_taps": 283.9,
    "old_xp_supply": 67,
    "old_xp_need": 119,
-   "new_xp_supply": 84,
-   "new_xp_need": 84,
+   "new_xp_supply": 60,
+   "new_xp_need": 60,
    "story_items": [
     [
-     "tool_7"
+     "fruit_8",
+     "tool_4"
     ],
     [
-     "fruit_6",
-     "seed_3"
+     "tool_7",
+     "cloth_6"
     ],
     [
      "fruit_7",
-     "tool_6"
+     "cloth_5",
+     "fruit_4"
+    ],
+    [
+     "tool_8",
+     "fruit_5"
+    ],
+    [
+     "fruit_9",
+     "tool_2",
+     "fruit_2"
     ]
    ],
    "story_order_taps": [
-    60,
-    78,
-    90
+    134,
+    95,
+    87,
+    142,
+    256
    ],
-   "cum_days": 7.75
+   "cum_days": 1.66
   },
   {
    "level": 15,
-   "days": 1.0,
-   "taps": 540,
-   "eff": 1.233,
+   "days": 0.333,
+   "taps": 820,
+   "eff": 1.3,
    "gens": {
     "basket": 6,
     "anvil": 6,
-    "loom": 5
+    "loom": 6
    },
    "easy_taps": 19.5,
    "hard_taps": 120.0,
@@ -834,54 +968,67 @@
     74.8,
     120.0
    ],
-   "easy_f": 21,
-   "hard_f": 129,
-   "story_taps": 243,
-   "story_f": 261,
-   "income": 1998,
-   "cum_coins": 17436,
-   "cum_cost": 17430,
+   "easy_f": 22,
+   "hard_f": 136,
+   "story_taps": 656,
+   "story_f": 742,
+   "income": 3522,
+   "cum_coins": 21680,
+   "cum_cost": 20530,
    "built": [
-    "编草架",
-    "染缸"
+    "晾衣绳",
+    "黑曜石矿"
    ],
-   "xp_need": 10,
-   "old_easy_taps": 190.2,
-   "old_hard_taps": 380.4,
-   "old_avg_taps": 285.3,
+   "xp_need": 6,
+   "old_easy_taps": 180.5,
+   "old_hard_taps": 360.9,
+   "old_avg_taps": 270.7,
    "old_xp_supply": 72,
    "old_xp_need": 135,
-   "new_xp_supply": 94,
-   "new_xp_need": 94,
+   "new_xp_supply": 66,
+   "new_xp_need": 66,
    "story_items": [
     [
-     "tool_7"
+     "cloth_7",
+     "seed_2"
     ],
     [
-     "tool_8",
-     "tool_2"
+     "cloth_8",
+     "cloth_2"
     ],
     [
-     "fruit_8",
+     "cloth_8",
+     "cloth_3"
+    ],
+    [
+     "cloth_8",
+     "tool_5",
+     "fruit_3"
+    ],
+    [
+     "tool_9",
+     "cloth_4",
      "tool_3"
     ]
    ],
    "story_order_taps": [
-    60,
-    121,
-    123
+    79,
+    115,
+    117,
+    131,
+    237
    ],
-   "cum_days": 8.75
+   "cum_days": 1.99
   },
   {
    "level": 16,
-   "days": 1.0,
-   "taps": 542,
-   "eff": 1.175,
+   "days": 0.778,
+   "taps": 1050,
+   "eff": 1.225,
    "gens": {
     "basket": 6,
     "anvil": 6,
-    "loom": 5,
+    "loom": 6,
     "trap": 4
    },
    "easy_taps": 20.0,
@@ -892,54 +1039,65 @@
     77.2,
     124.0
    ],
-   "easy_f": 20,
-   "hard_f": 127,
-   "story_taps": 244,
-   "story_f": 249,
-   "income": 1911,
-   "cum_coins": 19346,
-   "cum_cost": 19000,
+   "easy_f": 21,
+   "hard_f": 132,
+   "story_taps": 840,
+   "story_f": 895,
+   "income": 4250,
+   "cum_coins": 25930,
+   "cum_cost": 23390,
    "built": [
-    "长矛架"
+    "兽皮帐篷"
    ],
-   "xp_need": 10,
-   "old_easy_taps": 211.4,
-   "old_hard_taps": 422.8,
-   "old_avg_taps": 317.1,
+   "xp_need": 6,
+   "old_easy_taps": 202.8,
+   "old_hard_taps": 405.6,
+   "old_avg_taps": 304.2,
    "old_xp_supply": 77,
    "old_xp_need": 152,
-   "new_xp_supply": 104,
-   "new_xp_need": 104,
+   "new_xp_supply": 72,
+   "new_xp_need": 72,
    "story_items": [
     [
+     "fruit_8",
      "beast_7"
     ],
     [
-     "beast_6",
-     "tool_6",
-     "tool_5"
+     "tool_8",
+     "beast_5"
     ],
     [
      "beast_8",
-     "tool_4"
+     "fruit_4"
+    ],
+    [
+     "beast_6",
+     "beast_4",
+     "seed_3"
+    ],
+    [
+     "beast_9",
+     "tool_6"
     ]
    ],
    "story_order_taps": [
-    63,
-    78,
-    133
+    180,
+    135,
+    128,
+    84,
+    270
    ],
-   "cum_days": 9.75
+   "cum_days": 2.77
   },
   {
    "level": 17,
-   "days": 1.0,
-   "taps": 544,
-   "eff": 1.175,
+   "days": 0.778,
+   "taps": 1050,
+   "eff": 1.225,
    "gens": {
     "basket": 6,
     "anvil": 6,
-    "loom": 5,
+    "loom": 6,
     "trap": 4
    },
    "easy_taps": 20.5,
@@ -950,53 +1108,69 @@
     79.6,
     128.0
    ],
-   "easy_f": 21,
-   "hard_f": 131,
-   "story_taps": 245,
-   "story_f": 250,
-   "income": 1918,
-   "cum_coins": 21264,
-   "cum_cost": 20600,
+   "easy_f": 22,
+   "hard_f": 136,
+   "story_taps": 840,
+   "story_f": 895,
+   "income": 4250,
+   "cum_coins": 30180,
+   "cum_cost": 26380,
    "built": [
-    "绳套陷阱"
+    "羽毛幡"
    ],
-   "xp_need": 11,
-   "old_easy_taps": 223.1,
-   "old_hard_taps": 446.3,
-   "old_avg_taps": 334.7,
+   "xp_need": 7,
+   "old_easy_taps": 214.0,
+   "old_hard_taps": 428.1,
+   "old_avg_taps": 321.1,
    "old_xp_supply": 82,
    "old_xp_need": 170,
-   "new_xp_supply": 115,
-   "new_xp_need": 115,
+   "new_xp_supply": 79,
+   "new_xp_need": 79,
    "story_items": [
     [
-     "beast_7"
+     "beast_8",
+     "tool_5"
     ],
     [
-     "beast_5",
-     "seed_3"
-    ],
-    [
-     "fruit_8",
+     "beast_8",
      "beast_2"
+    ],
+    [
+     "cloth_8",
+     "beast_3"
+    ],
+    [
+     "beast_8",
+     "fruit_3"
+    ],
+    [
+     "beast_7",
+     "gem_3"
+    ],
+    [
+     "beast_8",
+     "cloth_7"
     ]
    ],
    "story_order_taps": [
-    63,
-    66,
-    127
+    135,
+    122,
+    124,
+    124,
+    109,
+    180
    ],
-   "cum_days": 10.75
+   "cum_days": 3.55
   },
   {
    "level": 18,
-   "days": 1.0,
-   "taps": 546,
-   "eff": 1.2,
+   "days": 0.778,
+   "taps": 1050,
+   "eff": 1.25,
    "gens": {
     "basket": 6,
     "anvil": 6,
-    "loom": 5,
+    "loom": 6,
     "trap": 5
    },
    "easy_taps": 21.0,
@@ -1007,54 +1181,72 @@
     82.1,
     132.0
    ],
-   "easy_f": 22,
-   "hard_f": 138,
-   "story_taps": 246,
-   "story_f": 256,
-   "income": 1966,
-   "cum_coins": 23230,
-   "cum_cost": 22220,
+   "easy_f": 23,
+   "hard_f": 143,
+   "story_taps": 840,
+   "story_f": 913,
+   "income": 4337,
+   "cum_coins": 34517,
+   "cum_cost": 34120,
    "built": [
-    "晾肉架"
+    "长矛架",
+    "绳套陷阱"
    ],
-   "xp_need": 11,
-   "old_easy_taps": 230.0,
-   "old_hard_taps": 460.0,
-   "old_avg_taps": 345.0,
+   "xp_need": 7,
+   "old_easy_taps": 220.8,
+   "old_hard_taps": 441.6,
+   "old_avg_taps": 331.2,
    "old_xp_supply": 87,
    "old_xp_need": 189,
-   "new_xp_supply": 126,
-   "new_xp_need": 126,
+   "new_xp_supply": 86,
+   "new_xp_need": 86,
    "story_items": [
     [
+     "fruit_8",
      "beast_4",
-     "armor_3"
+     "seed_1"
     ],
     [
-     "beast_6",
-     "gem_3"
+     "fruit_7",
+     "beast_6"
+    ],
+    [
+     "beast_5",
+     "gem_2"
     ],
     [
      "beast_8",
-     "fruit_2"
+     "fruit_4",
+     "gem_1"
+    ],
+    [
+     "beast_7",
+     "gem_3"
+    ],
+    [
+     "beast_9",
+     "armor_1"
     ]
    ],
    "story_order_taps": [
-    57,
-    80,
-    125
+    137,
+    88,
+    38,
+    137,
+    106,
+    247
    ],
-   "cum_days": 11.75
+   "cum_days": 4.33
   },
   {
    "level": 19,
-   "days": 1.0,
-   "taps": 548,
-   "eff": 1.2,
+   "days": 0.778,
+   "taps": 1050,
+   "eff": 1.25,
    "gens": {
     "basket": 6,
     "anvil": 6,
-    "loom": 5,
+    "loom": 6,
     "trap": 5
    },
    "easy_taps": 21.5,
@@ -1065,48 +1257,67 @@
     84.5,
     136.0
    ],
-   "easy_f": 22,
-   "hard_f": 142,
-   "story_taps": 247,
-   "story_f": 257,
-   "income": 1973,
-   "cum_coins": 25202,
-   "cum_cost": 23850,
+   "easy_f": 23,
+   "hard_f": 148,
+   "story_taps": 840,
+   "story_f": 913,
+   "income": 4337,
+   "cum_coins": 38854,
+   "cum_cost": 38040,
    "built": [
-    "晾衣绳"
+    "晾肉架"
    ],
-   "xp_need": 12,
-   "old_easy_taps": 241.5,
-   "old_hard_taps": 483.0,
-   "old_avg_taps": 362.2,
+   "xp_need": 7,
+   "old_easy_taps": 231.8,
+   "old_hard_taps": 463.7,
+   "old_avg_taps": 347.8,
    "old_xp_supply": 92,
    "old_xp_need": 209,
-   "new_xp_supply": 138,
-   "new_xp_need": 138,
+   "new_xp_supply": 93,
+   "new_xp_need": 93,
    "story_items": [
     [
-     "fruit_7"
+     "beast_8",
+     "fruit_5"
+    ],
+    [
+     "tool_7",
+     "fruit_6"
+    ],
+    [
+     "tool_8",
+     "bird_1"
+    ],
+    [
+     "cloth_8",
+     "fruit_3",
+     "beast_3"
     ],
     [
      "cloth_7",
-     "tool_5"
+     "seed_3",
+     "beast_2"
     ],
     [
-     "beast_7",
-     "armor_2"
+     "cloth_9",
+     "cloth_2",
+     "tool_2"
     ]
    ],
    "story_order_taps": [
-    61,
-    77,
-    86
+    132,
+    88,
+    129,
+    125,
+    107,
+    239
    ],
-   "cum_days": 12.75
+   "cum_days": 5.11
   },
   {
    "level": 20,
-   "days": 1.0,
-   "taps": 550,
+   "days": 0.778,
+   "taps": 1050,
    "eff": 1.25,
    "gens": {
     "basket": 6,
@@ -1124,48 +1335,64 @@
    ],
    "easy_f": 24,
    "hard_f": 152,
-   "story_taps": 248,
-   "story_f": 269,
-   "income": 2062,
-   "cum_coins": 27265,
-   "cum_cost": 27140,
+   "story_taps": 840,
+   "story_f": 913,
+   "income": 4337,
+   "cum_coins": 43191,
+   "cum_cost": 42050,
    "built": [
-    "兽皮帐篷",
-    "羽毛幡"
+    "晒皮框"
    ],
-   "xp_need": 12,
+   "xp_need": 7,
    "old_easy_taps": 242.9,
    "old_hard_taps": 485.8,
    "old_avg_taps": 364.3,
    "old_xp_supply": 97,
    "old_xp_need": 230,
-   "new_xp_supply": 150,
-   "new_xp_need": 150,
+   "new_xp_supply": 100,
+   "new_xp_need": 100,
    "story_items": [
     [
-     "beast_6",
-     "beast_5"
-    ],
-    [
-     "tool_7",
-     "fruit_6"
+     "tool_6",
+     "armor_3"
     ],
     [
      "fruit_8",
+     "cloth_4",
+     "armor_1"
+    ],
+    [
+     "tool_5",
+     "armor_2"
+    ],
+    [
+     "tool_8",
+     "seed_2"
+    ],
+    [
+     "fruit_7",
+     "cloth_6",
+     "tool_4"
+    ],
+    [
+     "beast_9",
      "fruit_2"
     ]
    ],
    "story_order_taps": [
-    44,
-    88,
-    120
+    77,
+    137,
+    38,
+    141,
+    96,
+    237
    ],
-   "cum_days": 13.75
+   "cum_days": 5.88
   },
   {
    "level": 21,
-   "days": 1.5,
-   "taps": 777,
+   "days": 1.037,
+   "taps": 1400,
    "eff": 1.2,
    "gens": {
     "basket": 6,
@@ -1184,48 +1411,70 @@
    ],
    "easy_f": 23,
    "hard_f": 150,
-   "story_taps": 350,
-   "story_f": 365,
-   "income": 2797,
-   "cum_coins": 30062,
-   "cum_cost": 28880,
+   "story_taps": 1120,
+   "story_f": 1169,
+   "income": 5551,
+   "cum_coins": 48742,
+   "cum_cost": 47060,
    "built": [
-    "晒皮框"
+    "猎人帐"
    ],
-   "xp_need": 13,
+   "xp_need": 8,
    "old_easy_taps": 264.5,
    "old_hard_taps": 529.0,
    "old_avg_taps": 396.8,
    "old_xp_supply": 102,
    "old_xp_need": 252,
-   "new_xp_supply": 163,
-   "new_xp_need": 163,
+   "new_xp_supply": 108,
+   "new_xp_need": 108,
    "story_items": [
     [
      "veg_7",
-     "gem_2"
+     "armor_3"
+    ],
+    [
+     "veg_8",
+     "veg_5",
+     "tool_2"
+    ],
+    [
+     "beast_8",
+     "veg_4",
+     "fruit_4"
+    ],
+    [
+     "veg_6",
+     "bird_3"
+    ],
+    [
+     "beast_7",
+     "tool_7",
+     "veg_3"
     ],
     [
      "beast_8",
      "veg_2"
     ],
     [
-     "tool_8",
-     "fruit_5",
-     "veg_4"
+     "veg_9",
+     "veg_7"
     ]
    ],
    "story_order_taps": [
-    86,
+    111,
+    140,
+    138,
+    79,
+    126,
     125,
-    146
+    307
    ],
-   "cum_days": 15.25
+   "cum_days": 6.92
   },
   {
    "level": 22,
-   "days": 1.5,
-   "taps": 779,
+   "days": 1.037,
+   "taps": 1400,
    "eff": 1.2,
    "gens": {
     "basket": 6,
@@ -1244,55 +1493,74 @@
    ],
    "easy_f": 24,
    "hard_f": 154,
-   "story_taps": 351,
-   "story_f": 366,
-   "income": 2804,
-   "cum_coins": 32867,
-   "cum_cost": 31170,
+   "story_taps": 1120,
+   "story_f": 1169,
+   "income": 5551,
+   "cum_coins": 54294,
+   "cum_cost": 52070,
    "built": [
-    "猎人帐"
+    "石圈火塘"
    ],
-   "xp_need": 13,
+   "xp_need": 8,
    "old_easy_taps": 276.0,
    "old_hard_taps": 552.0,
    "old_avg_taps": 414.0,
    "old_xp_supply": 107,
    "old_xp_need": 275,
-   "new_xp_supply": 176,
-   "new_xp_need": 176,
+   "new_xp_supply": 116,
+   "new_xp_need": 116,
    "story_items": [
     [
-     "veg_6",
-     "bird_3"
+     "fruit_8",
+     "veg_6"
     ],
     [
-     "tool_7",
-     "veg_3",
-     "gem_3"
+     "veg_7",
+     "bird_2"
+    ],
+    [
+     "tool_8",
+     "veg_2"
     ],
     [
      "veg_8",
-     "fruit_2",
-     "bird_2"
+     "bird_1"
+    ],
+    [
+     "cloth_7",
+     "veg_6"
+    ],
+    [
+     "cloth_8",
+     "veg_5",
+     "cloth_5"
+    ],
+    [
+     "veg_9",
+     "seed_3"
     ]
    ],
    "story_order_taps": [
-    79,
-    115,
-    149
+    153,
+    85,
+    125,
+    135,
+    92,
+    153,
+    293
    ],
-   "cum_days": 16.75
+   "cum_days": 7.96
   },
   {
    "level": 23,
-   "days": 1.5,
-   "taps": 781,
-   "eff": 1.26,
+   "days": 1.037,
+   "taps": 1400,
+   "eff": 1.22,
    "gens": {
     "basket": 6,
     "anvil": 6,
     "loom": 6,
-    "trap": 6,
+    "trap": 5,
     "hearth": 5
    },
    "easy_taps": 23.5,
@@ -1303,52 +1571,76 @@
     94.2,
     152.0
    ],
-   "easy_f": 26,
-   "hard_f": 167,
-   "story_taps": 351,
-   "story_f": 385,
-   "income": 2952,
-   "cum_coins": 35819,
-   "cum_cost": 33470,
+   "easy_f": 25,
+   "hard_f": 161,
+   "story_taps": 1120,
+   "story_f": 1188,
+   "income": 5644,
+   "cum_coins": 59938,
+   "cum_cost": 57120,
    "built": [
-    "石圈火塘"
+    "猛犸骨门"
    ],
-   "xp_need": 14,
-   "old_easy_taps": 273.8,
-   "old_hard_taps": 547.6,
-   "old_avg_taps": 410.7,
+   "xp_need": 8,
+   "old_easy_taps": 282.8,
+   "old_hard_taps": 565.6,
+   "old_avg_taps": 424.2,
    "old_xp_supply": 112,
    "old_xp_need": 299,
-   "new_xp_supply": 190,
-   "new_xp_need": 190,
+   "new_xp_supply": 124,
+   "new_xp_need": 124,
    "story_items": [
     [
-     "veg_7",
-     "veg_5"
+     "veg_8",
+     "gem_1"
     ],
     [
-     "tool_8",
-     "veg_2"
+     "veg_8",
+     "tool_5"
     ],
     [
-     "cloth_8",
+     "beast_8",
      "veg_4"
+    ],
+    [
+     "beast_7",
+     "veg_3",
+     "gem_3"
+    ],
+    [
+     "veg_7",
+     "fruit_7",
+     "roast_3"
+    ],
+    [
+     "veg_8",
+     "fruit_6",
+     "fruit_5"
+    ],
+    [
+     "veg_9",
+     "veg_2",
+     "gem_2"
     ]
    ],
    "story_order_taps": [
-    73,
-    119,
-    124
+    133,
+    136,
+    128,
+    113,
+    169,
+    166,
+    268
    ],
-   "cum_days": 18.25
+   "cum_days": 9.0
   },
   {
    "level": 24,
-   "days": 1.5,
-   "taps": 783,
-   "eff": 1.328,
+   "days": 1.037,
+   "taps": 1400,
+   "eff": 1.26,
    "gens": {
-    "basket": 7,
+    "basket": 6,
     "anvil": 6,
     "loom": 6,
     "trap": 6,
@@ -1362,53 +1654,70 @@
     96.6,
     156.0
    ],
-   "easy_f": 28,
-   "hard_f": 180,
-   "story_taps": 352,
-   "story_f": 407,
-   "income": 3119,
-   "cum_coins": 38938,
-   "cum_cost": 38210,
+   "easy_f": 26,
+   "hard_f": 171,
+   "story_taps": 1120,
+   "story_f": 1227,
+   "income": 5829,
+   "cum_coins": 65766,
+   "cum_cost": 62200,
    "built": [
-    "猛犸骨门",
     "烤肉架"
    ],
-   "xp_need": 14,
-   "old_easy_taps": 270.2,
-   "old_hard_taps": 540.4,
-   "old_avg_taps": 405.3,
+   "xp_need": 8,
+   "old_easy_taps": 284.8,
+   "old_hard_taps": 569.5,
+   "old_avg_taps": 427.1,
    "old_xp_supply": 117,
    "old_xp_need": 324,
-   "new_xp_supply": 204,
-   "new_xp_need": 204,
+   "new_xp_supply": 132,
+   "new_xp_need": 132,
    "story_items": [
     [
-     "veg_6",
-     "tool_5",
-     "bird_3"
+     "cloth_8",
+     "seed_3"
+    ],
+    [
+     "tool_8",
+     "beast_3",
+     "beast_2"
+    ],
+    [
+     "cloth_7",
+     "veg_6"
+    ],
+    [
+     "tool_7",
+     "gem_3"
+    ],
+    [
+     "cloth_8",
+     "beast_6"
     ],
     [
      "beast_8",
-     "veg_3",
-     "cloth_2"
+     "roast_2"
     ],
     [
-     "fruit_8",
-     "cloth_5",
-     "gem_2"
+     "fruit_9",
+     "armor_2"
     ]
    ],
    "story_order_taps": [
-    85,
-    116,
-    147
+    162,
+    122,
+    88,
+    106,
+    146,
+    140,
+    257
    ],
-   "cum_days": 19.75
+   "cum_days": 10.03
   },
   {
    "level": 25,
-   "days": 1.5,
-   "taps": 785,
+   "days": 1.037,
+   "taps": 1400,
    "eff": 1.328,
    "gens": {
     "basket": 7,
@@ -1427,47 +1736,73 @@
    ],
    "easy_f": 28,
    "hard_f": 185,
-   "story_taps": 353,
-   "story_f": 408,
-   "income": 3127,
-   "cum_coins": 42066,
-   "cum_cost": 40760,
+   "story_taps": 1120,
+   "story_f": 1293,
+   "income": 6143,
+   "cum_coins": 71910,
+   "cum_cost": 67450,
    "built": [
     "熏肉棚"
    ],
-   "xp_need": 15,
+   "xp_need": 9,
    "old_easy_taps": 280.6,
    "old_hard_taps": 561.1,
    "old_avg_taps": 420.9,
    "old_xp_supply": 122,
    "old_xp_need": 350,
-   "new_xp_supply": 219,
-   "new_xp_need": 219,
+   "new_xp_supply": 141,
+   "new_xp_need": 141,
    "story_items": [
     [
+     "fruit_8",
+     "bird_3"
+    ],
+    [
+     "veg_7",
      "fruit_7",
-     "beast_6"
+     "tool_2"
     ],
     [
      "beast_7",
-     "bird_2"
+     "fruit_6"
     ],
     [
      "veg_8",
      "bird_1"
+    ],
+    [
+     "fruit_8",
+     "tool_3"
+    ],
+    [
+     "cloth_6",
+     "tool_6"
+    ],
+    [
+     "tool_8",
+     "beast_5"
+    ],
+    [
+     "tool_9",
+     "fruit_5"
     ]
    ],
    "story_order_taps": [
+    154,
+    113,
     83,
-    77,
-    122
+    122,
+    114,
+    55,
+    125,
+    236
    ],
-   "cum_days": 21.25
+   "cum_days": 11.07
   },
   {
    "level": 26,
-   "days": 1.5,
-   "taps": 787,
+   "days": 1.519,
+   "taps": 2050,
    "eff": 1.273,
    "gens": {
     "basket": 7,
@@ -1487,48 +1822,73 @@
    ],
    "easy_f": 28,
    "hard_f": 182,
-   "story_taps": 354,
-   "story_f": 392,
-   "income": 3006,
-   "cum_coins": 45072,
-   "cum_cost": 43230,
+   "story_taps": 1640,
+   "story_f": 1816,
+   "income": 8625,
+   "cum_coins": 80535,
+   "cum_cost": 73190,
    "built": [
-    "原木堆"
+    "叶包烤坑"
    ],
-   "xp_need": 15,
+   "xp_need": 9,
    "old_easy_taps": 303.5,
    "old_hard_taps": 606.9,
    "old_avg_taps": 455.2,
    "old_xp_supply": 127,
    "old_xp_need": 377,
-   "new_xp_supply": 234,
-   "new_xp_need": 234,
+   "new_xp_supply": 150,
+   "new_xp_need": 150,
    "story_items": [
     [
-     "furn_7",
-     "fruit_6"
+     "furn_8",
+     "veg_6",
+     "seed_3"
     ],
     [
-     "tool_8",
+     "furn_9",
+     "roast_1"
+    ],
+    [
+     "furn_7",
+     "roast_3"
+    ],
+    [
+     "furn_8",
+     "furn_6"
+    ],
+    [
+     "fruit_9",
      "furn_2"
     ],
     [
-     "cloth_8",
-     "veg_6",
-     "furn_3"
+     "furn_8",
+     "seed_2"
+    ],
+    [
+     "furn_9",
+     "bird_2"
+    ],
+    [
+     "furn_10",
+     "fruit_2"
     ]
    ],
    "story_order_taps": [
-    87,
-    117,
-    148
+    190,
+    243,
+    104,
+    145,
+    233,
+    138,
+    254,
+    464
    ],
-   "cum_days": 22.75
+   "cum_days": 12.59
   },
   {
    "level": 27,
-   "days": 1.5,
-   "taps": 789,
+   "days": 1.519,
+   "taps": 2050,
    "eff": 1.273,
    "gens": {
     "basket": 7,
@@ -1548,48 +1908,75 @@
    ],
    "easy_f": 28,
    "hard_f": 186,
-   "story_taps": 355,
-   "story_f": 393,
-   "income": 3014,
-   "cum_coins": 48086,
-   "cum_cost": 45730,
+   "story_taps": 1640,
+   "story_f": 1816,
+   "income": 8625,
+   "cum_coins": 89161,
+   "cum_cost": 88770,
    "built": [
-    "劈柴墩"
+    "整齐柴垛",
+    "原木堆"
    ],
-   "xp_need": 16,
+   "xp_need": 9,
    "old_easy_taps": 314.3,
    "old_hard_taps": 628.6,
    "old_avg_taps": 471.4,
    "old_xp_supply": 132,
    "old_xp_need": 405,
-   "new_xp_supply": 250,
-   "new_xp_need": 250,
+   "new_xp_supply": 159,
+   "new_xp_need": 159,
    "story_items": [
     [
-     "tool_7",
-     "furn_4",
-     "gem_2"
+     "furn_8",
+     "gem_3"
+    ],
+    [
+     "beast_9",
+     "furn_3"
     ],
     [
      "furn_8",
-     "gem_1"
+     "armor_3"
     ],
     [
-     "cloth_7",
-     "furn_6"
+     "furn_9",
+     "bird_1"
+    ],
+    [
+     "beast_8",
+     "beast_7",
+     "furn_4"
+    ],
+    [
+     "tool_9",
+     "furn_5"
+    ],
+    [
+     "furn_8",
+     "armor_2"
+    ],
+    [
+     "cloth_9",
+     "furn_7",
+     "roast_2"
     ]
    ],
    "story_order_taps": [
-    88,
-    127,
-    87
+    162,
+    235,
+    162,
+    243,
+    181,
+    246,
+    139,
+    312
    ],
-   "cum_days": 24.25
+   "cum_days": 14.11
   },
   {
    "level": 28,
-   "days": 1.5,
-   "taps": 791,
+   "days": 1.519,
+   "taps": 2050,
    "eff": 1.29,
    "gens": {
     "basket": 7,
@@ -1609,48 +1996,74 @@
    ],
    "easy_f": 29,
    "hard_f": 193,
-   "story_taps": 356,
-   "story_f": 399,
-   "income": 3061,
-   "cum_coins": 51147,
-   "cum_cost": 50840,
+   "story_taps": 1640,
+   "story_f": 1840,
+   "income": 8738,
+   "cum_coins": 97899,
+   "cum_cost": 96600,
    "built": [
-    "叶包烤坑",
-    "整齐柴垛"
+    "圣火台"
    ],
-   "xp_need": 16,
+   "xp_need": 9,
    "old_easy_taps": 320.9,
    "old_hard_taps": 641.9,
    "old_avg_taps": 481.4,
    "old_xp_supply": 137,
    "old_xp_need": 434,
-   "new_xp_supply": 266,
-   "new_xp_need": 266,
+   "new_xp_supply": 168,
+   "new_xp_need": 168,
    "story_items": [
     [
-     "furn_7",
-     "fruit_6"
+     "cloth_8",
+     "furn_6"
     ],
     [
-     "furn_5",
-     "bird_3"
+     "fruit_8",
+     "furn_2",
+     "furn_2"
+    ],
+    [
+     "furn_9",
+     "seed_1"
+    ],
+    [
+     "furn_9",
+     "furn_2"
     ],
     [
      "furn_8",
-     "gem_3"
+     "gem_2"
+    ],
+    [
+     "furn_9",
+     "gem_1"
+    ],
+    [
+     "furn_8",
+     "furn_7",
+     "tool_7"
+    ],
+    [
+     "furn_10",
+     "cloth_2"
     ]
    ],
    "story_order_taps": [
-    86,
-    59,
-    160
+    143,
+    118,
+    239,
+    230,
+    137,
+    240,
+    228,
+    458
    ],
-   "cum_days": 25.75
+   "cum_days": 15.63
   },
   {
    "level": 29,
-   "days": 1.5,
-   "taps": 793,
+   "days": 1.519,
+   "taps": 2050,
    "eff": 1.323,
    "gens": {
     "basket": 7,
@@ -1670,52 +2083,80 @@
    ],
    "easy_f": 30,
    "hard_f": 203,
-   "story_taps": 357,
-   "story_f": 411,
-   "income": 3148,
-   "cum_coins": 54295,
-   "cum_cost": 53410,
+   "story_taps": 1640,
+   "story_f": 1887,
+   "income": 8964,
+   "cum_coins": 106863,
+   "cum_cost": 104470,
    "built": [
-    "圣火台"
+    "劈柴墩"
    ],
-   "xp_need": 17,
+   "xp_need": 10,
    "old_easy_taps": 323.3,
    "old_hard_taps": 646.5,
    "old_avg_taps": 484.9,
    "old_xp_supply": 142,
    "old_xp_need": 464,
-   "new_xp_supply": 283,
-   "new_xp_need": 283,
+   "new_xp_supply": 178,
+   "new_xp_need": 178,
    "story_items": [
     [
-     "fruit_7",
-     "beast_6"
+     "beast_8",
+     "seed_2"
     ],
     [
-     "tool_7",
-     "beast_5",
-     "seed_3"
+     "tool_8",
+     "furn_5",
+     "furn_4"
     ],
     [
-     "fruit_8",
-     "bird_2"
+     "furn_8",
+     "furn_3"
+    ],
+    [
+     "veg_9",
+     "furn_8",
+     "craft_3"
+    ],
+    [
+     "cloth_7",
+     "gem_3"
+    ],
+    [
+     "tool_8",
+     "cloth_6",
+     "craft_2"
+    ],
+    [
+     "tool_9",
+     "gem_1"
+    ],
+    [
+     "furn_9",
+     "veg_8",
+     "veg_6"
     ]
    ],
    "story_order_taps": [
-    83,
-    114,
-    133
+    133,
+    132,
+    115,
+    381,
+    100,
+    163,
+    234,
+    362
    ],
-   "cum_days": 27.25
+   "cum_days": 17.15
   },
   {
    "level": 30,
-   "days": 1.5,
-   "taps": 795,
-   "eff": 1.323,
+   "days": 1.519,
+   "taps": 2050,
+   "eff": 1.38,
    "gens": {
     "basket": 7,
-    "anvil": 6,
+    "anvil": 7,
     "loom": 6,
     "trap": 6,
     "hearth": 6,
@@ -1729,54 +2170,80 @@
     111.2,
     180.0
    ],
-   "easy_f": 31,
-   "hard_f": 207,
-   "story_taps": 358,
-   "story_f": 412,
-   "income": 3156,
-   "cum_coins": 57451,
-   "cum_cost": 55980,
+   "easy_f": 32,
+   "hard_f": 216,
+   "story_taps": 1640,
+   "story_f": 1968,
+   "income": 9348,
+   "cum_coins": 116211,
+   "cum_cost": 112550,
    "built": [
     "长条凳"
    ],
-   "xp_need": 17,
-   "old_easy_taps": 333.7,
-   "old_hard_taps": 667.4,
-   "old_avg_taps": 500.6,
+   "xp_need": 10,
+   "old_easy_taps": 320.0,
+   "old_hard_taps": 640.0,
+   "old_avg_taps": 480.0,
    "old_xp_supply": 147,
    "old_xp_need": 495,
-   "new_xp_supply": 300,
-   "new_xp_need": 300,
+   "new_xp_supply": 188,
+   "new_xp_need": 188,
    "story_items": [
     [
-     "tool_6",
-     "tool_5",
-     "bird_3"
+     "beast_9",
+     "tool_2"
+    ],
+    [
+     "fruit_8",
+     "fruit_6"
+    ],
+    [
+     "veg_7",
+     "tool_7",
+     "craft_1"
+    ],
+    [
+     "beast_9",
+     "armor_3"
     ],
     [
      "veg_8",
-     "veg_4"
+     "beast_6"
     ],
     [
-     "beast_8",
-     "beast_7"
+     "beast_7",
+     "seed_3"
+    ],
+    [
+     "fruit_7",
+     "furn_7"
+    ],
+    [
+     "fruit_9",
+     "cloth_9",
+     "cloth_2"
     ]
    ],
    "story_order_taps": [
-    85,
+    215,
+    133,
     118,
-    167
+    256,
+    133,
+    95,
+    107,
+    428
    ],
-   "cum_days": 28.75
+   "cum_days": 18.66
   },
   {
    "level": 31,
-   "days": 2.0,
-   "taps": 1022,
-   "eff": 1.277,
+   "days": 1.815,
+   "taps": 2450,
+   "eff": 1.326,
    "gens": {
     "basket": 7,
-    "anvil": 6,
+    "anvil": 7,
     "loom": 6,
     "trap": 6,
     "hearth": 6,
@@ -1791,59 +2258,83 @@
     113.6,
     184.0
    ],
-   "easy_f": 31,
-   "hard_f": 204,
-   "story_taps": 460,
-   "story_f": 511,
-   "income": 3916,
-   "cum_coins": 61367,
-   "cum_cost": 58620,
+   "easy_f": 32,
+   "hard_f": 212,
+   "story_taps": 1960,
+   "story_f": 2259,
+   "income": 10733,
+   "cum_coins": 126944,
+   "cum_cost": 121100,
    "built": [
     "刨木架"
    ],
-   "xp_need": 18,
-   "old_easy_taps": 356.6,
-   "old_hard_taps": 713.2,
-   "old_avg_taps": 534.9,
+   "xp_need": 10,
+   "old_easy_taps": 343.5,
+   "old_hard_taps": 687.0,
+   "old_avg_taps": 515.3,
    "old_xp_supply": 152,
    "old_xp_need": 527,
-   "new_xp_supply": 318,
-   "new_xp_need": 318,
+   "new_xp_supply": 198,
+   "new_xp_need": 198,
    "story_items": [
     [
-     "pot_7",
-     "tool_7"
+     "pot_9",
+     "fruit_2"
     ],
     [
      "pot_8",
-     "beast_5",
-     "roast_2"
+     "seed_2"
+    ],
+    [
+     "fruit_9",
+     "pot_5"
+    ],
+    [
+     "tool_9",
+     "pot_7"
+    ],
+    [
+     "tool_8",
+     "pot_6"
+    ],
+    [
+     "cloth_8",
+     "pot_4"
     ],
     [
      "pot_9",
-     "armor_1"
+     "bird_1"
+    ],
+    [
+     "pot_10",
+     "seed_1"
     ]
    ],
    "story_order_taps": [
-    115,
-    153,
-    242
+    224,
+    133,
+    236,
+    278,
+    139,
+    118,
+    233,
+    455
    ],
-   "cum_days": 30.75
+   "cum_days": 20.48
   },
   {
    "level": 32,
-   "days": 2.0,
-   "taps": 1024,
-   "eff": 1.291,
+   "days": 1.815,
+   "taps": 2450,
+   "eff": 1.326,
    "gens": {
     "basket": 7,
-    "anvil": 6,
+    "anvil": 7,
     "loom": 6,
     "trap": 6,
     "hearth": 6,
     "carve": 5,
-    "kiln": 5
+    "kiln": 4
    },
    "easy_taps": 28.0,
    "hard_taps": 188.0,
@@ -1853,55 +2344,80 @@
     116.0,
     188.0
    ],
-   "easy_f": 31,
-   "hard_f": 211,
-   "story_taps": 461,
-   "story_f": 517,
-   "income": 3967,
-   "cum_coins": 65334,
-   "cum_cost": 65070,
+   "easy_f": 32,
+   "hard_f": 217,
+   "story_taps": 1960,
+   "story_f": 2259,
+   "income": 10733,
+   "cum_coins": 137676,
+   "cum_cost": 130800,
    "built": [
-    "木工棚",
-    "黏土坑"
+    "木工棚"
    ],
-   "xp_need": 18,
-   "old_easy_taps": 363.3,
-   "old_hard_taps": 726.6,
-   "old_avg_taps": 545.0,
+   "xp_need": 10,
+   "old_easy_taps": 353.9,
+   "old_hard_taps": 707.8,
+   "old_avg_taps": 530.9,
    "old_xp_supply": 157,
    "old_xp_need": 560,
-   "new_xp_supply": 336,
-   "new_xp_need": 336,
+   "new_xp_supply": 208,
+   "new_xp_need": 208,
    "story_items": [
     [
-     "pot_6",
-     "seed_3"
+     "pot_9",
+     "tool_4"
+    ],
+    [
+     "tool_9",
+     "pot_2",
+     "roast_2"
     ],
     [
      "pot_8",
-     "bird_3"
+     "roast_3"
     ],
     [
-     "tool_8",
-     "veg_7",
-     "pot_5"
+     "pot_10",
+     "craft_1"
+    ],
+    [
+     "pot_8",
+     "gem_3"
+    ],
+    [
+     "pot_8",
+     "tool_7"
+    ],
+    [
+     "beast_9",
+     "beast_5",
+     "pot_3"
+    ],
+    [
+     "veg_9",
+     "pot_8"
     ]
    ],
    "story_order_taps": [
-    74,
-    159,
-    185
+    229,
+    246,
+    156,
+    456,
+    156,
+    167,
+    239,
+    333
    ],
-   "cum_days": 32.75
+   "cum_days": 22.29
   },
   {
    "level": 33,
-   "days": 2.0,
-   "taps": 1026,
-   "eff": 1.32,
+   "days": 1.815,
+   "taps": 2450,
+   "eff": 1.369,
    "gens": {
     "basket": 7,
-    "anvil": 6,
+    "anvil": 7,
     "loom": 6,
     "trap": 6,
     "hearth": 6,
@@ -1916,51 +2432,81 @@
     118.4,
     192.0
    ],
-   "easy_f": 33,
-   "hard_f": 220,
-   "story_taps": 462,
-   "story_f": 530,
-   "income": 4063,
-   "cum_coins": 69397,
-   "cum_cost": 68350,
+   "easy_f": 34,
+   "hard_f": 228,
+   "story_taps": 1960,
+   "story_f": 2333,
+   "income": 11079,
+   "cum_coins": 148756,
+   "cum_cost": 140500,
    "built": [
-    "雕花图腾柱"
+    "黏土坑"
    ],
-   "xp_need": 19,
-   "old_easy_taps": 365.9,
-   "old_hard_taps": 731.8,
-   "old_avg_taps": 548.9,
+   "xp_need": 11,
+   "old_easy_taps": 352.9,
+   "old_hard_taps": 705.8,
+   "old_avg_taps": 529.4,
    "old_xp_supply": 162,
    "old_xp_need": 594,
-   "new_xp_supply": 355,
-   "new_xp_need": 355,
+   "new_xp_supply": 219,
+   "new_xp_need": 219,
    "story_items": [
     [
      "pot_7",
-     "bird_2"
+     "gem_2"
     ],
     [
-     "veg_8",
-     "fruit_6",
-     "pot_4"
+     "cloth_8",
+     "pot_6"
+    ],
+    [
+     "tool_8",
+     "pot_5"
     ],
     [
      "fruit_8",
-     "pot_3",
-     "armor_3"
+     "beast_7",
+     "pot_4"
+    ],
+    [
+     "furn_10",
+     "pot_4"
+    ],
+    [
+     "pot_8",
+     "seed_3"
+    ],
+    [
+     "pot_9",
+     "tool_2"
+    ],
+    [
+     "pot_9",
+     "tool_5",
+     "tool_3"
+    ],
+    [
+     "cloth_9",
+     "pot_7"
     ]
    ],
    "story_order_taps": [
-    78,
-    146,
-    160
+    75,
+    134,
+    121,
+    168,
+    437,
+    150,
+    217,
+    232,
+    269
    ],
-   "cum_days": 34.75
+   "cum_days": 24.11
   },
   {
    "level": 34,
-   "days": 2.0,
-   "taps": 1028,
+   "days": 1.815,
+   "taps": 2450,
    "eff": 1.369,
    "gens": {
     "basket": 7,
@@ -1981,48 +2527,81 @@
    ],
    "easy_f": 35,
    "hard_f": 233,
-   "story_taps": 463,
-   "story_f": 551,
-   "income": 4221,
-   "cum_coins": 73618,
-   "cum_cost": 71660,
+   "story_taps": 1960,
+   "story_f": 2333,
+   "income": 11079,
+   "cum_coins": 159835,
+   "cum_cost": 150330,
    "built": [
-    "慢轮台"
+    "雕花图腾柱"
    ],
-   "xp_need": 19,
+   "xp_need": 11,
    "old_easy_taps": 363.0,
    "old_hard_taps": 726.0,
    "old_avg_taps": 544.5,
    "old_xp_supply": 167,
    "old_xp_need": 629,
-   "new_xp_supply": 374,
-   "new_xp_need": 374,
+   "new_xp_supply": 230,
+   "new_xp_need": 230,
    "story_items": [
     [
+     "veg_8",
+     "furn_6",
+     "beast_5"
+    ],
+    [
      "furn_8",
-     "beast_4",
+     "cloth_7",
+     "veg_7"
+    ],
+    [
+     "furn_9",
      "cloth_2"
     ],
     [
-     "veg_7",
-     "ware_3"
+     "pot_8",
+     "pot_2",
+     "craft_2"
     ],
     [
-     "cloth_9",
+     "veg_10",
+     "roast_1"
+    ],
+    [
+     "veg_9",
+     "craft_1"
+    ],
+    [
+     "beast_8",
+     "fruit_7"
+    ],
+    [
+     "fruit_9",
+     "veg_2",
      "furn_2"
+    ],
+    [
+     "cloth_10",
+     "craft_3"
     ]
    ],
    "story_order_taps": [
-    116,
-    96,
-    217
+    148,
+    215,
+    217,
+    132,
+    441,
+    227,
+    161,
+    218,
+    476
    ],
-   "cum_days": 36.75
+   "cum_days": 25.93
   },
   {
    "level": 35,
-   "days": 2.0,
-   "taps": 1030,
+   "days": 1.815,
+   "taps": 2450,
    "eff": 1.417,
    "gens": {
     "basket": 7,
@@ -2043,54 +2622,87 @@
    ],
    "easy_f": 36,
    "hard_f": 246,
-   "story_taps": 464,
-   "story_f": 571,
-   "income": 4379,
-   "cum_coins": 77997,
-   "cum_cost": 75110,
+   "story_taps": 1960,
+   "story_f": 2415,
+   "income": 11473,
+   "cum_coins": 171308,
+   "cum_cost": 170270,
    "built": [
+    "慢轮台",
     "陶罐架"
    ],
-   "xp_need": 20,
+   "xp_need": 11,
    "old_easy_taps": 360.3,
    "old_hard_taps": 720.6,
    "old_avg_taps": 540.5,
    "old_xp_supply": 172,
    "old_xp_need": 665,
-   "new_xp_supply": 394,
-   "new_xp_need": 394,
+   "new_xp_supply": 241,
+   "new_xp_need": 241,
    "story_items": [
     [
-     "cloth_8",
-     "fruit_2",
-     "seed_1"
+     "pot_9",
+     "veg_3",
+     "craft_1"
     ],
     [
-     "tool_8",
-     "beast_7"
+     "fruit_8",
+     "pot_7"
+    ],
+    [
+     "cloth_8",
+     "fruit_6",
+     "cloth_6"
     ],
     [
      "furn_9",
-     "cloth_3"
+     "gem_1"
+    ],
+    [
+     "furn_10",
+     "ware_1"
+    ],
+    [
+     "beast_9",
+     "furn_3"
+    ],
+    [
+     "tool_8",
+     "furn_7"
+    ],
+    [
+     "veg_9",
+     "pot_3"
+    ],
+    [
+     "beast_10",
+     "furn_4",
+     "tool_2"
     ]
    ],
    "story_order_taps": [
-    116,
+    222,
     156,
-    211
+    156,
+    218,
+    426,
+    211,
+    156,
+    211,
+    424
    ],
-   "cum_days": 38.75
+   "cum_days": 27.74
   },
   {
    "level": 36,
-   "days": 2.0,
-   "taps": 1032,
-   "eff": 1.466,
+   "days": 2.185,
+   "taps": 2950,
+   "eff": 1.417,
    "gens": {
     "basket": 7,
     "anvil": 7,
     "loom": 7,
-    "trap": 7,
+    "trap": 6,
     "hearth": 6,
     "carve": 6,
     "kiln": 5
@@ -2103,59 +2715,92 @@
     125.7,
     204.0
    ],
-   "easy_f": 38,
-   "hard_f": 260,
-   "story_taps": 464,
-   "story_f": 592,
-   "income": 4538,
-   "cum_coins": 82535,
-   "cum_cost": 82450,
+   "easy_f": 37,
+   "hard_f": 251,
+   "story_taps": 2360,
+   "story_f": 2908,
+   "income": 13814,
+   "cum_coins": 185122,
+   "cum_cost": 180810,
    "built": [
-    "露天烧坑",
-    "圆顶土窑"
+    "露天烧坑"
    ],
-   "xp_need": 20,
-   "old_easy_taps": 357.8,
-   "old_hard_taps": 715.6,
-   "old_avg_taps": 536.7,
+   "xp_need": 11,
+   "old_easy_taps": 370.0,
+   "old_hard_taps": 740.1,
+   "old_avg_taps": 555.1,
    "old_xp_supply": 177,
    "old_xp_need": 702,
-   "new_xp_supply": 414,
-   "new_xp_need": 414,
+   "new_xp_supply": 252,
+   "new_xp_need": 252,
    "story_items": [
     [
-     "tool_7",
-     "gem_3"
-    ],
-    [
      "tool_9",
-     "gem_1"
+     "ware_2"
     ],
     [
-     "veg_9",
+     "cloth_9",
+     "fruit_2",
+     "gem_2"
+    ],
+    [
+     "veg_8",
+     "craft_3"
+    ],
+    [
+     "beast_8",
+     "veg_7"
+    ],
+    [
+     "fruit_10",
      "cloth_2"
+    ],
+    [
+     "fruit_9",
+     "cloth_7",
+     "craft_2"
+    ],
+    [
+     "furn_8",
+     "cloth_5",
+     "roast_3"
+    ],
+    [
+     "cloth_9",
+     "ware_3"
+    ],
+    [
+     "veg_10",
+     "pot_5",
+     "tool_5"
     ]
    ],
    "story_order_taps": [
-    91,
-    211,
-    202
+    228,
+    230,
+    148,
+    156,
+    417,
+    282,
+    159,
+    248,
+    441
    ],
-   "cum_days": 40.75
+   "cum_days": 29.93
   },
   {
    "level": 37,
-   "days": 2.0,
-   "taps": 1034,
-   "eff": 1.494,
+   "days": 2.185,
+   "taps": 2950,
+   "eff": 1.417,
    "gens": {
     "basket": 7,
     "anvil": 7,
     "loom": 7,
-    "trap": 7,
+    "trap": 6,
     "hearth": 6,
     "carve": 6,
-    "kiln": 6
+    "kiln": 5
    },
    "easy_taps": 30.5,
    "hard_taps": 208.0,
@@ -2165,56 +2810,91 @@
     128.1,
     208.0
    ],
-   "easy_f": 40,
-   "hard_f": 270,
-   "story_taps": 465,
-   "story_f": 605,
-   "income": 4635,
-   "cum_coins": 87170,
-   "cum_cost": 86250,
+   "easy_f": 38,
+   "hard_f": 256,
+   "story_taps": 2360,
+   "story_f": 2908,
+   "income": 13814,
+   "cum_coins": 198936,
+   "cum_cost": 193290,
    "built": [
-    "彩陶大瓮"
+    "圆顶土窑"
    ],
-   "xp_need": 21,
-   "old_easy_taps": 360.2,
-   "old_hard_taps": 720.3,
-   "old_avg_taps": 540.3,
+   "xp_need": 12,
+   "old_easy_taps": 379.8,
+   "old_hard_taps": 759.6,
+   "old_avg_taps": 569.7,
    "old_xp_supply": 182,
    "old_xp_need": 740,
-   "new_xp_supply": 435,
-   "new_xp_need": 435,
+   "new_xp_supply": 264,
+   "new_xp_need": 264,
    "story_items": [
     [
-     "furn_8",
-     "cloth_4",
-     "roast_1"
+     "furn_9",
+     "gem_1"
     ],
     [
-     "beast_8",
-     "fruit_7"
+     "fruit_8",
+     "armor_3"
+    ],
+    [
+     "tool_8",
+     "armor_2"
+    ],
+    [
+     "pot_9",
+     "craft_1"
     ],
     [
      "beast_9",
-     "armor_1"
+     "gem_3"
+    ],
+    [
+     "veg_9",
+     "tool_2"
+    ],
+    [
+     "beast_7",
+     "fruit_7",
+     "gem_3"
+    ],
+    [
+     "furn_9",
+     "furn_2"
+    ],
+    [
+     "cloth_8",
+     "bird_3"
+    ],
+    [
+     "pot_10",
+     "ware_1"
     ]
    ],
    "story_order_taps": [
-    115,
-    148,
-    207
+    218,
+    146,
+    125,
+    219,
+    250,
+    209,
+    146,
+    209,
+    144,
+    426
    ],
-   "cum_days": 42.75
+   "cum_days": 32.11
   },
   {
    "level": 38,
-   "days": 2.0,
-   "taps": 1036,
-   "eff": 1.494,
+   "days": 2.185,
+   "taps": 2950,
+   "eff": 1.446,
    "gens": {
     "basket": 7,
     "anvil": 7,
     "loom": 7,
-    "trap": 7,
+    "trap": 6,
     "hearth": 6,
     "carve": 6,
     "kiln": 6
@@ -2227,48 +2907,88 @@
     130.6,
     212.0
    ],
-   "easy_f": 40,
-   "hard_f": 275,
-   "story_taps": 466,
-   "story_f": 606,
-   "income": 4644,
-   "cum_coins": 91814,
-   "cum_cost": 86250,
-   "built": [],
-   "xp_need": 21,
-   "old_easy_taps": 369.4,
-   "old_hard_taps": 738.8,
-   "old_avg_taps": 554.1,
+   "easy_f": 39,
+   "hard_f": 267,
+   "story_taps": 2360,
+   "story_f": 2967,
+   "income": 14093,
+   "cum_coins": 213029,
+   "cum_cost": 205870,
+   "built": [
+    "彩陶大瓮"
+   ],
+   "xp_need": 12,
+   "old_easy_taps": 381.8,
+   "old_hard_taps": 763.6,
+   "old_avg_taps": 572.7,
    "old_xp_supply": 187,
    "old_xp_need": 779,
-   "new_xp_supply": 456,
-   "new_xp_need": 456,
+   "new_xp_supply": 276,
+   "new_xp_need": 276,
    "story_items": [
     [
-     "tool_8",
-     "veg_5",
-     "beast_4"
+     "pot_8",
+     "tool_7",
+     "cloth_5"
     ],
     [
-     "veg_8",
-     "ware_3"
+     "beast_8",
+     "bird_2"
     ],
     [
      "cloth_9",
-     "gem_1"
+     "cloth_2"
+    ],
+    [
+     "pot_7",
+     "beast_6"
+    ],
+    [
+     "tool_10",
+     "armor_1"
+    ],
+    [
+     "veg_8",
+     "cloth_7",
+     "beast_5"
+    ],
+    [
+     "tool_9",
+     "furn_3"
+    ],
+    [
+     "fruit_9",
+     "furn_4",
+     "bird_1"
+    ],
+    [
+     "tool_8",
+     "roast_3"
+    ],
+    [
+     "furn_10",
+     "cloth_4",
+     "gem_2"
     ]
    ],
    "story_order_taps": [
-    117,
-    137,
-    207
+    165,
+    122,
+    205,
+    76,
+    417,
+    165,
+    207,
+    220,
+    143,
+    434
    ],
-   "cum_days": 44.75
+   "cum_days": 34.3
   },
   {
    "level": 39,
-   "days": 2.0,
-   "taps": 1038,
+   "days": 2.185,
+   "taps": 2950,
    "eff": 1.494,
    "gens": {
     "basket": 7,
@@ -2289,47 +3009,83 @@
    ],
    "easy_f": 41,
    "hard_f": 281,
-   "story_taps": 467,
-   "story_f": 607,
-   "income": 4653,
-   "cum_coins": 96468,
-   "cum_cost": 86250,
+   "story_taps": 2360,
+   "story_f": 3067,
+   "income": 14566,
+   "cum_coins": 227595,
+   "cum_cost": 205870,
    "built": [],
-   "xp_need": 22,
+   "xp_need": 12,
    "old_easy_taps": 378.6,
    "old_hard_taps": 757.3,
    "old_avg_taps": 568.0,
    "old_xp_supply": 192,
    "old_xp_need": 819,
-   "new_xp_supply": 478,
-   "new_xp_need": 478,
+   "new_xp_supply": 288,
+   "new_xp_need": 288,
    "story_items": [
     [
-     "fruit_7",
-     "beast_7",
+     "cloth_8",
+     "roast_2"
+    ],
+    [
+     "tool_8",
+     "armor_3"
+    ],
+    [
+     "fruit_8",
      "armor_2"
     ],
     [
-     "beast_8",
-     "beast_6"
+     "beast_9",
+     "roast_1"
     ],
     [
-     "tool_9",
-     "pot_2",
+     "fruit_10",
+     "fruit_7",
+     "gem_1"
+    ],
+    [
+     "fruit_6",
+     "bird_3"
+    ],
+    [
+     "pot_9",
+     "cloth_3",
+     "bird_1"
+    ],
+    [
+     "fruit_9",
+     "tool_5"
+    ],
+    [
+     "furn_9",
+     "beast_3",
      "beast_2"
+    ],
+    [
+     "beast_10",
+     "veg_2"
     ]
    ],
    "story_order_taps": [
     118,
-    123,
-    200
+    138,
+    118,
+    207,
+    453,
+    63,
+    210,
+    209,
+    202,
+    396
    ],
-   "cum_days": 46.75
+   "cum_days": 36.48
   },
   {
    "level": 40,
-   "days": 2.0,
-   "taps": 1040,
+   "days": 2.185,
+   "taps": 2950,
    "eff": 1.494,
    "gens": {
     "basket": 7,
@@ -2350,108 +3106,144 @@
    ],
    "easy_f": 42,
    "hard_f": 286,
-   "story_taps": 468,
-   "story_f": 608,
-   "income": 4662,
-   "cum_coins": 101130,
-   "cum_cost": 86250,
+   "story_taps": 2360,
+   "story_f": 3067,
+   "income": 14566,
+   "cum_coins": 242161,
+   "cum_cost": 205870,
    "built": [],
-   "xp_need": 22,
+   "xp_need": 12,
    "old_easy_taps": 387.9,
    "old_hard_taps": 775.8,
    "old_avg_taps": 581.8,
    "old_xp_supply": 197,
    "old_xp_need": 860,
-   "new_xp_supply": 500,
-   "new_xp_need": 500,
+   "new_xp_supply": 300,
+   "new_xp_need": 300,
    "story_items": [
     [
-     "beast_8",
-     "seed_2"
+     "veg_9",
+     "fruit_5"
     ],
     [
-     "cloth_8",
-     "furn_5",
-     "craft_3"
+     "cloth_9",
+     "bird_2"
     ],
     [
-     "fruit_8",
-     "pot_8",
+     "tool_9",
      "craft_1"
+    ],
+    [
+     "veg_8",
+     "tool_7",
+     "gem_3"
+    ],
+    [
+     "veg_10",
+     "pot_2",
+     "ware_1"
+    ],
+    [
+     "beast_8",
+     "fruit_4"
+    ],
+    [
+     "fruit_9",
+     "ware_3"
+    ],
+    [
+     "veg_7",
+     "beast_7",
+     "beast_6"
+    ],
+    [
+     "beast_9",
+     "craft_2"
+    ],
+    [
+     "tool_10",
+     "gem_2"
     ]
    ],
    "story_order_taps": [
-    118,
-    153,
-    208
+    209,
+    216,
+    208,
+    188,
+    405,
+    105,
+    236,
+    123,
+    218,
+    414
    ],
-   "cum_days": 48.75
+   "cum_days": 38.67
   }
  ],
  "costs": {
   "fire": [
    0,
-   340,
-   440,
-   480,
-   490,
-   490
+   370,
+   610,
+   660,
+   660,
+   770
   ],
   "gather": [
-   460,
-   490,
-   490,
-   770,
-   860,
-   890
+   630,
+   660,
+   840,
+   850,
+   880,
+   1020
   ],
   "stone": [
-   810,
-   880,
-   890,
-   950,
-   1500,
-   1530
+   860,
+   860,
+   1210,
+   1290,
+   1300,
+   1960
   ],
   "weave": [
-   1510,
-   1540,
-   1620,
-   1630,
-   1640,
-   1650
+   1080,
+   1280,
+   1290,
+   1450,
+   2860,
+   2990
   ],
   "hunt": [
-   1570,
-   1600,
-   1620,
-   1740,
-   2290,
-   2350
+   3840,
+   3900,
+   3920,
+   4010,
+   5010,
+   5050
   ],
   "cook": [
-   2300,
-   2390,
-   2550,
-   2550,
-   2560,
-   2570
+   5010,
+   5080,
+   5250,
+   5740,
+   7790,
+   7830
   ],
   "wood": [
-   2470,
-   2500,
-   2570,
-   2640,
-   3220,
-   3280
+   7790,
+   7870,
+   8080,
+   8550,
+   9700,
+   9830
   ],
   "kiln": [
-   3230,
-   3310,
-   3450,
-   3600,
-   3740,
-   3800
+   9700,
+   9930,
+   10010,
+   10540,
+   12480,
+   12580
   ]
  },
  "level_gens": {
@@ -2461,51 +3253,51 @@
   "5": "basket",
   "6": null,
   "7": "anvil",
-  "8": "anvil",
-  "9": "basket",
+  "8": null,
+  "9": "loom",
   "10": "anvil",
-  "11": null,
+  "11": "basket",
   "12": "loom",
-  "13": "basket",
-  "14": "anvil",
-  "15": "basket",
+  "13": "anvil",
+  "14": "basket",
+  "15": "loom",
   "16": null,
-  "17": "loom",
+  "17": "anvil",
   "18": "trap",
-  "19": "anvil",
+  "19": "basket",
   "20": "loom",
   "21": null,
-  "22": "trap",
+  "22": "anvil",
   "23": "hearth",
-  "24": "basket",
-  "25": "anvil",
+  "24": "trap",
+  "25": "basket",
   "26": null,
   "27": "loom",
   "28": "carve",
   "29": "hearth",
-  "30": "trap",
+  "30": "anvil",
   "31": null,
-  "32": "kiln",
-  "33": "basket",
-  "34": "anvil",
+  "32": "trap",
+  "33": "kiln",
+  "34": "basket",
   "35": "loom",
-  "36": "trap",
+  "36": "anvil",
   "37": "hearth",
   "38": "carve",
-  "39": "basket",
-  "40": "anvil"
+  "39": "trap",
+  "40": "basket"
  },
  "old_stuck_level": 7,
  "final_eq": {
   "basket": 108,
-  "anvil": 92,
-  "loom": 72,
-  "trap": 64,
+  "anvil": 80,
+  "loom": 76,
+  "trap": 72,
   "hearth": 56,
   "carve": 48,
   "kiln": 32
  },
- "total_build": 86250,
+ "total_build": 205870,
  "old_total_build": 18180,
  "story": [
   {
@@ -2539,34 +3331,35 @@
    "orders": [
     {
      "items": [
-      "fruit_4",
-      "fruit_3"
-     ],
-     "rewards": [],
-     "say": "丰收的季节到了。",
-     "shell": 48,
-     "who": 0,
-     "xp": 1
-    },
-    {
-     "items": [
+      "fruit_6",
       "fruit_5"
      ],
      "rewards": [],
      "say": "大家今晚有果子吃了。",
-     "shell": 64,
+     "shell": 192,
      "who": 0,
      "xp": 1
     },
     {
      "items": [
-      "fruit_5",
+      "fruit_6",
       "fruit_4"
      ],
      "rewards": [],
-     "say": "甜甜的，还想要！",
-     "shell": 96,
-     "who": 3,
+     "say": "果子熟得正好。",
+     "shell": 160,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_7",
+      "fruit_2"
+     ],
+     "rewards": [],
+     "say": "带上果子，打猎不饿肚子。",
+     "shell": 264,
+     "who": 2,
      "xp": 1,
      "token": 3
     }
@@ -2577,36 +3370,36 @@
    "orders": [
     {
      "items": [
-      "fruit_5",
-      "fruit_2"
+      "fruit_6",
+      "fruit_3"
      ],
      "rewards": [],
-     "say": "果子熟得正好。",
-     "shell": 72,
-     "who": 1,
+     "say": "丰收的季节到了。",
+     "shell": 144,
+     "who": 0,
      "xp": 1
     },
     {
      "items": [
       "fruit_6",
-      "fruit_2"
+      "fruit_4"
      ],
      "rewards": [],
-     "say": "我一口气吃了三个！",
-     "shell": 136,
+     "say": "甜甜的，还想要！",
+     "shell": 160,
      "who": 3,
      "xp": 1
     },
     {
      "items": [
-      "fruit_6",
-      "fruit_3"
+      "fruit_5",
+      "seed_3"
      ],
      "rewards": [],
-     "say": "这果子晒干能存一冬。",
-     "shell": 144,
-     "who": 1,
-     "xp": 2,
+     "say": "我一口气吃了三个！",
+     "shell": 264,
+     "who": 3,
+     "xp": 1,
      "token": 3
     }
    ]
@@ -2616,24 +3409,23 @@
    "orders": [
     {
      "items": [
-      "fruit_4",
-      "seed_1"
+      "fruit_7",
+      "fruit_2"
      ],
      "rewards": [],
-     "say": "丰收的季节到了。",
-     "shell": 84,
-     "who": 0,
+     "say": "这果子晒干能存一冬。",
+     "shell": 264,
+     "who": 1,
      "xp": 1
     },
     {
      "items": [
-      "fruit_5",
-      "fruit_4"
+      "fruit_7"
      ],
      "rewards": [],
-     "say": "大家今晚有果子吃了。",
-     "shell": 96,
-     "who": 0,
+     "say": "果子熟得正好。",
+     "shell": 256,
+     "who": 1,
      "xp": 1
     },
     {
@@ -2641,10 +3433,10 @@
       "fruit_6"
      ],
      "rewards": [],
-     "say": "甜甜的，还想要！",
+     "say": "带上果子，打猎不饿肚子。",
      "shell": 128,
-     "who": 3,
-     "xp": 2,
+     "who": 2,
+     "xp": 1,
      "token": 4
     }
    ]
@@ -2657,32 +3449,43 @@
       "fruit_5"
      ],
      "rewards": [],
-     "say": "这果子晒干能存一冬。",
+     "say": "甜甜的，还想要！",
      "shell": 64,
-     "who": 1,
+     "who": 3,
      "xp": 1
     },
     {
      "items": [
-      "fruit_5",
+      "fruit_7",
       "fruit_3"
      ],
      "rewards": [],
-     "say": "果子熟得正好。",
-     "shell": 80,
-     "who": 1,
-     "xp": 2
+     "say": "丰收的季节到了。",
+     "shell": 272,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
-      "fruit_2",
-      "seed_2"
+      "fruit_6",
+      "fruit_4"
      ],
      "rewards": [],
      "say": "我一口气吃了三个！",
-     "shell": 112,
+     "shell": 160,
      "who": 3,
-     "xp": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_6",
+      "fruit_5"
+     ],
+     "rewards": [],
+     "say": "大家今晚有果子吃了。",
+     "shell": 192,
+     "who": 0,
+     "xp": 1,
      "token": 4
     }
    ]
@@ -2693,35 +3496,45 @@
     {
      "items": [
       "tool_6",
-      "tool_2"
+      "tool_5"
      ],
      "rewards": [],
      "say": "石匠台的第一把石器，真顺手！",
-     "shell": 136,
+     "shell": 192,
      "who": 2,
      "xp": 1
     },
     {
      "items": [
-      "tool_5",
-      "tool_4"
+      "tool_7",
+      "fruit_2"
      ],
      "rewards": [],
-     "say": "好工具才有好猎手。",
-     "shell": 96,
-     "who": 0,
-     "xp": 2
+     "say": "这把石器真顺手！",
+     "shell": 264,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
-      "tool_3",
-      "seed_3"
+      "tool_6"
      ],
      "rewards": [],
-     "say": "磨得真快，能削木头了。",
-     "shell": 224,
-     "who": 2,
-     "xp": 2,
+     "say": "好工具才有好猎手。",
+     "shell": 128,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_7",
+      "tool_2"
+     ],
+     "rewards": [],
+     "say": "这果子晒干能存一冬。",
+     "shell": 264,
+     "who": 1,
+     "xp": 1,
      "token": 5
     }
    ]
@@ -2732,35 +3545,46 @@
     {
      "items": [
       "fruit_6",
-      "tool_2"
+      "tool_4"
      ],
      "rewards": [],
      "say": "丰收的季节到了。",
-     "shell": 136,
+     "shell": 160,
      "who": 0,
-     "xp": 2
+     "xp": 1
     },
     {
      "items": [
       "tool_7",
-      "fruit_2"
+      "tool_3"
      ],
      "rewards": [],
-     "say": "这把石器真顺手！",
-     "shell": 264,
+     "say": "磨得真快，能削木头了。",
+     "shell": 272,
      "who": 2,
-     "xp": 2
+     "xp": 1
     },
     {
      "items": [
       "tool_6",
-      "seed_2"
+      "fruit_4"
      ],
      "rewards": [],
-     "say": "磨得真快，能削木头了。",
-     "shell": 232,
+     "say": "这把石器真顺手！",
+     "shell": 160,
      "who": 2,
-     "xp": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_6",
+      "fruit_5"
+     ],
+     "rewards": [],
+     "say": "好工具才有好猎手。",
+     "shell": 192,
+     "who": 0,
+     "xp": 1,
      "token": 5
     }
    ]
@@ -2770,37 +3594,47 @@
    "orders": [
     {
      "items": [
-      "tool_4",
-      "gem_2"
+      "tool_5"
      ],
      "rewards": [],
-     "say": "好工具才有好猎手。",
-     "shell": 136,
-     "who": 0,
-     "xp": 2
+     "say": "编织架织出的第一件衣服，真暖和。",
+     "shell": 64,
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "tool_5"
+      "tool_2",
+      "seed_2"
      ],
      "rewards": [
       "pack_1"
      ],
      "say": "这把石器真顺手！",
-     "shell": 64,
+     "shell": 108,
      "who": 2,
-     "xp": 2
+     "xp": 1
     },
     {
      "items": [
-      "fruit_7",
-      "tool_3"
+      "tool_7",
+      "tool_2"
      ],
      "rewards": [],
-     "say": "甜甜的，还想要！",
-     "shell": 272,
-     "who": 3,
-     "xp": 2,
+     "say": "好工具才有好猎手。",
+     "shell": 264,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_7"
+     ],
+     "rewards": [],
+     "say": "磨得真快，能削木头了。",
+     "shell": 256,
+     "who": 2,
+     "xp": 1,
      "token": 6
     }
    ]
@@ -2810,37 +3644,48 @@
    "orders": [
     {
      "items": [
-      "tool_6",
-      "fruit_3"
+      "cloth_4",
+      "seed_3"
      ],
      "rewards": [],
-     "say": "磨得真快，能削木头了。",
-     "shell": 144,
-     "who": 2,
-     "xp": 2
+     "say": "新衣服好软！",
+     "shell": 232,
+     "who": 3,
+     "xp": 1
     },
     {
      "items": [
-      "tool_7"
+      "cloth_6",
+      "gem_1"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "这把石器真顺手！",
-     "shell": 256,
-     "who": 2,
-     "xp": 2
+     "say": "老骨头总算暖和了。",
+     "shell": 180,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
-      "seed_3",
-      "tool_2"
+      "cloth_7"
      ],
      "rewards": [],
-     "say": "种子是部落的未来。",
-     "shell": 216,
+     "say": "冬天不怕冷了。",
+     "shell": 256,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_8",
+      "gem_2"
+     ],
+     "rewards": [],
+     "say": "老骨头总算暖和了。",
+     "shell": 616,
      "who": 0,
-     "xp": 3,
+     "xp": 2,
      "token": 6
     }
    ]
@@ -2850,37 +3695,47 @@
    "orders": [
     {
      "items": [
-      "fruit_6",
-      "tool_3"
+      "cloth_7"
      ],
      "rewards": [],
-     "say": "甜甜的，还想要！",
-     "shell": 144,
-     "who": 3,
-     "xp": 2
+     "say": "冬天不怕冷了。",
+     "shell": 256,
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "fruit_7",
-      "fruit_2"
+      "tool_6",
+      "cloth_5"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "我一口气吃了三个！",
-     "shell": 264,
-     "who": 3,
-     "xp": 2
+     "say": "这把石器真顺手！",
+     "shell": 192,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
-      "tool_7"
+      "cloth_6"
      ],
      "rewards": [],
-     "say": "好工具才有好猎手。",
-     "shell": 256,
+     "say": "新衣服好软！",
+     "shell": 128,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_3",
+      "gem_3"
+     ],
+     "rewards": [],
+     "say": "老骨头总算暖和了。",
+     "shell": 224,
      "who": 0,
-     "xp": 3,
+     "xp": 2,
      "token": 7
     }
    ]
@@ -2890,37 +3745,50 @@
    "orders": [
     {
      "items": [
-      "cloth_7"
+      "tool_7",
+      "fruit_3"
      ],
      "rewards": [],
-     "say": "编织架织出的第一件衣服，真暖和。",
-     "shell": 256,
-     "who": 1,
-     "xp": 2
+     "say": "磨得真快，能削木头了。",
+     "shell": 272,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
-      "cloth_6",
-      "tool_6"
+      "fruit_7",
+      "cloth_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "冬天不怕冷了。",
-     "shell": 256,
+     "say": "果子熟得正好。",
+     "shell": 264,
      "who": 1,
-     "xp": 3
+     "xp": 1
     },
     {
      "items": [
-      "cloth_5",
+      "fruit_6",
       "seed_3"
      ],
      "rewards": [],
+     "say": "大家今晚有果子吃了。",
+     "shell": 328,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_8",
+      "fruit_2",
+      "seed_1"
+     ],
+     "rewards": [],
      "say": "新衣服好软！",
-     "shell": 272,
+     "shell": 568,
      "who": 3,
-     "xp": 3,
+     "xp": 2,
      "token": 7
     }
    ]
@@ -2930,38 +3798,49 @@
    "orders": [
     {
      "items": [
-      "cloth_4",
-      "gem_3"
+      "tool_7"
      ],
      "rewards": [],
-     "say": "老骨头总算暖和了。",
-     "shell": 240,
+     "say": "好工具才有好猎手。",
+     "shell": 256,
      "who": 0,
-     "xp": 2
+     "xp": 1
     },
     {
      "items": [
-      "cloth_7",
-      "gem_1"
+      "tool_6",
+      "tool_4"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "新衣服好软！",
-     "shell": 308,
-     "who": 3,
-     "xp": 3
+     "say": "这把石器真顺手！",
+     "shell": 160,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
-      "tool_8",
-      "cloth_2"
+      "fruit_7",
+      "fruit_4"
      ],
      "rewards": [],
-     "say": "好工具才有好猎手。",
-     "shell": 520,
+     "say": "这果子晒干能存一冬。",
+     "shell": 288,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_8",
+      "fruit_5",
+      "tool_2"
+     ],
+     "rewards": [],
+     "say": "丰收的季节到了。",
+     "shell": 584,
      "who": 0,
-     "xp": 3,
+     "xp": 2,
      "token": 8
     }
    ]
@@ -2971,37 +3850,60 @@
    "orders": [
     {
      "items": [
-      "cloth_6"
+      "tool_8",
+      "cloth_3"
      ],
      "rewards": [],
-     "say": "冬天不怕冷了。",
-     "shell": 128,
-     "who": 1,
-     "xp": 3
+     "say": "磨得真快，能削木头了。",
+     "shell": 528,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
-      "cloth_5",
-      "gem_2"
+      "fruit_6",
+      "armor_3"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "老骨头总算暖和了。",
-     "shell": 168,
-     "who": 0,
-     "xp": 3
+     "say": "带上果子，打猎不饿肚子。",
+     "shell": 336,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_7",
+      "tool_5"
+     ],
+     "rewards": [],
+     "say": "新衣服好软！",
+     "shell": 320,
+     "who": 3,
+     "xp": 1
     },
     {
      "items": [
       "cloth_8",
+      "tool_3"
+     ],
+     "rewards": [],
+     "say": "老骨头总算暖和了。",
+     "shell": 528,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_9",
       "seed_1"
      ],
      "rewards": [],
-     "say": "新衣服好软！",
-     "shell": 564,
-     "who": 3,
-     "xp": 3,
+     "say": "这把石器真顺手！",
+     "shell": 1072,
+     "who": 2,
+     "xp": 2,
      "token": 8
     }
    ]
@@ -3011,37 +3913,62 @@
    "orders": [
     {
      "items": [
-      "tool_7"
+      "fruit_8",
+      "tool_4"
      ],
      "rewards": [],
-     "say": "好工具才有好猎手。",
-     "shell": 256,
-     "who": 0,
-     "xp": 3
+     "say": "甜甜的，还想要！",
+     "shell": 544,
+     "who": 3,
+     "xp": 1
     },
     {
      "items": [
-      "fruit_6",
-      "seed_3"
+      "tool_7",
+      "cloth_6"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "这果子晒干能存一冬。",
-     "shell": 336,
-     "who": 1,
-     "xp": 3
+     "say": "好工具才有好猎手。",
+     "shell": 384,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
       "fruit_7",
-      "tool_6"
+      "cloth_5",
+      "fruit_4"
+     ],
+     "rewards": [],
+     "say": "我一口气吃了三个！",
+     "shell": 352,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "fruit_5"
+     ],
+     "rewards": [],
+     "say": "这把石器真顺手！",
+     "shell": 576,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_9",
+      "tool_2",
+      "fruit_2"
      ],
      "rewards": [],
      "say": "大家今晚有果子吃了。",
-     "shell": 384,
+     "shell": 1040,
      "who": 0,
-     "xp": 3,
+     "xp": 2,
      "token": 9
     }
    ]
@@ -3051,37 +3978,62 @@
    "orders": [
     {
      "items": [
-      "tool_7"
+      "cloth_7",
+      "seed_2"
      ],
      "rewards": [],
-     "say": "这把石器真顺手！",
-     "shell": 256,
-     "who": 2,
-     "xp": 3
+     "say": "老骨头总算暖和了。",
+     "shell": 356,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
-      "tool_8",
-      "tool_2"
+      "cloth_8",
+      "cloth_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "磨得真快，能削木头了。",
+     "say": "冬天不怕冷了。",
      "shell": 520,
-     "who": 2,
-     "xp": 3
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "fruit_8",
+      "cloth_8",
+      "cloth_3"
+     ],
+     "rewards": [],
+     "say": "新衣服好软！",
+     "shell": 528,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_8",
+      "tool_5",
+      "fruit_3"
+     ],
+     "rewards": [],
+     "say": "冬天不怕冷了。",
+     "shell": 592,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_9",
+      "cloth_4",
       "tool_3"
      ],
      "rewards": [],
-     "say": "甜甜的，还想要！",
-     "shell": 528,
-     "who": 3,
-     "xp": 4,
+     "say": "磨得真快，能削木头了。",
+     "shell": 1072,
+     "who": 2,
+     "xp": 2,
      "token": 9
     }
    ]
@@ -3091,38 +4043,61 @@
    "orders": [
     {
      "items": [
+      "fruit_8",
       "beast_7"
      ],
      "rewards": [],
      "say": "第一次下陷阱就有收获！",
-     "shell": 256,
+     "shell": 768,
      "who": 2,
-     "xp": 3
+     "xp": 1
     },
     {
      "items": [
-      "beast_6",
-      "tool_6",
-      "tool_5"
+      "tool_8",
+      "beast_5"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "够全部落吃三天。",
-     "shell": 320,
-     "who": 0,
-     "xp": 3
+     "say": "这把石器真顺手！",
+     "shell": 576,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
       "beast_8",
-      "tool_4"
+      "fruit_4"
+     ],
+     "rewards": [],
+     "say": "够全部落吃三天。",
+     "shell": 544,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_6",
+      "beast_4",
+      "seed_3"
+     ],
+     "rewards": [],
+     "say": "阿石叔叔好厉害！",
+     "shell": 360,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_9",
+      "tool_6"
      ],
      "rewards": [],
      "say": "今天收获不错！",
-     "shell": 544,
+     "shell": 1152,
      "who": 2,
-     "xp": 4,
+     "xp": 2,
      "token": 10
     }
    ]
@@ -3132,37 +4107,71 @@
    "orders": [
     {
      "items": [
-      "beast_7"
+      "beast_8",
+      "tool_5"
      ],
      "rewards": [],
-     "say": "阿石叔叔好厉害！",
-     "shell": 256,
-     "who": 3,
-     "xp": 3
+     "say": "今天收获不错！",
+     "shell": 576,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
-      "beast_5",
-      "seed_3"
+      "beast_8",
+      "beast_2"
      ],
      "rewards": [
       "pack_1"
      ],
      "say": "够全部落吃三天。",
-     "shell": 272,
+     "shell": 520,
      "who": 0,
-     "xp": 4
+     "xp": 1
     },
     {
      "items": [
-      "fruit_8",
-      "beast_2"
+      "cloth_8",
+      "beast_3"
      ],
      "rewards": [],
-     "say": "大家今晚有果子吃了。",
-     "shell": 520,
+     "say": "新衣服好软！",
+     "shell": 528,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_8",
+      "fruit_3"
+     ],
+     "rewards": [],
+     "say": "阿石叔叔好厉害！",
+     "shell": 528,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_7",
+      "gem_3"
+     ],
+     "rewards": [],
+     "say": "够全部落吃三天。",
+     "shell": 464,
      "who": 0,
-     "xp": 4,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_8",
+      "cloth_7"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 768,
+     "who": 2,
+     "xp": 2,
      "token": 10
     }
    ]
@@ -3172,38 +4181,73 @@
    "orders": [
     {
      "items": [
+      "fruit_8",
       "beast_4",
-      "armor_3"
+      "seed_1"
      ],
      "rewards": [],
-     "say": "今天收获不错！",
-     "shell": 240,
-     "who": 2,
-     "xp": 3
+     "say": "果子熟得正好。",
+     "shell": 592,
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "beast_6",
-      "gem_3"
+      "fruit_7",
+      "beast_6"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "够全部落吃三天。",
-     "shell": 336,
-     "who": 0,
-     "xp": 4
+     "say": "甜甜的，还想要！",
+     "shell": 384,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_5",
+      "gem_2"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 168,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
       "beast_8",
-      "fruit_2"
+      "fruit_4",
+      "gem_1"
      ],
      "rewards": [],
      "say": "阿石叔叔好厉害！",
-     "shell": 520,
+     "shell": 596,
      "who": 3,
-     "xp": 4,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_7",
+      "gem_3"
+     ],
+     "rewards": [],
+     "say": "够全部落吃三天。",
+     "shell": 464,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_9",
+      "armor_1"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 1076,
+     "who": 2,
+     "xp": 2,
      "token": 11
     }
    ]
@@ -3213,54 +4257,14 @@
    "orders": [
     {
      "items": [
-      "fruit_7"
+      "beast_8",
+      "fruit_5"
      ],
      "rewards": [],
-     "say": "大家今晚有果子吃了。",
-     "shell": 256,
-     "who": 0,
-     "xp": 4
-    },
-    {
-     "items": [
-      "cloth_7",
-      "tool_5"
-     ],
-     "rewards": [
-      "pack_1"
-     ],
-     "say": "新衣服好软！",
-     "shell": 320,
-     "who": 3,
-     "xp": 4
-    },
-    {
-     "items": [
-      "beast_7",
-      "armor_2"
-     ],
-     "rewards": [],
-     "say": "阿石叔叔好厉害！",
-     "shell": 360,
-     "who": 3,
-     "xp": 4,
-     "token": 11
-    }
-   ]
-  },
-  {
-   "level": 20,
-   "orders": [
-    {
-     "items": [
-      "beast_6",
-      "beast_5"
-     ],
-     "rewards": [],
-     "say": "够全部落吃三天。",
-     "shell": 192,
-     "who": 0,
-     "xp": 4
+     "say": "今天收获不错！",
+     "shell": 576,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
@@ -3270,21 +4274,133 @@
      "rewards": [
       "pack_1"
      ],
-     "say": "这把石器真顺手！",
+     "say": "磨得真快，能削木头了。",
      "shell": 384,
      "who": 2,
-     "xp": 4
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "bird_1"
+     ],
+     "rewards": [],
+     "say": "这把石器真顺手！",
+     "shell": 560,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_8",
+      "fruit_3",
+      "beast_3"
+     ],
+     "rewards": [],
+     "say": "冬天不怕冷了。",
+     "shell": 544,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_7",
+      "seed_3",
+      "beast_2"
+     ],
+     "rewards": [],
+     "say": "新衣服好软！",
+     "shell": 464,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_9",
+      "cloth_2",
+      "tool_2"
+     ],
+     "rewards": [],
+     "say": "老骨头总算暖和了。",
+     "shell": 1040,
+     "who": 0,
+     "xp": 2,
+     "token": 11
+    }
+   ]
+  },
+  {
+   "level": 20,
+   "orders": [
+    {
+     "items": [
+      "tool_6",
+      "armor_3"
+     ],
+     "rewards": [],
+     "say": "好工具才有好猎手。",
+     "shell": 336,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
       "fruit_8",
+      "cloth_4",
+      "armor_1"
+     ],
+     "rewards": [
+      "pack_1"
+     ],
+     "say": "这果子晒干能存一冬。",
+     "shell": 596,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_5",
+      "armor_2"
+     ],
+     "rewards": [],
+     "say": "这把石器真顺手！",
+     "shell": 168,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "seed_2"
+     ],
+     "rewards": [],
+     "say": "磨得真快，能削木头了。",
+     "shell": 612,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_7",
+      "cloth_6",
+      "tool_4"
+     ],
+     "rewards": [],
+     "say": "甜甜的，还想要！",
+     "shell": 416,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_9",
       "fruit_2"
      ],
      "rewards": [],
-     "say": "这果子晒干能存一冬。",
-     "shell": 520,
-     "who": 1,
-     "xp": 4,
+     "say": "够全部落吃三天。",
+     "shell": 1032,
+     "who": 0,
+     "xp": 2,
      "token": 12
     }
    ]
@@ -3295,45 +4411,40 @@
     {
      "items": [
       "veg_7",
-      "gem_2"
+      "armor_3"
      ],
      "rewards": [],
      "say": "火塘生起来了，烤得真香！",
-     "shell": 360,
+     "shell": 464,
      "who": 0,
-     "xp": 4
+     "xp": 1
     },
     {
      "items": [
-      "beast_8",
-      "veg_2"
+      "veg_8",
+      "veg_5",
+      "tool_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "今天收获不错！",
-     "shell": 520,
-     "who": 2,
-     "xp": 4
+     "say": "火塘边香喷喷的。",
+     "shell": 584,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
-      "tool_8",
-      "fruit_5",
-      "veg_4"
+      "beast_8",
+      "veg_4",
+      "fruit_4"
      ],
      "rewards": [],
-     "say": "好工具才有好猎手。",
-     "shell": 608,
-     "who": 0,
-     "xp": 5,
-     "token": 12
-    }
-   ]
-  },
-  {
-   "level": 22,
-   "orders": [
+     "say": "阿石叔叔好厉害！",
+     "shell": 576,
+     "who": 3,
+     "xp": 1
+    },
     {
      "items": [
       "veg_6",
@@ -3343,33 +4454,127 @@
      "say": "热乎的吃了不生病。",
      "shell": 328,
      "who": 1,
-     "xp": 4
+     "xp": 1
     },
     {
      "items": [
+      "beast_7",
       "tool_7",
-      "veg_3",
-      "gem_3"
+      "veg_3"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 528,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_8",
+      "veg_2"
+     ],
+     "rewards": [],
+     "say": "够全部落吃三天。",
+     "shell": 520,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_9",
+      "veg_7"
+     ],
+     "rewards": [],
+     "say": "烤得真香！",
+     "shell": 1280,
+     "who": 3,
+     "xp": 2,
+     "token": 12
+    }
+   ]
+  },
+  {
+   "level": 22,
+   "orders": [
+    {
+     "items": [
+      "fruit_8",
+      "veg_6"
+     ],
+     "rewards": [],
+     "say": "丰收的季节到了。",
+     "shell": 640,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_7",
+      "bird_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "这把石器真顺手！",
-     "shell": 480,
+     "say": "热乎的吃了不生病。",
+     "shell": 356,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "veg_2"
+     ],
+     "rewards": [],
+     "say": "磨得真快，能削木头了。",
+     "shell": 520,
      "who": 2,
-     "xp": 4
+     "xp": 1
     },
     {
      "items": [
       "veg_8",
-      "fruit_2",
-      "bird_2"
+      "bird_1"
      ],
      "rewards": [],
      "say": "火塘边香喷喷的。",
-     "shell": 620,
+     "shell": 560,
      "who": 0,
-     "xp": 5,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_7",
+      "veg_6"
+     ],
+     "rewards": [],
+     "say": "新衣服好软！",
+     "shell": 384,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_8",
+      "veg_5",
+      "cloth_5"
+     ],
+     "rewards": [],
+     "say": "冬天不怕冷了。",
+     "shell": 640,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_9",
+      "seed_3"
+     ],
+     "rewards": [],
+     "say": "烤得真香！",
+     "shell": 1224,
+     "who": 3,
+     "xp": 2,
      "token": 13
     }
    ]
@@ -3379,38 +4584,86 @@
    "orders": [
     {
      "items": [
-      "veg_7",
-      "veg_5"
+      "veg_8",
+      "gem_1"
      ],
      "rewards": [],
-     "say": "烤得真香！",
-     "shell": 320,
-     "who": 3,
-     "xp": 4
+     "say": "火塘边香喷喷的。",
+     "shell": 564,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
-      "tool_8",
-      "veg_2"
+      "veg_8",
+      "tool_5"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "好工具才有好猎手。",
-     "shell": 520,
-     "who": 0,
-     "xp": 5
+     "say": "热乎的吃了不生病。",
+     "shell": 576,
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "cloth_8",
+      "beast_8",
       "veg_4"
      ],
      "rewards": [],
-     "say": "老骨头总算暖和了。",
+     "say": "阿石叔叔好厉害！",
      "shell": 544,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_7",
+      "veg_3",
+      "gem_3"
+     ],
+     "rewards": [],
+     "say": "够全部落吃三天。",
+     "shell": 480,
      "who": 0,
-     "xp": 5,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_7",
+      "fruit_7",
+      "roast_3"
+     ],
+     "rewards": [],
+     "say": "烤得真香！",
+     "shell": 720,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_8",
+      "fruit_6",
+      "fruit_5"
+     ],
+     "rewards": [],
+     "say": "烤得真香！",
+     "shell": 704,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_9",
+      "veg_2",
+      "gem_2"
+     ],
+     "rewards": [],
+     "say": "热乎的吃了不生病。",
+     "shell": 1136,
+     "who": 1,
+     "xp": 2,
      "token": 13
     }
    ]
@@ -3420,41 +4673,83 @@
    "orders": [
     {
      "items": [
-      "veg_6",
-      "tool_5",
-      "bird_3"
+      "cloth_8",
+      "seed_3"
      ],
      "rewards": [],
-     "say": "火塘边香喷喷的。",
-     "shell": 392,
-     "who": 0,
-     "xp": 4
+     "say": "新衣服好软！",
+     "shell": 712,
+     "who": 3,
+     "xp": 1
     },
     {
      "items": [
-      "beast_8",
-      "veg_3",
-      "cloth_2"
+      "tool_8",
+      "beast_3",
+      "beast_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "够全部落吃三天。",
+     "say": "磨得真快，能削木头了。",
      "shell": 536,
-     "who": 0,
-     "xp": 5
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
-      "fruit_8",
-      "cloth_5",
-      "gem_2"
+      "cloth_7",
+      "veg_6"
      ],
      "rewards": [],
-     "say": "这果子晒干能存一冬。",
-     "shell": 680,
+     "say": "老骨头总算暖和了。",
+     "shell": 384,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_7",
+      "gem_3"
+     ],
+     "rewards": [],
+     "say": "好工具才有好猎手。",
+     "shell": 464,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_8",
+      "beast_6"
+     ],
+     "rewards": [],
+     "say": "冬天不怕冷了。",
+     "shell": 640,
      "who": 1,
-     "xp": 5,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_8",
+      "roast_2"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 616,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_9",
+      "armor_2"
+     ],
+     "rewards": [],
+     "say": "带上果子，打猎不饿肚子。",
+     "shell": 1128,
+     "who": 2,
+     "xp": 2,
      "token": 14
     }
    ]
@@ -3464,27 +4759,39 @@
    "orders": [
     {
      "items": [
-      "fruit_7",
-      "beast_6"
+      "fruit_8",
+      "bird_3"
      ],
      "rewards": [],
      "say": "甜甜的，还想要！",
-     "shell": 384,
+     "shell": 712,
      "who": 3,
-     "xp": 5
+     "xp": 1
     },
     {
      "items": [
-      "beast_7",
-      "bird_2"
+      "veg_7",
+      "fruit_7",
+      "tool_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "今天收获不错！",
-     "shell": 356,
-     "who": 2,
-     "xp": 5
+     "say": "热乎的吃了不生病。",
+     "shell": 520,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_7",
+      "fruit_6"
+     ],
+     "rewards": [],
+     "say": "阿石叔叔好厉害！",
+     "shell": 384,
+     "who": 3,
+     "xp": 1
     },
     {
      "items": [
@@ -3492,10 +4799,54 @@
       "bird_1"
      ],
      "rewards": [],
-     "say": "烤得真香！",
+     "say": "火塘边香喷喷的。",
      "shell": 560,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_8",
+      "tool_3"
+     ],
+     "rewards": [],
+     "say": "这果子晒干能存一冬。",
+     "shell": 528,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_6",
+      "tool_6"
+     ],
+     "rewards": [],
+     "say": "新衣服好软！",
+     "shell": 256,
      "who": 3,
-     "xp": 5,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "beast_5"
+     ],
+     "rewards": [],
+     "say": "这把石器真顺手！",
+     "shell": 576,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_9",
+      "fruit_5"
+     ],
+     "rewards": [],
+     "say": "好工具才有好猎手。",
+     "shell": 1088,
+     "who": 0,
+     "xp": 2,
      "token": 14
     }
    ]
@@ -3505,39 +4856,94 @@
    "orders": [
     {
      "items": [
-      "furn_7",
-      "fruit_6"
+      "furn_8",
+      "veg_6",
+      "seed_3"
      ],
      "rewards": [],
      "say": "木工场开工了，部落要盖大屋了！",
-     "shell": 384,
+     "shell": 840,
      "who": 0,
-     "xp": 5
+     "xp": 1
     },
     {
      "items": [
-      "tool_8",
-      "furn_2"
+      "furn_9",
+      "roast_1"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "好工具才有好猎手。",
-     "shell": 520,
-     "who": 0,
-     "xp": 5
+     "say": "这木头纹路真好看。",
+     "shell": 1076,
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "cloth_8",
-      "veg_6",
-      "furn_3"
+      "furn_7",
+      "roast_3"
      ],
      "rewards": [],
-     "say": "新衣服好软！",
-     "shell": 656,
-     "who": 3,
-     "xp": 5,
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 464,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_8",
+      "furn_6"
+     ],
+     "rewards": [],
+     "say": "这木头纹路真好看。",
+     "shell": 640,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_9",
+      "furn_2"
+     ],
+     "rewards": [],
+     "say": "丰收的季节到了。",
+     "shell": 1032,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_8",
+      "seed_2"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 612,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_9",
+      "bird_2"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 1124,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_10",
+      "fruit_2"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 2056,
+     "who": 0,
+     "xp": 2,
      "token": 15
     }
    ]
@@ -3547,39 +4953,95 @@
    "orders": [
     {
      "items": [
-      "tool_7",
-      "furn_4",
-      "gem_2"
+      "furn_8",
+      "gem_3"
      ],
      "rewards": [],
-     "say": "磨得真快，能削木头了。",
-     "shell": 392,
-     "who": 2,
-     "xp": 5
+     "say": "这木头纹路真好看。",
+     "shell": 720,
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "furn_8",
-      "gem_1"
+      "beast_9",
+      "furn_3"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "大屋里终于有凳子坐了。",
-     "shell": 564,
-     "who": 0,
-     "xp": 5
+     "say": "阿石叔叔好厉害！",
+     "shell": 1040,
+     "who": 3,
+     "xp": 1
     },
     {
      "items": [
-      "cloth_7",
-      "furn_6"
+      "furn_8",
+      "armor_3"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 720,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_9",
+      "bird_1"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 1072,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_8",
+      "beast_7",
+      "furn_4"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 800,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_9",
+      "furn_5"
+     ],
+     "rewards": [],
+     "say": "这把石器真顺手！",
+     "shell": 1088,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_8",
+      "armor_2"
+     ],
+     "rewards": [],
+     "say": "这木头纹路真好看。",
+     "shell": 616,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_9",
+      "furn_7",
+      "roast_2"
      ],
      "rewards": [],
      "say": "老骨头总算暖和了。",
-     "shell": 384,
+     "shell": 1384,
      "who": 0,
-     "xp": 6,
+     "xp": 2,
      "token": 15
     }
    ]
@@ -3589,38 +5051,95 @@
    "orders": [
     {
      "items": [
-      "furn_7",
-      "fruit_6"
+      "cloth_8",
+      "furn_6"
      ],
      "rewards": [],
-     "say": "这木头纹路真好看。",
-     "shell": 384,
+     "say": "冬天不怕冷了。",
+     "shell": 640,
      "who": 1,
-     "xp": 5
+     "xp": 1
     },
     {
      "items": [
-      "furn_5",
-      "bird_3"
+      "fruit_8",
+      "furn_2",
+      "furn_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "大屋里终于有凳子坐了。",
-     "shell": 264,
+     "say": "大家今晚有果子吃了。",
+     "shell": 528,
      "who": 0,
-     "xp": 5
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_9",
+      "seed_1"
+     ],
+     "rewards": [],
+     "say": "这木头纹路真好看。",
+     "shell": 1072,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_9",
+      "furn_2"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 1032,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
       "furn_8",
-      "gem_3"
+      "gem_2"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 616,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_9",
+      "gem_1"
      ],
      "rewards": [],
      "say": "这木头纹路真好看。",
-     "shell": 720,
+     "shell": 1076,
      "who": 1,
-     "xp": 6,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_8",
+      "furn_7",
+      "tool_7"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 1024,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_10",
+      "cloth_2"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 2056,
+     "who": 0,
+     "xp": 2,
      "token": 16
     }
    ]
@@ -3630,39 +5149,97 @@
    "orders": [
     {
      "items": [
-      "fruit_7",
-      "beast_6"
+      "beast_8",
+      "seed_2"
      ],
      "rewards": [],
-     "say": "甜甜的，还想要！",
-     "shell": 384,
+     "say": "阿石叔叔好厉害！",
+     "shell": 612,
      "who": 3,
-     "xp": 5
+     "xp": 1
     },
     {
      "items": [
-      "tool_7",
-      "beast_5",
-      "seed_3"
+      "tool_8",
+      "furn_5",
+      "furn_4"
      ],
      "rewards": [
       "pack_1"
      ],
      "say": "这把石器真顺手！",
-     "shell": 528,
+     "shell": 608,
      "who": 2,
-     "xp": 6
+     "xp": 1
     },
     {
      "items": [
-      "fruit_8",
-      "bird_2"
+      "furn_8",
+      "furn_3"
      ],
      "rewards": [],
-     "say": "这果子晒干能存一冬。",
-     "shell": 612,
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 528,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_9",
+      "furn_8",
+      "craft_3"
+     ],
+     "rewards": [],
+     "say": "火塘边香喷喷的。",
+     "shell": 1756,
+     "who": 0,
+     "xp": 2
+    },
+    {
+     "items": [
+      "cloth_7",
+      "gem_3"
+     ],
+     "rewards": [],
+     "say": "新衣服好软！",
+     "shell": 464,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "cloth_6",
+      "craft_2"
+     ],
+     "rewards": [],
+     "say": "好工具才有好猎手。",
+     "shell": 748,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_9",
+      "gem_1"
+     ],
+     "rewards": [],
+     "say": "磨得真快，能削木头了。",
+     "shell": 1076,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_9",
+      "veg_8",
+      "veg_6"
+     ],
+     "rewards": [],
+     "say": "这木头纹路真好看。",
+     "shell": 1664,
      "who": 1,
-     "xp": 6,
+     "xp": 2,
      "token": 16
     }
    ]
@@ -3672,39 +5249,95 @@
    "orders": [
     {
      "items": [
-      "tool_6",
-      "tool_5",
-      "bird_3"
+      "beast_9",
+      "tool_2"
      ],
      "rewards": [],
-     "say": "磨得真快，能削木头了。",
-     "shell": 392,
+     "say": "今天收获不错！",
+     "shell": 1032,
      "who": 2,
-     "xp": 5
+     "xp": 1
     },
     {
      "items": [
-      "veg_8",
-      "veg_4"
+      "fruit_8",
+      "fruit_6"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "烤得真香！",
-     "shell": 544,
-     "who": 3,
-     "xp": 6
+     "say": "果子熟得正好。",
+     "shell": 640,
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "beast_8",
-      "beast_7"
+      "veg_7",
+      "tool_7",
+      "craft_1"
      ],
      "rewards": [],
-     "say": "今天收获不错！",
-     "shell": 768,
-     "who": 2,
-     "xp": 6,
+     "say": "热乎的吃了不生病。",
+     "shell": 568,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_9",
+      "armor_3"
+     ],
+     "rewards": [],
+     "say": "够全部落吃三天。",
+     "shell": 1232,
+     "who": 0,
+     "xp": 2
+    },
+    {
+     "items": [
+      "veg_8",
+      "beast_6"
+     ],
+     "rewards": [],
+     "say": "烤得真香！",
+     "shell": 640,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_7",
+      "seed_3"
+     ],
+     "rewards": [],
+     "say": "阿石叔叔好厉害！",
+     "shell": 456,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_7",
+      "furn_7"
+     ],
+     "rewards": [],
+     "say": "我一口气吃了三个！",
+     "shell": 512,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_9",
+      "cloth_9",
+      "cloth_2"
+     ],
+     "rewards": [],
+     "say": "这果子晒干能存一冬。",
+     "shell": 2056,
+     "who": 1,
+     "xp": 2,
      "token": 17
     }
    ]
@@ -3714,39 +5347,93 @@
    "orders": [
     {
      "items": [
-      "pot_7",
-      "tool_7"
+      "pot_9",
+      "fruit_2"
      ],
      "rewards": [],
      "say": "第一只陶罐烧好了，真结实。",
-     "shell": 512,
+     "shell": 1032,
      "who": 1,
-     "xp": 6
+     "xp": 1
     },
     {
      "items": [
       "pot_8",
-      "beast_5",
-      "roast_2"
+      "seed_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "有了陶罐，粮食不怕潮了。",
-     "shell": 680,
+     "say": "陶罐能装好多水。",
+     "shell": 612,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_9",
+      "pot_5"
+     ],
+     "rewards": [],
+     "say": "大家今晚有果子吃了。",
+     "shell": 1088,
      "who": 0,
-     "xp": 6
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_9",
+      "pot_7"
+     ],
+     "rewards": [],
+     "say": "这把石器真顺手！",
+     "shell": 1280,
+     "who": 2,
+     "xp": 2
+    },
+    {
+     "items": [
+      "tool_8",
+      "pot_6"
+     ],
+     "rewards": [],
+     "say": "好工具才有好猎手。",
+     "shell": 640,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_8",
+      "pot_4"
+     ],
+     "rewards": [],
+     "say": "老骨头总算暖和了。",
+     "shell": 544,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
       "pot_9",
-      "armor_1"
+      "bird_1"
      ],
      "rewards": [],
      "say": "我也想捏一个！",
-     "shell": 1076,
+     "shell": 1072,
      "who": 3,
-     "xp": 6,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_10",
+      "seed_1"
+     ],
+     "rewards": [],
+     "say": "有了陶罐，粮食不怕潮了。",
+     "shell": 2096,
+     "who": 0,
+     "xp": 2,
      "token": 17
     }
    ]
@@ -3756,39 +5443,95 @@
    "orders": [
     {
      "items": [
-      "pot_6",
-      "seed_3"
+      "pot_9",
+      "tool_4"
      ],
      "rewards": [],
-     "say": "陶罐能装好多水。",
-     "shell": 336,
-     "who": 1,
-     "xp": 6
+     "say": "我也想捏一个！",
+     "shell": 1056,
+     "who": 3,
+     "xp": 1
     },
     {
      "items": [
-      "pot_8",
-      "bird_3"
+      "tool_9",
+      "pot_2",
+      "roast_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "有了陶罐，粮食不怕潮了。",
-     "shell": 712,
-     "who": 0,
-     "xp": 6
+     "say": "磨得真快，能削木头了。",
+     "shell": 1136,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
-      "tool_8",
-      "veg_7",
-      "pot_5"
+      "pot_8",
+      "roast_3"
      ],
      "rewards": [],
-     "say": "这把石器真顺手！",
-     "shell": 832,
-     "who": 2,
-     "xp": 6,
+     "say": "有了陶罐，粮食不怕潮了。",
+     "shell": 720,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_10",
+      "craft_1"
+     ],
+     "rewards": [],
+     "say": "陶罐能装好多水。",
+     "shell": 2104,
+     "who": 1,
+     "xp": 2
+    },
+    {
+     "items": [
+      "pot_8",
+      "gem_3"
+     ],
+     "rewards": [],
+     "say": "我也想捏一个！",
+     "shell": 720,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_8",
+      "tool_7"
+     ],
+     "rewards": [],
+     "say": "我也想捏一个！",
+     "shell": 768,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_9",
+      "beast_5",
+      "pot_3"
+     ],
+     "rewards": [],
+     "say": "够全部落吃三天。",
+     "shell": 1104,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_9",
+      "pot_8"
+     ],
+     "rewards": [],
+     "say": "热乎的吃了不生病。",
+     "shell": 1536,
+     "who": 1,
+     "xp": 2,
      "token": 18
     }
    ]
@@ -3799,39 +5542,105 @@
     {
      "items": [
       "pot_7",
-      "bird_2"
+      "gem_2"
      ],
      "rewards": [],
      "say": "我也想捏一个！",
-     "shell": 356,
+     "shell": 360,
      "who": 3,
-     "xp": 6
+     "xp": 1
     },
     {
      "items": [
-      "veg_8",
-      "fruit_6",
-      "pot_4"
+      "cloth_8",
+      "pot_6"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "热乎的吃了不生病。",
-     "shell": 672,
-     "who": 1,
-     "xp": 6
+     "say": "老骨头总算暖和了。",
+     "shell": 640,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "pot_5"
+     ],
+     "rewards": [],
+     "say": "这把石器真顺手！",
+     "shell": 576,
+     "who": 2,
+     "xp": 1
     },
     {
      "items": [
       "fruit_8",
-      "pot_3",
-      "armor_3"
+      "beast_7",
+      "pot_4"
      ],
      "rewards": [],
      "say": "甜甜的，还想要！",
-     "shell": 736,
+     "shell": 800,
      "who": 3,
-     "xp": 7,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_10",
+      "pot_4"
+     ],
+     "rewards": [],
+     "say": "这木头纹路真好看。",
+     "shell": 2080,
+     "who": 1,
+     "xp": 2
+    },
+    {
+     "items": [
+      "pot_8",
+      "seed_3"
+     ],
+     "rewards": [],
+     "say": "陶罐能装好多水。",
+     "shell": 712,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_9",
+      "tool_2"
+     ],
+     "rewards": [],
+     "say": "有了陶罐，粮食不怕潮了。",
+     "shell": 1032,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_9",
+      "tool_5",
+      "tool_3"
+     ],
+     "rewards": [],
+     "say": "我也想捏一个！",
+     "shell": 1104,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_9",
+      "pot_7"
+     ],
+     "rewards": [],
+     "say": "冬天不怕冷了。",
+     "shell": 1280,
+     "who": 1,
+     "xp": 2,
      "token": 18
     }
    ]
@@ -3841,39 +5650,108 @@
    "orders": [
     {
      "items": [
-      "furn_8",
-      "beast_4",
-      "cloth_2"
+      "veg_8",
+      "furn_6",
+      "beast_5"
      ],
      "rewards": [],
-     "say": "大屋里终于有凳子坐了。",
-     "shell": 552,
-     "who": 0,
-     "xp": 6
+     "say": "热乎的吃了不生病。",
+     "shell": 704,
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "veg_7",
-      "ware_3"
+      "furn_8",
+      "cloth_7",
+      "veg_7"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "烤得真香！",
-     "shell": 456,
-     "who": 3,
-     "xp": 6
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 1024,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
-      "cloth_9",
+      "furn_9",
+      "cloth_2"
+     ],
+     "rewards": [],
+     "say": "这木头纹路真好看。",
+     "shell": 1032,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_8",
+      "pot_2",
+      "craft_2"
+     ],
+     "rewards": [],
+     "say": "陶罐能装好多水。",
+     "shell": 628,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_10",
+      "roast_1"
+     ],
+     "rewards": [],
+     "say": "烤得真香！",
+     "shell": 2100,
+     "who": 3,
+     "xp": 2
+    },
+    {
+     "items": [
+      "veg_9",
+      "craft_1"
+     ],
+     "rewards": [],
+     "say": "火塘边香喷喷的。",
+     "shell": 1080,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_8",
+      "fruit_7"
+     ],
+     "rewards": [],
+     "say": "阿石叔叔好厉害！",
+     "shell": 768,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_9",
+      "veg_2",
       "furn_2"
      ],
      "rewards": [],
-     "say": "老骨头总算暖和了。",
-     "shell": 1032,
+     "say": "大家今晚有果子吃了。",
+     "shell": 1040,
      "who": 0,
-     "xp": 7,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_10",
+      "craft_3"
+     ],
+     "rewards": [],
+     "say": "新衣服好软！",
+     "shell": 2268,
+     "who": 3,
+     "xp": 2,
      "token": 19
     }
    ]
@@ -3883,39 +5761,107 @@
    "orders": [
     {
      "items": [
-      "cloth_8",
-      "fruit_2",
-      "seed_1"
+      "pot_9",
+      "veg_3",
+      "craft_1"
      ],
      "rewards": [],
-     "say": "冬天不怕冷了。",
-     "shell": 572,
-     "who": 1,
-     "xp": 6
+     "say": "我也想捏一个！",
+     "shell": 1096,
+     "who": 3,
+     "xp": 1
     },
     {
      "items": [
-      "tool_8",
-      "beast_7"
+      "fruit_8",
+      "pot_7"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "好工具才有好猎手。",
+     "say": "这果子晒干能存一冬。",
+     "shell": 768,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_8",
+      "fruit_6",
+      "cloth_6"
+     ],
+     "rewards": [],
+     "say": "老骨头总算暖和了。",
      "shell": 768,
      "who": 0,
-     "xp": 7
+     "xp": 1
     },
     {
      "items": [
       "furn_9",
-      "cloth_3"
+      "gem_1"
      ],
      "rewards": [],
      "say": "这木头纹路真好看。",
-     "shell": 1040,
+     "shell": 1076,
      "who": 1,
-     "xp": 7,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_10",
+      "ware_1"
+     ],
+     "rewards": [],
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 2096,
+     "who": 0,
+     "xp": 2
+    },
+    {
+     "items": [
+      "beast_9",
+      "furn_3"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 1040,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "furn_7"
+     ],
+     "rewards": [],
+     "say": "好工具才有好猎手。",
+     "shell": 768,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_9",
+      "pot_3"
+     ],
+     "rewards": [],
+     "say": "火塘边香喷喷的。",
+     "shell": 1040,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_10",
+      "furn_4",
+      "tool_2"
+     ],
+     "rewards": [],
+     "say": "够全部落吃三天。",
+     "shell": 2088,
+     "who": 0,
+     "xp": 2,
      "token": 19
     }
    ]
@@ -3925,38 +5871,108 @@
    "orders": [
     {
      "items": [
-      "tool_7",
-      "gem_3"
+      "tool_9",
+      "ware_2"
      ],
      "rewards": [],
      "say": "磨得真快，能削木头了。",
-     "shell": 464,
+     "shell": 1124,
      "who": 2,
-     "xp": 6
+     "xp": 1
     },
     {
      "items": [
-      "tool_9",
-      "gem_1"
+      "cloth_9",
+      "fruit_2",
+      "gem_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "这把石器真顺手！",
-     "shell": 1076,
-     "who": 2,
-     "xp": 7
+     "say": "新衣服好软！",
+     "shell": 1136,
+     "who": 3,
+     "xp": 1
     },
     {
      "items": [
-      "veg_9",
-      "cloth_2"
+      "veg_8",
+      "craft_3"
      ],
      "rewards": [],
      "say": "烤得真香！",
-     "shell": 1032,
+     "shell": 732,
      "who": 3,
-     "xp": 7,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_8",
+      "veg_7"
+     ],
+     "rewards": [],
+     "say": "阿石叔叔好厉害！",
+     "shell": 768,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_10",
+      "cloth_2"
+     ],
+     "rewards": [],
+     "say": "果子熟得正好。",
+     "shell": 2056,
+     "who": 1,
+     "xp": 2
+    },
+    {
+     "items": [
+      "fruit_9",
+      "cloth_7",
+      "craft_2"
+     ],
+     "rewards": [],
+     "say": "丰收的季节到了。",
+     "shell": 1388,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_8",
+      "cloth_5",
+      "roast_3"
+     ],
+     "rewards": [],
+     "say": "这木头纹路真好看。",
+     "shell": 784,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_9",
+      "ware_3"
+     ],
+     "rewards": [],
+     "say": "冬天不怕冷了。",
+     "shell": 1224,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_10",
+      "pot_5",
+      "tool_5"
+     ],
+     "rewards": [],
+     "say": "热乎的吃了不生病。",
+     "shell": 2176,
+     "who": 1,
+     "xp": 2,
      "token": 20
     }
    ]
@@ -3966,39 +5982,116 @@
    "orders": [
     {
      "items": [
-      "furn_8",
-      "cloth_4",
-      "roast_1"
+      "furn_9",
+      "gem_1"
      ],
      "rewards": [],
      "say": "大屋里终于有凳子坐了。",
-     "shell": 596,
+     "shell": 1076,
      "who": 0,
-     "xp": 7
+     "xp": 1
     },
     {
      "items": [
-      "beast_8",
-      "fruit_7"
+      "fruit_8",
+      "armor_3"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "阿石叔叔好厉害！",
-     "shell": 768,
+     "say": "我一口气吃了三个！",
+     "shell": 720,
      "who": 3,
-     "xp": 7
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "armor_2"
+     ],
+     "rewards": [],
+     "say": "这把石器真顺手！",
+     "shell": 616,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_9",
+      "craft_1"
+     ],
+     "rewards": [],
+     "say": "陶罐能装好多水。",
+     "shell": 1080,
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
       "beast_9",
-      "armor_1"
+      "gem_3"
      ],
      "rewards": [],
      "say": "够全部落吃三天。",
-     "shell": 1076,
+     "shell": 1232,
      "who": 0,
-     "xp": 7,
+     "xp": 2
+    },
+    {
+     "items": [
+      "veg_9",
+      "tool_2"
+     ],
+     "rewards": [],
+     "say": "火塘边香喷喷的。",
+     "shell": 1032,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_7",
+      "fruit_7",
+      "gem_3"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 720,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_9",
+      "furn_2"
+     ],
+     "rewards": [],
+     "say": "这木头纹路真好看。",
+     "shell": 1032,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "cloth_8",
+      "bird_3"
+     ],
+     "rewards": [],
+     "say": "老骨头总算暖和了。",
+     "shell": 712,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_10",
+      "ware_1"
+     ],
+     "rewards": [],
+     "say": "我也想捏一个！",
+     "shell": 2096,
+     "who": 3,
+     "xp": 2,
      "token": 20
     }
    ]
@@ -4008,39 +6101,119 @@
    "orders": [
     {
      "items": [
-      "tool_8",
-      "veg_5",
-      "beast_4"
+      "pot_8",
+      "tool_7",
+      "cloth_5"
      ],
      "rewards": [],
-     "say": "这把石器真顺手！",
-     "shell": 608,
-     "who": 2,
-     "xp": 7
+     "say": "有了陶罐，粮食不怕潮了。",
+     "shell": 832,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
-      "veg_8",
-      "ware_3"
+      "beast_8",
+      "bird_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "烤得真香！",
-     "shell": 712,
+     "say": "阿石叔叔好厉害！",
+     "shell": 612,
      "who": 3,
-     "xp": 7
+     "xp": 1
     },
     {
      "items": [
       "cloth_9",
-      "gem_1"
+      "cloth_2"
      ],
      "rewards": [],
-     "say": "冬天不怕冷了。",
-     "shell": 1076,
+     "say": "新衣服好软！",
+     "shell": 1032,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_7",
+      "beast_6"
+     ],
+     "rewards": [],
+     "say": "我也想捏一个！",
+     "shell": 384,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_10",
+      "armor_1"
+     ],
+     "rewards": [],
+     "say": "磨得真快，能削木头了。",
+     "shell": 2100,
+     "who": 2,
+     "xp": 2
+    },
+    {
+     "items": [
+      "veg_8",
+      "cloth_7",
+      "beast_5"
+     ],
+     "rewards": [],
+     "say": "烤得真香！",
+     "shell": 832,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_9",
+      "furn_3"
+     ],
+     "rewards": [],
+     "say": "好工具才有好猎手。",
+     "shell": 1040,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_9",
+      "furn_4",
+      "bird_1"
+     ],
+     "rewards": [],
+     "say": "丰收的季节到了。",
+     "shell": 1104,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_8",
+      "roast_3"
+     ],
+     "rewards": [],
+     "say": "这把石器真顺手！",
+     "shell": 720,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_10",
+      "cloth_4",
+      "gem_2"
+     ],
+     "rewards": [],
+     "say": "这木头纹路真好看。",
+     "shell": 2184,
      "who": 1,
-     "xp": 7,
+     "xp": 2,
      "token": 21
     }
    ]
@@ -4050,40 +6223,118 @@
    "orders": [
     {
      "items": [
-      "fruit_7",
-      "beast_7",
-      "armor_2"
+      "cloth_8",
+      "roast_2"
      ],
      "rewards": [],
-     "say": "我一口气吃了三个！",
+     "say": "冬天不怕冷了。",
      "shell": 616,
-     "who": 3,
-     "xp": 7
+     "who": 1,
+     "xp": 1
     },
     {
      "items": [
-      "beast_8",
-      "beast_6"
+      "tool_8",
+      "armor_3"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "够全部落吃三天。",
-     "shell": 640,
+     "say": "好工具才有好猎手。",
+     "shell": 720,
      "who": 0,
-     "xp": 7
+     "xp": 1
     },
     {
      "items": [
-      "tool_9",
-      "pot_2",
+      "fruit_8",
+      "armor_2"
+     ],
+     "rewards": [],
+     "say": "大家今晚有果子吃了。",
+     "shell": 616,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_9",
+      "roast_1"
+     ],
+     "rewards": [],
+     "say": "够全部落吃三天。",
+     "shell": 1076,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_10",
+      "fruit_7",
+      "gem_1"
+     ],
+     "rewards": [],
+     "say": "甜甜的，还想要！",
+     "shell": 2356,
+     "who": 3,
+     "xp": 2
+    },
+    {
+     "items": [
+      "fruit_6",
+      "bird_3"
+     ],
+     "rewards": [],
+     "say": "带上果子，打猎不饿肚子。",
+     "shell": 328,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "pot_9",
+      "cloth_3",
+      "bird_1"
+     ],
+     "rewards": [],
+     "say": "陶罐能装好多水。",
+     "shell": 1088,
+     "who": 1,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_9",
+      "tool_5"
+     ],
+     "rewards": [],
+     "say": "我一口气吃了三个！",
+     "shell": 1088,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "furn_9",
+      "beast_3",
       "beast_2"
      ],
      "rewards": [],
-     "say": "好工具才有好猎手。",
-     "shell": 1040,
+     "say": "大屋里终于有凳子坐了。",
+     "shell": 1048,
      "who": 0,
-     "xp": 8,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_10",
+      "veg_2"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 2056,
+     "who": 2,
+     "xp": 2,
      "token": 21
     }
    ]
@@ -4093,40 +6344,118 @@
    "orders": [
     {
      "items": [
-      "beast_8",
-      "seed_2"
+      "veg_9",
+      "fruit_5"
      ],
      "rewards": [],
-     "say": "阿石叔叔好厉害！",
-     "shell": 616,
+     "say": "烤得真香！",
+     "shell": 1088,
      "who": 3,
-     "xp": 7
+     "xp": 1
     },
     {
      "items": [
-      "cloth_8",
-      "furn_5",
-      "craft_3"
+      "cloth_9",
+      "bird_2"
      ],
      "rewards": [
       "pack_1"
      ],
-     "say": "冬天不怕冷了。",
-     "shell": 796,
-     "who": 1,
-     "xp": 7
+     "say": "老骨头总算暖和了。",
+     "shell": 1124,
+     "who": 0,
+     "xp": 1
     },
     {
      "items": [
-      "fruit_8",
-      "pot_8",
+      "tool_9",
       "craft_1"
      ],
      "rewards": [],
-     "say": "这果子晒干能存一冬。",
+     "say": "这把石器真顺手！",
      "shell": 1080,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_8",
+      "tool_7",
+      "gem_3"
+     ],
+     "rewards": [],
+     "say": "火塘边香喷喷的。",
+     "shell": 976,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_10",
+      "pot_2",
+      "ware_1"
+     ],
+     "rewards": [],
+     "say": "热乎的吃了不生病。",
+     "shell": 2104,
      "who": 1,
-     "xp": 8,
+     "xp": 2
+    },
+    {
+     "items": [
+      "beast_8",
+      "fruit_4"
+     ],
+     "rewards": [],
+     "say": "阿石叔叔好厉害！",
+     "shell": 544,
+     "who": 3,
+     "xp": 1
+    },
+    {
+     "items": [
+      "fruit_9",
+      "ware_3"
+     ],
+     "rewards": [],
+     "say": "丰收的季节到了。",
+     "shell": 1224,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "veg_7",
+      "beast_7",
+      "beast_6"
+     ],
+     "rewards": [],
+     "say": "火塘边香喷喷的。",
+     "shell": 640,
+     "who": 0,
+     "xp": 1
+    },
+    {
+     "items": [
+      "beast_9",
+      "craft_2"
+     ],
+     "rewards": [],
+     "say": "今天收获不错！",
+     "shell": 1132,
+     "who": 2,
+     "xp": 1
+    },
+    {
+     "items": [
+      "tool_10",
+      "gem_2"
+     ],
+     "rewards": [],
+     "say": "磨得真快，能削木头了。",
+     "shell": 2152,
+     "who": 2,
+     "xp": 2,
      "token": 22
     }
    ]
@@ -4136,7 +6465,7 @@
   "2": [
    [
     "fire_2",
-    64
+    11
    ],
    [
     "chest_1",
@@ -4154,7 +6483,7 @@
   "3": [
    [
     "fire_2",
-    66
+    14
    ],
    [
     "chest_1",
@@ -4163,9 +6492,411 @@
    [
     "basket_3",
     1
+   ],
+   [
+    "sand_2",
+    4
    ]
   ],
   "4": [
+   [
+    "fire_2",
+    17
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "basket_3",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    4
+   ]
+  ],
+  "5": [
+   [
+    "fire_2",
+    20
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "basket_3",
+    1
+   ],
+   [
+    "sand_2",
+    4
+   ]
+  ],
+  "6": [
+   [
+    "fire_2",
+    23
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "anvil_4",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    5
+   ]
+  ],
+  "7": [
+   [
+    "fire_2",
+    26
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "anvil_3",
+    1
+   ],
+   [
+    "sand_2",
+    5
+   ]
+  ],
+  "8": [
+   [
+    "fire_2",
+    29
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "loom_4",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    5
+   ]
+  ],
+  "9": [
+   [
+    "fire_2",
+    32
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "loom_3",
+    1
+   ],
+   [
+    "sand_2",
+    6
+   ]
+  ],
+  "10": [
+   [
+    "fire_2",
+    35
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "anvil_3",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    6
+   ]
+  ],
+  "11": [
+   [
+    "fire_2",
+    38
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "basket_3",
+    1
+   ],
+   [
+    "sand_2",
+    6
+   ]
+  ],
+  "12": [
+   [
+    "fire_2",
+    41
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "loom_4",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    7
+   ],
+   [
+    "emberpot_1",
+    1
+   ]
+  ],
+  "13": [
+   [
+    "fire_2",
+    44
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "anvil_4",
+    1
+   ],
+   [
+    "sand_2",
+    7
+   ]
+  ],
+  "14": [
+   [
+    "fire_2",
+    47
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "basket_4",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    7
+   ]
+  ],
+  "15": [
+   [
+    "fire_2",
+    50
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "loom_4",
+    1
+   ],
+   [
+    "sand_2",
+    8
+   ]
+  ],
+  "16": [
+   [
+    "fire_2",
+    53
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "trap_4",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    8
+   ]
+  ],
+  "17": [
+   [
+    "fire_2",
+    56
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "anvil_4",
+    1
+   ],
+   [
+    "sand_2",
+    8
+   ]
+  ],
+  "18": [
+   [
+    "fire_2",
+    59
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "trap_4",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    9
+   ]
+  ],
+  "19": [
+   [
+    "fire_2",
+    62
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "basket_4",
+    1
+   ],
+   [
+    "sand_2",
+    9
+   ]
+  ],
+  "20": [
+   [
+    "fire_2",
+    65
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "loom_4",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    9
+   ]
+  ],
+  "21": [
    [
     "fire_2",
     68
@@ -4175,35 +6906,29 @@
     1
    ],
    [
-    "basket_3",
+    "pack_1",
     1
    ],
    [
-    "amber_3",
-    5
+    "hearth_4",
+    1
+   ],
+   [
+    "sand_2",
+    10
    ]
   ],
-  "5": [
+  "22": [
    [
     "fire_2",
-    70
+    71
    ],
    [
     "chest_1",
     1
    ],
    [
-    "basket_3",
-    1
-   ]
-  ],
-  "6": [
-   [
-    "fire_2",
-    72
-   ],
-   [
-    "chest_1",
+    "pack_1",
     1
    ],
    [
@@ -4213,9 +6938,13 @@
    [
     "amber_3",
     5
+   ],
+   [
+    "sand_2",
+    10
    ]
   ],
-  "7": [
+  "23": [
    [
     "fire_2",
     74
@@ -4225,334 +6954,48 @@
     1
    ],
    [
-    "anvil_3",
-    1
-   ]
-  ],
-  "8": [
-   [
-    "fire_2",
-    76
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "anvil_3",
-    1
-   ],
-   [
-    "amber_3",
-    5
-   ]
-  ],
-  "9": [
-   [
-    "fire_2",
-    78
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "basket_3",
-    1
-   ]
-  ],
-  "10": [
-   [
-    "fire_2",
-    80
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "anvil_3",
-    1
-   ],
-   [
-    "amber_3",
-    5
-   ]
-  ],
-  "11": [
-   [
-    "fire_2",
-    82
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "loom_4",
-    1
-   ]
-  ],
-  "12": [
-   [
-    "fire_2",
-    84
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "loom_4",
-    1
-   ],
-   [
-    "amber_3",
-    5
-   ]
-  ],
-  "13": [
-   [
-    "fire_2",
-    86
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "basket_4",
-    1
-   ]
-  ],
-  "14": [
-   [
-    "fire_2",
-    88
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "anvil_4",
-    1
-   ],
-   [
-    "amber_3",
-    5
-   ]
-  ],
-  "15": [
-   [
-    "fire_2",
-    90
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "basket_4",
-    1
-   ]
-  ],
-  "16": [
-   [
-    "fire_2",
-    92
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "trap_4",
-    1
-   ],
-   [
-    "amber_3",
-    5
-   ]
-  ],
-  "17": [
-   [
-    "fire_2",
-    94
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "loom_4",
-    1
-   ]
-  ],
-  "18": [
-   [
-    "fire_2",
-    96
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "trap_4",
-    1
-   ],
-   [
-    "amber_3",
-    5
-   ]
-  ],
-  "19": [
-   [
-    "fire_2",
-    98
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "anvil_4",
-    1
-   ]
-  ],
-  "20": [
-   [
-    "fire_2",
-    100
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "loom_4",
-    1
-   ],
-   [
-    "amber_3",
-    5
-   ]
-  ],
-  "21": [
-   [
-    "fire_2",
-    102
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
     "pack_1",
     1
    ],
    [
     "hearth_4",
     1
-   ]
-  ],
-  "22": [
-   [
-    "fire_2",
-    104
    ],
    [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "trap_4",
-    1
-   ],
-   [
-    "amber_3",
-    5
-   ]
-  ],
-  "23": [
-   [
-    "fire_2",
-    106
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "hearth_4",
-    1
+    "sand_2",
+    10
    ]
   ],
   "24": [
    [
     "fire_2",
-    108
+    77
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "trap_5",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    11
+   ]
+  ],
+  "25": [
+   [
+    "fire_2",
+    80
    ],
    [
     "chest_1",
@@ -4567,32 +7010,14 @@
     1
    ],
    [
-    "amber_3",
-    5
-   ]
-  ],
-  "25": [
-   [
-    "fire_2",
-    110
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "anvil_5",
-    1
+    "sand_2",
+    11
    ]
   ],
   "26": [
    [
     "fire_2",
-    112
+    83
    ],
    [
     "chest_1",
@@ -4609,12 +7034,16 @@
    [
     "amber_3",
     5
+   ],
+   [
+    "sand_2",
+    11
    ]
   ],
   "27": [
    [
     "fire_2",
-    114
+    86
    ],
    [
     "chest_1",
@@ -4627,12 +7056,16 @@
    [
     "loom_5",
     1
+   ],
+   [
+    "sand_2",
+    12
    ]
   ],
   "28": [
    [
     "fire_2",
-    116
+    89
    ],
    [
     "chest_1",
@@ -4649,12 +7082,16 @@
    [
     "amber_3",
     5
+   ],
+   [
+    "sand_2",
+    12
    ]
   ],
   "29": [
    [
     "fire_2",
-    118
+    92
    ],
    [
     "chest_1",
@@ -4667,12 +7104,64 @@
    [
     "hearth_5",
     1
+   ],
+   [
+    "sand_2",
+    12
    ]
   ],
   "30": [
    [
     "fire_2",
-    120
+    95
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "anvil_5",
+    1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    13
+   ]
+  ],
+  "31": [
+   [
+    "fire_2",
+    98
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "kiln_4",
+    1
+   ],
+   [
+    "sand_2",
+    13
+   ]
+  ],
+  "32": [
+   [
+    "fire_2",
+    101
    ],
    [
     "chest_1",
@@ -4689,30 +7178,16 @@
    [
     "amber_3",
     5
+   ],
+   [
+    "sand_2",
+    13
    ]
   ],
-  "31": [
+  "33": [
    [
     "fire_2",
-    122
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "kiln_4",
-    1
-   ]
-  ],
-  "32": [
-   [
-    "fire_2",
-    124
+    104
    ],
    [
     "chest_1",
@@ -4727,14 +7202,14 @@
     1
    ],
    [
-    "amber_3",
-    5
+    "sand_2",
+    14
    ]
   ],
-  "33": [
+  "34": [
    [
     "fire_2",
-    126
+    107
    ],
    [
     "chest_1",
@@ -4747,12 +7222,42 @@
    [
     "basket_5",
     1
+   ],
+   [
+    "amber_3",
+    5
+   ],
+   [
+    "sand_2",
+    14
    ]
   ],
-  "34": [
+  "35": [
    [
     "fire_2",
-    128
+    110
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "loom_5",
+    1
+   ],
+   [
+    "sand_2",
+    14
+   ]
+  ],
+  "36": [
+   [
+    "fire_2",
+    113
    ],
    [
     "chest_1",
@@ -4769,52 +7274,16 @@
    [
     "amber_3",
     5
-   ]
-  ],
-  "35": [
-   [
-    "fire_2",
-    130
    ],
    [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "loom_5",
-    1
-   ]
-  ],
-  "36": [
-   [
-    "fire_2",
-    132
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "trap_5",
-    1
-   ],
-   [
-    "amber_3",
-    5
+    "sand_2",
+    15
    ]
   ],
   "37": [
    [
     "fire_2",
-    134
+    116
    ],
    [
     "chest_1",
@@ -4827,12 +7296,16 @@
    [
     "hearth_5",
     1
+   ],
+   [
+    "sand_2",
+    15
    ]
   ],
   "38": [
    [
     "fire_2",
-    136
+    119
    ],
    [
     "chest_1",
@@ -4849,12 +7322,38 @@
    [
     "amber_3",
     5
+   ],
+   [
+    "sand_2",
+    15
    ]
   ],
   "39": [
    [
     "fire_2",
-    138
+    122
+   ],
+   [
+    "chest_1",
+    1
+   ],
+   [
+    "pack_1",
+    1
+   ],
+   [
+    "trap_5",
+    1
+   ],
+   [
+    "sand_2",
+    16
+   ]
+  ],
+  "40": [
+   [
+    "fire_2",
+    125
    ],
    [
     "chest_1",
@@ -4867,33 +7366,19 @@
    [
     "basket_5",
     1
-   ]
-  ],
-  "40": [
-   [
-    "fire_2",
-    140
-   ],
-   [
-    "chest_1",
-    1
-   ],
-   [
-    "pack_1",
-    1
-   ],
-   [
-    "anvil_5",
-    1
    ],
    [
     "amber_3",
     5
+   ],
+   [
+    "sand_2",
+    16
    ]
   ]
  },
  "sub_percent": {
-  "seed": 7.75,
+  "seed": 8.0,
   "gem": 7.75,
   "armor": 7.75,
   "bird": 8.0,

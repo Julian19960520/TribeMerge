@@ -322,6 +322,30 @@ func cancel_slides(i: int) -> void:
 			moves.erase(m)
 			_unhide(i)
 
+## 玩家手快，格子上的动画还没播完就要拿或放：直接把裂石、滑入、飞入收尾，逻辑状态早已就绪。
+## 返回这格现在能不能当作静止的格子来操作。
+func _settle(i: int) -> bool:
+	if i < 0:
+		return false
+	var kept: Array = []
+	for c in crumbles:
+		if int(c["i"]) == i:
+			_pay_crumble(c)
+		else:
+			kept.append(c)
+	crumbles = kept
+	for m in moves.duplicate():
+		if m["to"] == i:
+			moves.erase(m)
+			_move_done(m)
+	for f in flights.duplicate():
+		if f["to"] == i:
+			flights.erase(f)
+			_unhide(i)
+			pop(i)
+	queue_redraw()
+	return not hid.has(i)
+
 func _unhide(i: int) -> void:
 	var n := int(hid.get(i, 0)) - 1
 	if n <= 0:
@@ -374,7 +398,7 @@ func _gui_input(e: InputEvent) -> void:
 		if not dragging and e.position.distance_to(press_pos) > 10.0:
 			var c: Dictionary = G.board[press_cell]
 			var held: bool = str(c["id"]) != "" or G.cooking(press_cell)
-			if held and c["lock"] == 0 and not hid.has(press_cell) and _crumble_for(press_cell).is_empty():
+			if held and c["lock"] == 0 and _settle(press_cell):
 				dragging = true
 				drag_from = press_cell
 				drag_vis = e.position
@@ -387,11 +411,8 @@ func _gui_input(e: InputEvent) -> void:
 			queue_redraw()
 
 func _tap(i: int) -> void:
+	_settle(i)
 	var c: Dictionary = G.board[i]
-	if not _crumble_for(i).is_empty():
-		shake(i)
-		Sfx.play("deny")
-		return
 	if G.cooking(i):
 		if selected == i:
 			if G.main:
@@ -429,11 +450,8 @@ func _drop(p: Vector2) -> void:
 		slide(id_from, vis, from, "", "pop", MOVE_DUR, cook_from)
 		dropped_outside.emit(from, get_global_transform() * p)
 		return
-	if not _crumble_for(to).is_empty():
-		slide(id_from, vis, from, "", "pop", MOVE_DUR, cook_from)
-		Sfx.play("deny")
-		shake(to)
-		return
+	if to != from:
+		_settle(to)
 	if not _guide_allows_drop(from, to):
 		slide(id_from, vis, from, "", "pop", MOVE_DUR, cook_from)
 		if to != from:
@@ -508,6 +526,7 @@ func _invalidate_base() -> void:
 		layer.queue_redraw()
 
 func _draw() -> void:
+	_egen_pills.clear()
 	for i in G.board.size():
 		if i == drag_from and dragging:
 			continue
@@ -531,6 +550,9 @@ func _draw() -> void:
 		var pulse := 1.0 + 0.04 * sin(_t * 6.0)
 		var sz := Vector2(CELL, CELL) * pulse
 		Paint.cell_bracket(self, Rect2(sel_c - sz * 0.5, sz).grow(-4))
+	for p in _egen_pills:
+		var pd: Array = p
+		_draw_egen_pill(pd[0], pd[1], pd[2], pd[3])
 	for f in flights:
 		if float(f.get("delay", 0.0)) > 0.0:
 			continue
@@ -559,7 +581,7 @@ func _draw() -> void:
 		draw_rect(r0.grow(-6), Color(0.3, 0.2, 0.1, 0.12))
 		var hov := cell_at(drag_pos)
 		if hov >= 0 and hov != drag_from and not G.cooking(drag_from):
-			var ok: bool = G.board[hov]["id"] == G.board[drag_from]["id"] and Data.next_id(G.board[drag_from]["id"]) != "" and G.board[hov]["lock"] != 2 and _crumble_for(hov).is_empty()
+			var ok: bool = G.board[hov]["id"] == G.board[drag_from]["id"] and Data.next_id(G.board[drag_from]["id"]) != "" and G.board[hov]["lock"] != 2
 			if ok:
 				draw_colored_polygon(Art.rrect(cell_rect(hov).grow(-3), 16, hov, 0.0), Color(1, 0.85, 0.2, 0.45))
 		if not hide_drag:
@@ -619,22 +641,38 @@ func _draw_cell(i: int) -> void:
 		breath = _breath_scale()
 		nudge = _breath_nudge(i)
 		sc *= breath
+	if c["lock"] == 1:
+		if breath != 1.0 or nudge != Vector2.ZERO:
+			draw_set_transform(ctr * (1.0 - breath) + nudge, 0.0, Vector2(breath, breath))
+		_draw_vine(r, i, true) # 后面那根：先画，被物品挡住中段
+		if breath != 1.0 or nudge != Vector2.ZERO:
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	Art.item(self, c["id"], ctr + nudge, ITEM * sc)
 	if c["lock"] == 1:
 		if breath != 1.0 or nudge != Vector2.ZERO:
 			draw_set_transform(ctr * (1.0 - breath) + nudge, 0.0, Vector2(breath, breath))
-		_draw_vine(r, i)
+		_draw_vine(r, i, false)
 		if breath != 1.0 or nudge != Vector2.ZERO:
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	elif reveal > 0.65 and _is_max_currency(str(c["id"])):
 		_draw_max_badge(r)
 	elif prod and reveal > 0.65:
 		var wait := G.gen_wait(i)
-		if wait > 0:
+		var free := Data.type_of(str(c["id"])) == "egen"
+		if wait > 0 and free:
+			_egen_pills.append([r, i, G.fmt_time(wait), Color("4b3a2e")])
+		elif wait > 0:
 			_draw_rest(r.position + Vector2(78, 78), 1.0 - float(wait) / (float(Data.gen_stats(c["id"])["refill"]) * 60.0))
-		elif G.energy > 0:
-			var bolt := Art.flame_pts(r.position + Vector2(80, 78), 7, 18, i)
-			Art.fill(self, bolt, Art.FIRE2, 2.0)
+		elif free:
+			_egen_pills.append([r, i, "×%d" % G.gen_left(i), Art.CLAY])
+		else:
+			# 开了冷却的产线：底部显示剩余可点次数
+			if G.gen_left(i) >= 0:
+				_egen_pills.append([r, i, "×%d" % G.gen_left(i), Art.CLAY])
+			if G.energy >= G.gen_cost():
+				# 双倍火种模式：右下角换成紫火
+				var bolt := Art.flame_pts(r.position + Vector2(80, 78), 7, 18, i)
+				Art.fill(self, bolt, Art.FIRE_BOOST if G.boost_on() else Art.FIRE2, 2.0)
 
 ## 贝币、琥珀、沙漏、火种合到最高级后不能再合，右下角显示皇冠标志
 const MAX_BADGE_CHAINS := ["shell", "amber", "sand", "fire"]
@@ -653,6 +691,8 @@ func _draw_max_badge(r: Rect2) -> void:
 
 static func _sec_text(sec: int) -> String:
 	sec = maxi(sec, 0)
+	if sec >= 3600:
+		return "%d时%02d分" % [sec / 3600, sec % 3600 / 60]
 	if sec >= 60:
 		return "%d分%02d秒" % [sec / 60, sec % 60]
 	return "%d秒" % sec
@@ -694,6 +734,21 @@ func _draw_cook(i: int, r: Rect2, ck: Dictionary) -> void:
 	Paint.bar(self, Rect2(r.position.x + 10, r.end.y - 16, r.size.x - 20, 11), frac, Art.MOSS, seed + 9)
 
 ## 生产器休息中：右下角的小表盘，亮弧是恢复进度
+## 体力生产器底部的小牌：休息时是倒计时，能点时是剩余次数（样式同合成泡泡的倒计时牌）。
+## _draw_cell 只登记，等选中框画完再统一画，免得被框挡住。
+var _egen_pills: Array = []
+
+func _draw_egen_pill(r: Rect2, i: int, label: String, col: Color) -> void:
+	var fs := 20
+	var f: Font = G.font_title
+	var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var pill := Rect2(r.get_center().x - tw * 0.5 - 8, r.end.y - 18, tw + 16, 26)
+	var shape := Art.rrect(pill, 11, i + 700, 0.3)
+	Art.dilate(self, shape, 2.0, Art.INK)
+	draw_colored_polygon(shape, col)
+	var base := pill.position.y + 13.0 + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
+	draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+
 func _draw_rest(c: Vector2, t: float) -> void:
 	draw_circle(c, 13.0, Art.INK)
 	draw_circle(c, 10.5, Color("4b3a2e"))
@@ -756,16 +811,135 @@ func _draw_fragment(k: int, pos: Vector2, rotation_value: float, scale_value: fl
 	draw_texture_rect_region(ROCK_BITS, Rect2(-32, -32, 64, 64), Rect2(k * 64, 0, 64, 64), Color(1, 1, 1, alpha))
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 
-func _draw_vine(r: Rect2, i: int) -> void:
-	draw_rect(r.grow(-3), Color(0.25, 0.4, 0.1, 0.28))
+## 藤蔓：两根弯曲的藤茎（墨线 + 深浅两层绿 + 高光）从格子上缘和下部绕过物品，
+## 沿茎交替长出带叶脉的双色叶子，末端卷须打圈；部分格子开一朵小白花。
+## 走上 / 下三分之一，物品中间留出来，看得清是什么。i 决定镜像和抖动，格格不同。
+const VINE_STEM := Color("5b7a32")
+const VINE_STEM_HI := Color("a8b878")
+const VINE_LEAF := Color("8fae55")
+const VINE_LEAF_D := Color("62813a")
+
+func _draw_vine(r: Rect2, i: int, back: bool) -> void:
 	var p := r.position
-	Art.pl(self, [p + Vector2(4, 30), p + Vector2(30, 46), p + Vector2(56, 34), p + Vector2(92, 52)], 7.0, Art.INK, i)
-	Art.pl(self, [p + Vector2(4, 30), p + Vector2(30, 46), p + Vector2(56, 34), p + Vector2(92, 52)], 4.0, Art.LEAF_D, i)
-	Art.pl(self, [p + Vector2(10, 92), p + Vector2(34, 66), p + Vector2(64, 76), p + Vector2(88, 6)], 7.0, Art.INK, i + 3)
-	Art.pl(self, [p + Vector2(10, 92), p + Vector2(34, 66), p + Vector2(64, 76), p + Vector2(88, 6)], 4.0, Art.LEAF_D, i + 3)
-	for lp in [Vector2(30, 46), Vector2(64, 76), Vector2(80, 30)]:
-		var v := Art.ell(p + lp, Vector2(9, 5), i + int(lp.x), 0.05, 10, 0.6)
-		Art.fill(self, v, Art.LEAF, 2.0)
+	var s := r.size.x / 96.0
+	var flip := i % 2 == 1
+	var j := func(k: int, amp: float) -> float: return Art.srnd(i * 13 + k) * amp
+	var pt := func(x: float, y: float, k: int) -> Vector2:
+		# 带沸腾线：控制点跟着全局 boil 帧轻轻抖
+		return p + Vector2((96.0 - x) if flip else x, y) * s + Art.jv(i * 97 + k * 29, 1.2 * s)
+	# 两根藤，一上一下：断口那头藏在物品后面，从物品侧边绕出来，
+	# 在前面弯一道，末端是尖尖的藤梢 + 卷须
+	var up_side: Vector2 = pt.call(12, 36 + j.call(1, 3), 1)
+	var lo_side: Vector2 = pt.call(84, 64 + j.call(2, 3), 2)
+	if back:
+		# 背后那段：从物品中间（看不见）拉到侧边，和前面那段接上
+		_vine_stroke(_bez(pt.call(46, 30, 3), pt.call(30, 24, 4), pt.call(16, 28, 5), up_side, 10), 5.5 * s, false, false)
+		_vine_stroke(_bez(pt.call(50, 70, 6), pt.call(66, 76, 7), pt.call(80, 72, 8), lo_side, 10), 5.5 * s, false, false)
+		return
+	# 物品整体压淡一点
+	draw_colored_polygon(Art.rrect(r.grow(-5), 14, i, 0.0), Color(0.93, 0.89, 0.8, 0.22))
+	var up := _bez(up_side, pt.call(30, 56 + j.call(3, 4), 9), pt.call(58, 24 + j.call(4, 4), 10), pt.call(82, 34 + j.call(5, 3), 11), 22)
+	var lo := _bez(lo_side, pt.call(66, 86 + j.call(6, 3), 12), pt.call(38, 58 + j.call(7, 4), 13), pt.call(16, 70 + j.call(8, 3), 14), 22)
+	_vine_stroke(up, 6.0 * s, false, true)
+	_vine_stroke(lo, 6.0 * s, false, true)
+	# 藤梢卷须
+	for c in [up, lo]:
+		var cv: PackedVector2Array = c
+		var d: Vector2 = (cv[cv.size() - 1] - cv[cv.size() - 3]).normalized()
+		_curl(cv[cv.size() - 1], d.orthogonal() * (-1.0 if c == up else 1.0) * (-1.0 if flip else 1.0), 6.0 * s, i + (0 if c == up else 1))
+	# 叶子：每根两片，左右错开
+	var n := 0
+	for c in [up, lo]:
+		var cv: PackedVector2Array = c
+		for k in [7, 15]:
+			var tan: Vector2 = (cv[k + 1] - cv[k - 1]).normalized()
+			var side := -1.0 if n % 2 == 0 else 1.0
+			var ang: float = tan.angle() + side * (1.0 + j.call(20 + n, 0.25)) + Art.jit(i * 7 + n) * 0.06
+			_leaf(cv[k], ang, (16.0 + j.call(40 + n, 2.0)) * s, i * 31 + n)
+			n += 1
+
+## 藤条：两头收尖的一条，墨边 + 灰绿芯
+func _vine_stroke(c: PackedVector2Array, w: float, taper_a := true, taper_b := true) -> void:
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for k in c.size():
+		var u := float(k) / float(c.size() - 1)
+		var dir := (c[mini(k + 1, c.size() - 1)] - c[maxi(k - 1, 0)]).normalized()
+		var half := w * 0.5
+		if taper_a and u < 0.5: half *= clampf(u * 3.2, 0.25, 1.0)
+		if taper_b and u > 0.5: half *= clampf((1.0 - u) * 3.2, 0.12, 1.0)
+		left.append(c[k] + dir.orthogonal() * half)
+		right.append(c[k] - dir.orthogonal() * half)
+	right.reverse()
+	var shape := PackedVector2Array(left)
+	shape.append_array(right)
+	Art.dilate(self, shape, 2.2, Art.INK)
+	draw_colored_polygon(shape, VINE_STEM)
+	# 高光：偏上一道浅线
+	var hi := PackedVector2Array()
+	for k in range(3, c.size() - 3): hi.append(c[k] + Vector2(0, -w * 0.18))
+	draw_polyline(hi, Color(VINE_STEM_HI, 0.6), maxf(1.0, w * 0.18), true)
+
+func _bez(a: Vector2, b: Vector2, c: Vector2, d: Vector2, n: int) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for k in n + 1:
+		var t := float(k) / float(n)
+		var u := 1.0 - t
+		out.append(a * u * u * u + b * 3.0 * u * u * t + c * 3.0 * u * t * t + d * t * t * t)
+	return out
+
+## 一片叶子：base 处连茎，朝 ang 方向长 len；上半浅绿、下半深绿，中间一道叶脉 + 两根侧脉。
+func _leaf(base: Vector2, ang: float, len: float, seed: int) -> void:
+	var w := len * 0.42
+	var dir := Vector2.from_angle(ang)
+	var nrm := dir.orthogonal()
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for k in 9:
+		var u := float(k) / 8.0
+		var half := w * pow(sin(u * PI), 0.85) * (1.0 - 0.25 * u)
+		var along := base + dir * (u * len)
+		left.append(along + nrm * half)
+		right.append(along - nrm * half)
+	var outline := PackedVector2Array(left)
+	for k in range(right.size() - 1, -1, -1): outline.append(right[k])
+	Art.dilate(self, outline, 2.2, Art.INK)
+	draw_colored_polygon(outline, VINE_LEAF)
+	var dark := PackedVector2Array()
+	for k in right.size(): dark.append(right[k])
+	for k in range(right.size() - 1, -1, -1): dark.append(base + dir * (float(k) / 8.0 * len))
+	draw_colored_polygon(dark, VINE_LEAF_D)
+	# 叶脉
+	draw_line(base + dir * len * 0.08, base + dir * len * 0.86, Color(Art.INK, 0.55), 1.4, true)
+	for k in [0.35, 0.6]:
+		var m: Vector2 = base + dir * len * k
+		draw_line(m, m + (dir + nrm * 0.9).normalized() * w * 0.6, Color(Art.INK, 0.4), 1.1, true)
+		draw_line(m, m + (dir - nrm * 0.9).normalized() * w * 0.6, Color(Art.INK, 0.4), 1.1, true)
+	# 一点高光
+	draw_line(left[2] - nrm * 1.5, left[5] - nrm * 1.5, Color(1, 1, 0.8, 0.45), 1.4, true)
+
+## 卷须：从 at 出发向 dir 方向打一圈半螺旋
+func _curl(at: Vector2, dir: Vector2, r: float, seed: int) -> void:
+	var pts := PackedVector2Array()
+	var a0 := dir.angle() + PI
+	var spin := 1.0 if seed % 2 == 0 else -1.0
+	var c := at + dir * r
+	for k in 16:
+		var t := float(k) / 15.0
+		var a := a0 + spin * t * TAU * 1.25
+		pts.append(c + Vector2.from_angle(a) * r * (1.0 - t * 0.75))
+	draw_polyline(pts, Art.INK, 5.0, true)
+	draw_polyline(pts, VINE_STEM, 2.6, true)
+
+func _flower(c: Vector2, r: float, seed: int) -> void:
+	for k in 5:
+		var q := c + Vector2.from_angle(TAU * k / 5.0 + seed * 0.7) * r * 0.85
+		draw_circle(q, r * 0.62, Art.INK)
+	for k in 5:
+		var q := c + Vector2.from_angle(TAU * k / 5.0 + seed * 0.7) * r * 0.85
+		draw_circle(q, r * 0.48, Color("fff4ea"))
+	draw_circle(c, r * 0.45, Art.INK)
+	draw_circle(c, r * 0.33, Art.FIRE2)
 
 func _draw_burst(b: Dictionary) -> void:
 	var t: float = b["t"] / 0.6

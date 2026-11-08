@@ -1,9 +1,9 @@
 {
   "seed": 20261107,
   "runs": 1,
-  "cycle_days": 14,
+  "cycle_days": 45,
   "max_actions": 150000,
-  "action_seconds": 2,
+  "action_seconds": 3,
   "start_utc": "2026-11-02T00:00:00",
   "story_first": true,
   "play_events": true,
@@ -13,5 +13,12 @@
   "wait_energy_batch": 10,
   "delete_max_level": 10,
   "stop_level": 40,
-  "main_story_max_level": 0
+  "main_story_max_level": 0,
+  "schedule": {
+    "quit_idle_minutes": 5,
+    "days": [
+      [["08:00", 60], ["12:30", 40], ["19:30", 120]],
+      [["08:00", 20], ["12:30", 30], ["19:00", 30], ["21:30", 45]]
+    ]
+  }
 }

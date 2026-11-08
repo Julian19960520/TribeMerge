@@ -30,6 +30,8 @@ const MEAT := Color("e8766a")
 const ROAST := Color("c0682b")
 const FIRE := Color("ff7b22")
 const FIRE2 := Color("ffd23f")
+## 双倍火种模式下生产器右下角的紫火
+const FIRE_BOOST := Color("b45cff")
 const SHELL := Color("f8d9bc")
 const SHELL_D := Color("e7a98a")
 const AMBER := Color("f39a1f")
@@ -248,6 +250,11 @@ static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool 
 		ci.draw_set_transform(c, rot, Vector2.ONE * (size / 100.0))
 		var sand_s: int = absi(id.hash()) % 97
 		_sand(ci, Data.lv(id), sand_s, rim)
+		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		return
+	if Data.chain(id) == "emberpot":
+		ci.draw_set_transform(c, rot, Vector2.ONE * (size / 100.0))
+		_emberpot(ci, 41, rim)
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		return
 	if not force_live:
@@ -554,6 +561,35 @@ static func _amber_bug(ci: CanvasItem, c: Vector2, sz: float, a: float, s: int) 
 const SAND_GLASS := Color("e3f3f1")
 const SAND_FILL := Color("f2c35a")
 
+## 火种罐（体力生产器）：鼓肚陶罐，腰上一圈草绳，罐口冒火苗、飞火星。现场绘制，跟着 boil 抖动。
+static func _emberpot(ci: CanvasItem, s: int, rim: bool) -> void:
+	ci.draw_colored_polygon(ell(Vector2(0, 44), Vector2(32, 6), 1, 0.0, 14, 0.0, 0.0), Color(0.2, 0.1, 0.0, 0.18))
+	var body := poly([Vector2(-20, -16), Vector2(-34, 0), Vector2(-36, 18), Vector2(-26, 38), Vector2(26, 38),
+		Vector2(36, 18), Vector2(34, 0), Vector2(20, -16)], s, 0.8)
+	var neck := rrect(Rect2(-22, -24, 44, 12), 5, s + 1, 0.5)
+	var flame := flame_pts(Vector2(0, -36), 22, 56, s + 2)
+	var side_l := flame_pts(Vector2(-13, -30), 9, 26, s + 3)
+	var side_r := flame_pts(Vector2(14, -31), 9, 28, s + 4)
+	sil(ci, [P(side_l, FIRE, 1), P(side_r, FIRE, 1), P(flame, FIRE, 1), P(body, CLAY, 1), P(neck, OCHRE, 0)], rim)
+	ci.draw_colored_polygon(flame_pts(Vector2(0, -30), 12, 32, s + 5), FIRE2)
+	ci.draw_colored_polygon(flame_pts(Vector2(0, -26), 5, 14, s + 6), Color(1, 1, 0.85))
+	# 罐口里的炭火
+	for k in 3:
+		ci.draw_circle(Vector2(-11 + 11 * k, -19) + jv(s + 20 + k, 0.6), 3.2, FIRE2)
+	# 腰上一圈草绳 + 绳结
+	var rope := capsule(Vector2(-35, 10), Vector2(35, 10), 4.0, s + 7)
+	sil(ci, [P(rope, ROPE, 1)], false, 2.0)
+	for k in 6:
+		var x := -28.0 + 11.2 * k
+		ln(ci, Vector2(x, 7), Vector2(x + 4, 13), 1.6, INK, s + 30 + k)
+	# 罐身上赭石画的火纹
+	pl(ci, [Vector2(-14, 30), Vector2(-9, 21), Vector2(-4, 28), Vector2(1, 19), Vector2(6, 28), Vector2(11, 21), Vector2(16, 30)], 2.4, OCHRE.darkened(0.15), s + 9)
+	pl(ci, [Vector2(-24, -4), Vector2(-27, 6)], 2.4, Color(1, 1, 1, 0.55), s + 10)
+	# 飞火星
+	for k in 4:
+		var p := Vector2(-30 + 20 * k, -58 + 10 * (k % 2)) + jv(s + 40 + k, 1.5)
+		ci.draw_colored_polygon(star_pts(p, 5.5, 2.2, 4, s + 50 + k), FIRE2)
+
 static func _sand(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 	lv = clampi(lv, 1, 6)
 	var h: float = [0, 30.0, 34.0, 38.0, 40.0, 42.0, 44.0][lv]
@@ -715,6 +751,48 @@ static func _paint_dish(ci: CanvasItem, id: String, c: Vector2, size: float, rim
 			_dish_grill(ci, s, rim)
 		"feast":
 			_dish_feast(ci, s, rim)
+		"nutmix":
+			_dish_nutmix(ci, s, rim)
+		"cutfruit":
+			_dish_cutfruit(ci, s, rim)
+		"flintkit":
+			_dish_flintkit(ci, s, rim)
+		"fruitbasket":
+			_dish_fruitbasket(ci, s, rim)
+		"ochrebeads":
+			_dish_ochrebeads(ci, s, rim)
+		"trailpack":
+			_dish_trailpack(ci, s, rim)
+		"toolbelt":
+			_dish_toolbelt(ci, s, rim)
+		"bracer":
+			_dish_bracer(ci, s, rim)
+		"talisman":
+			_dish_talisman(ci, s, rim)
+		"warpaint":
+			_dish_warpaint(ci, s, rim)
+		"hunterkit":
+			_dish_hunterkit(ci, s, rim)
+		"furwrap":
+			_dish_furwrap(ci, s, rim)
+		"featherhat":
+			_dish_featherhat(ci, s, rim)
+		"skewer":
+			_dish_skewer(ci, s, rim)
+		"fruitboard":
+			_dish_fruitboard(ci, s, rim)
+		"mask":
+			_dish_mask(ci, s, rim)
+		"chiefseat":
+			_dish_chiefseat(ci, s, rim)
+		"potstew":
+			_dish_potstew(ci, s, rim)
+		"drumset":
+			_dish_drumset(ci, s, rim)
+		"grandfeast":
+			_dish_grandfeast(ci, s, rim)
+		"chiefgift":
+			_dish_chiefgift(ci, s, rim)
 		_:
 			_dish_salad(ci, s, rim)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -779,3 +857,304 @@ static func _dish_feast(ci: CanvasItem, s: int, rim: bool) -> void:
 	sil(ci, [P(ell(Vector2(-4, 14), Vector2(8, 5), s + 7, 0.06, 12), Color("8d4a32"), 1),
 		P(capsule(Vector2(-4, 8), Vector2(-4, 16), 2.4, s + 8), BONE, 1)], rim)
 	sil(ci, _berry(Vector2(6, -16), 7, BERRY, s + 9), rim)
+## 坚果干粮：扎口皮袋，口里冒出坚果
+static func _dish_nutmix(ci: CanvasItem, s: int, rim: bool) -> void:
+	var sack := poly([Vector2(-26, -4), Vector2(-14, -16), Vector2(14, -16), Vector2(26, -4), Vector2(30, 22), Vector2(0, 32), Vector2(-30, 22)], s, 0.8)
+	var parts: Array = [P(sack, LEATHER, 1)]
+	for k in 3:
+		var at := Vector2(-11 + float(k) * 11, -22 + float(k % 2) * 4)
+		parts.append(P(ell(at + Vector2(0, 3), Vector2(7, 8), s + 3 + k, 0.05, 12), SEED, 1))
+		parts.append(P(ell(at + Vector2(0, -4), Vector2(7.5, 4), s + 6 + k, 0.05, 10), WOOD_D, 1))
+	parts.append(P(ell(Vector2(28, 26), Vector2(7, 8), s + 9, 0.05, 12), SEED, 1))
+	parts.append(P(ell(Vector2(28, 19), Vector2(7.5, 4), s + 10, 0.05, 10), WOOD_D, 1))
+	sil(ci, parts, rim)
+	pl(ci, [Vector2(-20, -8), Vector2(20, -8)], 3.0, ROPE, s + 2)
+	for k in 4:
+		ci.draw_circle(Vector2(-14 + float(k) * 9, 12 + float(k % 2) * 6), 2.0, LEATHER_D)
+## 石刀果盘：石板上切开的果子，旁边一把石刀
+static func _dish_cutfruit(ci: CanvasItem, s: int, rim: bool) -> void:
+	var parts: Array = [P(ell(Vector2(-4, 14), Vector2(38, 18), s, 0.08, 16), STONE, 1)]
+	var cols: Array = [BERRY, Color("f2c94c"), Color("7a4db8")]
+	for k in 3:
+		var c := Vector2(-22 + float(k) * 16, 8 - float(k % 2) * 8)
+		var col: Color = cols[k]
+		parts.append(P(ell(c, Vector2(10, 9), s + 1 + k, 0.04, 14), col, 1))
+		parts.append(P(ell(c + Vector2(0, -1), Vector2(7, 6), s + 4 + k, 0.03, 12), Color("ffe9c0"), 2))
+	parts.append(P(poly([Vector2(14, 20), Vector2(40, 2), Vector2(44, 9), Vector2(20, 27)], s + 8, 0.6), STONE_D.lightened(0.25), 1))
+	parts.append(P(capsule(Vector2(4, 28), Vector2(15, 23), 4.0, s + 9), WOOD, 1))
+	sil(ci, parts, rim)
+	for k in 3:
+		ci.draw_circle(Vector2(-22 + float(k) * 16, 7 - float(k % 2) * 8), 1.8, INK)
+## 燧石火镰：黑燧石 + 打火石，迸出火星
+static func _dish_flintkit(ci: CanvasItem, s: int, rim: bool) -> void:
+	var flint := poly([Vector2(-34, 10), Vector2(-24, -14), Vector2(-4, -18), Vector2(4, 4), Vector2(-10, 24), Vector2(-30, 24)], s, 1.0)
+	sil(ci, [P(flint, Color("4a4550"), 1)], rim)
+	pl(ci, [Vector2(-24, -6), Vector2(-14, 2), Vector2(-20, 14)], 2.0, Color("8a8494"), s + 1)
+	var striker := poly([Vector2(6, 14), Vector2(30, 2), Vector2(38, 14), Vector2(14, 28)], s + 2, 0.8)
+	sil(ci, [P(striker, OCHRE.darkened(0.1), 1), P(capsule(Vector2(30, 6), Vector2(40, -2), 3.0, s + 3), LEATHER, 1)], rim)
+	fill(ci, star_pts(Vector2(4, -16), 9, 3.5, 4, s + 4), FIRE2, 2.0)
+	fill(ci, star_pts(Vector2(18, -22), 6, 2.5, 4, s + 5), FIRE, 1.6)
+	fill(ci, star_pts(Vector2(-4, -30), 5, 2.0, 4, s + 6), FIRE2, 1.4)
+
+## 草编果篮：编织纹的草篮，上面堆果子
+static func _dish_fruitbasket(ci: CanvasItem, s: int, rim: bool) -> void:
+	var bas := poly([Vector2(-36, -2), Vector2(36, -2), Vector2(26, 30), Vector2(-26, 30)], s, 0.7)
+	sil(ci, [P(_berry(Vector2(-16, -12), 11, BERRY, s + 1)[0][0], BERRY, 1), P(_berry(Vector2(4, -16), 11, OCHRE, s + 2)[0][0], OCHRE, 1),
+		P(_berry(Vector2(20, -9), 10, Color("7a4db8"), s + 3)[0][0], Color("7a4db8"), 1), P(bas, ROPE, 1)], rim)
+	for k in 5:
+		var x := -26.0 + float(k) * 13.0
+		pl(ci, [Vector2(x, 2), Vector2(x * 0.78, 28)], 2.0, WOOD, s + 4 + k)
+	for k in 3:
+		pl(ci, [Vector2(-31 + float(k) * 3, 9 + float(k) * 7), Vector2(31 - float(k) * 3, 9 + float(k) * 7)], 2.0, WOOD, s + 9 + k)
+	sil(ci, [P(ell(Vector2(0, -1), Vector2(37, 5), s + 12, 0.04, 16), ROPE.darkened(0.12), 1)], false)
+## 赭石项链：绳上一圈赭石珠，中间挂吊坠
+static func _dish_ochrebeads(ci: CanvasItem, s: int, rim: bool) -> void:
+	var arc: Array = []
+	for k in 13:
+		var a := PI * 0.05 + PI * 0.9 * float(k) / 12.0
+		arc.append(Vector2(cos(a) * 32.0, -14.0 + sin(a) * 26.0))
+	pl(ci, [arc[0], Vector2(0, -30), arc[12]], 2.4, ROPE.darkened(0.3), s)
+	var parts: Array = []
+	for k in 11:
+		var p: Vector2 = arc[1 + k]
+		var col := OCHRE if k % 2 == 0 else CLAY
+		parts.append(P(ell(p, Vector2(6.5, 6.5), s + k, 0.05, 12), col, 1))
+	parts.append(P(poly([Vector2(-11, 12), Vector2(11, 12), Vector2(0, 38)], s + 20, 0.8), Color("b5492d"), 1))
+	sil(ci, parts, rim)
+	ci.draw_circle(Vector2(-3, 18), 2.2, Color(1, 1, 1, 0.6))
+## 远行干粮包：皮背包，顶上绑一卷草席
+static func _dish_trailpack(ci: CanvasItem, s: int, rim: bool) -> void:
+	var bag := rrect(Rect2(-26, -10, 52, 44), 12, s, 0.8)
+	var flap := poly([Vector2(-26, -8), Vector2(26, -8), Vector2(22, 12), Vector2(-22, 12)], s + 1, 0.7)
+	var roll := capsule(Vector2(-30, -18), Vector2(30, -18), 9.0, s + 2)
+	sil(ci, [P(roll, ROPE, 1), P(bag, LEATHER, 1), P(flap, LEATHER_D.lightened(0.15), 1)], rim)
+	pl(ci, [Vector2(-14, -26), Vector2(-14, -10)], 2.4, WOOD_D, s + 3)
+	pl(ci, [Vector2(14, -26), Vector2(14, -10)], 2.4, WOOD_D, s + 4)
+	sil(ci, [P(ell(Vector2(0, 14), Vector2(5, 5), s + 5, 0.04, 10), BONE, 1)], rim)
+	sil(ci, _berry(Vector2(20, 24), 6, BERRY, s + 6), rim)
+
+## 工具腰带：弯皮带上挂着石斧和石刀
+static func _dish_toolbelt(ci: CanvasItem, s: int, rim: bool) -> void:
+	var belt := poly([Vector2(-40, -10), Vector2(0, -2), Vector2(40, -10), Vector2(40, 0), Vector2(0, 8), Vector2(-40, 0)], s, 0.7)
+	sil(ci, [P(belt, LEATHER, 1)], rim)
+	sil(ci, [P(rrect(Rect2(-6, -6, 12, 12), 3, s + 1, 0.5), BONE2, 1)], rim)
+	sil(ci, [P(capsule(Vector2(-22, 2), Vector2(-26, 34), 3.2, s + 2), WOOD, 1),
+		P(poly([Vector2(-36, 6), Vector2(-20, 4), Vector2(-18, 16), Vector2(-34, 18)], s + 3, 0.6), STONE, 1)], rim)
+	sil(ci, [P(poly([Vector2(16, 4), Vector2(26, 4), Vector2(22, 34)], s + 4, 0.6), STONE_D.lightened(0.25), 1),
+		P(capsule(Vector2(21, 2), Vector2(21, 10), 4.0, s + 5), LEATHER_D, 1)], rim)
+
+## 贝饰草裙：皮腰头下一圈草穗，腰头上挂三枚扇贝壳
+static func _dish_bracer(ci: CanvasItem, s: int, rim: bool) -> void:
+	var parts: Array = []
+	for k in 9:
+		var x := -24.0 + float(k) * 6.0
+		var bot := 32.0 - absf(float(k) - 4.0) * 1.0
+		var col := Color("c9b45a") if k % 2 == 0 else Color("b5a14e")
+		parts.append(P(poly([Vector2(x - 4.4, -12), Vector2(x + 4.4, -12), Vector2(x * 1.25 + 4.4, bot), Vector2(x * 1.25 - 4.4, bot)], s + k, 0.3), col, 2))
+	parts.append(P(rrect(Rect2(-32, -22, 64, 12), 5, s + 20, 0.5), LEATHER, 1))
+	sil(ci, parts, rim)
+	var shells: Array = []
+	var cs: Array = []
+	for k in 3:
+		var c := Vector2(-20.0 + float(k) * 20.0, -14.0 + (4.0 if k == 1 else 0.0))
+		cs.append(c)
+		var pts: Array = [c + Vector2(-3, -1), c + Vector2(3, -1)]
+		for j in 9:
+			var a := lerpf(0.45, PI - 0.45, float(j) / 8.0)
+			pts.append(c + Vector2(cos(a), sin(a)) * (17.0 if j % 2 == 0 else 15.5))
+		shells.append(P(poly(pts, s + 30 + k, 0.2), SHELL, 1))
+	sil(ci, shells, false, 2.0)
+	for c in cs:
+		for j in 3:
+			var a := lerpf(1.0, PI - 1.0, float(j) / 2.0)
+			ln(ci, (c as Vector2) + Vector2(0, 1), (c as Vector2) + Vector2(cos(a), sin(a)) * 14.0, 1.4, SHELL_D, s + j)
+		ci.draw_circle((c as Vector2) + Vector2(0, -1), 2.0, ROPE)
+## 宝石护符：木框里镶一颗绿宝石，挂绳
+static func _dish_talisman(ci: CanvasItem, s: int, rim: bool) -> void:
+	pl(ci, [Vector2(-26, -38), Vector2(0, -18), Vector2(26, -38)], 2.6, ROPE.darkened(0.3), s)
+	var frame := poly([Vector2(0, -22), Vector2(24, 0), Vector2(0, 36), Vector2(-24, 0)], s + 1, 0.8)
+	var gem := poly([Vector2(0, -12), Vector2(14, 2), Vector2(0, 26), Vector2(-14, 2)], s + 2, 0.5)
+	sil(ci, [P(frame, WOOD, 1), P(gem, TEAL, 0)], rim)
+	pl(ci, [Vector2(-14, 2), Vector2(14, 2)], 1.6, TEAL.darkened(0.3), s + 3)
+	pl(ci, [Vector2(0, -12), Vector2(0, 26)], 1.6, TEAL.darkened(0.3), s + 4)
+	for k in 2:
+		sil(ci, [P(ell(Vector2(-18 + float(k) * 36, 22), Vector2(4, 7), s + 5 + k, 0.05, 10), Color("e9e3d0"), 1)], rim)
+
+## 祭典彩妆：三小碗颜料（红、黄、白）和一支草刷
+static func _dish_warpaint(ci: CanvasItem, s: int, rim: bool) -> void:
+	var cols: Array = [CLAY, OCHRE, BONE]
+	var at: Array = [Vector2(22, -6), Vector2(-20, 4), Vector2(6, 18)]
+	var parts: Array = [P(capsule(Vector2(-34, -30), Vector2(-6, -10), 3.0, s + 7), WOOD, 1),
+		P(poly([Vector2(-8, -14), Vector2(0, -8), Vector2(2, 0), Vector2(-10, -4)], s + 8, 0.6), CLAY, 1)]
+	for k in 3:
+		var c: Vector2 = at[k]
+		var col: Color = cols[k]
+		parts.append(P(ell(c + Vector2(0, 4), Vector2(15, 10), s + k, 0.04, 14), STONE, 1))
+		parts.append(P(ell(c, Vector2(11, 5), s + 3 + k, 0.04, 12), col, 2))
+	sil(ci, parts, rim)
+## 猎人行囊：箭筒插着三支羽箭，旁边小皮囊
+static func _dish_hunterkit(ci: CanvasItem, s: int, rim: bool) -> void:
+	var tips: Array = [CLAY, BONE, TEAL]
+	var parts: Array = []
+	var shafts: Array = []
+	for k in 3:
+		var x := -18.0 + float(k) * 10.0
+		var tip := Vector2(x - 6 + float(k) * 4, -32)
+		var col: Color = tips[k]
+		parts.append(P(poly([tip + Vector2(-7, 4), tip + Vector2(0, -9), tip + Vector2(7, 4)], s + 3 + k, 0.4), col, 1))
+		shafts.append([Vector2(x, -4), tip + Vector2(0, 3)])
+	parts.append(P(poly([Vector2(-28, -6), Vector2(8, -6), Vector2(4, 34), Vector2(-24, 34)], s + 6, 0.7), LEATHER, 1))
+	parts.append(P(ell(Vector2(24, 18), Vector2(14, 14), s + 9, 0.06, 14), HIDE2, 1))
+	parts.append(P(ell(Vector2(24, 6), Vector2(8, 4), s + 10, 0.05, 10), LEATHER_D, 1))
+	for sh in shafts:
+		var a: Array = sh
+		pl(ci, a, 6.0, Color(1, 0.98, 0.92, 0.96), s)
+	sil(ci, parts, rim)
+	for sh in shafts:
+		var a: Array = sh
+		pl(ci, a, 3.0, WOOD_D, s + 1)
+	pl(ci, [Vector2(-26, 6), Vector2(6, 6)], 2.2, ROPE, s + 7)
+	pl(ci, [Vector2(-25, 22), Vector2(5, 22)], 2.2, ROPE, s + 8)
+## 兔毛项圈：一圈蓬松的灰白兔毛围成项圈，前面垂三颗兽牙
+static func _dish_furwrap(ci: CanvasItem, s: int, rim: bool) -> void:
+	var fur := Color("eee5d4")
+	var teeth: Array = []
+	for k in 3:
+		var x := -14.0 + float(k) * 14.0
+		var l := 26.0 if k == 1 else 20.0
+		var tp := PackedVector2Array([Vector2(x - 6, 10), Vector2(x + 6, 10), Vector2(x + 4, 10 + l * 0.6), Vector2(x + 2.5, 10 + l * 0.92),
+			Vector2(x + 1, 10 + l), Vector2(x - 1, 10 + l * 0.8), Vector2(x - 4, 10 + l * 0.45)])
+		teeth.append(P(tp, BONE, 2))
+	var ring: Array = []
+	for k in 64:
+		var a := TAU * float(k) / 64.0
+		var r := 1.0 - 0.07 * (0.5 + 0.5 * cos(a * 16.0))
+		ring.append(Vector2(cos(a) * 40.0 * r, -6.0 + sin(a) * 22.0 * r))
+	sil(ci, teeth + [P(poly(ring, s + 9, 0.5), fur, 1)], rim)
+	var hole := ell(Vector2(0, -9), Vector2(20, 8), s, 0.04, 18)
+	ci.draw_colored_polygon(hole, Color("5a4632"))
+	outline(ci, hole, 1.6)
+	for k in 12:
+		var a := TAU * float(k) / 12.0 + 0.2
+		var p := Vector2(cos(a) * 30.0, -6.0 + sin(a) * 15.0)
+		ln(ci, p, p + Vector2(cos(a) * 5.0, sin(a) * 3.0 + 2.0), 1.4, Color(INK, 0.3), s + k)
+	for k in 3:
+		ci.draw_circle(Vector2(-14.0 + float(k) * 14.0, 12), 2.6, ROPE)
+
+## 羽毛头冠：皮头带上一排彩色羽毛
+static func _dish_featherhat(ci: CanvasItem, s: int, rim: bool) -> void:
+	var cols: Array = [CLAY, OCHRE, TEAL, BONE, OCHRE]
+	var parts: Array = []
+	var quills: Array = []
+	for k in 5:
+		var a := -PI * 0.5 + (float(k) - 2.0) * 0.38
+		var base := Vector2(cos(a) * 14.0, 14.0 + sin(a) * 6.0)
+		var tip := base + Vector2(cos(a), sin(a)) * 38.0
+		var col: Color = cols[k]
+		parts.append(P(ell((base + tip) * 0.5, Vector2(8, 19), s + k, 0.05, 14, a + PI * 0.5), col, 1))
+		quills.append([base, tip])
+	parts.append(P(poly([Vector2(-34, 12), Vector2(34, 12), Vector2(30, 28), Vector2(-30, 28)], s + 12, 0.7), LEATHER, 1))
+	sil(ci, parts, rim)
+	for q in quills:
+		var qa: Array = q
+		pl(ci, [(qa[0] as Vector2).lerp(qa[1], 0.15), qa[1]], 1.6, INK, s + 6)
+	for k in 4:
+		var x := float(k) * 14.0
+		fill(ci, poly([Vector2(-22 + x, 16), Vector2(-16 + x, 24), Vector2(-28 + x, 24)], s + 13 + k, 0.4), OCHRE, 1.4)
+## 烤肉串拼盘：叶子上并排三串肉菜相间的串
+static func _dish_skewer(ci: CanvasItem, s: int, rim: bool) -> void:
+	sil(ci, [P(ell(Vector2(0, 14), Vector2(42, 18), s, 0.06, 16, -0.1), LEAF, 1)], rim)
+	var veg: Array = [LEAF_D, OCHRE, CLAY]
+	for k in 3:
+		var a := Vector2(-36, float(k) * 10 - 4)
+		var b := Vector2(36, float(k) * 10 - 14)
+		pl(ci, [a, b], 2.4, WOOD_D, s + 1 + k)
+		var cubes: Array = []
+		for j in 4:
+			var c := a.lerp(b, 0.2 + float(j) * 0.2)
+			var col: Color = ROAST if (j + k) % 2 == 0 else veg[k]
+			cubes.append(P(rrect(Rect2(c - Vector2(6, 6), Vector2(12, 12)), 3, s + 5 + j + k * 4, 0.4), col, 1))
+		sil(ci, cubes, false, 2.0)
+## 木托果盘：长方木板上各色果子
+static func _dish_fruitboard(ci: CanvasItem, s: int, rim: bool) -> void:
+	var board := rrect(Rect2(-40, 0, 80, 26), 8, s, 0.7)
+	sil(ci, [P(ell(Vector2(4, -24), Vector2(8, 4), s + 8, 0.1, 10, 0.6), LEAF, 1),
+		P(ell(Vector2(-22, -6), Vector2(12, 11), s + 4, 0.05, 14), Color("f2c94c"), 1),
+		P(ell(Vector2(0, -10), Vector2(13, 13), s + 5, 0.05, 14), BERRY, 1),
+		P(ell(Vector2(30, -12), Vector2(7, 7), s + 7, 0.05, 12), Color("6a3fa0"), 1),
+		P(ell(Vector2(22, -4), Vector2(9, 9), s + 6, 0.05, 12), Color("7a4db8"), 1),
+		P(board, WOOD, 1)], rim)
+	for k in 2:
+		pl(ci, [Vector2(-32, 11 + float(k) * 7), Vector2(32, 9 + float(k) * 7)], 1.4, WOOD_D, s + 1 + k)
+## 祭典面具：椭圆木面具，彩绘条纹，顶上两根羽毛
+static func _dish_mask(ci: CanvasItem, s: int, rim: bool) -> void:
+	sil(ci, [P(ell(Vector2(-14, -32), Vector2(5, 12), s, 0.05, 12, -0.4), CLAY, 1), P(ell(Vector2(14, -32), Vector2(5, 12), s + 1, 0.05, 12, 0.4), TEAL, 1)], rim)
+	var face := ell(Vector2(0, 2), Vector2(26, 34), s + 2, 0.04, 20)
+	sil(ci, [P(face, WOOD, 1)], rim)
+	ci.draw_colored_polygon(ell(Vector2(-10, -6), Vector2(7, 5), s + 3, 0.05, 12), INK)
+	ci.draw_colored_polygon(ell(Vector2(10, -6), Vector2(7, 5), s + 4, 0.05, 12), INK)
+	pl(ci, [Vector2(-20, 6), Vector2(-8, 10)], 3.4, CLAY, s + 5)
+	pl(ci, [Vector2(20, 6), Vector2(8, 10)], 3.4, CLAY, s + 6)
+	pl(ci, [Vector2(0, -24), Vector2(0, -12)], 3.4, OCHRE, s + 7)
+	pl(ci, [Vector2(-10, 22), Vector2(0, 26), Vector2(10, 22)], 2.6, INK, s + 8)
+
+## 酋长坐席：木座铺兽皮，靠背两侧一对兽角
+static func _dish_chiefseat(ci: CanvasItem, s: int, rim: bool) -> void:
+	sil(ci, [P(poly([Vector2(-26, -20), Vector2(-40, -36), Vector2(-30, -14)], s, 0.6), BONE, 1),
+		P(poly([Vector2(26, -20), Vector2(40, -36), Vector2(30, -14)], s + 1, 0.6), BONE, 1)], rim)
+	var back := rrect(Rect2(-26, -26, 52, 34), 8, s + 2, 0.7)
+	var seat := rrect(Rect2(-34, 4, 68, 14), 5, s + 3, 0.6)
+	var leg1 := poly([Vector2(-30, 18), Vector2(-22, 18), Vector2(-24, 36), Vector2(-30, 36)], s + 4, 0.5)
+	var leg2 := poly([Vector2(22, 18), Vector2(30, 18), Vector2(30, 36), Vector2(24, 36)], s + 5, 0.5)
+	sil(ci, [P(leg1, WOOD_D, 1), P(leg2, WOOD_D, 1), P(back, WOOD, 1), P(seat, WOOD, 1)], rim)
+	var fur := poly([Vector2(-18, -18), Vector2(18, -18), Vector2(22, 8), Vector2(12, 14), Vector2(-12, 14), Vector2(-22, 8)], s + 6, 1.2)
+	sil(ci, [P(fur, Color("c79a5e"), 1)], rim)
+	for k in 3:
+		ci.draw_colored_polygon(ell(Vector2(-8 + float(k) * 8, -6 + float(k % 2) * 8), Vector2(4, 3), s + 7 + k, 0.1, 10), LEATHER_D)
+
+## 陶罐炖肉：红陶罐冒热气，骨头露出罐口
+static func _dish_potstew(ci: CanvasItem, s: int, rim: bool) -> void:
+	for k in 3:
+		var x := -12.0 + float(k) * 12.0
+		pl(ci, [Vector2(x, -22), Vector2(x - 4, -30), Vector2(x + 2, -38)], 2.2, Color(1, 1, 1, 0.75), s + k)
+	sil(ci, [P(capsule(Vector2(6, -6), Vector2(20, -22), 3.4, s + 3), BONE, 1), P(ell(Vector2(21, -24), Vector2(5, 4), s + 4, 0.05, 10), BONE, 1)], rim)
+	var pot := ell(Vector2(0, 12), Vector2(32, 24), s + 5, 0.03, 20)
+	sil(ci, [P(pot, CLAY, 1), P(ell(Vector2(0, -8), Vector2(26, 7), s + 6, 0.03, 16), ROAST, 1)], rim)
+	pl(ci, [Vector2(-22, 12), Vector2(-8, 6), Vector2(8, 6), Vector2(22, 12)], 2.0, OCHRE, s + 7)
+	sil(ci, [P(ell(Vector2(-34, 8), Vector2(5, 7), s + 8, 0.05, 10), CLAY.darkened(0.15), 1), P(ell(Vector2(34, 8), Vector2(5, 7), s + 9, 0.05, 10), CLAY.darkened(0.15), 1)], rim)
+
+## 祭典乐器：兽皮鼓、骨笛和摇铃
+static func _dish_drumset(ci: CanvasItem, s: int, rim: bool) -> void:
+	sil(ci, [P(capsule(Vector2(-34, -24), Vector2(4, -34), 4.0, s), BONE, 1)], rim)
+	for k in 3:
+		ci.draw_circle(Vector2(-24 + float(k) * 9, -28 - float(k) * 2.4), 1.8, INK)
+	var body := poly([Vector2(-30, -6), Vector2(14, -6), Vector2(10, 32), Vector2(-26, 32)], s + 1, 0.6)
+	sil(ci, [P(body, WOOD, 1), P(ell(Vector2(-8, -6), Vector2(22, 7), s + 2, 0.03, 16), HIDE, 1)], rim)
+	for k in 4:
+		var x := -24.0 + float(k) * 11.0
+		pl(ci, [Vector2(x, -1), Vector2(x + 5, 28)], 1.8, ROPE, s + 3 + k)
+	sil(ci, [P(capsule(Vector2(26, 34), Vector2(26, 12), 2.6, s + 8), WOOD_D, 1), P(ell(Vector2(26, 2), Vector2(11, 12), s + 9, 0.05, 14), OCHRE, 1)], rim)
+	for k in 3:
+		ci.draw_circle(Vector2(21 + float(k) * 5, 0 + float(k % 2) * 5), 1.8, CLAY)
+
+## 篝火盛宴：中间篝火，上面架烤腿，两侧陶罐
+static func _dish_grandfeast(ci: CanvasItem, s: int, rim: bool) -> void:
+	sil(ci, [P(ell(Vector2(0, 26), Vector2(30, 8), s, 0.06, 14), STONE, 1)], rim)
+	fill(ci, flame_pts(Vector2(0, 10), 16, 34, s + 1), FIRE, 2.2)
+	fill(ci, flame_pts(Vector2(0, 16), 8, 18, s + 2), FIRE2, 0.0)
+	pl(ci, [Vector2(-38, -16), Vector2(38, -16)], 3.0, WOOD_D, s + 3)
+	sil(ci, [P(ell(Vector2(0, -16), Vector2(18, 9), s + 4, 0.05, 14), ROAST, 1), P(ell(Vector2(16, -16), Vector2(5, 5), s + 5, 0.05, 10), BONE, 1)], rim)
+	sil(ci, [P(poly([Vector2(-44, 8), Vector2(-28, 8), Vector2(-30, 32), Vector2(-42, 32)], s + 6, 0.6), CLAY, 1)], rim)
+	sil(ci, [P(poly([Vector2(28, 8), Vector2(44, 8), Vector2(42, 32), Vector2(30, 32)], s + 7, 0.6), OCHRE.darkened(0.15), 1)], rim)
+	sil(ci, _berry(Vector2(36, 4), 5, BERRY, s + 8), rim)
+
+## 酋长献礼：系布带的木箱，嵌宝石，闪着光
+static func _dish_chiefgift(ci: CanvasItem, s: int, rim: bool) -> void:
+	var box := rrect(Rect2(-32, -8, 64, 40), 6, s, 0.7)
+	var lid := rrect(Rect2(-36, -20, 72, 16), 6, s + 1, 0.7)
+	sil(ci, [P(ell(Vector2(-11, -26), Vector2(11, 6), s + 3, 0.05, 12, -0.4), CLAY, 1), P(ell(Vector2(11, -26), Vector2(11, 6), s + 4, 0.05, 12, 0.4), CLAY, 1),
+		P(box, WOOD, 1), P(lid, WOOD_D.lightened(0.15), 1), P(rrect(Rect2(-6, -20, 12, 52), 3, s + 2, 0.4), CLAY, 1)], rim)
+	sil(ci, [P(poly([Vector2(-24, 8), Vector2(-17, 0), Vector2(-10, 8), Vector2(-17, 17)], s + 5, 0.4), TEAL, 1),
+		P(poly([Vector2(10, 8), Vector2(17, 0), Vector2(24, 8), Vector2(17, 17)], s + 6, 0.4), Color("7a4db8"), 1)], false, 2.0)
+	fill(ci, star_pts(Vector2(32, -30), 8, 3, 4, s + 7), FIRE2, 1.6)
+	fill(ci, star_pts(Vector2(-34, -30), 5, 2, 4, s + 8), FIRE2, 1.4)

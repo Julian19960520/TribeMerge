@@ -101,8 +101,10 @@ def test_refresh_changes_every_hot_slot_without_snapshot(player):
         previous = current
 
 
-def test_crafted_item_codex_reward_once(player):
+def test_crafted_item_codex_reward_once(client):
     from conftest import ev
+    player = Player(client, player_id="TRBcraftbook", device="craftbook")
+    assert player.put(player.snapshot(level=3)).status_code == 200  # 水果沙拉 3 级解锁
     assert player.post('/v1/book/claim', {'item': 'salad'}).status_code == 409
     r = player.post('/v1/events', {'events': [ev('found', item='salad')]})
     assert r.status_code == 200 and r.json()['events'][0]['ok']

@@ -86,7 +86,7 @@ static func _energy_art(ci: CanvasItem, sz: Vector2) -> void:
 		for j in 4:
 			if (i + j) % 2 == 0:
 				ci.draw_rect(Rect2(table.position + Vector2(i * 46, j * 40), Vector2(46, 40)), Color(0.85, 0.45, 0.3, 0.35))
-	Art.item(ci, "basket_3", Vector2(sz.x * 0.52, sz.y * 0.6), 270)
+	Art.item(ci, "basket_4", Vector2(sz.x * 0.52, sz.y * 0.6), 270)
 	for k in 7:
 		var x := sz.x * 0.52 + (float(k) - 3.0) * 30.0
 		Art.item(ci, "fire_2", Vector2(x, sz.y * 0.36 - abs(float(k) - 3.0) * -6.0 - 20.0 + (k % 2) * 12.0), 70)
@@ -714,7 +714,7 @@ static func _book_icon(line: Dictionary) -> String:
 		"food": "fruit_6",
 		"tool": "tool_5",
 		"cloth": "cloth_7",
-		"hunt": "beast_10",
+		"hunt": "beast_6",
 		"fire": "hearth_5",
 		"wood": "furn_10",
 		"pot": "pot_6",

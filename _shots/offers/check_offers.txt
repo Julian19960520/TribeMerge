@@ -1,0 +1,40 @@
+PASS spree tier 0 value 254% matches label 250%
+PASS energy tier 0 value 130% matches label 130%
+PASS energy tier 1 value 135% matches label 135%
+PASS energy tier 2 value 140% matches label 140%
+PASS level 12: spree does not open
+PASS level 12: out of energy opens the amber energy popup
+PASS level 13: spree window opens for one hour
+PASS spree auto-popup on open
+PASS spree shows remaining 5 and ¥6 button
+PASS spree has 150% burst and info badges
+PASS spree pops only once per window
+PASS home entry card visible while spree is live
+PASS spree pays amber 60, energy 60, shells 300
+PASS spree delivers generator, chest and pack to stash
+PASS spree limit counts down
+PASS spree buy 2
+PASS spree buy 3
+PASS spree buy 4
+PASS spree buy 5
+PASS spree sold out after 5
+PASS five spree buys total 300 amber
+PASS spree expired and cooling down
+PASS spree reopens after 20h cooldown
+PASS new spree window resets limit and pops again
+PASS out of energy opens a 10 minute energy offer
+PASS energy offer popup shown instead of amber popup
+PASS three price cards ¥18 / ¥30 / ¥45
+PASS last card has best-value ribbon
+PASS wait line uses energy_full_left: 或者等待 03:20:00 体力恢复到 100
+PASS tier 3 pays amber 350, energy 1450, chest
+PASS bought tier disabled, others still buyable
+PASS energy entry reopens offer while tiers remain
+PASS tiers 1 and 2 buyable once
+PASS tier cannot be bought twice
+PASS all tiers bought: energy entry falls back to amber popup
+PASS energy offer expired, cooling down
+PASS energy offer available again after cooldown
+PASS new energy window resets tier limits
+PASS offers saved in save_dict
+RESULT: 0 failures

@@ -1,15 +1,15 @@
 {
-  "unlock_level": 6,
+  "unlock_level": 9,
   "target": 30,
   "order_thresholds": [3, 5, 7],
   "order_points": [1, 2, 3, 4],
   "opponent_seconds": [1800, 3600],
-  "win_rewards": [["shell_2", 240], ["fire_2", 60], ["chest_1", 1]],
-  "lose_rewards": [["shell_2", 60], ["fire_2", 15]],
+  "win_rewards": [["shell_2", 240], ["fire_2", 30], ["chest_1", 1]],
+  "lose_rewards": [["shell_2", 60], ["fire_2", 5]],
   "milestones": [
-    {"wins": 2, "rewards": [["fire_2", 80], ["chest_1", 1]]},
+    {"wins": 2, "rewards": [["fire_2", 50], ["chest_1", 1]]},
     {"wins": 5, "rewards": [["amber_3", 20], ["chest_1", 2]]},
-    {"wins": 8, "rewards": [["fire_2", 150], ["pack_1", 2]]},
+    {"wins": 8, "rewards": [["fire_2", 100], ["pack_1", 2]]},
     {"wins": 12, "rewards": [["amber_3", 50], ["chest_1", 3], ["pack_1", 3]]}
   ]
 }

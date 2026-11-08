@@ -29,6 +29,8 @@ var _info_visual: DrawBox
 var _info_action := {}
 var _info_btn: TButton
 var _del_btn: TButton
+## 双倍火种开关（Data.BOOST_LEVEL 级解锁，圆钮，在顶栏集市小屋下面）
+var _boost_btn: TButton
 var _del_lbl: Label
 var _undo_cell := -1
 var _undo_id := ""
@@ -49,6 +51,7 @@ var _race_entry: Control
 var _duel_entry: Control
 var _seven_entry: Control
 var _merge_event_entry: Control
+var _shown_was: Array = []
 var _cards: Array[Control] = []
 var _cards_root: Control
 ## 订单在 _cards_root 内的右缘（含原来的 2px），滚动长度再叠上根节点目标 x
@@ -100,6 +103,7 @@ func _ready() -> void:
 	_seven_entry.size = Vector2(EVENT_W, BASE_RECT.size.y)
 	_orders.content.add_child(_seven_entry)
 	_duel_entry = preload("res://scripts/ui/DuelEntry.gd").new()
+	_duel_entry.position = BASE_RECT.position
 	_duel_entry.size = Vector2(EVENT_W, BASE_RECT.size.y)
 	_orders.content.add_child(_duel_entry)
 	_base_btn = UI.hit(_orders.content, BASE_RECT, func(): G.main.open("level"))
@@ -146,6 +150,10 @@ func _ready() -> void:
 		G.changed.emit()
 		G.main.toast("月石遗迹、香蕉活动已解锁"), 21)
 	gm.name = "gm_activities"
+	_boost_btn = UI.btn(self, Rect2(646, 118, 66, 66), "", "grey", _on_boost)
+	_boost_btn.is_round = true
+	_boost_btn.extra = _paint_boost
+	_boost_btn.visible = false
 	_build_bubble_offer()
 	G.changed.connect(_refresh_hud)
 	G.orders_changed.connect(_build_orders)
@@ -652,6 +660,8 @@ func _on_deliver(oi: int) -> void:
 func _process(_delta: float) -> void:
 	if board == null:
 		return
+	if Engine.get_process_frames() % 60 == 0:
+		_sync_row() # 活动开放 / 结束时入口出现或收起
 	if _bubble_offer != null and _bubble_offer.visible:
 		if G.is_merge_bubble(board.selected) and G.bubble_left(board.selected) > 0:
 			_bubble_tick()
@@ -660,7 +670,7 @@ func _process(_delta: float) -> void:
 	var i := board.selected
 	if i < 0 or not G.cooking(i):
 		return
-	var text := "还要 %s。沙漏 %d，每份快 10 秒。" % [Board._sec_text(maxi(G.cook_left(i), 1)), G.rush]
+	var text := "还要 %s。沙漏 %d（每份快 %s），做完要 %d 份。" % [Board._sec_text(maxi(G.cook_left(i), 1)), G.rush, Data.rush_text(), G.rush_need(i)]
 	if _info_desc.text != text:
 		_info_desc.text = text
 
@@ -675,16 +685,27 @@ func _tribe_ready() -> bool:
 	var id := G.next_build_id()
 	return id != "" and G.shells >= G.build_cost(id)
 
+## 活动入口只显示已解锁的，顺序：香蕉竞速、月石遗迹、七日任务、双人竞速
+func _entries_shown() -> Array:
+	return [_race_entry.race.unlocked(), MergeEvent.available(MergeEvent.current()), true, DuelRace.unlocked()]
+
+func _entries_w() -> float:
+	var shown := _entries_shown()
+	var w := 0.0
+	for i in shown.size():
+		if shown[i]: w += (RACE_W if i == 0 else EVENT_W) + ROW_GAP
+	return w
+
 func _cards_x() -> float:
 	var x := 0.0 if not G.stash.is_empty() else -(BASE_RECT.position.x - STASH_RECT.position.x)
-	x += RACE_W + EVENT_W * 3 + ROW_GAP * 4
+	x += _entries_w() + ROW_GAP
 	if _tribe_ready():
 		x += HAMMER_W + ROW_GAP
 	return x
 
 func _sync_row() -> void:
 	var open := not G.stash.is_empty()
-	if open == _stash_open and _tribe_ready() == _hammer_on:
+	if open == _stash_open and _tribe_ready() == _hammer_on and _entries_shown() == _shown_was:
 		return
 	_apply_row(true)
 
@@ -693,11 +714,20 @@ func _apply_row(animate: bool) -> void:
 		_row_tween.kill()
 	var open := not G.stash.is_empty()
 	var hammer := _tribe_ready()
-	var race_x := BASE_RECT.position.x if open else STASH_RECT.position.x
-	var event_x := race_x + RACE_W + ROW_GAP
-	var seven_x := event_x + EVENT_W + ROW_GAP
-	var duel_x := seven_x + EVENT_W + ROW_GAP
-	var base_x := duel_x + EVENT_W + ROW_GAP
+	var shown := _entries_shown()
+	_shown_was = shown
+	var entries := [_race_entry, _merge_event_entry, _seven_entry, _duel_entry]
+	var xs := []
+	var cx: float = BASE_RECT.position.x if open else STASH_RECT.position.x
+	for i in entries.size():
+		xs.append(cx)
+		entries[i].visible = shown[i]
+		if shown[i]: cx += (RACE_W if i == 0 else EVENT_W) + ROW_GAP
+	var race_x: float = xs[0]
+	var event_x: float = xs[1]
+	var seven_x: float = xs[2]
+	var duel_x: float = xs[3]
+	var base_x := cx
 	var hammer_x := base_x + BASE_RECT.size.x + ROW_GAP
 	var cards_x := _cards_x()
 	var stash_was := _stash_open
@@ -775,6 +805,7 @@ func _refresh_hud() -> void:
 	_inv_lbl.text = "%d/%d" % [G.inv.size(), G.inv_cap]
 	_lv_lbl.text = "阿焰 Lv.%d" % G.level
 	_xp_lbl.text = "%d/%d" % [G.xp, G.xp_need()]
+	_sync_boost()
 	_sync_row()
 	_stash_btn.queue_redraw()
 	_base_btn.queue_redraw()
@@ -807,7 +838,7 @@ func _on_select(i: int) -> void:
 		_info_desc.position.x = 170
 		_info_desc.size.x = 300
 		_info_name.text = "制作 %s" % Data.name_of(str(ck["dish"]))
-		_set_desc("还要 %s。沙漏 %d，每份快 10 秒。" % [Board._sec_text(maxi(G.cook_left(i), 1)), G.rush])
+		_set_desc("还要 %s。沙漏 %d（每份快 %s），做完要 %d 份。" % [Board._sec_text(maxi(G.cook_left(i), 1)), G.rush, Data.rush_text(), G.rush_need(i)])
 		if pending:
 			_show_undo_btn()
 		else:
@@ -845,7 +876,7 @@ func _on_select(i: int) -> void:
 		elif Data.is_dish(c["id"]):
 			_show_delete_btn(false)
 		else:
-			_show_delete_btn(c["lock"] == 0 and Data.type_of(str(c["id"])) != "gen")
+			_show_delete_btn(c["lock"] == 0 and not Data.type_of(str(c["id"])) in ["gen", "egen"])
 	else:
 		_info_btn.visible = false
 		_show_delete_btn(false)
@@ -915,7 +946,7 @@ func _on_delete() -> void:
 	if i < 0 or G.board[i]["lock"] != 0 or G.board[i]["id"] == "":
 		return
 	var id: String = G.board[i]["id"]
-	if Data.type_of(id) == "gen": return
+	if Data.type_of(id) in ["gen", "egen"]: return
 	if Data.is_dish(id):
 		G.main.toast("做好的食物要交给订单")
 		Sfx.play("deny")
@@ -935,10 +966,10 @@ func _on_rush(i: int) -> void:
 		Sfx.play("deny")
 		board.shake(i)
 		return
-	G.rush_cook(i)
+	var used := G.rush_cook(i)
 	Sfx.play("pop", 1.15)
 	if G.cooking(i):
-		G.main.toast("快了 10 秒")
+		G.main.toast("用了 %d 份沙漏，还差 %d 份" % [used, G.rush_need(i)])
 	else:
 		G.main.toast("制作完成")
 
@@ -975,6 +1006,34 @@ func _clear_undo() -> void:
 	_del_btn.extra = Callable()
 	_del_btn.queue_redraw()
 
+# ---------------------------------------------------------------- 双倍火种
+
+func _sync_boost() -> void:
+	var open := G.level >= Data.BOOST_LEVEL
+	_boost_btn.visible = open
+	_boost_btn.style = "purple" if G.boost_on() else "grey"
+	_boost_btn.queue_redraw()
+
+func _on_boost() -> void:
+	if G.level < Data.BOOST_LEVEL:
+		G.main.toast("%d级解锁双倍火种" % Data.BOOST_LEVEL)
+		return
+	G.set_boost(not G.boost)
+	if G.boost:
+		G.main.toast("双倍火种已开启：生产器每次耗 2 火种，产物升 1 级")
+	else:
+		G.main.toast("双倍火种已关闭")
+
+## 开关上画：火苗 + ×2，开着是紫火
+func _paint_boost(ci: CanvasItem, sz: Vector2) -> void:
+	var on := G.boost_on()
+	var c := sz * 0.5 + Vector2(0, -6)
+	Art.fill(ci, Art.flame_pts(c, 15, 40, 7), Art.FIRE_BOOST if on else Art.FIRE2, 2.5)
+	Art.fill(ci, Art.flame_pts(c + Vector2(0, 7), 7, 18, 9), Color.WHITE if on else Art.FIRE, 0.0, Color(0, 0, 0, 0))
+	var at := Vector2(0, sz.y - 10)
+	ci.draw_string_outline(G.font_title, at, "×2", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, 6, Art.INK)
+	ci.draw_string(G.font_title, at, "×2", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, Color.WHITE)
+
 func _on_activate(i: int) -> void:
 	if i < 0 or i >= G.board.size() or int(G.board[i]["lock"]) != 0:
 		return
@@ -990,9 +1049,10 @@ func _on_activate(i: int) -> void:
 		Sfx.play("deny")
 		return
 	match Data.type_of(id):
-		"gen":
+		"gen", "egen":
+			var free := Data.type_of(id) == "egen"
 			if Data.gen_stats(id).is_empty():
-				var nxt := Data.first_prod_lv(Data.chain(id))
+				var nxt := 0 if free else Data.first_prod_lv(Data.chain(id))
 				if nxt <= 0:
 					G.main.toast("这一级不能生产")
 				else:
@@ -1005,7 +1065,10 @@ func _on_activate(i: int) -> void:
 				board.shake(i)
 				Sfx.play("deny")
 				return
-			if G.energy <= 0:
+			var cost := 0 if free else G.gen_cost()
+			if not free and G.energy < cost:
+				if G.energy > 0:
+					G.main.toast("双倍火种每次要 %d 火种" % cost)
 				G.main.open("energy")
 				return
 			var to := _guide_spawn(i)
@@ -1013,9 +1076,14 @@ func _on_activate(i: int) -> void:
 				G.main.toast("棋盘满了，先合成或收起一些物品吧！")
 				Sfx.play("deny")
 				return
-			G.spend("energy", 1)
+			if not free:
+				G.spend("energy", cost)
 			G.gen_use(i)
 			var out := G.roll_produce(id)
+			if not free:
+				out = G.boost_drop(out)
+			if free:
+				G.cloud_event({"type": "egen", "gen": id, "item": out})
 			if _guide_up():
 				var forced := str(G.main._guide.force_drop(i))
 				if forced != "":
@@ -1076,6 +1144,11 @@ func _on_drop_outside(i: int, gp: Vector2) -> void:
 		Sfx.play("deny")
 		return
 	if _pouch.get_global_rect().has_point(gp):
+		if Data.type_of(str(G.board[i]["id"])) == "egen":
+			# 冷却记在格子上，收进储物洞会丢掉；服务器也按账号限次，所以火种罐只能留在棋盘
+			G.main.toast("%s要留在棋盘上" % Data.name_of(str(G.board[i]["id"])))
+			Sfx.play("deny")
+			return
 		if G.inv.size() >= G.inv_cap:
 			G.main.toast("储物洞已满！")
 			Sfx.play("deny")
@@ -1337,7 +1410,7 @@ func _set_item_action(id: String, tangled: bool = false) -> void:
 	var kind := Data.type_of(id)
 	var production := Data.gen_stats(id)
 	var next := Data.next_id(id)
-	if kind == "gen" and not production.is_empty() and not tangled:
+	if kind in ["gen", "egen"] and not production.is_empty() and not tangled:
 		var drops: Array = []
 		for drop in production["drops"]:
 			if not drops.has(str(drop["id"])):

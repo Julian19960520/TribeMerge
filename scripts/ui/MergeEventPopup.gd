@@ -20,12 +20,13 @@ var _node_x: Array = []
 
 const INK := Color("3b2314")
 const CREAM := Color("fff3c4")
-const PANEL := Rect2(28, 174, 664, 1216)
-const SCENE := Rect2(44, 192, 632, 1180)
+const PANEL := Rect2(28, 174, 664, 1084)
+const SCENE := Rect2(44, 192, 632, 1048)
 const TRACK := Rect2(56, 266, 608, 138)
 const BAR := Rect2(92, 338, 508, 20)
 const SHELF := Rect2(56, 1106, 608, 74)
-const BUBBLE := Vector2(360, 1268)
+## 放置按钮骑在面板底边上：圆心 = 面板底边
+const BUBBLE := Vector2(360, 1264)
 
 func _ready() -> void:
 	cfg = MergeEvent.definition(period_key) if period_key != "" else MergeEvent.current()
@@ -166,7 +167,7 @@ func _build_bottom() -> void:
 	spawn_btn = UI.hit(box, Rect2(BUBBLE.x - 76, BUBBLE.y - 78, 152, 164), func(): board.spawn())
 	spawn_btn.extra = _paint_spawn
 	spawn_btn.name = "moon_place_button"
-	points = UI.lbl(spawn_btn, "", Rect2(4, 122, 144, 38), 23, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, INK, true)
+	points = UI.lbl(spawn_btn, "", Rect2(30, 122, 120, 38), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, INK, true)
 
 func _paint_spawn(ci: CanvasItem, sz: Vector2) -> void:
 	var s := MergeEvent.state(cfg)

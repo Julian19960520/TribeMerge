@@ -70,7 +70,7 @@ static func screen() -> PopupBase:
 	UI.lbl(p.box, "超级贵宾", Rect2(SUPER_X + 16, HEAD_Y + 306, CARD_W - 16, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 	var refresh := func():
 		var reached := G.pass_reached()
-		time_lbl.text = G.fmt_time(G.event_left())
+		time_lbl.text = G.fmt_time(G.pass_secs_left())
 		lv_lbl.text = str(reached)
 		if reached >= n:
 			goal_lbl.text = "已满级" + ("，循环宝箱开启中" if G.pass_tier == 2 else "")
@@ -93,7 +93,7 @@ static func screen() -> PopupBase:
 	p.add_child(clock)
 	clock.timeout.connect(func():
 		if is_instance_valid(time_lbl):
-			time_lbl.text = G.fmt_time(G.event_left()))
+			time_lbl.text = G.fmt_time(G.pass_secs_left()))
 	return p
 
 # ---------------------------------------------------------------- 轨道几何（轨道内坐标，0 在轨道顶）

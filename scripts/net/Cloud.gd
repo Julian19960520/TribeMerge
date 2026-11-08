@@ -29,8 +29,8 @@ const MERGE_DELAY := 3.0
 const RETRY_SEC := 90.0
 const QUIT_WAIT := 2.0
 const DAY_OFFSET := 8 * 3600
-const SERVER_FIELDS := ["duel_race", "ufo_offer", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "hot_revision",
-	"inv_cap", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus",
+const SERVER_FIELDS := ["duel_race", "ufo_offer", "offers", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "hot_revision",
+	"inv_cap", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season",
 	"tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period"]
 
 var state_path := "user://cloud_state.json"
@@ -682,8 +682,28 @@ func _call(method: String, path: String, body, idem := "", anon := false, use_to
 		_srv_tick = Time.get_ticks_msec()
 		clock_offset = _srv_unix - Time.get_unix_time_from_system()
 	if code == 401 and not anon and use_token == "":
-		_on_kicked(str(d.get("error", "unauthorized")))
+		if str(d.get("error", "")) == "unauthorized":
+			_on_unknown_token.call_deferred()
+		else:
+			_on_kicked(str(d.get("error", "")))
 	return [code, d]
+
+## 服务器根本不认识这个 token（多半是服务器数据库重建过）：不是被顶下线，
+## 用本机存档重新注册一个游客号接着玩，不弹「已退出登录」。
+func _on_unknown_token() -> void:
+	if kicked != "" or token == "":
+		return
+	token = ""
+	version = 0
+	sent_hash = ""
+	pending = true
+	events = []
+	_boot_done = false
+	_save_state()
+	while _busy:
+		await get_tree().process_frame
+	if token == "":
+		_register()
 
 func _on_kicked(why: String) -> void:
 	if kicked != "":

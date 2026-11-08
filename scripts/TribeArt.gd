@@ -703,7 +703,7 @@ static func _meatrack(ci: CanvasItem) -> void:
 		var m := Art.poly([p + Vector2(-8, 10), p + Vector2(8, 10), p + Vector2(10, 32), p + Vector2(0, 40), p + Vector2(-10, 32)], k + 4, 0.6)
 		_sil(ci, [Art.P(m, Art.MEAT if k != 1 else Art.ROAST, 1)], 2.2)
 		_ln(ci, p + Vector2(-5, 20), p + Vector2(5, 26), 2.0, Color(1, 1, 1, 0.6), k + 9)
-	_it(ci, "bird_3", Vector2(30, -14), 26)
+	_it(ci, "bird_1", Vector2(30, -14), 26)
 
 static func _hidedry(ci: CanvasItem) -> void:
 	_shadow(ci, 40)

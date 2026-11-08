@@ -42,7 +42,7 @@ func play(to: String, swap: Callable) -> void:
 	_t = 0.0
 	_seed = randi() % 1000
 	if to == "board":
-		_icon = "basket_5"
+		_icon = "basket_6"
 		_label = "去合成"
 	else:
 		_icon = "fire_4"

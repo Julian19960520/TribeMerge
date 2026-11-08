@@ -27,7 +27,9 @@ def test_claim_early_individual_and_milestones(player):
     # d7_2 alone is 30 points; two early order tasks (10 + 15) push past the first 50-point stage
     for key in ['d1_2','d2_2']:
         assert player.post('/v1/seven-day/claim',{'entry':key}).status_code==200
-    assert player.post('/v1/seven-day/claim',{'entry':'p50','stage':True}).json()['give']['energy']==100
+    p50=next(s for s in economy().gd.seven_day['milestones'] if s['id']=='p50')
+    want=sum(int(n) for i,n in p50['rewards'] if str(i).startswith('fire_'))
+    assert player.post('/v1/seven-day/claim',{'entry':'p50','stage':True}).json()['give']['energy']==want
     assert player.post('/v1/seven-day/claim',{'entry':'p50','stage':True}).json()['error']=='already_claimed'
 
 

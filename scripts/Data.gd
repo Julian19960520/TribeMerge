@@ -20,6 +20,8 @@ static var STORE_SHELL: Array = []
 static var STORE_SHELL_HOURS := 8
 static var STORE_SHELL_REFRESH := 5
 static var PASS_LEVELS: Array = []
+## 通行证赛季：{"days": 35, "start": "2026-11-02"}（北京时间零点起算）
+static var PASS_SEASON: Dictionary = {}
 static var RULES: Dictionary = {}
 static var BOARD: Array = []
 static var LOCKS: Array = []
@@ -32,6 +34,8 @@ static var RANDOM_SLOTS: Array = [0.0, 0.3, 0.55, 1.0]
 static var UNLOCK_ROWS: Dictionary = {}
 ## 典藏卡册是后期活动。这一级之前不发卡包，主页也不露出卡册。
 const CARD_LEVEL := 8
+## 双倍火种（生产器加速）：这一级解锁。开启后生产器每次耗 2 火种，产物高 1 级。
+const BOOST_LEVEL := 18
 
 static func _static_init() -> void:
 	_load()
@@ -108,6 +112,7 @@ static func _load() -> void:
 		STORE_SHELL_HOURS = maxi(1, int(shellf.get("refresh_hours", 8)))
 	var passf = _take(ConfigFiles.PASS, {"levels": []})
 	PASS_LEVELS = passf.get("levels", [])
+	PASS_SEASON = passf.get("season", {}) if passf.get("season") is Dictionary else {}
 	RULES = _take(ConfigFiles.RULES, {})
 	var board = _take(ConfigFiles.BOARD, {"cells": []})
 	BOARD = board.get("cells", [])
@@ -311,6 +316,8 @@ static func level_unlocks(level: int) -> Array:
 		out.append("订单栏 +%d，现在 %d 张" % [order_total(level) - order_total(level - 1), order_total(level)])
 	if level == CARD_LEVEL:
 		out.append("丰收祭卡册开放")
+	if level == BOOST_LEVEL:
+		out.append("新玩法：双倍火种（生产器产物升 1 级）")
 	return out
 
 static func is_dish(id: String) -> bool:
@@ -325,7 +332,7 @@ static func dishes_for(level: int) -> Array:
 			continue
 		var ok := true
 		for m in d["mats"]:
-			if not CHAINS.has(chain(str(m))):
+			if not CHAINS.has(chain(str(m))) or not product_open(level, chain(str(m))):
 				ok = false
 				break
 		if ok and not (d["mats"] as Array).is_empty():
@@ -466,6 +473,8 @@ static func _prod_ready(slot) -> bool:
 
 ## 生产器的产出参数；这一级没配产物时返回空字典
 static func gen_stats(id: String) -> Dictionary:
+	if type_of(id) == "egen":
+		return egen_stats(id)
 	if type_of(id) != "gen":
 		return {}
 	var ch := chain(id)
@@ -485,6 +494,21 @@ static func gen_stats(id: String) -> Dictionary:
 		st["refill"] = int(slot.get("refill_min", 12))
 	return st
 
+## 体力生产器（type "egen"，如火种罐）：点击不耗体力，一批 charges 次，点空后休息 refill_min 分钟再整批回满。
+## 配置在 chains.json 这条链的 prod[0]。返回格式同 gen_stats，多一个 "free"。
+static func egen_stats(id: String) -> Dictionary:
+	var prod = CHAINS[chain(id)].get("prod", [])
+	if not (prod is Array) or prod.is_empty() or not (prod[0] is Dictionary):
+		return {}
+	var slot: Dictionary = prod[0]
+	var usable: Array = []
+	for d in slot.get("drops", []):
+		if d is Dictionary and str(d.get("id", "")) != "" and int(d.get("p", 0)) > 0:
+			usable.append({"id": str(d["id"]), "p": int(d["p"])})
+	if usable.is_empty():
+		return {}
+	return {"drops": usable, "charges": int(slot.get("charges", 24)), "refill": int(slot.get("refill_min", 720)), "free": true}
+
 static func producers_of(ch: String) -> Array:
 	var l := line(str(CHAINS[ch].get("line", "")))
 	if l.is_empty() or l["gen"] == ch:
@@ -502,8 +526,12 @@ static func describe(id: String) -> String:
 		for m in d["mats"]:
 			bits.append(name_of(str(m)))
 		var secs := int(d["secs"])
-		var clock := "%d秒" % secs if secs < 60 else "%d分%02d秒" % [secs / 60, secs % 60]
-		return "把%s拌成一份。制作需要%s。" % ["、".join(bits), clock]
+		var clock := "%d 秒" % secs
+		if secs >= 3600:
+			clock = "%d 小时" % (secs / 3600) if secs % 3600 == 0 else "%d 小时 %d 分钟" % [secs / 3600, secs % 3600 / 60]
+		elif secs >= 60:
+			clock = "%d 分钟" % (secs / 60) if secs % 60 == 0 else "%d 分 %d 秒" % [secs / 60, secs % 60]
+		return "用%s做成。制作需要 %s，可以用沙漏加速。%d 级解锁。" % ["、".join(bits), clock, int(d["unlock"])]
 	var t := type_of(id)
 	var nx := next_id(id)
 	var tail := "合成可得：%s。" % name_of(nx) if nx != "" else "已经是最高级！"
@@ -519,6 +547,13 @@ static func describe(id: String) -> String:
 			for d in st["drops"]:
 				bits.append("%s %d" % [name_of(str(d["id"])), int(d["p"])])
 			return "点击产出%s。%s" % ["、".join(bits), tail]
+		"egen":
+			var st := gen_stats(id)
+			if st.is_empty():
+				return "还不能生产。"
+			var rest := int(st["refill"])
+			var rest_text := "%d 小时" % (rest / 60) if rest % 60 == 0 else "%d 分钟" % rest
+			return "点击免费产出火种，一批 %d 次，点完休息 %s。攒着合成大火种再收！" % [int(st["charges"]), rest_text]
 		"item":
 			var l := line_of(id)
 			var sell := value_of(id)
@@ -536,7 +571,7 @@ static func describe(id: String) -> String:
 		"amber":
 			return "点击收取 %d 琥珀。%s" % [value_of(id), tail]
 		"sand":
-			return "点击收取 %d 份沙漏。每份能让正在制作的食物快 10 秒。%s" % [value_of(id), tail]
+			return "点击收取 %d 份沙漏。每份能让正在制作的成品快 %s。%s" % [value_of(id), rush_text(), tail]
 		"choice":
 			return "点击打开，三选一。选择后宝箱变为所选物品。"
 		"chest":
@@ -616,3 +651,44 @@ static func merge_coin_item(merged: String) -> String:
 static func merge_coin_chance() -> float:
 	var r = RULES.get("merge_coin", {})
 	return clampf(float(r.get("chance", 0.0)), 0.0, 1.0) if r is Dictionary else 0.0
+
+## 合成掉沙漏：普通物品合成后，在掉贝币之外再有 merge_sand.chance 的机会掉一个沙漏（rules.json merge_sand）。
+## 和贝币共用同一个掷点：[贝币概率, 贝币概率 + 沙漏概率) 这一段掉沙漏。服务器 Economy.merge_sand_item 同一套算法。
+static func merge_sand_item(merged: String, level: int) -> String:
+	var r = RULES.get("merge_sand", {})
+	if not (r is Dictionary) or level < int(r.get("min_level", 1)) or DISHES.has(merged):
+		return ""
+	if not CHAINS.has(chain(merged)) or str(CHAINS[chain(merged)]["type"]) != "item":
+		return ""
+	var out := ""
+	for t in r.get("tiers", []):
+		if t is Array and t.size() >= 2 and lv(merged) >= int(t[0]):
+			out = str(t[1])
+	return out
+
+static func merge_sand_chance() -> float:
+	var r = RULES.get("merge_sand", {})
+	return clampf(float(r.get("chance", 0.0)), 0.0, 1.0) if r is Dictionary else 0.0
+
+static func rush_text() -> String:
+	var s := rush_sec()
+	return "%d 分钟" % (s / 60) if s % 60 == 0 else "%d 秒" % s
+
+## 一份沙漏让制作快多少秒（rules.json rush_sec）。
+static func rush_sec() -> int:
+	return maxi(1, int(RULES.get("rush_sec", 60)))
+
+## 同时最多几张制作订单：craft_cap_at 每个元素是多开一张的等级。
+static func craft_cap(level: int) -> int:
+	return _cap_at("craft_cap_at", [int(RULES.get("craft_level", 3))], level, 9)
+
+## 制作订单附送的沙漏：按菜的制作秒数取 craft_sand 里最后一个够得着的档 [[最少秒数, 物品], ...]。
+static func craft_sand(dish_id: String) -> String:
+	if not DISHES.has(dish_id):
+		return ""
+	var secs := int(DISHES[dish_id].get("secs", 0))
+	var out := ""
+	for t in RULES.get("craft_sand", []):
+		if t is Array and t.size() >= 2 and secs >= int(t[0]):
+			out = str(t[1])
+	return out

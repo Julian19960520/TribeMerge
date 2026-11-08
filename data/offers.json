@@ -1,0 +1,45 @@
+{
+	"_说明": "付费限时礼包。客户端 scripts/events/Offers.gd 与服务器 server/app/offers.py 读同一份。估值按琥珀当量 AE（见 gift_chain.json）：琥珀 1、体力 0.4、贝币 0.1、藤编宝箱 15、兽皮卡包 20、采集篮 4 级 80；商店基准 ¥1 ≈ 15 AE。value_pct = 内容 AE ÷（价格 × 15），面板上的「多送 / 超值」就写这个数，tools/check_offers.gd 和 server/tests/test_offers.py 会核对。窗口：start → start + duration_sec 内可买，每档 limit 次；窗口结束后再过 cooldown_sec 才能开下一期。",
+	"spree": {
+		"title": "赶大集",
+		"min_level": 13,
+		"duration_sec": 3600,
+		"cooldown_sec": 72000,
+		"auto_popup": true,
+		"tiers": [
+			{
+				"price_cny": 6,
+				"limit": 5,
+				"value_pct": 250,
+				"rewards": [["amber_4", 60], ["fire_2", 60], ["basket_4", 1], ["chest_1", 1], ["pack_1", 1], ["shell_2", 300]]
+			}
+		]
+	},
+	"energy": {
+		"title": "火种大礼包",
+		"min_level": 13,
+		"duration_sec": 600,
+		"cooldown_sec": 14400,
+		"tiers": [
+			{
+				"price_cny": 18,
+				"limit": 1,
+				"value_pct": 130,
+				"rewards": [["amber_4", 136], ["fire_2", 500], ["chest_1", 1]]
+			},
+			{
+				"price_cny": 30,
+				"limit": 1,
+				"value_pct": 135,
+				"rewards": [["amber_4", 240], ["fire_2", 880], ["chest_1", 1]]
+			},
+			{
+				"price_cny": 45,
+				"limit": 1,
+				"value_pct": 140,
+				"best": true,
+				"rewards": [["amber_4", 350], ["fire_2", 1450], ["chest_1", 1]]
+			}
+		]
+	}
+}

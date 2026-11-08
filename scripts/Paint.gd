@@ -11,6 +11,7 @@ const BTN := {
 	"red": [Color("dd5a33"), Color("8f2e15"), Color("ff9a72")],
 	"wood": [Color("c98b4a"), Color("7a4a22"), Color("e8b67a")],
 	"hide": [Color("f6e7c8"), Color("c9a774"), Color("fffaf0")],
+	"purple": [Color("a35ce0"), Color("5e2a8f"), Color("d6a8ff")],
 }
 
 static func button(ci: CanvasItem, r: Rect2, style: String, seed: int = 0, pressed: bool = false) -> void:

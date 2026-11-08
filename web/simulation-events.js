@@ -11,13 +11,16 @@
     resource_amber: ['收取琥珀', '#e7c258'], resource_sand: ['收取沙漏', '#bcb19e'],
     stash: ['暂存区领奖', '#c0a6cf'], duel_match: ['双人赛结算', '#7bccb1'],
     duel_milestone: ['双人赛胜场奖', '#a1d485'], banana: ['香蕉赛奖励', '#d4d878'],
-    moon: ['月石奖励', '#87c9df'], other: ['其他领奖', '#bd9fc9']
+    moon: ['月石奖励', '#87c9df'],
+    ph_gather_fest: ['采集祭（占位）', '#9fd3a0'], ph_treasure_dig: ['部落寻宝（占位）', '#e0b98a'],
+    ph_hunt_fest: ['狩猎大会（占位）', '#d99a8f'], ph_expedition: ['远征（占位）', '#8fb8d9'],
+    ph_festival: ['节日庆典（占位）', '#d7a3d9'], other: ['其他领奖', '#bd9fc9']
   };
   const base = {
     start: ['开始', '#aeb6ba'], end: ['结束', '#aeb6ba'], level: ['等级提升', '#f3c66d'],
     milestone: ['里程碑', '#f3c66d'], build: ['升级部落', '#89c49a'],
-    order_xp: ['经验订单', '#f3c66d'], order_no_xp: ['无经验订单', '#70b7d6'], unlock: ['解锁藤蔓', '#a6d66f'],
-    craft: ['制作', '#80a0dc'], event: ['活动操作', '#5dd4c1'], wait: ['等待', '#657d87'],
+    order_xp: ['经验订单', '#f3c66d'], order_no_xp: ['无经验订单', '#70b7d6'], unlock: ['主线解锁藤蔓', '#a6d66f'], unlock_moon: ['月石解锁藤蔓', '#87c9df'],
+    craft: ['制作', '#80a0dc'], egen: ['点火种罐', '#e7aa71'], event: ['活动操作', '#5dd4c1'], wait: ['等待', '#657d87'], offline: ['下线', '#3f5058'], stuck: ['卡住下线', '#ff927e'],
     bottleneck: ['阻塞', '#ff927e'], error: ['异常', '#ff716e'], decision: ['决策', '#bdaf93'],
     storage: ['储物洞', '#c5ae81'], stash: ['取出暂存物品', '#c5ae81'], delete: ['丢弃', '#f29d75'],
     merge: ['合成', '#80a49e'], produce: ['生产', '#7693a1'], other: ['其他事件', '#aeb6ba']
@@ -25,9 +28,13 @@
   const names = {}, colors = {};
   for (const [key, [name, color]] of Object.entries(base)) { names[key] = name; colors[key] = color; }
   for (const [key, [name, color]] of Object.entries(rewards)) { names['reward_' + key] = name; colors['reward_' + key] = color; }
+  function isMoon(event) {
+    return event.detail?.board === 'moon' || (event.title || '').startsWith('月石棋盘');
+  }
   function category(event) {
+    if (event.category === 'unlock') return isMoon(event) ? 'unlock_moon' : 'unlock';
     if (event.category === 'order') return Number(event.detail?.rw?.xp || 0) > 0 ? 'order_xp' : 'order_no_xp';
-    if (event.category === 'merge' && event.reason === '解锁藤蔓' && !event.detail?.unlock_recorded) return 'unlock';
+    if (event.category === 'merge' && event.reason === '解锁藤蔓' && !event.detail?.unlock_recorded) return isMoon(event) ? 'unlock_moon' : 'unlock';
     if (event.reward_source) return 'reward_' + (rewards[event.reward_source] ? event.reward_source : 'other');
     const title = event.title || '';
     if (event.category === 'event') {
@@ -57,16 +64,31 @@
     const key = category(event);
     return (all || !minor.has(key)) && (!selected || selected === key);
   }
-  const tracks = [
-    { label: '等级 / 里程碑', keys: ['level', 'milestone', 'start', 'end'] },
-    { label: '升级部落', keys: ['build'] }, { label: '订单', keys: ['order_xp', 'order_no_xp'] },
-    { label: '解锁藤蔓', keys: ['unlock'] },
-    { label: '制作', keys: ['craft'] },
-    ...Object.keys(rewards).map(key => ({ label: rewards[key][0], keys: ['reward_' + key] })),
-    { label: '活动操作', keys: ['event'] }, { label: '物品整理', keys: ['storage', 'stash', 'delete'] },
-    { label: '合成 / 生产', keys: ['merge', 'produce'] }, { label: '决策 / 阻塞', keys: ['decision', 'bottleneck', 'error', 'other'] },
-    { label: '等待', keys: ['wait'] }
+  /* Lanes are grouped; the page colours by group and can fold a group into one lane. */
+  const groups = [
+    { id: 'progress', label: '进度', color: '#3987e5' },
+    { id: 'energy', label: '体力', color: '#d95926' },
+    { id: 'reward', label: '奖励', color: '#9085e9' },
+    { id: 'activity', label: '活动', color: '#199e70' },
+    { id: 'misc', label: '其他', color: '#7d8c91' }
   ];
+  const rewardGroup = { resource_energy: 'energy', duel_match: 'activity', duel_milestone: 'activity', banana: 'activity', moon: 'activity' };
+  const tracks = [
+    { label: '等级 / 里程碑', keys: ['level', 'milestone', 'start', 'end'], group: 'progress' },
+    { label: '订单', keys: ['order_xp', 'order_no_xp'], group: 'progress' },
+    { label: '升级部落', keys: ['build'], group: 'progress' },
+    { label: '主线解锁藤蔓', keys: ['unlock'], group: 'progress' },
+    { label: '制作', keys: ['craft'], group: 'progress' },
+    { label: '卡体力', keys: ['stuck'], group: 'energy' },
+    { label: '点火种罐', keys: ['egen'], group: 'energy' },
+    ...Object.keys(rewards).map(key => ({ label: rewards[key][0], keys: ['reward_' + key], group: key.startsWith('ph_') ? 'activity' : rewardGroup[key] || 'reward' })),
+    { label: '活动操作', keys: ['event'], group: 'activity' },
+    { label: '月石解锁藤蔓', keys: ['unlock_moon'], group: 'activity' },
+    { label: '物品整理', keys: ['storage', 'stash', 'delete'], group: 'misc' },
+    { label: '合成 / 生产', keys: ['merge', 'produce'], group: 'misc' },
+    { label: '决策 / 阻塞', keys: ['decision', 'bottleneck', 'error', 'other'], group: 'misc' },
+    { label: '等待', keys: ['wait'], group: 'misc' }, { label: '下线', keys: ['offline'], group: 'misc' }
+  ].sort((a, b) => groups.findIndex(g => g.id === a.group) - groups.findIndex(g => g.id === b.group));
   function lanes(events, all = false, selected = '') {
     const present = new Set(events.filter(event => matches(event, all, selected)).map(category));
     return tracks.filter(track => track.keys.some(key => present.has(key)));
@@ -78,7 +100,7 @@
     return (hours?`${hours}小时`:'')+(hours||minutes?`${minutes}分`:'')+`${secondsPart}秒`;
   }
   function eventTitle(event) {
-    if (event.category==='wait' && Number.isFinite(event.detail?.seconds)) return '快进 '+formatTime(event.detail.seconds);
+    if ((event.category==='wait' || event.category==='offline') && Number.isFinite(event.detail?.seconds)) return '快进 '+formatTime(event.detail.seconds);
     return String(event.title || names[category(event)] || '事件');
   }
   function brief(event) {
@@ -134,7 +156,7 @@
         if (!Number.isFinite(time)) continue;
         const key = category(event), label = trackFor.get(key);
         const at = formatTime(time);
-        if (key==='unlock') unlockPoint(timelines.get(label),event,at);
+        if (key==='unlock' || key==='unlock_moon') unlockPoint(timelines.get(label),event,at);
         else if (label && key!=='merge' && key!=='produce') appendText(timelines.get(label),at,brief(event));
         for (const metric of metrics) {
           const value = event.state?.[metric.key];
@@ -158,5 +180,5 @@
     }
     return output;
   }
-  root.SimulationEvents = { names, colors, category, matches, lanes, compactReport, formatTime, eventTitle };
+  root.SimulationEvents = { names, colors, groups, tracks, category, matches, lanes, compactReport, formatTime, eventTitle, brief };
 })(globalThis);

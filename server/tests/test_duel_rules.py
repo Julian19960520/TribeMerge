@@ -20,7 +20,7 @@ def test_duel_rules():
         except Reject: return
         raise AssertionError('action should reject: ' + action)
     rejects('join')
-    st['level'] = 6
+    st['level'] = int(gd.duel_race['unlock_level'])
     rejects('milestone', 2)
     for n in range(12):
         act('join')

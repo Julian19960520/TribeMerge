@@ -9,6 +9,7 @@ extends RefCounted
 ## dot：右上角红点（有奖可领）。bump：0~1，香蕉飞进来时图片弹一下。
 
 const Banana := preload("res://scripts/ui/Banana.gd")
+const Meme := preload("res://scripts/Meme.gd")
 
 const PILL := {
 	"num": [Color("fff3d2"), Color("6b3f1d")],
@@ -22,6 +23,7 @@ const PILL := {
 }
 
 static var _grey := false
+static var _xf := Transform2D.IDENTITY
 
 static func paint(ci: CanvasItem, sz: Vector2, kind: String, title: String, badge := {}, locked := false, dot := false, bump := 0.0) -> void:
 	var ground := sz.y - 46.0
@@ -30,15 +32,10 @@ static func paint(ci: CanvasItem, sz: Vector2, kind: String, title: String, badg
 	ci.draw_colored_polygon(Art.ell(c + Vector2(0, -2), Vector2(44, 8), 3, 0.05, 18, 0.0, 0.3), Color(0.16, 0.1, 0.04, 0.28))
 	var s := 1.08 * (1.0 + 0.12 * sin(bump * PI))
 	ci.draw_set_transform(c, 0.0, Vector2(s, s))
+	_xf = Transform2D(0.0, Vector2(s, s), 0.0, c)
 	_grey = locked
 	match kind:
-		"duel":
-			for side in 2:
-				var x := -23.0 if side==0 else 23.0
-				ci.draw_circle(Vector2(x,-55),29,Art.INK)
-				ci.draw_circle(Vector2(x,-55),25,_c(Art.MOSS if side==0 else Art.CLAY))
-				Paint.bust(ci,Vector2(x,-52),42)
-			text(ci,"VS",Vector2(0,-12),24,Color("ffd23f"))
+		"duel": _duel(ci)
 		"race": _race(ci)
 		"ruins": _ruins(ci)
 		"seven": _seven(ci)
@@ -82,6 +79,32 @@ static func _c(col: Color) -> Color:
 static func _parts(ci: CanvasItem, parts: Array) -> void:
 	for p in parts: p[1] = _c(p[1])
 	Art.sil(ci, parts, true, 3.0)
+
+## 双人竞速：两张头像对顶，中间红色 VS 星章，脚下一小堆香蕉
+static func _duel(ci: CanvasItem) -> void:
+	for side in 2:
+		var c := Vector2(-24.0 if side == 0 else 24.0, -56.0 + (0.0 if side == 0 else -3.0))
+		ci.draw_circle(c + Vector2(0, 3), 27, Color(0, 0, 0, 0.2))
+		ci.draw_circle(c, 27, Art.INK)
+		ci.draw_circle(c, 24.5, _c(Art.MOSS if side == 0 else Art.CLAY))
+		ci.draw_circle(c, 20, _c(Art.BONE))
+		# Meme 内部会改画布变换：换回屏幕坐标画，画完再恢复
+		ci.draw_set_transform_matrix(Transform2D.IDENTITY)
+		Meme.portrait(ci, side, _xf * (c + Vector2(0, 2)), 42 * _xf.get_scale().x)
+		ci.draw_set_transform_matrix(_xf)
+		if _grey: ci.draw_circle(c, 25, Color(0.55, 0.53, 0.5, 0.55))
+	# 香蕉堆（左右各一小撮，压在头像下面）
+	for k in 4:
+		var c := Vector2(-21.0 + k * 14.0, -8.0 + absf(k - 1.5) * 3.0)
+		var rot := -0.5 + k * 0.33
+		Art.dilate(ci, _banana(c, 30.0, rot), 4.0, Color(1, 0.98, 0.92, 0.96))
+		if _grey: Art.fill(ci, _banana(c, 30.0, rot), _c(Color("ffd84a")), 2.4)
+		else: Banana.draw(ci, c, 30.0, rot)
+	# VS 星章
+	var v := Vector2(0, -30)
+	Art.fill(ci, Art.star_pts(v, 19, 13, 9, 61), _c(Art.CLAY), 2.6)
+	ci.draw_circle(v, 10.5, _c(Color("e8673f")))
+	text(ci, "VS", v + Vector2(0, 6), 16, Color.WHITE, 4)
 
 ## 香蕉竞速：一串香蕉靠着方格赛旗
 static func _race(ci: CanvasItem) -> void:

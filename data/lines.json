@@ -2,7 +2,7 @@
 	{"id": "food", "name": "食物", "gen": "basket", "main": "fruit", "sub": "seed", "unlock": 1},
 	{"id": "tool", "name": "工具", "gen": "anvil", "main": "tool", "sub": "gem", "unlock": 6},
 	{"id": "cloth", "name": "衣服", "gen": "loom", "main": "cloth", "sub": "armor", "unlock": 8},
-	{"id": "hunt", "name": "狩猎", "gen": "trap", "main": "beast", "sub": "bird", "unlock": 16},
+	{"id": "hunt", "name": "狩猎", "gen": "trap", "main": "beast", "sub": "bird", "unlock": 16, "cooldown": true},
 	{"id": "fire", "name": "火堆", "gen": "hearth", "main": "veg", "sub": "roast", "unlock": 21},
 	{"id": "wood", "name": "木头工艺", "gen": "carve", "main": "furn", "sub": "craft", "unlock": 26},
 	{"id": "pot", "name": "陶艺", "gen": "kiln", "main": "pot", "sub": "ware", "unlock": 31}

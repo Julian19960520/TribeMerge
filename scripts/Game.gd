@@ -29,6 +29,8 @@ var TOKEN_STEP := 10
 var main: Node = null
 var ufo_offer: Dictionary = {}
 var ufo_receipts: Array = []
+## 付费限时礼包（赶大集 / 火种大礼包）每期状态，见 scripts/events/Offers.gd
+var offers: Dictionary = {}
 var local_race: Dictionary = {}
 var duel_race: Dictionary = {}
 var gm_activities := false
@@ -46,6 +48,8 @@ var shells := 320
 var amber := 140
 var rush := 0
 var energy_stamp := 0.0
+## 双倍火种模式开关（Data.BOOST_LEVEL 级解锁）
+var boost := false
 var board: Array = []
 ## 最近一次合成解开的巨石格子，给崩坏动画用
 var opened: Array = []
@@ -72,6 +76,8 @@ var pass_prem: Array = []
 var pass_super: Array = []
 var pass_endless := 0
 var pass_super_bonus := false
+## 当前通行证赛季号（和服务器 Economy.pass_season 算法一致），换季时清空通行证进度
+var pass_season := ""
 var scroll_drag := false
 ## 有列表正在拖动或惯性滑动。这时推迟线条沸腾，避免整屏重绘把滚动卡住。
 var scroll_moving := false
@@ -236,6 +242,8 @@ func set_server_field(k: String, v) -> void:
 	match k:
 		"ufo_offer":
 			ufo_offer = v.duplicate(true) if v is Dictionary else {}
+		"offers":
+			offers = v.duplicate(true) if v is Dictionary else {}
 		"gm_activities":
 			gm_activities = bool(v)
 		"seven_day":
@@ -264,6 +272,8 @@ func set_server_field(k: String, v) -> void:
 			deals_day = str(v)
 		"shell_period":
 			shell_period = str(v)
+		"pass_season":
+			pass_season = str(v)
 		_:
 			set(k, int(v))
 
@@ -296,10 +306,41 @@ func check_shell_period() -> void:
 		shell_period = p
 		shell_bought = {}
 
+## 通行证赛季：从 season.start（北京时间零点）起每 season.days 天一季
+func _pass_season_span() -> int:
+	return maxi(1, int(Data.PASS_SEASON.get("days", 35))) * 86400
+
+func _pass_season_offset() -> int:
+	var start := str(Data.PASS_SEASON.get("start", "2026-11-02"))
+	return int(now()) + 8 * 3600 - int(Time.get_unix_time_from_datetime_string(start + "T00:00:00"))
+
+func pass_season_now() -> String:
+	return str(floori(float(_pass_season_offset()) / float(_pass_season_span())))
+
+func pass_secs_left() -> int:
+	return _pass_season_span() - posmod(_pass_season_offset(), _pass_season_span())
+
+## 换季：积分、已领档位、贵宾档位全部清零，上季没领的奖励作废（服务器同样在换季时清零）
+func check_pass_season() -> void:
+	var s := pass_season_now()
+	if s == pass_season:
+		return
+	pass_season = s
+	pass_pts = 0
+	pass_tier = 0
+	pass_free = []
+	pass_prem = []
+	pass_super = []
+	pass_endless = 0
+	pass_super_bonus = false
+	dirty()
+	changed.emit()
+
 func event_left() -> int:
 	return 35 * 86400 + 15 * 3600 - int(fmod(now(), 86400.0))
 
 func _check_day() -> void:
+	check_pass_season()
 	SevenDay.login()
 	# 等云存档拿到服务器时间（或确认连不上）再判断，免得改了本机时间先把每日次数清掉
 	var c = get_node_or_null("/root/Cloud")
@@ -327,6 +368,7 @@ func new_game() -> void:
 	amber = 80
 	rush = 0
 	energy_stamp = now()
+	boost = false
 	inv = []
 	inv_cap = int(Data.RULES.get("storage_initial", 5))
 	discovered = {}
@@ -336,6 +378,7 @@ func new_game() -> void:
 	stash = []
 	ufo_offer = {}
 	ufo_receipts = []
+	offers = {}
 	local_race = {}
 	duel_race = {}
 	gm_activities = false
@@ -350,6 +393,7 @@ func new_game() -> void:
 	pass_super = []
 	pass_endless = 0
 	pass_super_bonus = false
+	pass_season = pass_season_now()
 	player_id = "TRB" + str(rng.randi_range(10000000, 99999999))
 	seen_tutorial = false
 	tutorial_on = true
@@ -398,21 +442,24 @@ func _init_board() -> void:
 
 func save_game() -> void:
 	if simulation_time >= 0: return # Simulator owns its reports/checkpoints; never writes a player save.
+	DirAccess.make_dir_recursive_absolute(save_path.get_base_dir())
 	var f := FileAccess.open(save_path, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(save_dict()))
+	else:
+		push_error("save_game: cannot write %s (%s)" % [save_path, error_string(FileAccess.get_open_error())])
 
 ## 整份存档。本地存档和云存档快照都用它。
 func save_dict() -> Dictionary:
 	return {
-		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "local_race": local_race, "duel_race": duel_race, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "shells": shells, "amber": amber, "rush": rush,
+		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "offers": offers, "local_race": local_race, "duel_race": duel_race, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "boost": boost, "shells": shells, "amber": amber, "rush": rush,
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
 		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "story_done": story_done, "pending_orders": pending_orders, "builds": builds, "cards": cards,
 		"stash": stash, "tokens": tokens, "token_claimed": token_claimed, "settings": settings, "hot_bought": hot_bought, "hot_revision": hot_revision,
 		"deals_bought": deals_bought, "deals_day": deals_day, "shell_bought": shell_bought, "shell_period": shell_period, "energy_buys": energy_buys, "player_id": player_id,
 		"seen_tutorial": seen_tutorial, "tutorial_on": tutorial_on,
 		"pass_pts": pass_pts, "pass_tier": pass_tier, "pass_free": pass_free, "pass_prem": pass_prem, "pass_super": pass_super,
-		"pass_endless": pass_endless, "pass_super_bonus": pass_super_bonus,
+		"pass_endless": pass_endless, "pass_super_bonus": pass_super_bonus, "pass_season": pass_season,
 	}
 
 func load_game() -> bool:
@@ -426,6 +473,7 @@ func load_game() -> bool:
 		return false
 	ufo_offer = d.get("ufo_offer", {}) if d.get("ufo_offer", {}) is Dictionary else {}
 	ufo_receipts = d.get("ufo_receipts", []) if d.get("ufo_receipts", []) is Array else []
+	offers = d.get("offers", {}) if d.get("offers", {}) is Dictionary else {}
 	duel_race = d.get("duel_race", {}) if d.get("duel_race", {}) is Dictionary else {}
 	local_race = d.get("local_race", {}) if d.get("local_race", {}) is Dictionary else {}
 	gm_activities = bool(d.get("gm_activities", false))
@@ -438,6 +486,7 @@ func load_game() -> bool:
 	amber = int(d["amber"])
 	rush = int(d.get("rush", 0))
 	energy_stamp = float(d["energy_stamp"])
+	boost = bool(d.get("boost", false))
 	board = d["board"]
 	for c in board:
 		c["lock"] = int(c["lock"])
@@ -501,6 +550,8 @@ func load_game() -> bool:
 			pass_super.append(int(x))
 	pass_endless = int(d.get("pass_endless", 0))
 	pass_super_bonus = bool(d.get("pass_super_bonus", false))
+	pass_season = str(d.get("pass_season", ""))
+	check_pass_season()
 	_reconcile_cooks()
 	if not tutorial_on:
 		# Legacy saves had no completion ledger; infer preceding displayed rows.
@@ -997,6 +1048,27 @@ func gen_wait(i: int) -> int:
 	var st := Data.gen_stats(board[i]["id"])
 	return maxi(1, int(float(st["refill"]) * 60.0 - (now() - float(board[i]["gm"]["t"]))))
 
+## 双倍火种是否生效（开着且等级够）
+func boost_on() -> bool:
+	return boost and level >= Data.BOOST_LEVEL
+
+## 点一次（耗火种的）生产器要花多少火种
+func gen_cost() -> int:
+	return 2 if boost_on() else 1
+
+func set_boost(on: bool) -> void:
+	boost = on and level >= Data.BOOST_LEVEL
+	dirty()
+	changed.emit()
+	board_changed.emit()
+
+## 双倍火种下产物升 1 级（到链顶为止）
+func boost_drop(id: String) -> String:
+	if not boost_on() or Data.is_dish(id):
+		return id
+	var nxt := Data.next_id(id)
+	return nxt if nxt != "" else id
+
 func gen_use(i: int) -> void:
 	var left := gen_left(i)
 	if left < 0:
@@ -1216,23 +1288,27 @@ func _make_order_free() -> Dictionary:
 	var rw := {"shell": shell}
 	return {"who": rng.randi() % Data.PEOPLE.size(), "items": items, "rw": rw, "story": false}
 
-func _has_craft_order() -> bool:
+func _craft_count() -> int:
+	var n := 0
 	for o in orders:
 		if str(o.get("kind", "")) == "craft":
-			return true
-	return false
+			n += 1
+	return n
 
-func _pick_dish(avoid: String = "") -> Dictionary:
-	var pool := Data.dishes_for(level)
-	var fresh: Array = []
-	for d in pool:
-		if str(d["id"]) != avoid:
-			fresh.append(d)
-	if fresh.is_empty():
-		fresh = pool
-	if fresh.is_empty():
+## 挑一道菜：图鉴里还没做过的优先（越早解锁越先来）；都做过了就在最新解锁的 8 道里随机。
+## avoid 里的菜（场上已有的制作单）不重复。
+func _pick_dish(avoid: Array = []) -> Dictionary:
+	var pool: Array = []
+	for d in Data.dishes_for(level):
+		if not (str(d["id"]) in avoid):
+			pool.append(d)
+	if pool.is_empty():
 		return {}
-	return fresh[rng.randi() % fresh.size()]
+	for d in pool:
+		if not discovered.has(str(d["id"])):
+			return d
+	var recent := pool.slice(maxi(0, pool.size() - 8))
+	return recent[rng.randi() % recent.size()]
 
 func _craft_order(d: Dictionary) -> Dictionary:
 	if d.is_empty():
@@ -1244,6 +1320,9 @@ func _craft_order(d: Dictionary) -> Dictionary:
 	var rw := {"shell": shell}
 	if rng.randf() < 0.4:
 		rw["token"] = rng.randi_range(1, 3)
+	var sand := Data.craft_sand(str(d["id"]))
+	if sand != "":
+		rw["rewards"] = [sand]
 	return {
 		"who": rng.randi() % Data.PEOPLE.size(),
 		"kind": "craft",
@@ -1259,20 +1338,27 @@ func _craft_order(d: Dictionary) -> Dictionary:
 		"uid": "c%d" % rng.randi(),
 	}
 
-## 经验订单之后有空位时，保留一单制作；正在制作的订单不挤掉。
+## 经验订单之后有空位时，保留制作单（同时最多 Data.craft_cap 张，菜不重复）；正在制作的订单不挤掉。
 func _ensure_craft_order(replace: bool, avoid: String = "") -> void:
-	if _has_craft_order() or level < craft_level() or orders.size() >= Data.order_total(level):
+	if level < craft_level():
 		return
-	var made := _craft_order(_pick_dish(avoid))
-	if made.is_empty():
-		return
-	if replace:
-		for i in range(orders.size() - 1, -1, -1):
-			if not bool(orders[i].get("story", false)):
-				orders[i] = made
-				return
-	orders.append(made)
-	dirty()
+	while _craft_count() < Data.craft_cap(level) and orders.size() < Data.order_total(level):
+		var skip: Array = [avoid] if avoid != "" else []
+		for o in orders:
+			if str(o.get("kind", "")) == "craft":
+				skip.append(str(o.get("dish", "")))
+		var made := _craft_order(_pick_dish(skip))
+		if made.is_empty():
+			return
+		if replace:
+			replace = false
+			for i in range(orders.size() - 1, -1, -1):
+				if not bool(orders[i].get("story", false)) and str(orders[i].get("kind", "")) != "craft":
+					orders[i] = made
+					dirty()
+					return
+		orders.append(made)
+		dirty()
 
 ## 经验订单按 story.json 顺序优先占用共享订单位：
 ## after 是已经放出过的最大序号（交单时传入），只发它后面的。行里记 si（序号），交单时据此放下一张。
@@ -1456,13 +1542,14 @@ func cook_left(i: int) -> int:
 	var left := float(ck["t0"]) + float(ck["secs"]) - now()
 	return maxi(0, int(ceil(left)))
 
-## 花 1 份沙漏，让这一格的制作快 10 秒。时间够了就当场完成。
+## 用沙漏加速这一格的制作：每份快 Data.rush_sec() 秒，一次用到做完为止（沙漏不够就全用上）。返回用了几份。
 func rush_cook(i: int) -> int:
 	if not cooking(i) or rush < 1:
 		return 0
-	rush -= 1
+	var n := mini(rush, rush_need(i))
+	rush -= n
 	var ck: Dictionary = board[i]["ck"]
-	ck["t0"] = float(ck["t0"]) - 10.0
+	ck["t0"] = float(ck["t0"]) - float(n * Data.rush_sec())
 	var uid := str(ck.get("uid", ""))
 	for o in orders:
 		if str(o.get("kind", "")) == "craft" and str(o.get("uid", "")) == uid:
@@ -1471,7 +1558,11 @@ func rush_cook(i: int) -> int:
 	dirty()
 	changed.emit()
 	board_changed.emit()
-	return 10
+	return n
+
+## 做完这一格还要几份沙漏。
+func rush_need(i: int) -> int:
+	return maxi(1, int(ceil(float(cook_left(i)) / float(Data.rush_sec()))))
 
 func _gather_anchor(cells: Array) -> int:
 	var sx := 0.0
@@ -1608,6 +1699,7 @@ func complete_order(oi: int) -> Array:
 	DuelRace.on_order(o)
 	orders.remove_at(oi)
 	if not tutorial_on: refill_orders()
+	check_pass_season()
 	pass_pts += 2 if pass_tier >= 2 else 1
 	cloud_mark()
 	dirty()
@@ -1680,6 +1772,7 @@ func pass_claimable() -> bool:
 	return pass_endless_ready() > 0
 
 func claim_pass_free(lv: int) -> Array:
+	check_pass_season()
 	if server_mode():
 		return await _claim_pass_srv("free", lv)
 	if lv < 1 or lv > Data.PASS_LEVELS.size():
@@ -1692,6 +1785,7 @@ func claim_pass_free(lv: int) -> Array:
 	return Data.PASS_LEVELS[lv - 1]["free"]
 
 func claim_pass_prem(lv: int) -> Array:
+	check_pass_season()
 	if server_mode():
 		return await _claim_pass_srv("prem", lv)
 	if lv < 1 or lv > Data.PASS_LEVELS.size() or _pass_has(pass_prem, lv):
@@ -1709,6 +1803,7 @@ func claim_pass_prem(lv: int) -> Array:
 
 ## 超级贵宾那一列：只有超级贵宾能领
 func claim_pass_super(lv: int) -> Array:
+	check_pass_season()
 	if server_mode():
 		return await _claim_pass_srv("super", lv)
 	if lv < 1 or lv > Data.PASS_LEVELS.size() or _pass_has(pass_super, lv):
@@ -1738,6 +1833,7 @@ func _claim_pass_srv(track: String, lv: int) -> Array:
 	return rw
 
 func claim_pass_endless() -> Array:
+	check_pass_season()
 	if server_mode():
 		return await _claim_pass_srv("endless", 0)
 	if pass_tier != 2:
@@ -1956,6 +2052,9 @@ func _merge_coin(merged: String, origin: int) -> void:
 	var roll := float(uid.sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
 	# 掷点用事件 id 的哈希，服务器按同一个 id 复算，结果一致
 	var id := Data.merge_coin_item(merged)
-	if id == "" or roll >= Data.merge_coin_chance(): return
+	if id == "" or roll >= Data.merge_coin_chance():
+		id = Data.merge_sand_item(merged, level)
+		var lo := Data.merge_coin_chance() if Data.merge_coin_item(merged) != "" else 0.0
+		if id == "" or roll < lo or roll >= lo + Data.merge_sand_chance(): return
 	Rewards.grant([[id, 1, "physical"]], Callable(), false, true, {"board_origin": to})
 	if is_instance_valid(main): main.board_screen.board.fly_in(origin, to, id)

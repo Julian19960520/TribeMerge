@@ -70,12 +70,12 @@ func _run() -> void:
 		await create_timer(0.4).timeout
 	if _want("inventory"):
 		g.inv_cap = 13
-		g.inv = ["fruit_4", "tool_3", "cloth_5", "gem_2", "fire_4", "beast_6", "pot_3", "seed_2"]
+		g.inv = ["fruit_4", "tool_3", "cloth_5", "gem_2", "fire_4", "beast_3", "pot_3", "seed_2"]
 		var p = main.open("inventory")
 		await create_timer(1.2).timeout
 		_shot("inventory")
 		g.inv_cap = 42
-		for k in 30: g.inv.append(["fruit_3", "tool_4", "furn_2", "bird_5"][k % 4])
+		for k in 30: g.inv.append(["fruit_3", "tool_4", "furn_2", "bird_2"][k % 4])
 		g.changed.emit()
 		p.scroll.jump_to(400.0)
 		await create_timer(0.8).timeout

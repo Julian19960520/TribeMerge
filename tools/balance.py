@@ -24,12 +24,17 @@ DATA = os.path.join(ROOT, "data")
 
 KNOBS = {
     "levels": 40,
-    # 活跃玩家每天大约用掉的火种（自然回复 720，按一天 3-4 局、睡觉时溢出折算）
-    "day_taps": 450,
-    # 每个等级段预计玩几天
-    "days": [(5, 0.25), (10, 0.5), (20, 1.0), (30, 1.5), (40, 2.0)],
-    # 每级点击里有多少花在剧情订单上，其余给随机单 / 制作单（换贝币）
-    "story_share": 0.45,
+    # 每级总共花多少火种（点击），含升级送的火种。(到这一级为止, 点击数)
+    # 目标节奏：第 1 天（约 3.5 小时）1→12 级一直有事干；第 2 天 13→15 级偶尔卡体力；
+    # 16 级第四产线约第 3 天；之后越来越慢，40 级约第 40 天。
+    # 演算校准（2026-11-07，含占位活动）：自动玩家实际花的体力 ≈ 前期 0.52×、后期 0.55× 这里的点击数
+    "taps": [(1, 75), (4, 200), (8, 260), (12, 380), (15, 820), (20, 1050), (25, 1400), (30, 2050), (35, 2450), (40, 2950)],
+    # 第 3 天起每天折合多少点击（体力约 750/天 ÷ 演算校准 0.55），只用来估算天数
+    "day_taps": 1350,
+    # 每级点击里有多少花在经验订单上，其余给随机单 / 制作单（换贝币）
+    "story_share": 0.8,
+    # 经验订单基本 1 点声望；6 级起每 5 点需求里有 1 张 2 点的大单
+    "xp2_from": 6, "xp2_every": 5,
     # 合成剩零头、产出不对口的损耗
     "waste": 1.15,
     # 随机订单难度（点击数）：简单单 = easy_a + easy_b × 等级，难单 = hard_a + hard_b × 等级
@@ -37,10 +42,20 @@ KNOBS = {
     "hard_a": 60, "hard_b": 4.0,
     # 常驻 4 张随机单在简单～难之间的位置：1 简单、2 中等、1 难
     "slots": [0.0, 0.3, 0.55, 1.0],
-    # 升到下一级要的声望 = xp_base + (等级-1) // xp_div
-    "xp_base": 3, "xp_div": 2,
+    # 升到下一级要的声望 = xp_base + (等级-1) // xp_div：1~4 级 3 点，之后每 4 级 +1，40 级 12 点
+    "xp_base": 3, "xp_div": 4,
     # 升级送的火种 = fire_a + fire_b × 等级
-    "fire_a": 60, "fire_b": 2,
+    "fire_a": 5, "fire_b": 3,
+    # 第几级送火种罐
+    "emberpot_level": 12,
+    # 制作订单：几级开放；craft_cap_at 每个元素是多开一张制作单的等级
+    "craft_level": 3, "craft_cap_at": [3, 16],
+    # 沙漏：一份快多少秒；升级送的沙漏份数 = sand_a + 等级 // sand_div（制作开放后）
+    "rush_sec": 60, "sand_a": 3, "sand_div": 3,
+    # 制作单附送的沙漏实物：按菜的制作秒数取档 [最少秒数, 物品]
+    "craft_sand": [[0, "sand_2"], [300, "sand_3"], [1800, "sand_4"], [7200, "sand_5"]],
+    # 合成普通物品时掉沙漏：和合成掉贝币共用掷点，排在贝币后面
+    "merge_sand": {"chance": 0.03, "min_level": 3, "tiers": [[2, "sand_1"], [7, "sand_2"], [10, "sand_3"]]},
     # 贝币：建造总价占全程订单贝币收入的比例
     "build_share": 0.85,
     # 每个区域从开放到建完大约用几级
@@ -104,11 +119,20 @@ OLD_BUILDS = load_base("builds.json")
 apply_drop_template()
 
 
-def days_of(L):
-    for top, d in KNOBS["days"]:
+def taps_of(L):
+    for top, t in KNOBS["taps"]:
         if L <= top:
-            return d
-    return KNOBS["days"][-1][1]
+            return t
+    return KNOBS["taps"][-1][1]
+
+
+def days_of(L):
+    """估算天数：第 1 天 1~12 级、第 2 天 13~15 级，之后按每天能花的火种折算。"""
+    if L <= 12:
+        return round(1 / 12, 3)
+    if L <= 15:
+        return round(1 / 3, 3)
+    return round(taps_of(L) / KNOBS["day_taps"], 3)
 
 
 def xp_need(L):
@@ -206,7 +230,7 @@ def simulate(costs, level_gens):
         gl = {l["gen"]: gen_level(eq[l["gen"]], l["gen"]) for l in lines}
         effs = [eff(l["gen"], gl[l["gen"]])[0] for l in lines]
         e = sum(effs) / len(effs)
-        taps = days_of(L) * K["day_taps"] + (level_fire(L) if L > 1 else 0)
+        taps = taps_of(L)
         story_taps = taps * K["story_share"]
         rand_taps = taps - story_taps
         story_f = story_taps * e / K["waste"]
@@ -383,14 +407,27 @@ def item_flames(x):
     return f
 
 
+# 1 级的两张剧情单和新手引导绑在一起，保持原样
+STORY_L1 = next(x["orders"] for x in load("story.json")["levels"] if x["level"] == 1)
+
+
 def story_for(L, rows_by_level, rng):
+    if L == 1:
+        return [dict(o) for o in STORY_L1]
     r = rows_by_level[L]
     total_f = r["story_f"]
     need = xp_need(L)
-    # 1 级只有 2 张：新手引导最后那张草籽单的 1 点声望也算在 1 级里
-    shares = [0.45, 0.55] if L == 1 else [0.25, 0.33, 0.42]
+    # 1 级：新手引导最后那张草籽单的 1 点声望也算在 1 级里
     if L == 1:
         need -= 1
+    # 每张 1 点声望；中后期每 xp2_every 点里有一张 2 点的大单，放在中间和压轴
+    n2 = need // KNOBS["xp2_every"] if L >= KNOBS["xp2_from"] else 0
+    xps = [1] * (need - 2 * n2)
+    for j in range(n2):
+        xps.insert(len(xps) if j == 0 else len(xps) // 2, 2)
+    # 火苗按声望分，带 ±25% 浮动，同一级里订单有大有小
+    weights = [x * rng.uniform(0.75, 1.25) for x in xps]
+    shares = [w / sum(weights) for w in weights]
     fresh = [l for l in LINES if l["unlock"] <= L <= l["unlock"] + 2]
     chains = [l["main"] for l in open_lines(L) if product_open(L, l["main"])]
     subs = [l["sub"] for l in open_lines(L) if product_open(L, l["sub"])]
@@ -398,9 +435,6 @@ def story_for(L, rows_by_level, rng):
     # 同一级、上一级已经要过的物品尽量不再要，免得订单栏里全是同一两种东西
     recent = set(LAST_ITEMS)
     k_n = len(shares)
-    xps = [need // k_n] * k_n
-    for i in range(need % k_n):
-        xps[k_n - 1 - i] += 1
     for i, s in enumerate(shares):
         f = total_f * s
         if f <= 24:
@@ -476,6 +510,11 @@ def level_rewards(L, level_gens):
         rw.append([f"{level_gens[L]}_{gen_reward_lv(L)}", 1])
     if L % 2 == 0:
         rw.append(["amber_3", 5])
+    if L >= KNOBS["craft_level"]:
+        rw.append(["sand_2", KNOBS["sand_a"] + L // KNOBS["sand_div"]])
+    # 火种罐（体力生产器）只送一个：第 2 天开始卡体力前拿到，每 12 小时一批约 90 体力
+    if L == KNOBS["emberpot_level"]:
+        rw.append(["emberpot_1", 1])
     return rw
 
 
@@ -577,7 +616,8 @@ def write_back(out):
     rules = load("rules.json")
     rules.update({"random_orders": len(KNOBS["slots"]), "xp_base": KNOBS["xp_base"], "xp_div": KNOBS["xp_div"],
                   "energy_price": 20, "energy_price_step": 10, "energy_price_max": 60,
-                  "craft_level": 3})
+                  "craft_level": KNOBS["craft_level"], "craft_cap_at": KNOBS["craft_cap_at"],
+                  "rush_sec": KNOBS["rush_sec"], "craft_sand": KNOBS["craft_sand"], "merge_sand": KNOBS["merge_sand"]})
     with open(os.path.join(DATA, "rules.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(rules, f, ensure_ascii=False, indent="\t")
         f.write("\n")
@@ -594,6 +634,7 @@ def write_html(out):
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
     out = run()
     with open(os.path.join(ROOT, "tools", "balance_out.json"), "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=1)

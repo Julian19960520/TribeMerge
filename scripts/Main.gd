@@ -145,7 +145,15 @@ func open(name: String, arg = null) -> PopupBase:
 		"merge_event":
 			p = preload("res://scripts/ui/MergeEventPopup.gd").new()
 			if arg is String: p.period_key = arg
-		"energy": p = Popups.energy()
+		"energy":
+			# 火种大礼包这期能买就先弹它（开期要问服务器，异步打开），否则琥珀买体力
+			if Offers.wants_energy():
+				Offers.open_energy()
+				return null
+			p = Popups.energy()
+		"energy_amber": p = Popups.energy()
+		"energy_offer": p = preload("res://scripts/ui/EnergyOfferPopup.gd").new()
+		"spree": p = preload("res://scripts/ui/SpreePopup.gd").new()
 		"howto": p = Popups.howto()
 		"store": p = Popups.store()
 		"settings": p = Popups.settings()

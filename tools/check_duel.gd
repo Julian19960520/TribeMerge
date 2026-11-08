@@ -12,7 +12,7 @@ func run() -> void:
 	g.new_game()
 	g.rng.seed=41
 	check(duel.local_action("join").has("error"),"locked player cannot join")
-	g.level=6
+	g.level=int(JSON.parse_string(FileAccess.get_file_as_string("res://data/duel_race.json"))["unlock_level"])
 	check(duel.order_points({"items":["fruit_1"]})==1 and duel.order_points({"items":["fruit_8"]})==4,"difficulty uses configured order points")
 	check(duel.local_action("milestone",2).has("error"),"cannot claim wins in advance")
 	for round_id in 12:

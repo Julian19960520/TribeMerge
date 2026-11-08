@@ -54,6 +54,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	if is_instance_valid(rail): rail.queue_redraw()
+	if is_instance_valid(tasks_root):
+		for c in tasks_root.get_children():
+			if c is DrawBox: c.queue_redraw()
 
 ## 打开时先停在有奖可领的那页，其次是第一页还没做完的
 func _first_page() -> int:
@@ -95,7 +98,12 @@ func _refresh() -> void:
 		var sel := page == k
 		tabs[k].style = "teal" if sel else "hide"
 		tabs[k].extra = func(ci, sz):
-			if SevenDay.day_done(k): Paint.check_mark(ci, Vector2(sz.x - 14, sz.y - 18), 0.55)
+			if SevenDay.day_done(k):
+				# 整页领完：盖一层绿 + 大勾
+				ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(4, 4), sz - Vector2(8, 8)), 14, 780 + k, 0), Color(Art.MOSS, 0.45))
+				ci.draw_circle(Vector2(sz.x - 16, sz.y - 16), 14, Art.INK)
+				ci.draw_circle(Vector2(sz.x - 16, sz.y - 16), 12, Art.MOSS_D)
+				ci.draw_polyline(PackedVector2Array([Vector2(sz.x - 23, sz.y - 16), Vector2(sz.x - 18, sz.y - 11), Vector2(sz.x - 9, sz.y - 22)]), Color.WHITE, 3.5, true)
 			elif SevenDay.ready(k): Paint.badge_num(ci, Vector2(sz.x - 9, 9), 6, 9)
 		tabs[k].queue_redraw()
 
@@ -194,38 +202,55 @@ func _task(task: Dictionary, y: float, k: int) -> void:
 	var progress := "%d/%d" % [current, target]
 	if paid: progress = "¥%d/%d" % [current / 100, target / 100]
 	var tier: Color = TIER.get(pts, TIER[30] if pts > 30 else TIER[10])
+	var ready := done and not claimed
 	UI.box(tasks_root, Rect2(48, y, 624, ROW_H), func(ci, sz):
-		var bg := Color("e4dccb") if claimed else (Color("fff6d8") if done else Color("fdeccb"))
 		var body := Art.rrect(Rect2(Vector2.ZERO, sz), 20, 731 + k, 0.5)
-		Art.fill(ci, body, bg, 3)
-		if done and not claimed:
-			Art.outline(ci, Art.rrect(Rect2(Vector2(5, 5), sz - Vector2(10, 10)), 16, 732 + k, 0.3), 3, Color(Art.MOSS, 0.8))
-		# 积分牌：一块石头挂牌，越难颜色越热
+		if ready:
+			# 可领：外圈呼吸金光 + 亮黄底 + 绿描边
+			var glow := 0.35 + 0.25 * sin(_t * 5.0 + k)
+			Art.dilate(ci, body, 7.0, Color(1.0, 0.82, 0.25, glow))
+		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 5), sz), 20, 731 + k, 0.5), Color(0.3, 0.18, 0.08, 0.22 if ready else 0.0))
+		var bg := Color("d2ccbf") if claimed else (Color("dcf0b4") if ready else Color("f6ecd8"))
+		Art.fill(ci, body, bg, 3 if ready else 2, Art.INK if ready else Color("b8a582"))
+		if ready:
+			Art.outline(ci, Art.rrect(Rect2(Vector2(5, 5), sz - Vector2(10, 10)), 16, 732 + k, 0.3), 5, Art.MOSS_D)
+		# 积分牌：一块石头挂牌，越难颜色越热；已领变灰
 		var tag := Art.ell(Vector2(56, sz.y * 0.5), Vector2(38, 40), 733 + k, 0.06, 18)
-		Art.dilate(ci, tag, 3.0, Art.INK)
-		Art.shade(ci, tag, tier.lerp(Color("d8d2c4"), 0.6) if claimed else tier, 0)
+		Art.dilate(ci, tag, 3.0, Color("9a8e7c") if claimed else Art.INK)
+		Art.shade(ci, tag, Color("bdb5a6") if claimed else tier, 0)
 		EventEntryArt.text(ci, str(pts), Vector2(56, sz.y * 0.5 + 6), 32, Color.WHITE, 6)
 		EventEntryArt.text(ci, "积分", Vector2(56, sz.y * 0.5 + 30), 15, Color.WHITE, 4)
 		# 进度条
 		var bar := Rect2(112, 70, 196, 30)
 		var pfs := 18 if progress.length() <= 7 else 16
-		Paint.bar(ci, bar, float(current) / float(maxi(1, target)), Art.MOSS if done else Color("ffb02e"), 734 + k)
+		Paint.bar(ci, bar, float(current) / float(maxi(1, target)), Color("b5ad9c") if claimed else (Art.MOSS if done else Color("ffb02e")), 734 + k)
 		EventEntryArt.text(ci, progress, bar.get_center() + Vector2(0, 6), pfs, Color.WHITE, 4)
 		# 奖励泡泡
 		var rewards: Array = task["rewards"]
 		for j in rewards.size():
 			var c := Vector2(352 + j * 72, sz.y * 0.5 + 2)
 			Paint.reward_bubble(ci, c, 31, str(rewards[j][0]), int(rewards[j][1]), 740 + k * 3 + j)
+			if claimed: ci.draw_circle(c, 32, Color(0.85, 0.83, 0.78, 0.65))
 		if claimed:
-			# 已领：斜盖一个印章
-			ci.draw_set_transform(Vector2(546, sz.y * 0.5), -0.18, Vector2.ONE)
-			Art.outline(ci, Art.rrect(Rect2(-54, -24, 108, 48), 12, 735 + k, 0.6), 3.5, Color(Art.CLAY, 0.85))
-			EventEntryArt.text(ci, "已领取", Vector2(0, 9), 24, Color(Art.CLAY, 0.95), 0)
-			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE))
+			# 已领：整行压灰，右侧绿色大勾 + 「已领取」
+			ci.draw_circle(Vector2(560, sz.y * 0.5 - 8), 26, Art.INK)
+			ci.draw_circle(Vector2(560, sz.y * 0.5 - 8), 23, Art.MOSS_D)
+			ci.draw_polyline(PackedVector2Array([Vector2(548, sz.y * 0.5 - 8), Vector2(557, sz.y * 0.5 + 1), Vector2(573, sz.y * 0.5 - 18)]), Color.WHITE, 5, true)
+			EventEntryArt.text(ci, "已领取", Vector2(560, sz.y * 0.5 + 40), 20, Color("7a7264"), 0)
+		elif ready:
+			# 「可领取」角标
+			var rib := Rect2(sz.x - 118, -12, 96, 30)
+			Art.fill(ci, Art.rrect(rib, 10, 736 + k, 0.4), Art.CLAY, 2.6)
+			EventEntryArt.text(ci, "可领取", rib.get_center() + Vector2(0, 7), 18, Color.WHITE, 4))
 	UI.lbl(tasks_root, str(task["title"]), Rect2(160, y + 12, 330, 44), 25, Color("8a7a66") if claimed else Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
 	if claimed: return
-	var b := UI.btn(tasks_root, Rect2(530, y + 30, 128, 64), "领取" if done else "进行中", "green" if done else "hide", func(): _claim(str(task["id"]), false), 24)
-	b.enabled = done and not SevenDay.busy
+	if not done:
+		UI.box(tasks_root, Rect2(530, y + 34, 128, 56), func(ci, sz):
+			Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 16, 737 + k, 0.4), Color("e8dcc2"), 2.5, Color("b5a688"))
+			EventEntryArt.text(ci, "进行中", Vector2(sz.x * 0.5, sz.y * 0.5 + 8), 22, Color("9a8a70"), 0), false)
+		return
+	var b := UI.btn(tasks_root, Rect2(526, y + 28, 136, 70), "领取", "green", func(): _claim(str(task["id"]), false), 28)
+	b.enabled = not SevenDay.busy
 
 func _claim(id: String, stage: bool) -> void:
 	var result := await SevenDay.claim(id, stage)

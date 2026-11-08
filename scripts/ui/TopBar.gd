@@ -112,7 +112,7 @@ func _add_gem() -> void:
 	_gem_lbl = UI.lbl(c, "", Rect2(PILLS["amber"].position + Vector2(30, 0) - o, Vector2(116, 50)), 26)
 	UI.hit(c, Rect2(Vector2.ZERO, r.size), func():
 		if _gem_mode == "sand":
-			G.main.toast("沙漏能加快制作，每份 10 秒。合成到 2 级以上再领取，级别越高得到越多。")
+			G.main.toast("沙漏能加快制作，每份快 %s。合成到 2 级以上再领取，级别越高得到越多。" % Data.rush_text())
 		else:
 			_open_from("amber", "store"))
 

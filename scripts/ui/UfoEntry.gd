@@ -13,12 +13,10 @@ var _clock := 0.0
 var _shown := false
 var _motion: Tween
 var _t := 0.0
-var _tex: Texture2D
 func _ready() -> void:
 	position = Vector2(560, 96)
 	size = Vector2(W, H)
 	mouse_filter = MOUSE_FILTER_IGNORE
-	_tex = load(str(UfoOffer.config()["icon"]))
 	hit = UI.hit(self, Rect2(Vector2.ZERO, size), UfoOffer.open_panel)
 	hit.name = "ufo_entry"
 	hit.extra = _paint
@@ -26,35 +24,41 @@ func _ready() -> void:
 	var tag := UI.lbl(hit, "5折", Rect2(98, 0, 58, 32), 19, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	tag.rotation = 0.22
 	hit.visible = false
+## 全部用 Art 的抖动形状画，跟着全局沸腾线一起抖；配色压到夜空蓝 + 骨白 + 一点黄绿。
 func _paint(ci: CanvasItem, _sz: Vector2) -> void:
-	# 气泡
-	ci.draw_circle(C + Vector2(0, 7), RAD + 3, Color(0, 0, 0, 0.28))
-	ci.draw_circle(C, RAD + 3, Art.INK)
-	ci.draw_circle(C, RAD, Color("dff7f0"))
-	ci.draw_circle(C, RAD - 4, Color("234a63"))
-	ci.draw_circle(C + Vector2(0, 6), RAD - 14, Color("2e6377"))
-	ci.draw_circle(C + Vector2(0, 12), RAD - 28, Color("3d7d88"))
-	for k in 9:
-		var p := C + Vector2((Art.srnd(k * 5 + 1) - 0.5) * 84, (Art.srnd(k * 7 + 2) - 0.75) * 70)
-		if p.distance_to(C) < RAD - 10:
-			ci.draw_circle(p, 1.2 + Art.srnd(k) * 1.4, Color(1, 1, 0.85, 0.8))
+	# 气泡：墨线 + 骨白玻璃边 + 夜空底
+	var bub := Art.ell(C, Vector2(RAD, RAD), 801, 0.03, 26)
+	ci.draw_colored_polygon(Art.ell(C + Vector2(0, 6), Vector2(RAD + 2, RAD + 2), 802, 0.03, 26), Color(0, 0, 0, 0.25))
+	Art.dilate(ci, bub, 3.0, Art.INK)
+	ci.draw_colored_polygon(bub, Color("dff7f0"))
+	ci.draw_colored_polygon(Art.ell(C, Vector2(RAD - 5, RAD - 5), 803, 0.03, 24), Color("27506a"))
 	# 牵引光
-	var beam := PackedVector2Array([C + Vector2(-10, 18), C + Vector2(10, 18), C + Vector2(30, 52), C + Vector2(-30, 52)])
-	ci.draw_colored_polygon(beam, Color(0.76, 0.92, 0.48, 0.32))
-	# 飞碟（轻轻摇）
-	var tilt := sin(_t * 2.2) * 0.06
-	ci.draw_set_transform(C + Vector2(0, -12 + sin(_t * 3.0) * 2.0), tilt, Vector2.ONE)
-	ci.draw_texture_rect(_tex, Rect2(-54, -40, 108, 76), false)
+	var beam := Art.poly([C + Vector2(-9, 8), C + Vector2(9, 8), C + Vector2(28, 44), C + Vector2(-28, 44)], 804)
+	ci.draw_colored_polygon(beam, Color(0.8, 0.95, 0.5, 0.35))
+	# 飞碟：轻轻晃
+	var o := C + Vector2(0, -12 + sin(_t * 3.0) * 2.0)
+	var tilt := sin(_t * 2.2) * 0.07
+	ci.draw_set_transform(o, tilt, Vector2.ONE)
+	var dome := Art.ell(Vector2(0, -8), Vector2(17, 15), 805, 0.05, 16)
+	Art.fill(ci, dome, Color("bfeee6"), 2.6)
+	ci.draw_colored_polygon(Art.ell(Vector2(-6, -13), Vector2(4, 3), 806, 0.1, 8), Color(1, 1, 1, 0.8))
+	var disc := Art.ell(Vector2(0, 2), Vector2(40, 11), 807, 0.04, 20)
+	Art.fill(ci, disc, Color("a7b4b8"), 2.8)
+	Art.fill(ci, Art.ell(Vector2(0, 0), Vector2(30, 5), 808, 0.05, 14), Color("d7e0e2"), 0.0)
+	for k in 3:
+		var on := int(_t * 3.0 + k) % 3 == 0
+		Art.fill(ci, Art.ell(Vector2(-20 + k * 20, 6), Vector2(4, 3.5), 809 + k, 0.1, 8), Art.FIRE2 if on else Color("e8b44a"), 1.8)
 	ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 	# 玻璃高光
-	ci.draw_arc(C, RAD - 9, 3.55, 4.55, 18, Color(1, 1, 1, 0.75), 4.0, true)
-	ci.draw_circle(C + Vector2(-38, -20), 4, Color(1, 1, 1, 0.7))
+	Art.pl(ci, [C + Vector2(-40, -26), C + Vector2(-30, -40), C + Vector2(-16, -48)], 4.0, Color(1, 1, 1, 0.7), 812)
+	# 倒计时底条
+	var bar := Art.rrect(Rect2(C.x - 40, 88, 80, 28), 12, 813, 0.6)
+	ci.draw_colored_polygon(bar, Color(0.08, 0.15, 0.2, 0.75))
 	# 「5折」小签
 	ci.draw_set_transform(Vector2(127, 16), 0.22, Vector2.ONE)
-	var t := Art.rrect(Rect2(-28, -15, 56, 30), 9, 704, 0.4)
-	Art.dilate(ci, t, 2.5, Art.INK)
-	ci.draw_colored_polygon(t, Art.CLAY)
+	Art.fill(ci, Art.rrect(Rect2(-28, -15, 56, 30), 9, 814, 0.6), Art.CLAY, 2.5)
 	ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+
 func _process(delta: float) -> void:
 	if not is_visible_in_tree(): return
 	if hit.visible:

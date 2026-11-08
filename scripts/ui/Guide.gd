@@ -211,6 +211,8 @@ func _process(dt: float) -> void:
 		return
 	_follow()
 	_t += dt
+	if _arrow_on and is_instance_valid(_frames):
+		_frames.queue_redraw()
 	if _bust.visible:
 		_bust.position = _bust_home + Vector2(0, sin(_t * 2.3) * 5.0)
 	var board: Board = G.main.board_screen.board
@@ -374,12 +376,12 @@ func _fill_step() -> void:
 			_aim(_open_id("basket_2"), VINE2 if _lock(VINE2) == 1 and _id(VINE2) == "basket_2" else -1)
 			_anchor = _union()
 		"to_prod":
-			_text = "再合成，做出4级藤篮\n藤篮才能生产"
+			_text = "再合成，做出4级小草篓\n小草篓才能生产"
 			_add_cells([VINE2, PROD])
 			_aim(_open_id("basket_3"), PROD if _id(PROD) == "basket_3" and _lock(PROD) != 2 else -1)
 			_anchor = _union()
 		"produce":
-			_text = "点一下藤篮\n野莓会落到旁边"
+			_text = "点一下小草篓\n野莓会落到旁边"
 			_add_cells([PROD, SPAWN])
 			_anchor = _cell_local(PROD)
 		"make_fruit2":
@@ -393,7 +395,7 @@ func _fill_step() -> void:
 			_add_global(G.main.board_screen.guide_deliver_rect())
 			_anchor = _holes.back() if not _holes.is_empty() else Rect2()
 		"produce_more":
-			_text = "再点藤篮，多做几颗野莓\n合成更高级的水果"
+			_text = "再点小草篓，多做几颗野莓\n合成更高级的水果"
 			_add_cells([PROD, SPAWN, BERRY])
 			_anchor = _cell_local(PROD)
 		"climb":
@@ -420,26 +422,26 @@ func _fill_step() -> void:
 			_text = "正在打开部落升级"
 			_anchor = Rect2(160, 280, 400, 80)
 		"build":
-			_text = "点绿色按钮升级\n还有一只小草篓"
+			_text = "点绿色按钮升级\n还有一只半编草篓"
 			for pp in G.main.popup_layer.get_children():
 				if pp.has_meta("build_rects"):
 					for br in pp.get_meta("build_rects"):
 						_add_popup((br as Rect2).grow(6))
 			_anchor = _union()
 		"rewarded":
-			_text = "小草篓进了暂存区"
+			_text = "半编草篓进了暂存区"
 			_anchor = Rect2(150, 280, 420, 80)
 		"back":
-			_text = "回到棋盘\n把小草篓合成上去"
+			_text = "回到棋盘\n把半编草篓合成上去"
 			if G.main.home != null and G.main.home.go != null:
 				_add_ctrl(G.main.home.go)
 			_anchor = _union()
 		"take3":
-			_text = "升级送了小草篓\n点暂存区放到棋盘"
+			_text = "升级送了半编草篓\n点暂存区放到棋盘"
 			_add_global(G.main.board_screen._stash_wrap.get_global_rect())
 			_anchor = _union()
 		"merge3":
-			_text = "拖到藤蔓上的小草篓\n合成4级藤篮"
+			_text = "拖到藤蔓上的半编草篓\n合成4级小草篓"
 			var src3 := _open_id("basket_3")
 			var cells3: Array = []
 			if src3 >= 0:
@@ -450,14 +452,14 @@ func _fill_step() -> void:
 			_aim(src3, VINE3 if _vine3_ready() else -1)
 			_anchor = _union()
 		"merge5":
-			_text = "再和你的4级藤篮合成\n5级才会掉副产物"
+			_text = "再和你的4级小草篓合成\n5级才会掉副产物"
 			var pair := _basket4_pair()
 			if pair.x >= 0:
 				_add_cells([pair.x, pair.y])
 				_aim(pair.x, pair.y)
 			_anchor = _union()
 		"byprod":
-			_text = "点一下双耳藤筐\n这次掉出的是草籽"
+			_text = "点一下藤篮\n这次掉出的是草籽"
 			var gen := _open_id("basket_5")
 			if gen >= 0:
 				_add_cells([gen])
@@ -541,16 +543,54 @@ func _paint_frames(ci: CanvasItem, _sz: Vector2) -> void:
 			Art.outline(ci, frame, 2.6, Art.INK)
 	if not _arrow_on:
 		return
-	Art.pl(ci, [_arrow_a, _arrow_b], 10.0, Art.INK, 4)
-	Art.pl(ci, [_arrow_a, _arrow_b], 6.0, Color("fff1c4"), 5)
-	var dir := (_arrow_b - _arrow_a).normalized()
-	if dir.length() < 0.5:
+	_paint_merge_arrow(ci)
+
+## 合成指引：两格柔光 + 一条弯弯的贴纸箭头（墨线 / 奶白边 / 赭黄芯），箭身上有小箭头往前流动。
+## 合并引导：一支简单的白色弧形箭头（细墨边），从起点格指向终点格，随呼吸轻轻往前顶。
+func _paint_merge_arrow(ci: CanvasItem) -> void:
+	var a := _arrow_a
+	var b := _arrow_b
+	var d := b - a
+	if d.length() < 8.0:
 		return
-	var n := Vector2(-dir.y, dir.x)
-	var tip := _arrow_b + dir * 18.0
-	ci.draw_colored_polygon(PackedVector2Array([tip, _arrow_b - dir * 6.0 + n * 12.0, _arrow_b - dir * 6.0 - n * 12.0]), Art.INK)
-	var tip2 := _arrow_b + dir * 14.0
-	ci.draw_colored_polygon(PackedVector2Array([tip2, _arrow_b - dir * 2.0 + n * 8.0, _arrow_b - dir * 2.0 - n * 8.0]), Color("fff1c4"))
+	var pulse := 0.5 + 0.5 * sin(_t * 4.0)
+	var n := d.normalized().orthogonal()
+	if n.y > 0.0:
+		n = -n
+	var ctrl := (a + b) * 0.5 + n * minf(40.0, d.length() * 0.3)
+	var pts := PackedVector2Array()
+	for k in 21:
+		var u := float(k) / 20.0
+		pts.append(a.lerp(ctrl, u).lerp(ctrl.lerp(b, u), u))
+	var push := (pts[20] - pts[18]).normalized() * pulse * 4.0
+	var tip := pts[20] + push
+	var tdir := (pts[20] - pts[18]).normalized()
+	var tn := tdir.orthogonal()
+	var head_len := 24.0
+	var base := tip - tdir * head_len
+	var body := PackedVector2Array()
+	for p in pts:
+		if (p - a).length() < (base - push - a).length():
+			body.append(p + push * 0.5)
+	body.append(base)
+	# 箭身：尾巴尖、往箭头方向逐渐变粗，整支是一块多边形
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for k in body.size():
+		var u := float(k) / float(body.size() - 1)
+		var dir := (body[mini(k + 1, body.size() - 1)] - body[maxi(k - 1, 0)]).normalized()
+		var w := lerpf(0.5, 5.5, sqrt(u))
+		left.append(body[k] + dir.orthogonal() * w)
+		right.append(body[k] - dir.orthogonal() * w)
+	var shape := PackedVector2Array()
+	shape.append_array(left)
+	shape.append(base + tn * 17.0)
+	shape.append(tip)
+	shape.append(base - tn * 17.0)
+	right.reverse()
+	shape.append_array(right)
+	Art.dilate(ci, shape, 3.0, Art.INK)
+	ci.draw_colored_polygon(shape, Color.WHITE)
 
 func _sync_mask() -> void:
 	var arr := PackedVector4Array()

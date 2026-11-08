@@ -238,7 +238,7 @@ def test_orders_outside_race_dont_count(client, t0):
     goto(t0 + 70)
     assert race(p)["current"]["me"]["score"] == 0
     deliver(p, 1, "seed_1")  # 副产物按掉率折算
-    assert race(p)["current"]["me"]["score"] == pytest.approx(12.9, abs=0.05)
+    assert race(p)["current"]["me"]["score"] == pytest.approx(12.5, abs=0.05)
 
 
 # ---------------------------------------------------------------- 领奖

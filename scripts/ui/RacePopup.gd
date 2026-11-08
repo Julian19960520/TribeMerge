@@ -180,6 +180,19 @@ static func race_panel() -> PopupBase:
 	Popups.frame(p, r, "香蕉竞速", Art.CLAY, "fire")
 	var area := Rect2(r.position.x + 24, r.position.y + 48, r.size.x - 48, r.size.y - 70)
 	var box := UI.box(p.box, area, func(ci, sz): _paint_race(ci, sz, race), false)
+	# 竹筒顶上的金银铜宝箱：点一下弹气泡看这一名的奖励，点空白收起
+	var bubble := Control.new()
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var cw := area.size.x / 5.0
+	for i in 5:
+		var col := i
+		var hit := UI.hit(p.box, Rect2(area.position.x + cw * (i + 0.5) - 42, area.position.y + CHEST_Y - 40, 84, 80), func():
+			var m := _member_at(race, col)
+			var rk: int = race.place_of(m) if not m.is_empty() else 99
+			_toggle_rank_bubble(p, bubble, race, rk, area.position.x + cw * (col + 0.5), area.position.y + CHEST_Y + 40))
+		hit.name = "race_chest_col_%d" % i
+	p.box.add_child(bubble)
+	p.on_tap = func(): _toggle_rank_bubble(p, bubble, race, 0, 0, 0)
 	race.watch(p)
 	var t := Timer.new()
 	t.wait_time = 0.033
@@ -198,7 +211,69 @@ static func race_panel() -> PopupBase:
 	G.main._attach_popup(p)
 	return p
 
-const TUBE_TOP := 236.0
+const TUBE_TOP := 196.0
+## 宝箱中心（相对比赛区域）
+const CHEST_Y := 166.0
+
+static func _sorted_members(race: Node) -> Array:
+	var ms: Array = race.members().duplicate()
+	ms.sort_custom(func(a, b):
+		if bool(a.get("me", false)) != bool(b.get("me", false)):
+			return bool(a.get("me", false))
+		return int(a.get("slot", 0)) < int(b.get("slot", 0)))
+	return ms
+
+static func _member_at(race: Node, col: int) -> Dictionary:
+	var ms := _sorted_members(race)
+	return ms[col] if col < ms.size() else {}
+
+## 金银铜宝箱：箱体用名次色，箱盖更亮，深色箍带 + 锁扣
+static func _rank_chest(ci: CanvasItem, c: Vector2, rank: int, s: float) -> void:
+	var col: Color = MEDAL[rank]
+	var k := s / 64.0
+	ci.draw_colored_polygon(Art.ell(c + Vector2(0, 24 * k), Vector2(30 * k, 7 * k), 470 + rank, 0.05, 14), Color(0, 0, 0, 0.22))
+	var body := Art.rrect(Rect2(c + Vector2(-27, -6) * k, Vector2(54, 30) * k), 5 * k, 471 + rank, 0.5)
+	Art.fill(ci, body, col.darkened(0.12), 2.6)
+	var lid := Art.rrect(Rect2(c + Vector2(-30, -24) * k, Vector2(60, 20) * k), 8 * k, 472 + rank, 0.5)
+	Art.fill(ci, lid, col.lightened(0.15), 2.6)
+	ci.draw_colored_polygon(Art.rrect(Rect2(c + Vector2(-24, -21) * k, Vector2(48, 5) * k), 2 * k, 473 + rank, 0.2), Color(1, 1, 1, 0.45))
+	for x in [-17.0, 17.0]:
+		ci.draw_rect(Rect2(c + Vector2(x - 3, -23) * k, Vector2(6, 46) * k), col.darkened(0.45))
+	var lock := Art.rrect(Rect2(c + Vector2(-7, -10) * k, Vector2(14, 15) * k), 3 * k, 474 + rank, 0.3)
+	Art.fill(ci, lock, Color("5a3a1e"), 2.0)
+	ci.draw_circle(c + Vector2(0, -3) * k, 2.2 * k, col.lightened(0.4))
+	# 名次章
+	var mc := c + Vector2(26, -24) * k
+	var medal := Art.ell(mc, Vector2(13, 13) * k, 475 + rank, 0.03, 14)
+	Art.fill(ci, medal, col, 2.2)
+	_txt(ci, str(rank + 1), mc, int(16 * k), Color.WHITE, 4)
+
+static func _toggle_rank_bubble(p: PopupBase, layer: Control, race: Node, rank: int, x: float, y: float) -> void:
+	var cur: int = p.get_meta("rank_bubble", 0)
+	for ch in layer.get_children():
+		layer.remove_child(ch)
+		ch.queue_free()
+	if rank < 1 or rank > 3 or cur == rank:
+		p.set_meta("rank_bubble", 0)
+		return
+	var rws: Array = race.rules().get("rewards", []) if race.rules().get("rewards") is Array else []
+	var rw: Array = rws[rank - 1] if rank - 1 < rws.size() and rws[rank - 1] is Array else []
+	p.set_meta("rank_bubble", rank)
+	var w := maxf(200.0, 40.0 + rw.size() * 82.0)
+	var bx := clampf(x - w * 0.5, 50.0, 670.0 - w)
+	var tip := x - bx
+	var b := UI.hit(layer, Rect2(bx, y + 14, w, 142), func(): pass)
+	b.name = "race_rank_bubble"
+	b.extra = func(ci, sz):
+		var ptr := PackedVector2Array([Vector2(tip - 14, 4), Vector2(tip, -14), Vector2(tip + 14, 4)])
+		Art.fill(ci, ptr, Art.BONE, 2.4)
+		Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 18, 480, 0.4), Art.BONE, 2.6)
+		ci.draw_colored_polygon(ptr, Art.BONE)
+		_txt(ci, "第 %d 名奖励" % rank, Vector2(sz.x * 0.5, 24), 22, Color("8a5a30"))
+		for j in rw.size():
+			var cx: float = sz.x * 0.5 + (j - (rw.size() - 1) / 2.0) * 82.0
+			Art.item(ci, str(rw[j][0]), Vector2(cx, 78), 56)
+			_txt(ci, "×%d" % int(rw[j][1]), Vector2(cx, 120), 20, Color.WHITE, 5)
 const TUBE_W := 84.0
 
 static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
@@ -206,20 +281,21 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 	var t := float(Time.get_ticks_msec()) / 1000.0
 	# 顶部：剩余时间 + 前三名奖励
 	_pill(ci, Rect2(sz.x * 0.5 - 120, 2, 240, 40), "还剩 %s" % G.fmt_time(race.secs_left()), Color("8a5a30"), Color.WHITE)
-	var rws: Array = race.rules().get("rewards", []) if race.rules().get("rewards") is Array else []
-	_paint_top_rewards(ci, Rect2(0, 54, sz.x, 140), rws)
-	var ms: Array = race.members().duplicate()
 	# 自己放最左边，其他按位置
-	ms.sort_custom(func(a, b):
-		if bool(a.get("me", false)) != bool(b.get("me", false)):
-			return bool(a.get("me", false))
-		return int(a.get("slot", 0)) < int(b.get("slot", 0)))
+	var ms := _sorted_members(race)
 	var cw := sz.x / 5.0
 	var tube_bot := sz.y - 262.0
 	# 终点线 + 小旗
 	var fy := TUBE_TOP + 10.0
 	ci.draw_dashed_line(Vector2(6, fy), Vector2(sz.x - 6, fy), Color("e0a030"), 3.0, 10.0)
-	_txt(ci, "终点 %d 根" % int(tg), Vector2(sz.x * 0.5, TUBE_TOP - 18), 20, Color("8a5a30"))
+	_txt(ci, "终点 %d 根 · 前三名开宝箱" % int(tg), Vector2(sz.x * 0.5, 66), 20, Color("8a5a30"))
+	# 竹筒顶上按当前名次摆金银铜宝箱
+	for i in mini(5, ms.size()):
+		var rk0: int = race.place_of(ms[i]) - 1
+		if rk0 >= 0 and rk0 < 3:
+			var cc := Vector2(cw * (i + 0.5), CHEST_Y + sin(t * 2.4 + i) * 2.0)
+			ci.draw_circle(cc, 34, Color(MEDAL[rk0], 0.25))
+			_rank_chest(ci, cc, rk0, 62.0 if rk0 == 0 else 54.0)
 	for i in 5:
 		var cx := cw * (i + 0.5)
 		var m: Dictionary = ms[i] if i < ms.size() else {}
@@ -251,7 +327,7 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 			var y2 := tr.end.y - 10.0 - lh * (layers + 0.5)
 			Banana.draw(ci, Vector2(cx, lerpf(tr.position.y + 10, y2, part) + 8), 86.0, 0.2, true)
 		if m.get("finished_at") != null:
-			Art.item(ci, "fire_2", Vector2(cx, TUBE_TOP - 4), 44)
+			Art.item(ci, "fire_2", Vector2(cx, TUBE_TOP + 30), 44)
 		# 进度下面：香蕉数、头像（带名次牌）、名字
 		_pill(ci, Rect2(cx - 50, tube_bot + 20, 100, 38), "%d" % int(s), Color("ffd23f") if mine else Color("6b4a2a"),
 			Art.INK if mine else Color.WHITE)
@@ -268,29 +344,6 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 		_txt(ci, str(rk), mc, 19, Color.WHITE, 4)
 		_txt(ci, "我" if mine else str(m.get("name", "")), Vector2(cx, sz.y - 46), 21, Art.CLAY if mine else Color("6b4a2a"))
 	_txt(ci, "交付订单收香蕉，先收满的赢！", Vector2(sz.x * 0.5, sz.y - 14), 20, Color("a08a70"))
-
-## 顶部的前三名奖励：三张小牌子（金银铜底色），奖励图标和数量
-static func _paint_top_rewards(ci: CanvasItem, r: Rect2, rewards: Array) -> void:
-	var gap := 10.0
-	var w := (r.size.x - gap * 2.0) / 3.0
-	for rank in mini(3, rewards.size()):
-		var cr := Rect2(r.position.x + rank * (w + gap), r.position.y, w, r.size.y)
-		var b := Art.rrect(cr, 16, 300 + rank, 0.5)
-		ci.draw_colored_polygon(Art.rrect(Rect2(cr.position + Vector2(0, 5), cr.size), 16, 300 + rank, 0.0), Color(0, 0, 0, 0.18))
-		Art.dilate(ci, b, 2.6, Art.INK)
-		ci.draw_colored_polygon(b, MEDAL[rank].lightened(0.55))
-		var mc := Vector2(cr.get_center().x, cr.position.y + 4)
-		var medal := Art.ell(mc, Vector2(20, 20), 310 + rank, 0.02, 18)
-		Art.dilate(ci, medal, 2.6, Art.INK)
-		ci.draw_colored_polygon(medal, MEDAL[rank])
-		_txt(ci, str(rank + 1), mc, 22, Color.WHITE, 4)
-		var rw: Array = rewards[rank] if rewards[rank] is Array else []
-		var n := rw.size()
-		var step := minf(62.0, (w - 16.0) / maxf(1.0, float(n)))
-		for k in n:
-			var x: float = cr.get_center().x + (k - (n - 1) / 2.0) * step
-			Art.item(ci, str(rw[k][0]), Vector2(x, cr.position.y + 62), 54)
-			_txt(ci, "×%d" % int(rw[k][1]), Vector2(x, cr.position.y + 112), 19, Art.INK, 0)
 
 static func _pill(ci: CanvasItem, r: Rect2, s: String, bg: Color, fg: Color) -> void:
 	var b := Art.rrect(r, r.size.y * 0.5, 600, 0.3)

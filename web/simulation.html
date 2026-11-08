@@ -1,92 +1,335 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TribeMerge · 自动玩家时间轴</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TribeMerge · 自动演算</title>
 <style>
-:root{--bg:#111b20;--panel:#1b292e;--line:#35454b;--text:#f3ebd9;--muted:#a5b6b6;--gold:#e9bb69;--green:#83c6a3}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,"Microsoft YaHei",sans-serif}main{display:grid;grid-template-columns:minmax(0,1fr) minmax(310px,360px);gap:16px;max-width:1920px;margin:auto;padding:16px}small,.muted{color:var(--muted)}button,select,input{font:inherit;color:var(--text);border:1px solid var(--line);border-radius:9px;background:#24363c;padding:9px 14px}button{cursor:pointer}button:hover{border-color:var(--gold)}button:disabled{opacity:.4;cursor:default}.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.order-legend{display:flex;gap:14px;flex-wrap:wrap}.panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;align-self:start}#timeline,#curve{width:100%;display:block;touch-action:none}#timeline{height:245px;cursor:crosshair}.timeline-scroll{max-height:65vh;overflow-y:auto;overscroll-behavior:contain;margin-top:14px}#curve{height:140px}#range{width:100%;padding:0;accent-color:var(--gold)}.detail h2{font-size:22px;margin:6px 0;overflow-wrap:anywhere}.badge{display:inline-block;font-size:12px;border-radius:20px;padding:3px 10px;background:#364b51}.values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:20px 0 0}.value{padding:10px;background:#111e23;border-radius:7px;overflow-wrap:anywhere}.value strong{display:block;font-size:21px}.plus{color:var(--green)}.minus{color:#ed977e}#milestones{display:flex;overflow:auto;gap:10px;padding-top:14px}.mile{flex:0 0 auto;text-align:left;border-color:#5e705b}.mile b{display:block;color:var(--green)}#status{color:var(--gold)}#status:empty{display:none}.empty{padding:30px;color:var(--muted)}#run[hidden]{display:none}@media(max-width:1000px){main{grid-template-columns:1fr;padding:12px}.panel{padding:16px}.values{grid-template-columns:repeat(auto-fit,minmax(100px,1fr))}}
-</style></head><body><main>
-<section class="panel"><div class="toolbar"><b>游戏内时间</b><span id="window" class="muted"></span><button id="zoomIn">＋ 放大</button><button id="zoomOut">－ 缩小</button><button id="reset">全程</button><select id="run" aria-label="模拟轮次" hidden></select><button id="download">下载记录</button><span id="status" role="status">正在加载…</span></div><div class="order-legend"><small style="color:#f3c66d">● 带经验订单</small><small style="color:#70b7d6">● 无经验订单</small></div><div class="timeline-scroll"><canvas id="timeline" aria-label="各类事件时间轴，点击选择事件，滚轮缩放，拖动平移"></canvas></div><input aria-label="时间轴平移" id="range" type="range" min="0" max="1000" value="0"><small>点击事件查看详情 · 滚轮缩放 · 拖动平移 · 等待时段显示为连续色带</small><div class="toolbar" style="margin-top:14px"><b>资源与进度</b><select id="metric" aria-label="资源与进度指标"><option value="level">玩家等级</option><option value="energy">体力</option><option value="coins">贝币</option><option value="gems">琥珀 · 现有</option><option value="amber_earned">琥珀 · 累计获得</option><option value="sand">沙漏 · 现有</option><option value="sand_earned">沙漏 · 累计获得</option><option value="empty">棋盘空格</option><option value="parts">部落部件</option><option value="moon">月石进度</option><option value="duel_wins">双人竞速胜场</option></select></div><canvas id="curve" aria-label="所选指标随游戏内时间变化的曲线"></canvas><div id="milestones"></div></section>
-<section class="panel detail" id="detail" aria-label="事件详情"><div class="empty">点击时间轴上的事件，查看当时的资源与进度。</div></section>
-</main><script src="simulation-events.js"></script><script>
+:root{--bg:#0f181c;--panel:#16232a;--panel2:#1d2d34;--line:#2c3d44;--grid:#22333a;--text:#f1eadb;--muted:#9fb0b2;--faint:#6f8186;--accent:#e9bb69;--critical:#e66767;--good:#4fbf7a;
+  --g-progress:#3987e5;--g-energy:#d95926;--g-reward:#9085e9;--g-activity:#199e70;--g-misc:#7d8c91}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 system-ui,"Microsoft YaHei",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+header h1{font-size:18px;margin:0 8px 0 0}
+main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;max-width:1920px;margin:auto;padding:16px 20px}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.panel h2{font-size:15px;margin:0 0 2px}.panel .sub{color:var(--muted);font-size:12px;margin:0 0 10px}
+small,.muted{color:var(--muted)}
+button,select{font:inherit;color:var(--text);border:1px solid var(--line);border-radius:8px;background:var(--panel2);padding:6px 12px}
+button{cursor:pointer}button:hover{border-color:var(--accent)}button:disabled{opacity:.4;cursor:default}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#status{color:var(--accent)}#status:empty{display:none}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--panel2);border-radius:10px;padding:10px 14px}
+.kpi small{display:block}.kpi b{display:block;font-size:24px;line-height:1.3}.kpi span{font-size:12px;color:var(--muted)}
+.kpi.warn b{color:var(--critical)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend .ring{background:transparent!important;border:2px solid var(--g-progress);border-radius:50%}
+.legend .tri{width:0;height:0;border-radius:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid var(--critical);background:none}
+.legend .band{background:#0a1114;border:1px solid var(--line)}
+.chip{cursor:pointer;user-select:none;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--text)}
+.chip[aria-pressed=false]{opacity:.55}
+#days{width:100%;display:block}
+#timeline,#curveEnergy,#curve{width:100%;display:block;touch-action:none}
+#timeline{cursor:crosshair}
+.timeline-scroll{max-height:62vh;overflow-y:auto;overscroll-behavior:contain;margin-top:8px}
+#curveEnergy,#curve{height:120px;margin-top:6px}
+#range{width:100%;padding:0;accent-color:var(--accent);margin:6px 0 0}
+#tip{position:fixed;pointer-events:none;z-index:20;background:#0b1316;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;max-width:320px;box-shadow:0 6px 18px #0008;display:none}
+#tip b{display:block;font-size:13px}
+.tablewrap{max-height:520px;overflow:auto;margin-top:6px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:600;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{white-space:normal;padding:5px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--panel2)}tbody tr.sel{background:#263a42}
+tr.daybreak td{border-top:1px solid #3d5059}
+.stuck{color:var(--critical);font-weight:600}
+.unlock{color:var(--text)}
+.detail{position:sticky;top:76px;align-self:start;max-height:calc(100vh - 92px);overflow:auto}
+.detail h3{font-size:19px;margin:4px 0 2px;overflow-wrap:anywhere}
+.badge{display:inline-block;font-size:12px;border-radius:20px;padding:2px 10px;background:var(--panel2)}
+.reason{color:var(--muted);margin:2px 0 10px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12.5px;margin:8px 0}
+.kv dt{color:var(--muted)}.kv dd{margin:0;overflow-wrap:anywhere}
+.values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.value{padding:8px 10px;background:var(--panel2);border-radius:8px}
+.value small{display:block;font-size:11.5px}.value strong{font-size:18px}
+.plus{color:var(--good)}.minus{color:#ec835a}
+details summary{cursor:pointer;color:var(--muted);margin-top:6px}
+.empty{color:var(--muted);padding:20px 4px}
+#run[hidden]{display:none}
+@media(max-width:1100px){main{grid-template-columns:1fr;padding:12px 16px}.detail{position:static;max-height:none}header{position:static}}
+</style></head><body>
+<header><h1>自动演算</h1><select id="run" aria-label="模拟轮次" hidden></select><span id="runInfo" class="muted"></span><span style="flex:1"></span><button id="download">下载记录</button><span id="status" role="status">正在加载…</span></header>
+<main>
+<div class="col">
+  <section class="panel"><h2>这一轮的结果</h2><p class="sub">零付费机器人按每天的上线时间表游玩的结果。</p><div class="kpis" id="kpis"></div></section>
+  <section class="panel"><h2>每天升了几级</h2><p class="sub">蓝柱 = 当天升了几级，柱顶数字 = 当天结束时的等级；下面红条 = 当天卡体力的次数。鼠标停在某一天看明细，点它让下面的时间轴跳到那一天。</p>
+    <svg id="days" role="img" aria-label="每天结束等级与卡体力次数"></svg>
+    <div class="legend"><span><i style="background:var(--g-progress)"></i>当天升的级数</span><span><i style="background:var(--critical)"></i>卡体力次数</span></div>
+  </section>
+  <section class="panel"><h2>时间轴</h2><p class="sub">横轴是游戏内的天数和北京时间；深色底 = 下线，浅色底 = 在线。点左侧分组名可以展开或收起，鼠标停在点上看说明，点它在右侧看当时的状态。滚轮缩放，拖动平移。</p>
+    <div class="toolbar"><select id="day" aria-label="跳到某一天"></select><button id="zoomIn">＋ 放大</button><button id="zoomOut">－ 缩小</button><button id="reset">全程</button><span id="window" class="muted"></span></div>
+    <div class="legend" id="groupChips"></div>
+    <div class="legend"><span><i style="background:var(--g-progress);border-radius:50%"></i>经验订单 / 一般事件</span><span><i class="ring"></i>无经验订单</span><span><i class="tri"></i>卡体力（没体力又没事做，只好下线）</span><span><i class="band"></i>下线时段</span></div>
+    <div class="timeline-scroll"><canvas id="timeline" aria-label="各类事件时间轴"></canvas></div>
+    <input aria-label="时间轴平移" id="range" type="range" min="0" max="1000" value="0">
+    <div class="toolbar" style="margin-top:12px"><b>体力</b><span class="muted" id="energyNote"></span></div>
+    <canvas id="curveEnergy" aria-label="体力随时间变化"></canvas>
+    <div class="toolbar" style="margin-top:10px"><b>对照指标</b><select id="metric" aria-label="资源与进度指标"><option value="level">玩家等级</option><option value="energy">体力</option><option value="coins">贝币</option><option value="gems">琥珀 · 现有</option><option value="amber_earned">琥珀 · 累计获得</option><option value="sand">沙漏 · 现有</option><option value="sand_earned">沙漏 · 累计获得</option><option value="empty">棋盘空格</option><option value="parts">部落部件</option><option value="moon">月石进度</option><option value="duel_wins">双人竞速胜场</option></select></div>
+    <canvas id="curve" aria-label="所选指标随时间变化"></canvas>
+  </section>
+  <section class="panel"><h2>每级明细</h2><p class="sub">每行是在这一级停留期间的数据。红色 = 这一级卡过体力。点一行，时间轴就跳到这一级。</p>
+    <div class="tablewrap"><table id="levels"></table></div></section>
+</div>
+<aside class="panel detail" id="detail" aria-label="事件详情"><div class="empty">点时间轴上的事件，查看当时的资源与进度。</div></aside>
+</main>
+<div id="tip" role="tooltip"></div>
+<script src="simulation-events.js"></script><script>
 'use strict';
 const $=id=>document.getElementById(id);
-const {names,colors,category:eventCategory,matches:eventMatches,lanes:eventLanes}=SimulationEvents;
-const PLOT_LEFT=108,PLOT_RIGHT=12;
+const SE=SimulationEvents;
+const {names,colors,category:eventCategory,matches:eventMatches}=SE;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const groupColor=Object.fromEntries(SE.groups.map(g=>[g.id,g.color]));
+const keyGroup=new Map(SE.tracks.flatMap(t=>t.keys.map(k=>[k,t.group])));
+const keyTrack=new Map(SE.tracks.flatMap(t=>t.keys.map(k=>[k,t])));
+const PLOT_LEFT=128,PLOT_RIGHT=12,LANE=24,HEAD=24,AXIS=26;
 const stateNames={level:'等级',xp:'经验',energy:'体力',coins:'贝币',gems:'现有琥珀',sand:'现有沙漏',amber_earned:'累计获得琥珀',sand_earned:'累计获得沙漏',empty:'棋盘空格',storage:'储物洞',stash:'暂存物品',parts:'部落部件',moon:'月石解锁',cards:'典藏卡',duel_wins:'双人竞速胜场',orders:'当前订单'};
-let productionLines=[],productionLabel='折合一级份数';
-const baseMetrics=[...$('metric').options].map(option=>({key:option.value,label:option.textContent}));
-let report,rows=[],selected=null,run=1,duration=1,left=0,span=1,hits=[],drag=null;
+const mainStats=['level','xp','energy','coins','gems','sand'];
+const incomeNames={level:'等级奖励',seven_day_task:'七日任务',seven_day_stage:'七日里程碑',resource_energy:'棋盘体力',book:'图鉴',banana:'香蕉竞速',duel_match:'双人竞速',duel_milestone:'双人里程碑',build:'部落建造',moon:'月石',land:'开地',pass:'通行证',daily:'每日补给',chest:'宝箱',stash:'暂存',egen:'火种罐'};
+let productionLabel='折合一级份数';
+const baseMetrics=[...$('metric').options].map(o=>({key:o.value,label:o.textContent}));
+let report,rows=[],runInfo=null,selected=null,run=1,duration=1,left=0,span=1,hits=[],heads=[],drag=null,hoverT=null,dayOffset=28800,offline=[],dayStats=[],selLevel=null;
+const collapsed={progress:false,energy:false,reward:true,activity:true,misc:true};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const time=SimulationEvents.formatTime,eventTitle=SimulationEvents.eventTitle;
+const pad=n=>String(n).padStart(2,'0');
+const dayOf=t=>Math.floor((t+dayOffset)/86400)+1;
+const dayStart=d=>Math.max(0,(d-1)*86400-dayOffset);
+const clock=t=>{const s=((Math.floor(t)+dayOffset)%86400+86400)%86400;return pad(Math.floor(s/3600))+':'+pad(Math.floor(s/60)%60)};
+const at=t=>`第${dayOf(t)}天 ${clock(t)}`;
+const hm=s=>{s=Math.round(s/60);return s>=60?`${Math.floor(s/60)}小时${s%60?pad(s%60)+'分':''}`:`${s}分`};
 async function decode(buffer,gz){return JSON.parse(gz?await new Response(new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'))).text():new TextDecoder().decode(buffer))}
-function load(data){if(data.schema!==1||!Array.isArray(data.events)||!data.runs?.length)throw Error('演算记录无效');report=data;configureProductionLines(data);$('run').innerHTML=data.runs.map(r=>`<option value="${r.run}">第 ${r.run} 轮</option>`).join('');$('run').hidden=data.runs.length<2;run=data.runs[0].run;$('status').textContent='';setRun()}
-function configureProductionLines(data){
-  const equivalent=data.production_counting==='level1_equivalent';
-  productionLabel=equivalent?'折合一级份数':'总等级（旧口径）';
-  productionLines=Array.isArray(data.production_lines)?data.production_lines.filter(line=>typeof line.metric==='string'&&typeof line.name==='string'):[];
-  for(const key of Object.keys(stateNames))if(key.startsWith('gen_total_')||key.startsWith('gen_max_'))delete stateNames[key];
-  const previous=$('metric').value;
-  $('metric').replaceChildren();
-  for(const {key,label} of baseMetrics){const option=document.createElement('option');option.value=key;option.textContent=label;$('metric').append(option)}
-  if(productionLines.length){
-    const group=document.createElement('optgroup');group.label='各产线生产器 · '+productionLabel;
-    for(const line of productionLines){
-      stateNames[line.metric]=line.name+'生产器'+productionLabel;
-      const option=document.createElement('option');option.value=line.metric;option.textContent=line.name+' · '+productionLabel;group.append(option);
-      if(typeof line.max_metric==='string'){
-        stateNames[line.max_metric]=line.name+'生产器最高等级';
-        const highest=document.createElement('option');highest.value=line.max_metric;highest.textContent=line.name+' · 最高等级';group.append(highest);
-      }
-    }
-    $('metric').append(group);
-  }
-  if([...$('metric').options].some(option=>option.value===previous))$('metric').value=previous;
+
+function load(data){
+  if(data.schema!==1||!Array.isArray(data.events)||!data.runs?.length)throw Error('演算记录无效');
+  report=data;
+  const start=Date.parse((data.config?.start_utc||'2026-11-02T00:00:00')+'Z')/1000;
+  dayOffset=((start+28800)%86400+86400)%86400;
+  configureProductionLines(data);
+  $('run').innerHTML=data.runs.map(r=>`<option value="${r.run}">第 ${r.run} 轮（种子 ${r.seed}）</option>`).join('');
+  $('run').hidden=data.runs.length<2;$('status').textContent='';
+  $('groupChips').innerHTML=SE.groups.map(g=>`<span class="chip" data-g="${g.id}" role="button" aria-pressed="${!collapsed[g.id]}"><i style="background:${g.color}"></i>${g.label}</span>`).join('')+'<small>（点分组名展开 / 收起）</small>';
+  for(const c of document.querySelectorAll('.chip'))c.onclick=()=>{collapsed[c.dataset.g]=!collapsed[c.dataset.g];syncChips();draw()};
+  setRun();
 }
-function setRun(){run=Number($('run').value);rows=report.events.filter(e=>e.run===run);duration=Math.max(1,rows.at(-1)?.time||1);left=0;span=duration;selected=null;$('milestones').innerHTML='';for(const e of rows.filter(e=>['level','milestone','bottleneck'].includes(e.category))){const b=document.createElement('button');b.className='mile';b.innerHTML=`<small>${time(e.time)}</small><b>${esc(eventTitle(e))}</b>`;b.onclick=()=>focusEvent(e);$('milestones').append(b)}if(rows.length)choose(rows[0]);draw()}
-function choose(e){selected=e;$('detail').innerHTML=`<span class="badge" style="color:${colors[eventCategory(e)]}">${names[eventCategory(e)]}</span><small>　第 ${e.run} 轮 / ${time(e.time)}</small><h2 style="color:${e.category==='order'?colors[eventCategory(e)]:'inherit'}">${esc(eventTitle(e))}</h2><div class="values">${Object.entries(e.state).map(([k,v])=>`<div class="value"><small>${esc(stateNames[k]||k)}</small><strong>${v} ${e.delta[k]?`<small class="${e.delta[k]>0?'plus':'minus'}">${e.delta[k]>0?'+':''}${e.delta[k]}</small>`:''}</strong></div>`).join('')}</div>`}
-function focusEvent(e){choose(e);left=Math.max(0,Math.min(duration-span,e.time-span*.4));draw()}
+function syncChips(){for(const c of document.querySelectorAll('.chip'))c.setAttribute('aria-pressed',String(!collapsed[c.dataset.g]))}
+function configureProductionLines(data){
+  productionLabel=data.production_counting==='level1_equivalent'?'折合一级份数':'总等级（旧口径）';
+  const lines=Array.isArray(data.production_lines)?data.production_lines.filter(l=>typeof l.metric==='string'&&typeof l.name==='string'):[];
+  const previous=$('metric').value;$('metric').replaceChildren();
+  for(const {key,label} of baseMetrics){const o=document.createElement('option');o.value=key;o.textContent=label;$('metric').append(o)}
+  if(lines.length){const g=document.createElement('optgroup');g.label='各产线生产器';
+    for(const l of lines){stateNames[l.metric]=l.name+'生产器'+productionLabel;const o=document.createElement('option');o.value=l.metric;o.textContent=l.name+' · '+productionLabel;g.append(o);
+      if(typeof l.max_metric==='string'){stateNames[l.max_metric]=l.name+'生产器最高等级';const h=document.createElement('option');h.value=l.max_metric;h.textContent=l.name+' · 最高等级';g.append(h)}}
+    $('metric').append(g)}
+  $('metric').value=[...$('metric').options].some(o=>o.value===previous)?previous:'level';
+}
+
+function setRun(){
+  run=Number($('run').value)||report.runs[0].run;runInfo=report.runs.find(r=>r.run===run);
+  rows=report.events.filter(e=>e.run===run);duration=Math.max(1,rows.at(-1)?.time||1);left=0;span=duration;selected=null;selLevel=null;
+  offline=rows.filter(e=>e.category==='offline').map(e=>[e.detail?.from??e.time,e.time]);
+  buildDays();renderKpis();renderDays();renderLevels();
+  $('day').innerHTML='<option value="">跳到某一天…</option>'+dayStats.map(d=>`<option value="${d.day}">第 ${d.day} 天（${d.from}→${d.to} 级）</option>`).join('');
+  $('detail').innerHTML='<div class="empty">点时间轴上的事件，查看当时的资源与进度。</div>';
+  draw();
+}
+function overlap(a0,a1){let s=0;for(const [b0,b1] of offline){const lo=Math.max(a0,b0),hi=Math.min(a1,b1);if(hi>lo)s+=hi-lo}return s}
+function buildDays(){
+  const last=dayOf(duration);dayStats=[];let i=0,level=rows[0]?.state?.level||1;
+  for(let d=1;d<=last;d++){
+    const s=dayStart(d),e=Math.min(duration,dayStart(d+1));const st={day:d,start:s,end:e,from:level,to:level,orders:0,xpOrders:0,stuck:0,egen:0};
+    while(i<rows.length&&rows[i].time<e){const r=rows[i++];if(r.state?.level)st.to=r.state.level;if(r.category==='order'){st.orders++;if(Number(r.detail?.rw?.xp||0)>0)st.xpOrders++}if(r.category==='stuck')st.stuck++;if(r.category==='egen')st.egen++}
+    st.online=Math.max(0,(e-s)-overlap(s,e));level=st.to;dayStats.push(st);
+  }
+}
+function renderKpis(){
+  const L=runInfo.levels||[],final=runInfo.state?.level??rows.at(-1)?.state?.level;
+  const target=L.find(r=>r.level===40);
+  const dayEnd=n=>dayStats[n-1]?.to;
+  const stuck=dayStats.reduce((a,d)=>a+d.stuck,0),stuckDays=dayStats.filter(d=>d.stuck>0);
+  const online=dayStats.reduce((a,d)=>a+d.online,0)/Math.max(1,dayStats.length);
+  const orders=dayStats.reduce((a,d)=>a+d.orders,0),xp=dayStats.reduce((a,d)=>a+d.xpOrders,0);
+  const k=[
+    target?['升到 40 级',`第 ${target.day} 天`,`开局后 ${hm(target.reached)}的游戏时间`]:['最终等级',`${final} 级`,`第 ${dayOf(duration)} 天结束`],
+    ['第 1 天结束',`${dayEnd(1)??'-'} 级`,'目标约 12 级'],
+    ['第 2 天结束',`${dayEnd(2)??'-'} 级`,`第 3 天 ${dayEnd(3)??'-'} 级`],
+    ['卡体力',`${stuck} 次`,stuckDays.length?`分布在 ${stuckDays.length} 天，第 1 天 ${dayStats[0]?.stuck||0} 次`:'从没卡过',stuck>0],
+    ['平均每天在线',hm(online),'按上线时间表'],
+    ['交单',`${orders} 张`,`其中经验单 ${xp} 张`]
+  ];
+  $('kpis').innerHTML=k.map(([a,b,c,w])=>`<div class="kpi${w?' warn':''}"><small>${a}</small><b>${b}</b><span>${c}</span></div>`).join('');
+  $('runInfo').textContent=`种子 ${runInfo.seed} · 共 ${dayOf(duration)} 天 · ${runInfo.finish_reason==='target_level'?'达到目标等级结束':'到时长结束'}`;
+}
+function renderDays(){
+  const svg=$('days'),W=svg.clientWidth||900,H=240,top=20,barH=130,gap=16,stuckH=40,left=34,right=6;
+  const n=dayStats.length,bw=(W-left-right)/n,maxG=Math.max(...dayStats.map(d=>d.to-d.from),1),maxS=Math.max(...dayStats.map(d=>d.stuck),1);
+  const y=v=>top+barH-v/maxG*barH,sy=top+barH+gap,showLabel=d=>bw>=18||d.day%5===0||d.day===1;
+  let h='';
+  const stepG=maxG>8?4:maxG>4?2:1;
+  for(let v=0;v<=maxG;v+=stepG){h+=`<line x1="${left}" x2="${W-right}" y1="${y(v)}" y2="${y(v)}" stroke="${css('--grid')}"/><text x="${left-6}" y="${y(v)+4}" fill="${css('--faint')}" font-size="11" text-anchor="end">${v}</text>`}
+  h+=`<text x="${left-6}" y="${sy+10}" fill="${css('--faint')}" font-size="11" text-anchor="end">${maxS}</text>`;
+  dayStats.forEach((d,i)=>{
+    const x=left+i*bw+1,w=Math.max(1,bw-2),rx=Math.min(4,w/2),g=d.to-d.from;
+    h+=`<g class="day" data-day="${d.day}" style="cursor:pointer"><rect x="${left+i*bw}" y="0" width="${bw}" height="${H}" fill="transparent"/>`;
+    if(g>0)h+=`<path d="M${x},${top+barH}V${y(g)+rx}q0,-${rx} ${rx},-${rx}h${w-2*rx}q${rx},0 ${rx},${rx}V${top+barH}Z" fill="${css('--g-progress')}"/>`;
+    h+=`<text x="${x+w/2}" y="${y(g)-5}" fill="${css('--text')}" font-size="${bw>=22?11:10}" text-anchor="middle">${showLabel(d)||g>=3?d.to:''}</text>`;
+    if(d.stuck)h+=`<path d="M${x},${sy}V${sy+Math.max(3,d.stuck/maxS*stuckH)-Math.min(3,w/2)}q0,${Math.min(3,w/2)} ${Math.min(3,w/2)},${Math.min(3,w/2)}h${w-2*Math.min(3,w/2)}q${Math.min(3,w/2)},0 ${Math.min(3,w/2)},-${Math.min(3,w/2)}V${sy}Z" fill="${css('--critical')}"/>`;
+    if(showLabel(d))h+=`<text x="${x+w/2}" y="${H-4}" fill="${css('--faint')}" font-size="10" text-anchor="middle">${d.day}</text>`;
+    h+='</g>';
+  });
+  h+=`<line x1="${left}" x2="${W-right}" y1="${sy}" y2="${sy}" stroke="${css('--line')}"/><text x="0" y="${H-4}" fill="${css('--faint')}" font-size="11">第几天</text>`;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('height',H);svg.innerHTML=h;
+  for(const el of svg.querySelectorAll('.day')){const d=dayStats[el.dataset.day-1];
+    el.onmousemove=ev=>tip(ev,`<b>第 ${d.day} 天</b>${d.from} → ${d.to} 级（升 ${d.to-d.from} 级）<br>在线 ${hm(d.online)} · 交单 ${d.orders}（经验单 ${d.xpOrders}）<br>卡体力 <span class="${d.stuck?'stuck':''}">${d.stuck} 次</span>${d.egen?` · 点火种罐 ${d.egen} 次`:''}`);
+    el.onmouseleave=hideTip;el.onclick=()=>showDay(d.day)}
+}
+function renderLevels(){
+  const L=runInfo.levels||[];
+  if(!L.length){$('levels').innerHTML='<tr><td class="empty">这份记录没有每级数据，重新跑一次演算即可。</td></tr>';return}
+  let prevDay=0;
+  $('levels').innerHTML=`<thead><tr><th>等级</th><th>到达</th><th class="num">本级在线</th><th class="num">订单 / 经验单</th><th class="num">需经验</th><th class="num">体力消耗</th><th class="num">体力收入</th><th class="num">卡体力</th><th>主要体力来源</th><th>这级新解锁</th></tr></thead><tbody>`+
+  L.map((r,i)=>{const inc=Object.entries(r.energy_income||{}).sort((a,b)=>b[1]-a[1]);const total=inc.reduce((a,[,v])=>a+v,0);
+    const brk=r.day!==prevDay;prevDay=r.day;
+    return `<tr data-i="${i}" class="${brk?'daybreak':''}"><td><b>${r.level}</b>${r.partial?'…':''}</td><td style="white-space:nowrap">${at(r.reached)}</td><td class="num">${hm(r.play_sec)}</td><td class="num">${r.orders} / ${r.xp_orders}</td><td class="num">${r.xp_need}</td><td class="num">${r.energy_spent}</td><td class="num">${total}<small> +恢复${r.energy_regen}</small></td><td class="num ${r.stuck_energy?'stuck':''}">${r.stuck_energy?'▲ '+r.stuck_energy:'–'}</td><td><small>${inc.slice(0,3).map(([k,v])=>`${esc(incomeNames[k]||names['reward_'+k]||k)} ${v}`).join('、')||'–'}</small></td><td class="unlock"><small>${esc((r.unlocks||[]).join('；'))||'–'}</small></td></tr>`}).join('')+'</tbody>';
+  for(const tr of $('levels').querySelectorAll('tbody tr'))tr.onclick=()=>{const r=L[tr.dataset.i];selLevel=Number(tr.dataset.i);for(const x of $('levels').querySelectorAll('tr.sel'))x.classList.remove('sel');tr.classList.add('sel');
+    const end=r.reached+(r.duration||span);zoomTo(r.reached,Math.max(end,r.reached+600));$('timeline').scrollIntoView({behavior:'smooth',block:'center'})};
+}
+
+function lanesNow(){
+  const present=new Set();for(const e of rows)if(eventMatches(e))present.add(eventCategory(e));
+  const out=[];
+  for(const g of SE.groups){
+    const ts=SE.tracks.filter(t=>t.group===g.id&&t.label!=='下线'&&t.keys.some(k=>present.has(k)));if(!ts.length)continue;
+    out.push({head:g,count:ts.length});
+    if(collapsed[g.id])out.push({label:`${g.label}（${ts.length} 类，已收起）`,keys:ts.flatMap(t=>t.keys),group:g.id,folded:true});
+    else out.push(...ts);
+  }
+  return out;
+}
 function canvas(id){const c=$(id),r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=r.width*d;c.height=r.height*d;const ctx=c.getContext('2d');ctx.scale(d,d);return [ctx,r.width,r.height]}
+function tickStep(){const steps=[3600,7200,10800,21600,43200,86400,172800,432000,604800];const plot=$('timeline').clientWidth-PLOT_LEFT-PLOT_RIGHT;for(const s of steps)if(span/s<=Math.max(3,plot/90))return s;return 604800}
 function draw(){
   if(!report)return;
   left=Math.max(0,Math.min(duration-span,left));
-  $('window').textContent=`${time(left)} — ${time(left+span)}`;
-  $('range').value=duration===span?0:left/(duration-span)*1000;
-  $('range').disabled=duration===span;
-  const lanes=eventLanes(rows), laneByKey=new Map();
-  lanes.forEach((lane,index)=>lane.keys.forEach(key=>laneByKey.set(key,index)));
-  $('timeline').style.height=`${Math.max(88,lanes.length*30+52)}px`;
-  const [ctx,w,h]=canvas('timeline'),plot=w-PLOT_LEFT-PLOT_RIGHT;
-  const x=t=>PLOT_LEFT+(t-left)/span*plot;
-  ctx.font='12px system-ui';hits=[];
-  lanes.forEach((lane,index)=>{
-    const y=27+index*30;ctx.fillStyle='#a5b6b6';ctx.fillText(lane.label,0,y+4);
-    ctx.strokeStyle='#35454b';ctx.beginPath();ctx.moveTo(PLOT_LEFT,y);ctx.lineTo(w,y);ctx.stroke();
-  });
-  ctx.save();ctx.beginPath();ctx.rect(PLOT_LEFT,0,plot,h);ctx.clip();
+  $('window').textContent=`${at(left)} — ${at(left+span)}`;
+  $('range').value=duration===span?0:left/(duration-span)*1000;$('range').disabled=duration===span;
+  const lanes=lanesNow();let y=0;const laneY=new Map();
+  for(const l of lanes){if(l.head){l.y=y+HEAD/2+4;y+=HEAD}else{l.y=y+LANE/2;for(const k of l.keys)laneY.set(k,l.y);y+=LANE}}
+  $('timeline').style.height=`${y+AXIS}px`;
+  const [ctx,w,h]=canvas('timeline'),plot=w-PLOT_LEFT-PLOT_RIGHT,x=t=>PLOT_LEFT+(t-left)/span*plot,body=h-AXIS;
+  hits=[];heads=[];
+  // day bands + offline shading
+  ctx.save();ctx.beginPath();ctx.rect(PLOT_LEFT,0,plot,body);ctx.clip();
+  ctx.fillStyle='#1b2a31';ctx.fillRect(PLOT_LEFT,0,plot,body);
+  ctx.fillStyle='#0c1417';for(const [a,b] of offline){if(b<left||a>left+span)continue;ctx.fillRect(x(a),0,Math.max(1,x(b)-x(a)),body)}
+  const step=tickStep();
+  for(let d=dayOf(left);dayStart(d)<=left+span;d++){const px=x(dayStart(d));if(d>1){ctx.strokeStyle='#3d5059';ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,body);ctx.stroke()}}
+  ctx.restore();
+  // lanes
+  ctx.font='12px system-ui';ctx.textBaseline='middle';
+  for(const l of lanes){
+    if(l.head){ctx.fillStyle=l.head.color;ctx.fillRect(0,l.y-5,4,10);ctx.fillStyle=css('--text');ctx.font='600 12.5px system-ui';ctx.fillText((collapsed[l.head.id]?'▸ ':'▾ ')+l.head.label,10,l.y);ctx.font='12px system-ui';heads.push({g:l.head.id,y0:l.y-HEAD/2,y1:l.y+HEAD/2});continue}
+    ctx.fillStyle=l.folded?css('--faint'):css('--muted');let label=l.label;while(ctx.measureText(label).width>PLOT_LEFT-22&&label.length>2)label=label.slice(0,-2)+'…';ctx.fillText(label,16,l.y);
+    ctx.strokeStyle='#26363d';ctx.beginPath();ctx.moveTo(PLOT_LEFT,l.y);ctx.lineTo(w-PLOT_RIGHT,l.y);ctx.stroke();
+  }
+  // events
+  ctx.save();ctx.beginPath();ctx.rect(PLOT_LEFT,0,plot,body);ctx.clip();
   for(const e of rows){
-    const from=e.category==='wait'?(e.detail.from??e.time):e.time;
+    if(e.category==='offline')continue;
+    const isSpan=e.category==='wait',from=isSpan?(e.detail?.from??e.time):e.time;
     if(e.time<left||from>left+span||!eventMatches(e))continue;
-    const key=eventCategory(e),lane=laneByKey.get(key);if(lane===undefined)continue;
-    const px=x(e.time),y=27+lane*30;ctx.fillStyle=colors[key];
-    if(e.category==='wait'){
-      const x1=x(from);ctx.globalAlpha=.55;ctx.fillRect(x1,y-6,Math.max(2,px-x1),12);ctx.globalAlpha=1;
-      hits.push({e,x:Math.max(PLOT_LEFT,x1),end:px,y});
-    }else{
-      ctx.beginPath();ctx.arc(px,y,['level','bottleneck'].includes(key)?5:3,0,Math.PI*2);ctx.fill();hits.push({e,x:px,end:px,y});
-    }
+    const key=eventCategory(e),ly=laneY.get(key);if(ly===undefined)continue;
+    const px=x(e.time),col=groupColor[keyGroup.get(key)]||css('--g-misc');
+    if(isSpan){const x1=x(from);ctx.globalAlpha=.45;ctx.fillStyle=col;ctx.fillRect(x1,ly-4,Math.max(2,px-x1),8);ctx.globalAlpha=1;hits.push({e,x:x1,end:px,y:ly});continue}
+    if(key==='stuck'){ctx.fillStyle=css('--critical');ctx.beginPath();ctx.moveTo(px,ly-6);ctx.lineTo(px+5,ly+4);ctx.lineTo(px-5,ly+4);ctx.closePath();ctx.fill()}
+    else if(key==='order_no_xp'){ctx.strokeStyle=col;ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(px,ly,3.2,0,7);ctx.stroke();ctx.lineWidth=1}
+    else{ctx.fillStyle=col;ctx.beginPath();ctx.arc(px,ly,key==='level'?5:3,0,7);ctx.fill()}
+    hits.push({e,x:px,end:px,y:ly});
   }
-  if(selected){const px=x(selected.time);ctx.strokeStyle='#fff';ctx.beginPath();ctx.moveTo(px,12);ctx.lineTo(px,h-25);ctx.stroke()}
-  ctx.restore();ctx.fillStyle='#a5b6b6';
-  const labelWidth=Math.max(ctx.measureText(time(left)).width,ctx.measureText(time(left+span)).width);
-  const tickCount=Math.max(1,Math.min(5,Math.floor(plot/(labelWidth+20))));
-  for(let j=0;j<tickCount;j++){
-    const t=left+span*(tickCount===1?0:j/(tickCount-1)),label=time(Math.floor(t)),width=ctx.measureText(label).width;
-    ctx.fillText(label,Math.max(PLOT_LEFT,Math.min(w-PLOT_RIGHT-width,x(t)-width/2)),h-8);
-  }
-  drawCurve();
+  for(const [t,c] of [[selected?.time,'#fff'],[hoverT,'#ffffff66']])if(t!=null&&t>=left&&t<=left+span){ctx.strokeStyle=c;ctx.beginPath();ctx.moveTo(x(t),0);ctx.lineTo(x(t),body);ctx.stroke()}
+  ctx.restore();
+  // axis
+  ctx.fillStyle=css('--muted');ctx.textBaseline='alphabetic';ctx.font='11.5px system-ui';
+  const first=Math.ceil((left+dayOffset)/step)*step-dayOffset;let lastX=-1e9;
+  for(let t=first;t<=left+span;t+=step){const px=x(t),isDay=((t+dayOffset)%86400+86400)%86400===0;const label=step>=86400?`第${dayOf(t)}天`:isDay?`第${dayOf(t)}天`:clock(t);const wd=ctx.measureText(label).width;if(px-wd/2<lastX+8)continue;ctx.fillStyle=isDay?css('--text'):css('--muted');ctx.fillText(label,Math.max(PLOT_LEFT,Math.min(w-PLOT_RIGHT-wd,px-wd/2)),h-8);lastX=px+wd/2}
+  drawCurve('curveEnergy','energy',css('--g-energy'));drawCurve('curve',$('metric').value,css('--accent'));
 }
-function drawCurve(){const [ctx,w,h]=canvas('curve'),key=$('metric').value;const inView=rows.filter(e=>e.time>=left&&e.time<=left+span),prior=rows.findLast(e=>e.time<left);if(prior)inView.unshift({...prior,time:left});if(!inView.length)return;if(!inView.some(e=>Number.isFinite(e.state[key]))){ctx.fillStyle='#a5b6b6';ctx.font='14px system-ui';ctx.fillText('这份记录未包含该指标',PLOT_LEFT,40);return}let max=1;for(const e of inView)max=Math.max(max,e.state[key]||0);ctx.strokeStyle='#e9bb69';ctx.lineWidth=1.5;ctx.beginPath();let prevY=null;for(const e of inView){let x=PLOT_LEFT+(e.time-left)/span*(w-PLOT_LEFT-PLOT_RIGHT),y=h-22-(e.state[key]||0)/max*(h-40);if(prevY!==null)ctx.lineTo(x,prevY);else ctx.moveTo(x,y);ctx.lineTo(x,y);prevY=y}ctx.stroke();ctx.fillStyle='#a5b6b6';ctx.font='12px system-ui';ctx.fillText(max.toLocaleString(),0,20);ctx.fillText('0',28,h-20)}
-function zoom(f,at=.5){const next=Math.min(duration,Math.max(60,span*f));left+=(span-next)*at;span=next;draw()}
-$('zoomIn').onclick=()=>zoom(.5);$('zoomOut').onclick=()=>zoom(2);$('reset').onclick=()=>{span=duration;left=0;draw()};$('range').oninput=()=>{left=Number($('range').value)/1000*(duration-span);draw()};$('run').onchange=setRun;$('metric').onchange=drawCurve;$('timeline').onwheel=e=>{e.preventDefault();zoom(e.deltaY>0?1.4:1/1.4,Math.max(0,Math.min(1,(e.offsetX-PLOT_LEFT)/($('timeline').clientWidth-PLOT_LEFT-PLOT_RIGHT))))};$('timeline').onpointerdown=e=>{drag={x:e.clientX,left};$('timeline').setPointerCapture(e.pointerId)};$('timeline').onpointermove=e=>{if(drag){left=drag.left-(e.clientX-drag.x)/($('timeline').clientWidth-PLOT_LEFT-PLOT_RIGHT)*span;draw()}};$('timeline').onpointerup=e=>{if(drag&&Math.abs(e.clientX-drag.x)<5){let nearest=null,dist=18;for(const hit of hits){let dx=e.offsetX<Math.min(hit.x,hit.end)?Math.min(hit.x,hit.end)-e.offsetX:e.offsetX>Math.max(hit.x,hit.end)?e.offsetX-Math.max(hit.x,hit.end):0;let d=Math.hypot(dx,e.offsetY-hit.y);if(d<dist){dist=d;nearest=hit.e}}if(nearest){choose(nearest);draw()}}drag=null};$('timeline').onpointercancel=()=>drag=null;
-$('download').onclick=()=>{if(!report)return;const u=URL.createObjectURL(new Blob([JSON.stringify(SimulationEvents.compactReport(report,[...$('metric').options].map(option=>({key:option.value,label:option.textContent}))),null,2)+'\n'],{type:'application/json;charset=utf-8'}));let a=document.createElement('a');a.href=u;a.download='TribeMerge-timeline.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
-new ResizeObserver(draw).observe($('timeline'));fetch('simulation-report.json.gz').then(r=>{if(!r.ok)throw Error('无法获取演算文件');return r.arrayBuffer()}).then(b=>decode(b,true)).then(load).catch(e=>$('status').textContent='加载失败：'+e.message);
+function drawCurve(id,key,color){
+  const [ctx,w,h]=canvas(id),plot=w-PLOT_LEFT-PLOT_RIGHT,X=t=>PLOT_LEFT+(t-left)/span*plot;
+  const view=rows.filter(e=>e.time>=left&&e.time<=left+span&&Number.isFinite(e.state?.[key])),prior=rows.findLast(e=>e.time<left&&Number.isFinite(e.state?.[key]));
+  if(prior)view.unshift({...prior,time:left});
+  ctx.font='11.5px system-ui';ctx.fillStyle=css('--muted');
+  if(!view.length){ctx.fillText('这份记录没有这个指标',PLOT_LEFT,30);return}
+  let max=1;for(const e of view)max=Math.max(max,e.state[key]);
+  const nice=Math.pow(10,Math.floor(Math.log10(max)));max=Math.ceil(max/nice)*nice;
+  const Y=v=>h-14-v/max*(h-24);
+  for(const v of [0,max/2,max]){ctx.strokeStyle='#22333a';ctx.beginPath();ctx.moveTo(PLOT_LEFT,Y(v));ctx.lineTo(w-PLOT_RIGHT,Y(v));ctx.stroke();ctx.fillStyle=css('--faint');ctx.fillText(Math.round(v).toLocaleString(),PLOT_LEFT-8-ctx.measureText(Math.round(v).toLocaleString()).width,Y(v)+4)}
+  ctx.fillStyle=css('--muted');ctx.fillText(key==='energy'?'体力':($('metric').selectedOptions[0]?.textContent||key),4,14);
+  ctx.save();ctx.beginPath();ctx.rect(PLOT_LEFT,0,plot,h);ctx.clip();
+  ctx.fillStyle='#0c1417';ctx.globalAlpha=.6;for(const [a,b] of offline){if(b<left||a>left+span)continue;ctx.fillRect(X(a),0,Math.max(1,X(b)-X(a)),h-14)}ctx.globalAlpha=1;
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.lineJoin='round';ctx.beginPath();let py=null;
+  for(const e of view){const px=X(e.time),y=Y(e.state[key]);if(py===null)ctx.moveTo(px,y);else ctx.lineTo(px,py);ctx.lineTo(px,y);py=y}ctx.lineTo(X(left+span),py);ctx.stroke();
+  if(hoverT!=null){const e=rows.findLast(r=>r.time<=hoverT&&Number.isFinite(r.state?.[key]));const px=X(hoverT);ctx.strokeStyle='#ffffff66';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,h-14);ctx.stroke();
+    if(e){const v=e.state[key],label=`${at(hoverT)}  ${v.toLocaleString()}`,wd=ctx.measureText(label).width+12,bx=Math.min(px+8,w-wd-2);ctx.fillStyle='#0b1316';ctx.fillRect(bx,4,wd,20);ctx.fillStyle=css('--text');ctx.fillText(label,bx+6,18);ctx.fillStyle=color;ctx.beginPath();ctx.arc(px,Y(v),4,0,7);ctx.fill()}}
+  ctx.restore();
+}
+
+function tip(ev,html){const t=$('tip');t.innerHTML=html;t.style.display='block';const r=t.getBoundingClientRect();t.style.left=Math.min(ev.clientX+14,innerWidth-r.width-8)+'px';t.style.top=Math.max(8,ev.clientY-r.height-12)+'px'}
+function hideTip(){$('tip').style.display='none'}
+function detailRows(e){
+  const d=e.detail||{},out=[];
+  const fmt=v=>Array.isArray(v)?(v.every(x=>Array.isArray(x))?v.map(x=>x.join('×')).join('、'):v.join('、')):typeof v==='object'&&v?Object.entries(v).map(([k,x])=>`${k} ${typeof x==='object'?JSON.stringify(x):x}`).join('，'):String(v);
+  const skip=new Set(['unlock_recorded','merge_seq','uid','t0','cell','si','who','lock_before','lock_after']);
+  const label={energy:'体力',session_left:'本次在线还剩',wait_needed:'体力回满还要',seconds:'时长',from:'开始于',items:'需要物品',mats:'材料',rw:'奖励',say:'台词',story:'主线订单',story_level:'主线所属等级',board:'棋盘',row:'行',col:'列',item:'物品',item_name:'物品',result:'结果',result_name:'合成结果',received:'到账',level:'等级',rewards:'奖励',dish:'料理',secs:'制作秒数',phase:'阶段',kind:'类型',wins:'胜场',place:'名次',season:'赛季',building:'建筑',stage:'阶段',cost:'花费',why:'原因',unlocks:'新解锁'};
+  const secs=new Set(['session_left','wait_needed','seconds','secs']);
+  for(const [k,v] of Object.entries(d)){if(skip.has(k)||v===''||v==null)continue;let s=secs.has(k)&&Number.isFinite(v)?hm(v):k==='from'&&Number.isFinite(v)?at(v):typeof v==='boolean'?(v?'是':'否'):fmt(v);if(s.length>160)s=s.slice(0,160)+'…';out.push(`<dt>${esc(label[k]||k)}</dt><dd>${esc(s)}</dd>`)}
+  return out.length?`<dl class="kv">${out.join('')}</dl>`:'';
+}
+function choose(e){
+  selected=e;const key=eventCategory(e),col=key==='stuck'?css('--critical'):groupColor[keyGroup.get(key)]||css('--g-misc');
+  const val=k=>{const v=e.state?.[k];if(v==null)return'';const dv=e.delta?.[k];return `<div class="value"><small>${esc(stateNames[k]||k)}</small><strong>${v.toLocaleString()}</strong>${dv?` <small class="${dv>0?'plus':'minus'}">${dv>0?'+':''}${dv}</small>`:''}</div>`};
+  const rest=Object.keys(e.state||{}).filter(k=>!mainStats.includes(k));
+  $('detail').innerHTML=`<span class="badge" style="color:${col}">${esc(names[key]||key)}</span><small>　${at(e.time)}（开局后 ${hm(e.time)}）</small><h3>${esc(SE.eventTitle(e))}</h3>${e.reason?`<div class="reason">${esc(e.reason)}</div>`:''}${detailRows(e)}<div class="values">${mainStats.map(val).join('')}</div><details><summary>全部状态（${rest.length} 项）</summary><div class="values">${rest.map(val).join('')}</div></details>`;
+}
+function zoomTo(a,b){span=Math.min(duration,Math.max(60,b-a));left=a;draw()}
+function showDay(d){$('day').value=String(d);zoomTo(dayStart(d),Math.min(duration,dayStart(d+1)));$('timeline').scrollIntoView({behavior:'smooth',block:'center'})}
+function zoom(f,atFrac=.5){const next=Math.min(duration,Math.max(60,span*f));left+=(span-next)*atFrac;span=next;draw()}
+function local(ev,el=tl){const r=el.getBoundingClientRect();return {x:ev.clientX-r.left,y:ev.clientY-r.top}}
+function nearest(ev){const p=local(ev);let best=null,dist=12;for(const h of hits){const dx=p.x<Math.min(h.x,h.end)?Math.min(h.x,h.end)-p.x:p.x>Math.max(h.x,h.end)?p.x-Math.max(h.x,h.end):0;const d=Math.hypot(dx,p.y-h.y);if(d<dist){dist=d;best=h.e}}return best}
+const tl=$('timeline'),plotW=()=>tl.clientWidth-PLOT_LEFT-PLOT_RIGHT;
+$('zoomIn').onclick=()=>zoom(.5);$('zoomOut').onclick=()=>zoom(2);$('reset').onclick=()=>{$('day').value='';zoomTo(0,duration)};
+$('day').onchange=()=>{const d=Number($('day').value);if(d)showDay(d)};
+$('range').oninput=()=>{left=Number($('range').value)/1000*(duration-span);draw()};
+$('run').onchange=setRun;$('metric').onchange=draw;
+tl.onwheel=e=>{e.preventDefault();zoom(e.deltaY>0?1.4:1/1.4,Math.max(0,Math.min(1,(local(e).x-PLOT_LEFT)/plotW())))};
+tl.onpointerdown=e=>{if(local(e).x<PLOT_LEFT)return;drag={x:e.clientX,left};tl.setPointerCapture(e.pointerId)};
+tl.onpointermove=e=>{
+  if(drag){left=drag.left-(e.clientX-drag.x)/plotW()*span;hideTip();draw();return}
+  const p=local(e);
+  if(p.x<PLOT_LEFT){hoverT=null;hideTip();tl.style.cursor=heads.some(h=>p.y>=h.y0&&p.y<h.y1)?'pointer':'default';draw();return}
+  tl.style.cursor='crosshair';hoverT=left+(p.x-PLOT_LEFT)/plotW()*span;
+  const n=nearest(e);if(n){const k=eventCategory(n);tip(e,`<b>${esc(SE.eventTitle(n))}</b>${esc(at(n.time))} · ${esc(names[k]||k)}${n.reason?`<br><span class="muted">${esc(n.reason)}</span>`:''}`)}else hideTip();
+  draw();
+};
+tl.onpointerleave=()=>{hoverT=null;hideTip();draw()};
+tl.onpointerup=e=>{
+  const p=local(e);
+  if(p.x<PLOT_LEFT){const h=heads.find(h=>p.y>=h.y0&&p.y<h.y1);if(h){collapsed[h.g]=!collapsed[h.g];syncChips();draw()}drag=null;return}
+  if(drag&&Math.abs(e.clientX-drag.x)<5){const n=nearest(e);if(n){choose(n);draw()}}drag=null};
+tl.onpointercancel=()=>drag=null;
+for(const id of ['curveEnergy','curve']){const c=$(id);c.onpointermove=e=>{const x=local(e,c).x;if(x<PLOT_LEFT)return;hoverT=left+(x-PLOT_LEFT)/plotW()*span;draw()};c.onpointerleave=()=>{hoverT=null;draw()}}
+$('download').onclick=()=>{if(!report)return;const u=URL.createObjectURL(new Blob([JSON.stringify(SE.compactReport(report,[...$('metric').options].map(o=>({key:o.value,label:o.textContent}))),null,2)+'\n'],{type:'application/json;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download='TribeMerge-timeline.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+let resizeT=0;new ResizeObserver(()=>{cancelAnimationFrame(resizeT);resizeT=requestAnimationFrame(()=>{if(report){renderDays();draw()}})}).observe(document.querySelector('main'));
+fetch('simulation-report.json.gz').then(r=>{if(!r.ok)throw Error('无法获取演算文件');return r.arrayBuffer()}).then(b=>decode(b,true)).then(load).catch(e=>$('status').textContent='加载失败：'+e.message);
 </script></body></html>

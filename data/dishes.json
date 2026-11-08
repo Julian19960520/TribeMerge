@@ -1,37 +1,28 @@
 [
-	{
-		"id": "salad",
-		"name": "水果沙拉",
-		"mats": ["fruit_1", "fruit_2", "fruit_3"],
-		"secs": 14,
-		"unlock": 1
-	},
-	{
-		"id": "berrybowl",
-		"name": "野果籽碗",
-		"mats": ["fruit_2", "fruit_4", "seed_2"],
-		"secs": 18,
-		"unlock": 4
-	},
-	{
-		"id": "platter",
-		"name": "果肉烤盘",
-		"mats": ["fruit_4", "veg_3", "roast_2"],
-		"secs": 24,
-		"unlock": 21
-	},
-	{
-		"id": "grill",
-		"name": "海陆双拼烤肉",
-		"mats": ["beast_4", "roast_3", "veg_2"],
-		"secs": 30,
-		"unlock": 21
-	},
-	{
-		"id": "feast",
-		"name": "部落大拼盘",
-		"mats": ["beast_4", "bird_4", "veg_2", "fruit_2"],
-		"secs": 42,
-		"unlock": 21
-	}
+	{"id": "salad", "name": "水果沙拉", "mats": ["fruit_2", "fruit_3", "seed_1"], "secs": 60, "unlock": 3},
+	{"id": "berrybowl", "name": "野果籽碗", "mats": ["fruit_2", "fruit_4", "seed_2"], "secs": 120, "unlock": 4},
+	{"id": "nutmix", "name": "坚果干粮", "mats": ["seed_1", "seed_3", "fruit_3"], "secs": 180, "unlock": 5},
+	{"id": "cutfruit", "name": "石刀果盘", "mats": ["tool_3", "fruit_4"], "secs": 240, "unlock": 6},
+	{"id": "flintkit", "name": "燧石火镰", "mats": ["gem_1", "tool_4"], "secs": 300, "unlock": 8},
+	{"id": "fruitbasket", "name": "草编果篮", "mats": ["cloth_3", "fruit_4"], "secs": 360, "unlock": 9},
+	{"id": "ochrebeads", "name": "赭石项链", "mats": ["gem_2", "cloth_2", "seed_2"], "secs": 480, "unlock": 10},
+	{"id": "trailpack", "name": "远行干粮包", "mats": ["cloth_4", "seed_3", "fruit_5"], "secs": 600, "unlock": 11},
+	{"id": "toolbelt", "name": "工具腰带", "mats": ["cloth_4", "tool_4"], "secs": 720, "unlock": 12},
+	{"id": "bracer", "name": "贝饰草裙", "mats": ["armor_1", "cloth_3", "tool_3"], "secs": 900, "unlock": 13},
+	{"id": "talisman", "name": "宝石护符", "mats": ["gem_3", "cloth_3", "seed_2"], "secs": 1080, "unlock": 14},
+	{"id": "warpaint", "name": "祭典彩妆", "mats": ["gem_2", "fruit_5", "seed_3"], "secs": 1200, "unlock": 15},
+	{"id": "hunterkit", "name": "猎人行囊", "mats": ["beast_1", "tool_4", "cloth_3"], "secs": 1500, "unlock": 16},
+	{"id": "furwrap", "name": "兔毛项圈", "mats": ["beast_2", "armor_2"], "secs": 1800, "unlock": 17},
+	{"id": "featherhat", "name": "羽毛头冠", "mats": ["bird_1", "cloth_4", "gem_2"], "secs": 2100, "unlock": 18},
+	{"id": "platter", "name": "果蔬烤盘", "mats": ["fruit_4", "veg_3", "beast_1"], "secs": 2700, "unlock": 21},
+	{"id": "grill", "name": "海陆双拼烤肉", "mats": ["beast_2", "veg_2", "bird_1"], "secs": 3000, "unlock": 22},
+	{"id": "skewer", "name": "烤肉串拼盘", "mats": ["roast_3", "veg_4", "seed_2"], "secs": 3600, "unlock": 23},
+	{"id": "feast", "name": "部落大拼盘", "mats": ["beast_2", "bird_1", "veg_4", "fruit_5"], "secs": 4500, "unlock": 25},
+	{"id": "fruitboard", "name": "木托果盘", "mats": ["furn_3", "fruit_6"], "secs": 4800, "unlock": 26},
+	{"id": "mask", "name": "祭典面具", "mats": ["craft_2", "cloth_5", "gem_3"], "secs": 6000, "unlock": 28},
+	{"id": "chiefseat", "name": "酋长坐席", "mats": ["furn_5", "armor_3", "cloth_5"], "secs": 7200, "unlock": 30},
+	{"id": "potstew", "name": "陶罐炖肉", "mats": ["pot_3", "roast_3", "veg_4"], "secs": 9000, "unlock": 31},
+	{"id": "drumset", "name": "祭典乐器", "mats": ["ware_2", "craft_3", "furn_4"], "secs": 10800, "unlock": 33},
+	{"id": "grandfeast", "name": "篝火盛宴", "mats": ["pot_5", "roast_3", "veg_5", "bird_1"], "secs": 12600, "unlock": 36},
+	{"id": "chiefgift", "name": "酋长献礼", "mats": ["craft_3", "ware_3", "armor_3", "cloth_6"], "secs": 14400, "unlock": 39}
 ]

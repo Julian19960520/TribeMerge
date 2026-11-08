@@ -1,0 +1,42 @@
+{
+  "_说明": "占位活动：玩法还没做，先按「主棋盘顺带产积分 → 积分玩活动 → 奖励反哺主线」的统一模型放进演算，用来预留体力预算和解锁节奏。points：每花 1 体力 / 每交 1 张订单 / 每张经验单得多少活动积分。play：每次花 cost 积分抽一次奖（占操作时间，填补等体力的空档）；没有 play 就是纯进度条。milestones 按 milestone_on（points 累计积分 / plays 累计次数）领取。每期 season_days 天，期满清零。paid 是付费档，零付费演算不领，只记录。",
+  "events": [
+    {
+      "id": "gather_fest", "name": "采集祭（占位）", "unlock_level": 11, "season_days": 3,
+      "points": {"per_energy": 1},
+      "milestone_on": "points",
+      "milestones": [[80, [["fire_2", 15]]], [200, [["chest_1", 1]]], [400, [["fire_2", 25]]], [700, [["shell_2", 200]]], [1100, [["fire_2", 40], ["chest_1", 1]]], [1600, [["pack_1", 1], ["fire_2", 30]]]],
+      "paid": {"amber": 120, "rewards": [["fire_2", 120], ["pack_1", 2], ["amber_3", 10]]}
+    },
+    {
+      "id": "treasure_dig", "name": "部落寻宝（占位）", "unlock_level": 13, "season_days": 4,
+      "points": {"per_order": 1, "per_xp_order": 1},
+      "play": {"cost": 1, "table": [[["fire_2", 4], 35], [["shell_2", 40], 30], [["fire_2", 8], 20], [["chest_1", 1], 10], [["amber_3", 2], 5]]},
+      "milestone_on": "plays",
+      "milestones": [[10, [["fire_2", 20]]], [25, [["chest_1", 2]]], [45, [["fire_2", 40], ["pack_1", 1]]]],
+      "paid": {"amber": 200, "rewards": [["fire_2", 150], ["chest_1", 3], ["pack_1", 2]]}
+    },
+    {
+      "id": "hunt_fest", "name": "狩猎大会（占位）", "unlock_level": 15, "season_days": 7,
+      "points": {"per_energy": 1, "per_xp_order": 20},
+      "milestone_on": "points",
+      "milestones": [[300, [["fire_2", 20]]], [800, [["chest_1", 1]]], [1500, [["fire_2", 40]]], [2500, [["shell_2", 400]]], [3600, [["fire_2", 60], ["chest_1", 2]]], [5000, [["pack_1", 2], ["fire_2", 50]]]],
+      "paid": {"amber": 300, "rewards": [["fire_2", 200], ["pack_1", 3], ["amber_3", 20]]}
+    },
+    {
+      "id": "expedition", "name": "远征（占位）", "unlock_level": 18, "season_days": 5,
+      "points": {"per_order": 2},
+      "play": {"cost": 3, "table": [[["fire_2", 10], 40], [["shell_2", 80], 30], [["chest_1", 1], 20], [["fire_2", 20], 10]]},
+      "milestone_on": "plays",
+      "milestones": [[5, [["fire_2", 25]]], [12, [["chest_1", 2]]], [20, [["fire_2", 50], ["pack_1", 1]]]],
+      "paid": {"amber": 250, "rewards": [["fire_2", 150], ["chest_1", 3]]}
+    },
+    {
+      "id": "festival", "name": "节日庆典（占位）", "unlock_level": 22, "season_days": 10,
+      "points": {"per_energy": 1},
+      "milestone_on": "points",
+      "milestones": [[500, [["fire_2", 30]]], [1500, [["chest_1", 2]]], [3000, [["fire_2", 60]]], [5000, [["shell_2", 600], ["pack_1", 1]]], [7500, [["fire_2", 80], ["chest_1", 2]]]],
+      "paid": {"amber": 400, "rewards": [["fire_2", 300], ["pack_1", 4], ["amber_3", 30]]}
+    }
+  ]
+}

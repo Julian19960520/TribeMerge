@@ -339,6 +339,8 @@ def _order_out(o: PayOrder, st: dict | None = None) -> dict:
         out.update({"kind": "gift", "step": o.pack, "give": o.give or {}})
     elif o.kind == "ufo":
         out.update({"kind": "ufo", "give": o.give or {}})
+    elif o.kind == "offer":  # 付费限时礼包：ref = "kind:期开始时间:档位"
+        out.update({"kind": "offer", "ref": o.ref, "give": o.give or {}})
     elif o.kind == "pass":  # 通行证：带上档位和到账时发的东西
         out.update({"kind": "pass", "tier": o.ref, "give": o.give or {}})
     if st is not None:
@@ -398,6 +400,9 @@ def _fulfil(db: Session, o: PayOrder, provider_ref: str) -> dict:
         elif o.kind == "ufo":
             from . import ufo_offer
             ufo_offer.fulfil(economy(), st, o)
+        elif o.kind == "offer":  # 付费限时礼包：按下单时冻结的奖励发，同一期记一次已购
+            from . import offers
+            o.give = {**(o.give or {}), **offers.fulfil(economy(), st, o)}
         elif o.kind == "pass":  # 通行证：付款成功才开通档位
             try:
                 o.give = economy().activate_pass(st, o.ref or "")
@@ -407,7 +412,7 @@ def _fulfil(db: Session, o: PayOrder, provider_ref: str) -> dict:
         else:
             st["amber"] = int(st.get("amber", 0)) + o.amber
         from . import seven_day
-        if o.kind not in ("gift", "pass", "ufo"):
+        if o.kind not in ("gift", "pass", "ufo", "offer"):
             seven_day.record(economy(), st, "amber", o.amber)
         if o.provider != "mock":
             from decimal import Decimal
@@ -556,6 +561,51 @@ def ufo_order(payload: dict, request: Request, auth: Auth = Depends(current), db
         raise ApiError(409, "ufo_changed", "礼包需求已变化，请等待下一次飞碟")
     resp = _order_out(o)
     idem_put(db, auth.id, key, "ufo.order", 200, resp)
+    db.commit()
+    return resp
+
+
+from pydantic import Field
+from .schemas import Req
+
+
+class OfferOpenReq(Req):
+    offer: str = Field(min_length=1, max_length=16)
+
+
+class OfferOrderReq(Req):
+    offer: str = Field(min_length=1, max_length=16)
+    tier: int = 0
+    provider: str = "mock"
+
+
+@router.post("/offer/open", response_model=ActionResp)
+def offer_open(req: OfferOpenReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    """付费限时礼包开一期（赶大集到点自动开 / 火种大礼包体力用完时开）。等级、冷却由服务器判定。"""
+    from . import offers
+    return _action(request, auth, db, "offer.open", lambda e, st: offers.open_window(e, st, req.offer))
+
+
+@router.post("/offer/order", response_model=PayOrderResp)
+def offer_order(req: OfferOrderReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    """付费限时礼包下单（PayOrder kind = offer）。到账只在支付回调里（_fulfil → offers.fulfil）。"""
+    from . import offers
+    if req.provider != "mock" or not get_settings().enable_mock_payment:
+        raise ApiError(501, "payment_not_configured", "这个支付渠道还没有接入")
+    key = idem_key(request)
+    hit = idem_get(db, auth.id, key, "offer.order")
+    if hit is not None:
+        return JSONResponse(hit.response, status_code=hit.status)
+    st = load_state(lock_account(db, auth.id))
+    try:
+        ref, price, rewards = offers.reviewed(economy(), st, req.offer, req.tier)
+    except Reject as r:
+        raise ApiError(r.status, r.error, r.message)
+    o = PayOrder(id="po_" + secrets.token_hex(12), account_id=auth.id, pack=req.tier, amber=0, kind="offer", ref=ref,
+                 price=price, provider=req.provider, status="created", created_at=clock.utcnow(), give={"rewards": rewards})
+    db.add(o)
+    resp = _order_out(o)
+    idem_put(db, auth.id, key, "offer.order", 200, resp)
     db.commit()
     return resp
 

@@ -26,7 +26,7 @@ func run() -> void:
 	check(claim.get("ok",false) and claim["rewards"].size()>0 and not (await race.claim(result)).get("ok",false),"local podium reward can be claimed only once")
 	local.join()
 	for m in g.local_race["current"]["group"]["members"]:
-		if not m["me"]:m["rate"]=100000
+		if not m["me"]:m["points"]=[[1.0,float(g.local_race["current"]["group"]["target"])]]
 	g.local_race["current"]["group"]["start"]=g.now()-10
 	local.tick()
 	check(g.local_race["results"][0]["me"]["place"]==5 and g.local_race["results"][0]["me"]["reward"].is_empty(),"local banana race awards only top three")

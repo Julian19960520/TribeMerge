@@ -27,6 +27,16 @@ var resource_tracking := false
 var resource_last: Dictionary = {}
 var resource_initial: Dictionary = {}
 var resource_earned: Dictionary = {}
+# 玩家作息：只在 schedule 的在线时段操作；空闲过久就下线，等下一段再上线。
+var schedule: Dictionary = {}
+var lv_acc: Dictionary = {}
+var level_rows: Array = []
+var regen_pending := 0
+var in_session := true
+# 占位活动（tools/sim/placeholder_events.json）：只在演算里存在，用来预留体力预算和解锁节奏
+var ph_events: Array = []
+var ph_state: Dictionary = {}
+var pass_season_seen := ""
 
 func run() -> int:
 	var config_path := "res://tools/sim/config.json"
@@ -38,6 +48,11 @@ func run() -> int:
 		push_error("Invalid simulation config: " + config_path)
 		return 2
 	cfg = raw
+	schedule = cfg.get("schedule", {}) if cfg.get("schedule", {}) is Dictionary else {}
+	var ph_path:=str(cfg.get("placeholder_events","res://tools/sim/placeholder_events.json"))
+	if ph_path!="" and FileAccess.file_exists(ph_path):
+		var ph=JSON.parse_string(FileAccess.get_file_as_string(ph_path))
+		if ph is Dictionary: ph_events=ph.get("events",[])
 	if float(cfg.get("cycle_days", 0)) <= 0 or int(cfg.get("max_actions", 0)) <= 0 or float(cfg.get("action_seconds", 0)) <= 0:
 		push_error("cycle_days, max_actions and action_seconds must be positive")
 		return 2
@@ -140,6 +155,7 @@ func record(cat: String, title: String, _reason: String, detail: Dictionary = {}
 		if after[key] != before.get(key, after[key]): delta[key] = after[key] - before[key]
 	var e := {"run": run_id, "seq": events.size()+1, "time": snappedf(G.now()-start, 0.01), "category": cat, "title": title, "state": after, "delta": delta, "detail": detail}
 	if reward_source!="": e["reward_source"]=reward_source
+	account(cat, reward_source, int(delta.get("energy",0)), detail)
 	events.append(e)
 	stream.store_line(JSON.stringify(e))
 	totals[cat] = int(totals.get(cat, 0)) + 1
@@ -154,19 +170,131 @@ func record_unlock(board_id: String, cell: int, item: String, result: String, co
 	var result_name:=Data.name_of(result) if board_id=="main" else str(MergeEvent.item(MergeEvent.current(),result).get("name",result))
 	record("unlock",("主棋盘" if board_id=="main" else "月石棋盘")+" · 解锁藤蔓","与藤蔓格内的同级物品合成，格子解除锁定",{"board":board_id,"cell":cell,"row":int(cell/cols)+1,"col":cell%cols+1,"item":item,"item_name":item_name,"result":result,"result_name":result_name,"lock_before":1,"lock_after":0,"merge_seq":merge_seq})
 
+# ---------------------------------------------------------------- 按等级汇总
+
+func new_level_acc() -> Dictionary:
+	return {"level":G.level,"reached":snappedf(G.now()-start,0.01),"day":play_day(),"orders":0,"xp_orders":0,"xp":0,
+		"produce":0,"merge":0,"energy_spent":0,"energy_regen":0,"energy_wasted":0,"energy_income":{},"energy_peak":G.energy,
+		"active_sec":0.0,"idle_sec":0.0,"offline_sec":0.0,"sessions":0,"stuck":0,"stuck_energy":0,"unlocks":unlocks_at(G.level)}
+
+## 本事件里不算体力恢复的体力变化，按来源记入本级收入或支出
+func account(cat: String, source: String, energy_delta: int, detail: Dictionary) -> void:
+	if lv_acc.is_empty(): return
+	var de := energy_delta-regen_pending
+	if regen_pending>0: lv_acc["energy_regen"]=int(lv_acc["energy_regen"])+regen_pending
+	regen_pending=0
+	var key:=source if source!="" else cat
+	if de>0: lv_acc["energy_income"][key]=int(lv_acc["energy_income"].get(key,0))+de
+	elif de<0: lv_acc["energy_spent"]=int(lv_acc["energy_spent"])-de
+	lv_acc["energy_peak"]=maxi(int(lv_acc["energy_peak"]),G.energy)
+	match cat:
+		"order":
+			lv_acc["orders"]=int(lv_acc["orders"])+1
+			var xp:=int((detail.get("rw",{}) as Dictionary).get("xp",0))
+			if xp>0:
+				lv_acc["xp_orders"]=int(lv_acc["xp_orders"])+1
+				lv_acc["xp"]=int(lv_acc["xp"])+xp
+		"produce": lv_acc["produce"]=int(lv_acc["produce"])+1
+		"merge": lv_acc["merge"]=int(lv_acc["merge"])+1
+
+func close_level_row(partial: bool) -> void:
+	if lv_acc.is_empty(): return
+	var row:=lv_acc.duplicate(true)
+	row["duration"]=snappedf(G.now()-start-float(row["reached"]),0.01)
+	row["play_sec"]=snappedf(float(row["active_sec"])+float(row["idle_sec"]),0.01)
+	row["xp_need"]=Data.xp_need(int(row["level"]))
+	row["partial"]=partial
+	level_rows.append(row)
+
+## 升到这一级时新出现的东西：产线 / 订单品类 / 玩法 / 活动 / 部落建筑 / 等级奖励里的生产器
+func unlocks_at(lv: int) -> Array:
+	var out: Array=Data.level_unlocks(lv) if lv>1 else ["新产线：食物"]
+	if lv==int(DuelRace.config().get("unlock_level",0)): out.append("活动：双人竞速")
+	if lv==int(LocalRace.rules().get("unlock_level",0)): out.append("活动：香蕉竞速")
+	for s in MergeEvent.config().get("seasons",[]):
+		if bool(s.get("enabled",true)) and lv==int(s.get("unlock_level",1)) and lv>1: out.append("活动：%s"%str(s.get("title","")))
+	for b in Data.BUILDS:
+		if b is Dictionary and Data.build_unlock(b)==lv and lv>1: out.append("部落建筑：%s"%str(b.get("name","")))
+	for rw in Data.LEVEL_REWARDS.get(lv,[]):
+		var id:=str(rw[0])
+		if Data.CHAINS.has(Data.chain(id)) and Data.type_of(id)=="gen": out.append("等级奖励生产器：%s %d级"%[Data.name_of(id),Data.lv(id)])
+	for ev in ph_events:
+		if int(ev["unlock_level"])==lv: out.append("活动：%s"%str(ev["name"]))
+	return out
+
+# ---------------------------------------------------------------- 作息
+
+## 按北京时间算第几天（从 1 开始）
+func play_day() -> int:
+	return int((G.now()+28800)/86400.0)-int((start+28800)/86400.0)+1
+
+## 当天的在线时段，[开始秒, 结束秒]（北京时间当天零点起）
+func sessions_today(day: int = -1) -> Array:
+	if day<0: day=play_day()
+	var days: Array=schedule.get("days",[])
+	var plan: Array=days[mini(day-1,days.size()-1)] if not days.is_empty() else []
+	var out: Array=[]
+	for s in plan:
+		var hm:=str(s[0]).split(":")
+		var a:=int(hm[0])*3600+int(hm[1])*60
+		out.append([a,a+int(s[1])*60])
+	return out
+
+func local_tod() -> float:
+	return fmod(G.now()+28800,86400.0)
+
+## 当前时段剩余秒数；不在线返回 0。没配置作息就视为一直在线。
+func session_left() -> float:
+	if schedule.is_empty(): return INF
+	var t:=local_tod()
+	for s in sessions_today():
+		if t>=float(s[0]) and t<float(s[1]): return float(s[1])-t
+	return 0.0
+
+func secs_to_next_session() -> float:
+	var t:=local_tod()
+	for s in sessions_today():
+		if float(s[0])>t: return float(s[0])-t
+	# 明天第一段
+	var day_left:=86400.0-t
+	var first: Array=sessions_today(play_day()+1)
+	return day_left+(float(first[0][0]) if not first.is_empty() else 0.0)
+
+## 下线到下一段在线时段
+func go_offline(why: String) -> void:
+	var seconds:=minf(secs_to_next_session(),float(cfg["cycle_days"])*86400-(G.now()-start))
+	if seconds<=0: return
+	var began:=G.now()-start
+	tick(seconds,"offline")
+	record("offline","下线 "+G.fmt_time(int(seconds)),why,{"seconds":seconds,"from":began,"why":why})
+	in_session=false
+
 func target_level_reached() -> bool:
 	var limit:=int(cfg.get("stop_level",40))
 	return limit>0 and G.level>=limit
 
 func observe_level() -> void:
 	if G.level!=observed_level:
-		record("level", "升到 %d 级" % G.level, "订单或建造奖励达到升级条件", {"from": observed_level, "to": G.level})
+		close_level_row(false)
+		lv_acc=new_level_acc()
+		record("level", "升到 %d 级" % G.level, "订单或建造奖励达到升级条件", {"from": observed_level, "to": G.level, "unlocks": lv_acc["unlocks"]})
 		observed_level=G.level
 
-func tick(seconds: float) -> void:
+func tick(seconds: float, mode: String = "active") -> void:
+	if not lv_acc.is_empty():
+		# 体力满着的那段时间，自然恢复被浪费
+		var wasted:=maxf(0,seconds-float(G.energy_full_left()))/G.REGEN_SEC
+		lv_acc["energy_wasted"]=int(lv_acc["energy_wasted"])+int(wasted)
+		lv_acc[mode+"_sec"]=float(lv_acc[mode+"_sec"])+seconds
+	var energy_before:=G.energy
 	G.simulation_time += seconds
 	G._regen()
+	regen_pending+=maxi(0,G.energy-energy_before)
+	var cooked_before:=G.cooked_pop.size()
 	G._tick_cooks()
+	for k in range(cooked_before,G.cooked_pop.size()):
+		var at:=int(G.cooked_pop[k])
+		record("craft","制作完成 · "+Data.name_of(G.cell_id(at)),"计时结束",{"dish":G.cell_id(at),"cell":at})
 	G._tick_bubbles()
 	G._check_day()
 	SevenDay.login()
@@ -184,6 +312,8 @@ func play() -> void:
 	begin_resource_tracking()
 	SevenDay.login()
 	claimed_levels = {}
+	ph_state = {}
+	pass_season_seen = ""
 	totals = {}
 	target = []
 	last_target = ""
@@ -195,6 +325,11 @@ func play() -> void:
 	main_finished=false
 	target_dirty=true
 	before = snap()
+	level_rows=[]
+	regen_pending=0
+	in_session=session_left()>0
+	lv_acc=new_level_acc()
+	lv_acc["sessions"]=1 if in_session else 0
 	record("start", "从新存档开始", "按当前工程配置初始化，不赠送额外资源", {"seed": int(cfg["seed"])+run_id-1})
 	while G.now()-start < float(cfg["cycle_days"])*86400 and action_count < int(cfg["max_actions"]):
 		if not main_finished and main_limit>0 and G.level>main_limit:
@@ -209,6 +344,12 @@ func play() -> void:
 			finish_reason = "invariant_failed"
 			record("error", "状态校验失败", "停止本轮，保留完整日志")
 			break
+		if session_left()<=0:
+			go_offline("不在作息的在线时段")
+			continue
+		if not in_session:
+			in_session=true
+			lv_acc["sessions"]=int(lv_acc["sessions"])+1
 		if await upgrade_tribe(): pass
 		elif await rewards(): pass
 		elif finish_tutorial(): pass
@@ -217,8 +358,10 @@ func play() -> void:
 			choose_target()
 			if retrieve(): pass
 			elif merge_main(): pass
-			elif await events_step(): pass
+			elif await events_step(false): pass
 			elif produce(): pass
+			# 活动玩法（月石合成、占位活动抽奖）排在主棋盘生产之后：没体力、没事干时用来填空档
+			elif await events_step(true): pass
 			elif await make_room(): pass
 			else:
 				var previous_target:=str(target)
@@ -236,7 +379,8 @@ func play() -> void:
 			await get_tree().process_frame
 	if finish_reason!="target_level" and action_count >= int(cfg["max_actions"]): finish_reason = "action_limit"
 	record("end", "本轮结束", {"duration_limit":"达到配置的模拟时长", "action_limit":"达到动作上限", "target_level":"达到目标等级", "invariant_failed":"状态校验失败"}[finish_reason], {"reason":finish_reason})
-	var summary := {"run":run_id,"seed":int(cfg["seed"])+run_id-1,"duration":G.now()-start,"actions":action_count,"state":snap(),"counts":totals.duplicate(),"finish_reason":finish_reason,"resource_initial":resource_initial.duplicate()}
+	close_level_row(true)
+	var summary := {"run":run_id,"seed":int(cfg["seed"])+run_id-1,"duration":G.now()-start,"actions":action_count,"state":snap(),"counts":totals.duplicate(),"finish_reason":finish_reason,"resource_initial":resource_initial.duplicate(),"levels":level_rows.duplicate(true)}
 	summaries.append(summary)
 	var state_file := FileAccess.open(output.get_basename()+"-run%d-save.json"%run_id,FileAccess.WRITE)
 	state_file.store_string(JSON.stringify(G.save_dict()))
@@ -292,6 +436,10 @@ func rewards() -> bool:
 			await SevenDay.claim(str(stage["id"]),true)
 			record_reward("seven_day_stage", "七日里程碑", "累计任务积分达标", {"stage":stage})
 			return true
+	if pass_season_seen != G.pass_season:
+		if pass_season_seen != "":
+			record("milestone","通行证换季","第 %s 季开始，积分与已领档位清零"%G.pass_season,{"season":G.pass_season})
+		pass_season_seen = G.pass_season
 	for lv in range(1,G.pass_reached()+1):
 		if not G.pass_got(false,lv):
 			var rw: Array = await G.claim_pass_free(lv)
@@ -318,7 +466,8 @@ func rewards() -> bool:
 		var kind := Data.type_of(id)
 		if kind in Rewards.RESOURCE_TYPES and Data.value_of(id)>0:
 			# Prefer merging resources; collect when needed, full, or at maximum tier.
-			var urgent: bool = (kind=="energy" and G.energy < 10) or G.empty_count()<2 or Data.next_id(id)==""
+			# 沙漏：有制作在计时就收，攒着加速
+			var urgent: bool = (kind=="energy" and G.energy < 10) or G.empty_count()<2 or Data.next_id(id)=="" or (kind=="sand" and cooking_any())
 			if urgent:
 				G.board[i]["id"] = ""
 				G.add_currency(kind,Data.value_of(id))
@@ -374,6 +523,8 @@ func submit_orders() -> bool:
 			var rw: Dictionary = o["rw"].duplicate(true)
 			var detail := o.duplicate(true)
 			G.complete_order(i)
+			ph_gain("per_order",1)
+			if int(rw.get("xp",0))>0: ph_gain("per_xp_order",1)
 			if bool(cfg.get("play_events",true)): LocalRace.order(detail["items"])
 			var rws := []
 			for p in [["shell","shell_2"],["xp","xp_1"],["token","token_1"]]:
@@ -387,8 +538,27 @@ func submit_orders() -> bool:
 			return true
 		if G.craft_mats_ready(o):
 			G.begin_craft(i)
-			record("craft", "开始制作料理", "材料齐全，等待制作完成",o.duplicate(true))
+			record("craft", "开始制作 · "+Data.name_of(str(o.get("dish",""))), "材料齐全，等待制作完成",o.duplicate(true))
 			return true
+	return rush_crafts()
+
+func cooking_any() -> bool:
+	for i in G.board.size():
+		if G.cooking(i): return true
+	return false
+
+## 沙漏够把一格制作直接做完就用（剩不到 1 份时间的不浪费沙漏）
+func rush_crafts() -> bool:
+	if G.rush<1: return false
+	for i in G.board.size():
+		if not G.cooking(i) or G.cook_left(i)<=int(cfg.get("rush_min_left",60)): continue
+		var need: int=G.rush_need(i)
+		if need>G.rush: continue
+		var dish:=str(G.board[i]["ck"]["dish"])
+		var left:=G.cook_left(i)
+		var used: int=G.rush_cook(i)
+		record("craft","沙漏加速 · "+Data.name_of(dish),"沙漏够直接做完",{"dish":dish,"sand":used,"saved_sec":left,"sand_left":G.rush})
+		return true
 	return false
 
 func upgrade_tribe() -> bool:
@@ -446,6 +616,8 @@ func choose_target() -> void:
 			if prob<=0 and mass<pow(2,Data.lv(id)-1): reachable=false
 			cost += maxf(0,pow(2,Data.lv(id)-1)-mass)/maxf(prob,0.01)
 		if bool(o.get("story",false)) and bool(cfg.get("story_first",true)): cost-=100000
+		# 制作单材料便宜时和主线同等优先（真人会顺手凑齐），贵的等没别的事再做
+		elif str(o.get("kind",""))=="craft" and cost<=float(cfg.get("craft_pursue_taps",40)): cost-=100000
 		if not reachable: cost+=1000000
 		if cost<best:
 			best=cost
@@ -523,7 +695,21 @@ func merge_main() -> bool:
 	if locked: record_unlock("main",b,id,G.cell_id(b),G.COLS)
 	return true
 
+## 火种罐这类体力生产器点击不耗体力：有次数、棋盘留得出空位就点
+func tap_energy_gen() -> bool:
+	if G.empty_count()<2: return false
+	for i in G.board.size():
+		if not free_item(i) or Data.type_of(G.cell_id(i))!="egen" or G.gen_left(i)==0: continue
+		var gen: String=G.cell_id(i)
+		G.gen_use(i)
+		var id: String=G.roll_produce(gen)
+		G.place(G.find_empty_near(i),id)
+		record("egen","点火种罐 · "+Data.name_of(id),"体力生产器不耗体力",{"generator":gen,"item":id,"left":G.gen_left(i)})
+		return true
+	return false
+
 func produce() -> bool:
+	if tap_energy_gen(): return true
 	if G.energy<1 or G.empty_count()<1: return false
 	var missing := {}
 	var used: Array=[]
@@ -545,6 +731,7 @@ func produce() -> bool:
 	if chosen<0: return false
 	var id: String=G.roll_produce(G.cell_id(chosen))
 	G.spend("energy",1)
+	ph_gain("per_energy",1)
 	G.gen_use(chosen)
 	G.place(G.find_empty_near(chosen),id)
 	record("produce","生产 "+Data.name_of(id),target_name,{"generator":G.cell_id(chosen),"item":id})
@@ -588,8 +775,65 @@ func make_room() -> bool:
 		return true
 	return false
 
-func events_step() -> bool:
+# ---------------------------------------------------------------- 占位活动
+
+func ph_on(ev: Dictionary) -> bool:
+	return bool(cfg.get("play_events",true)) and not G.tutorial_on and G.level>=int(ev["unlock_level"])
+
+## 当前这一期的状态；换期时清零，并记下没买的付费档
+func ph_sync(ev: Dictionary) -> Dictionary:
+	var id:=str(ev["id"])
+	var season:=int((G.now()-start)/(float(ev["season_days"])*86400.0))
+	var st: Dictionary=ph_state.get(id,{})
+	if st.is_empty() or int(st["season"])!=season:
+		if not st.is_empty() and ev.has("paid"):
+			record("event",str(ev["name"])+" 换期","零付费：付费档未购买",{"event":id,"season":st["season"],"earned":st["earned"],"plays":st["plays"],"claimed":st["claimed"],"paid_skipped":ev["paid"]})
+		st={"season":season,"points":0,"earned":0,"plays":0,"claimed":0}
+		ph_state[id]=st
+	return st
+
+func ph_gain(kind: String, n: int) -> void:
+	for ev in ph_events:
+		if not ph_on(ev): continue
+		var per:=int((ev.get("points",{}) as Dictionary).get(kind,0))
+		if per<=0: continue
+		var st:=ph_sync(ev)
+		st["points"]=int(st["points"])+per*n
+		st["earned"]=int(st["earned"])+per*n
+
+func ph_step(play_now: bool) -> bool:
+	for ev in ph_events:
+		if not ph_on(ev): continue
+		var st:=ph_sync(ev)
+		var ms: Array=ev.get("milestones",[])
+		var k:=int(st["claimed"])
+		var progress:=int(st["plays"]) if str(ev.get("milestone_on","points"))=="plays" else int(st["earned"])
+		if k<ms.size() and progress>=int(ms[k][0]):
+			st["claimed"]=k+1
+			grant(ms[k][1])
+			record_reward("ph_"+str(ev["id"]),str(ev["name"])+" 阶段奖励","累计进度达到 %d"%int(ms[k][0]),{"event":ev["id"],"stage":k+1,"rewards":ms[k][1],"received":reward_summary(ms[k][1])})
+			return true
+		var play: Dictionary=ev.get("play",{}) if play_now else {}
+		if not play.is_empty() and int(st["points"])>=int(play["cost"]):
+			st["points"]=int(st["points"])-int(play["cost"])
+			st["plays"]=int(st["plays"])+1
+			var table: Array=play["table"]
+			var total:=0
+			for row in table: total+=int(row[1])
+			var roll:=randi()%maxi(1,total)
+			var got: Array=table[0][0]
+			for row in table:
+				roll-=int(row[1])
+				if roll<0: got=row[0]; break
+			grant([got])
+			record_reward("ph_"+str(ev["id"]),str(ev["name"])+" 抽奖","花活动积分玩一次",{"event":ev["id"],"rewards":[got],"received":reward_summary([got])})
+			return true
+	return false
+
+## play=false 只做领奖、报名这类杂事；play=true 才花活动积分玩活动
+func events_step(play: bool) -> bool:
 	if not bool(cfg.get("play_events",true)) or G.tutorial_on: return false
+	if ph_step(play): return true
 	if DuelRace.unlocked():
 		var duel:=DuelRace.state()
 		var match_state: Dictionary=duel["match"]
@@ -626,6 +870,7 @@ func events_step() -> bool:
 		var result: Dictionary=await MergeEvent.act(c,"claim")
 		record_reward("moon","月石里程碑奖励","解锁格子数达到阶段目标",result)
 		return true
+	if not play: return false
 	var cells: Array=s["cells"]
 	var lo:=int(s["view"])*int(c["board"]["cols"])
 	var hi:=lo+int(c["board"]["cols"])*int(c["board"]["visible_rows"])
@@ -676,8 +921,15 @@ func wait_next() -> void:
 		elif G.is_merge_bubble(i): wait=G.bubble_left(i)
 		if wait>0 and wait<seconds: seconds=wait; why="等待制作、生产器冷却或气泡消失"
 	seconds=minf(maxf(seconds,1),float(cfg["cycle_days"])*86400-(G.now()-start))
+	# 真人没事干要等太久就下线；等体力这种算「卡体力」
+	if not schedule.is_empty() and (seconds>float(schedule.get("quit_idle_minutes",5))*60 or seconds>=session_left()):
+		lv_acc["stuck"]=int(lv_acc["stuck"])+1
+		if G.energy<1: lv_acc["stuck_energy"]=int(lv_acc["stuck_energy"])+1
+		record("stuck","没事可做："+why,"空等超过作息允许的时长，提前下线",{"wait_needed":seconds,"energy":G.energy,"session_left":session_left()})
+		go_offline("卡住："+why)
+		return
 	var began:=G.now()-start
-	tick(seconds)
+	tick(seconds,"idle")
 	record("wait","快进 "+G.fmt_time(int(seconds)),why,{"seconds":seconds,"from":began})
 	if G.now()-start-last_order_time>86400 and not warned_stall:
 		warned_stall=true

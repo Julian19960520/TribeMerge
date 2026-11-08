@@ -26,6 +26,7 @@ const examples = [
   [{ category:'order',title:'副线订单完成',detail:{story:false,rw:{xp:10}} }, 'order_xp'],
   [{ category:'order',title:'旧订单' }, 'order_no_xp'],
   [{ category:'unlock',title:'解锁藤蔓' }, 'unlock'],
+  [{ category:'unlock',title:'月石棋盘 · 解锁藤蔓',detail:{board:'moon'} }, 'unlock_moon'],
   [{ category:'merge',reason:'解锁藤蔓',detail:{} }, 'unlock'],
   [{ category:'merge',reason:'解锁藤蔓',detail:{unlock_recorded:true} }, 'merge'],
   [{ category:'reward',title:'领取 2 级奖励' }, 'reward_level'],
@@ -89,7 +90,7 @@ const filtered=compactReport({runs:[{run:1}],events:[
 ]},[{key:'energy',label:'体力'},{key:'empty',label:'棋盘空格'}]);
 assert(!('合成 / 生产' in filtered.轮次[0].时间线));
 assert(!('棋盘空格' in filtered.轮次[0].资源与进度));
-assert.deepEqual(JSON.parse(JSON.stringify(filtered.轮次[0].时间线.解锁藤蔓)),{主棋盘:{'2秒':{行:5,列:3}}});
+assert.deepEqual(JSON.parse(JSON.stringify(filtered.轮次[0].时间线.主线解锁藤蔓)),{主棋盘:{'2秒':{行:5,列:3}}});
 assert.equal(filtered.轮次[0].时间线.升级部落['3秒'],'篝火广场；织布坊');
 assert.equal(filtered.轮次[0].时间线.等级奖励['4秒'],'2级：体力×50、藤编宝箱×1');
 assert.deepEqual(JSON.parse(JSON.stringify(filtered.轮次[0].资源与进度.体力)),{'0秒':10,'1秒':9},'production still contributes resource changes despite being absent from timelines');
@@ -109,7 +110,7 @@ for(const run of exported.轮次){
   const source=report.runs.find(item=>item.run===run.轮次);
   const rows=report.events.filter(event=>event.run===run.轮次);
   for(const track of lanes(rows,true)){
-    if(track.keys.includes('merge') || track.keys.includes('unlock'))continue;
+    if(track.keys.includes('merge') || track.keys.some(key=>key.startsWith('unlock')))continue;
     const times=new Set(rows.filter(event=>track.keys.includes(category(event))).map(event=>formatTime(event.time)));
     assert.deepEqual(Object.keys(run.时间线[track.label]),[...times],'all retained event times are exported');
   }
@@ -117,7 +118,7 @@ for(const run of exported.轮次){
   assert(!('棋盘空格' in run.资源与进度));
   function checkTimeLeaves(group){
     for(const [key,value] of Object.entries(group)){
-      if(key==='解锁藤蔓')continue;
+      if(key.endsWith('解锁藤蔓'))continue;
       if(typeof value==='object'){assert(!Array.isArray(value));checkTimeLeaves(value);}
       else {assert(Number.isFinite(secondsOf(key)));assert(['string','number'].includes(typeof value));}
     }
@@ -125,10 +126,11 @@ for(const run of exported.轮次){
   checkTimeLeaves(run.时间线);
   assert(Object.values(run.时间线.升级部落).every(value=>!value.includes('升级部落 · ')));
   const unlocks=rows.filter(event=>event.category==='unlock' && event.detail.row);
-  assert.equal(Object.values(run.时间线.解锁藤蔓).reduce((count,points)=>count+Object.keys(points).length,0),unlocks.length,'all unlock coordinates are retained');
+  const vineCount=lane=>Object.values(run.时间线[lane]).reduce((count,points)=>count+Object.keys(points).length,0);
+  assert.equal(vineCount('主线解锁藤蔓')+vineCount('月石解锁藤蔓'),unlocks.length,'all unlock coordinates are retained');
   for(const event of unlocks){
     const board=event.detail.board==='main'?'主棋盘':'月石棋盘';
-    const point=run.时间线.解锁藤蔓[board][formatTime(event.time)];
+    const point=run.时间线[event.detail.board==='moon'?'月石解锁藤蔓':'主线解锁藤蔓'][board][formatTime(event.time)];
     assert.deepEqual(JSON.parse(JSON.stringify(point)),{行:event.detail.row,列:event.detail.col});
   }
   for(const event of rows.filter(event=>category(event)==='reward_level' && event.detail.received)){
