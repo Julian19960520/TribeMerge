@@ -4,6 +4,8 @@ extends RefCounted
 
 const Layout := preload("res://scripts/config/board_layout.gd")
 const HotDeals := preload("res://scripts/HotDeals.gd")
+## 弹窗界面图的固定区域（和生成时用的是同一份）
+const PS := preload("res://scripts/sprites/popups.gd")
 
 static func frame(p: PopupBase, r: Rect2, title: String, col: Color = Art.TEAL, mascot: String = "") -> void:
 	var br := Rect2(r.get_center().x - 180, r.position.y - 34, 360, 78)
@@ -31,10 +33,10 @@ static func section(parent: Control, text: String, y: float, col: Color = Color(
 		var mid: float = sz.x * 0.5
 		var left_star := clampf(mid - half, edge + 18.0, mid - 36.0)
 		var right_star := clampf(mid + half, mid + 36.0, sz.x - edge - 18.0)
-		Art.ln(ci, Vector2(edge, 20), Vector2(left_star - 10.0, 20), 2.0, Color(col, 0.5), 1)
-		Art.ln(ci, Vector2(right_star + 10.0, 20), Vector2(sz.x - edge, 20), 2.0, Color(col, 0.5), 2)
-		ci.draw_colored_polygon(Art.star_pts(Vector2(left_star, 20), 6, 2.5, 4, 3), Color(col, 0.6))
-		ci.draw_colored_polygon(Art.star_pts(Vector2(right_star, 20), 6, 2.5, 4, 4), Color(col, 0.6)))
+		Sprites.draw(ci, "pop_sec_line", Rect2(edge, 17, left_star - 10.0 - edge, 6), Color(col, 0.5))
+		Sprites.draw(ci, "pop_sec_line", Rect2(right_star + 10.0, 17, sz.x - edge - right_star - 10.0, 6), Color(col, 0.5))
+		Sprites.at(ci, "pop_sec_star", Vector2(left_star, 20), 1.0, 0.0, Color(col, 0.6))
+		Sprites.at(ci, "pop_sec_star", Vector2(right_star, 20), 1.0, 0.0, Color(col, 0.6)))
 
 # ---------------------------------------------------------------- 体力
 
@@ -62,24 +64,10 @@ static func energy() -> PopupBase:
 
 static func _energy_art(ci: CanvasItem, sz: Vector2) -> void:
 	var r := Rect2(Vector2.ZERO, sz)
-	var b := Art.rrect(r, 22, 101, 0.8)
-	ci.draw_colored_polygon(b, Color("c9a06a"))
-	var cave := PackedVector2Array()
-	for k in 17:
-		var a := PI + PI * float(k) / 16.0
-		cave.append(Vector2(sz.x * 0.72, sz.y * 0.62) + Vector2(cos(a) * 130.0, sin(a) * 170.0))
-	ci.draw_colored_polygon(cave, Color("8fd0d4"))
+	Sprites.draw(ci, "pop_energy_bg", r)
 	Paint.hills(ci, sz.y * 0.5, sz.x, 20, Color("7fb48a"), 2, sz.y * 0.62)
-	Art.outline(ci, cave, 4.0, Color(0.4, 0.25, 0.1, 0.6))
+	Sprites.draw(ci, "pop_energy_mid", r)
 	Paint.palm(ci, Vector2(70, sz.y * 0.62), 140, 4, Color("4a8a4a"))
-	var string := []
-	for k in 9:
-		string.append(Vector2(sz.x * float(k) / 8.0, 24 + sin(float(k) / 8.0 * PI) * 30.0))
-	Art.pl(ci, string, 2.5, Art.WOOD_D, 3)
-	for k in 8:
-		var p: Vector2 = string[k].lerp(string[k + 1], 0.5)
-		var cols := [Art.CLAY, Art.OCHRE, Art.TEAL, Art.BONE]
-		ci.draw_colored_polygon(Art.poly([p + Vector2(-16, -4), p + Vector2(16, -4), p + Vector2(0, 26)], k), cols[k % 4])
 	var table := Rect2(0, sz.y * 0.62, sz.x, sz.y * 0.38)
 	ci.draw_rect(table, Color("e9d3a3"))
 	for i in 12:
@@ -92,11 +80,7 @@ static func _energy_art(ci: CanvasItem, sz: Vector2) -> void:
 		Art.item(ci, "fire_2", Vector2(x, sz.y * 0.36 - abs(float(k) - 3.0) * -6.0 - 20.0 + (k % 2) * 12.0), 70)
 	for k in 3:
 		Art.item(ci, "fire_1", Vector2(80 + k * 50, sz.y * 0.8 + (k % 2) * 16), 50)
-	var plank := Art.rrect(Rect2(40, sz.y * 0.76, 170, 70), 10, 102, 0.8)
-	Art.dilate(ci, plank, 3.0, Art.INK)
-	ci.draw_colored_polygon(plank, Art.WOOD)
-	Art.ln(ci, Vector2(120, sz.y * 0.76), Vector2(120, sz.y * 0.70), 4.0, Art.ROPE, 1)
-	Art.outline(ci, b, 3.0, Art.LEATHER_D)
+	Sprites.draw(ci, "pop_energy_top", r)
 
 # ---------------------------------------------------------------- 玩法说明
 
@@ -106,25 +90,20 @@ static func howto() -> PopupBase:
 	p.set_meta("fullscreen", true)
 	UI.title(p.box, "玩法说明", Rect2(0, 150, 720, 100), 64)
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
-		var card := Art.rrect(Rect2(90, 330, 200, 100), 20, 111, 0.8)
-		Art.dilate(ci, card, 3.0, Art.INK)
-		ci.draw_colored_polygon(card, Art.BONE)
+		Sprites.draw(ci, "pop_howto_card", PS.HOWTO_CARD)
 		Art.item(ci, "roast_7", Vector2(160, 300), 110)
 		Paint.button(ci, Rect2(120, 360, 140, 56), "green")
 		ci.draw_polyline(PackedVector2Array([Vector2(170, 384), Vector2(186, 398), Vector2(212, 372)]), Color.WHITE, 7.0, true)
-		_arrow(ci, Vector2(330, 360), Vector2(500, 450), 0.4)
+		_arrow(ci, 0)
 		Art.item(ci, "shell_4", Vector2(560, 540), 170)
-		_arrow(ci, Vector2(520, 660), Vector2(380, 760), 0.4)
+		_arrow(ci, 1)
 		Art.item(ci, "chest_1", Vector2(220, 830), 200)
 		Art.item(ci, "fruit_2", Vector2(150, 720), 70)
 		Art.item(ci, "amber_4", Vector2(290, 700), 70)
-		var hand := Art.ell(Vector2(310, 880), Vector2(26, 34), 112, 0.08, 16, -0.6)
-		Art.fill(ci, hand, Color("f1c49a"), 3.0)
-		Art.fill(ci, Art.capsule(Vector2(296, 862), Vector2(270, 830), 8.0, 113), Color("f1c49a"), 3.0)
-		_arrow(ci, Vector2(360, 960), Vector2(480, 1010), -0.4)
+		Sprites.draw(ci, "pop_howto_hand", PS.HOWTO_HAND)
+		_arrow(ci, 2)
 		Paint._spot_hut(ci, Vector2(560, 1080), 4)
-		var bub := Art.ell(Vector2(620, 920), Vector2(36, 36), 114, 0.03, 18)
-		Art.fill(ci, bub, Art.BONE, 3.0)
+		Sprites.draw(ci, "pop_howto_bub", PS.HOWTO_BUB)
 		Paint.hammer(ci, Vector2(620, 918), 0.5))
 	UI.lbl(p.box, "完成订单！", Rect2(40, 440, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
 	UI.lbl(p.box, "赚取贝币！", Rect2(410, 630, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
@@ -139,18 +118,10 @@ static func howto() -> PopupBase:
 		G.main.show_screen("board"))
 	return p
 
-static func _arrow(ci: CanvasItem, a: Vector2, b: Vector2, bend: float) -> void:
-	var m := a.lerp(b, 0.5) + (b - a).orthogonal() * bend
-	var pts := []
-	for k in 13:
-		var t := float(k) / 12.0
-		pts.append(a.lerp(m, t).lerp(m.lerp(b, t), t))
-	Art.pl(ci, pts, 18.0, Art.INK, 1)
-	Art.pl(ci, pts, 11.0, Art.MOSS, 1)
-	var d := (b - m).normalized()
-	var n := d.orthogonal()
-	var head := Art.poly([b + d * 22.0, b + n * 22.0, b - n * 22.0], 2)
-	Art.fill(ci, head, Art.MOSS, 3.0)
+## 玩法说明里的第 k 支弯箭头（起止点见 PS.HOWTO_ARROWS）
+static func _arrow(ci: CanvasItem, k: int) -> void:
+	var a: Array = PS.HOWTO_ARROWS[k]
+	Sprites.draw(ci, "pop_howto_arrow%d" % k, PS.arrow_rect(a[0], a[1], a[2]))
 
 # ---------------------------------------------------------------- 集市
 
@@ -282,21 +253,20 @@ static func _daily_card(parent: Control, r: Rect2, d: Dictionary, k: int) -> voi
 	var col: Color = Color("4fa39a") if ad else (Color("6f9fb8") if paid else (Color("8a5bb8") if member else Color("7fb43a")))
 	var state := {"claimed": false}
 	var card := UI.box(parent, r, func(ci, sz):
-		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 18, 3, 0.0), Color(0, 0, 0, 0.3))
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, 105 + k, 0.8)
-		Art.dilate(ci, b, 3.0, Art.INK)
-		ci.draw_colored_polygon(b, col)
+		var full := Rect2(Vector2.ZERO, sz)
+		Sprites.draw(ci, "pop_card18_base", full)
+		Sprites.draw(ci, "pop_card18_fill", full, col)
 		var ir := Rect2(7, 7, sz.x - 14, 122)
-		ci.draw_colored_polygon(Art.rrect(ir, 13, 110 + k, 0.5), Art.BONE)
-		ci.draw_colored_polygon(Art.ell(Vector2(sz.x * 0.5, 110), Vector2(32, 6), 115 + k, 0.0, 14), Color(0, 0, 0, 0.1))
+		Sprites.draw(ci, "pop_inner14", ir, Art.BONE)
+		Sprites.at(ci, "pop_spot_shadow", Vector2(sz.x * 0.5, 110), 1.0, 0.0, Color(0, 0, 0, 0.1))
 		Art.item(ci, str(d["id"]), Vector2(sz.x * 0.5, 72), 86)
 		if member or ad:
 			var tw := 100.0 if tier >= 2 else 64.0
-			var t := Art.rrect(Rect2(sz.x * 0.5 - tw * 0.5, -13, tw, 28), 12, 120 + k, 0.4)
-			Art.dilate(ci, t, 2.5, Art.INK)
-			ci.draw_colored_polygon(t, Color("2a7469") if ad else (Color("f4c542") if tier >= 2 else Color("e0cdf5")))
+			var t := Rect2(sz.x * 0.5 - tw * 0.5, -13, tw, 28)
+			Sprites.draw(ci, "pop_tag_base", t)
+			Sprites.draw(ci, "pop_tag_fill", t, Color("2a7469") if ad else (Color("f4c542") if tier >= 2 else Color("e0cdf5")))
 		if state["claimed"]:
-			ci.draw_colored_polygon(Art.rrect(ir, 13, 110 + k, 0.0), Color(0.25, 0.18, 0.1, 0.35))
+			Sprites.draw(ci, "pop_inner14", ir, Color(0.25, 0.18, 0.1, 0.35))
 			var cc := Vector2(sz.x * 0.5, 72)
 			ci.draw_circle(cc, 26, Art.INK)
 			ci.draw_circle(cc, 23, Art.MOSS)
@@ -344,11 +314,10 @@ static func _refresh_bar(root: Control, r: Rect2, col: Color, title: String, lef
 	var has_btn := btn_text != ""
 	var bar_w := r.size.x - (262.0 if has_btn else 110.0)
 	var bar := UI.box(root, r, func(ci, sz):
-		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 6), sz), 18, 3, 0.0), Color(0, 0, 0, 0.28))
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, 125 + int(r.position.y) % 7, 0.6)
-		Art.dilate(ci, b, 3.0, Art.INK)
-		ci.draw_colored_polygon(b, col)
-		ci.draw_colored_polygon(Art.rrect(Rect2(6, 5, sz.x - 12, sz.y * 0.4), 12, 126, 0.3), Color(1, 1, 1, 0.08))
+		var full := Rect2(Vector2.ZERO, sz)
+		Sprites.draw(ci, "pop_card18_base", full)
+		Sprites.draw(ci, "pop_card18_fill", full, col)
+		Sprites.draw(ci, "pop_bar_hl", Rect2(6, 5, sz.x - 12, sz.y * 0.4), Color(1, 1, 1, 0.08))
 		Art.item(ci, "sand_3", Vector2(42, sz.y * 0.5), minf(60.0, sz.y - 8.0), false)
 		var tr := Rect2(80, sz.y - 22, bar_w, 12)
 		ci.draw_colored_polygon(Art.rrect(tr, 6, 127, 0.0), Color(0, 0, 0, 0.35))
@@ -377,20 +346,15 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 	# 礼包越大，堆的六边琥珀越多
 	var piles := [[Art.AMBER_ICON, 1], [Art.AMBER_ICON, 2], [Art.AMBER_ICON, 3], [Art.AMBER_ICON, 4], [Art.AMBER_ICON, 5], [Art.AMBER_ICON, 6]]
 	UI.box(parent, r, func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 20, 300 + k, 1.0)
-		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 20, 3, 0.0), Color(0, 0, 0, 0.3))
-		Art.dilate(ci, b, 3.0, Art.INK)
-		ci.draw_colored_polygon(b, Color("c9894a") if k < 5 else Color("d9a54a"))
-		var ir := Rect2(10, 10, sz.x - 20, sz.y - 96)
-		ci.draw_colored_polygon(Art.rrect(ir, 14, 310 + k, 0.6), Color("fff3d6"))
+		_card20(ci, sz, Color("c9894a") if k < 5 else Color("d9a54a"))
+		Sprites.draw(ci, "pop_inner14", Rect2(10, 10, sz.x - 20, sz.y - 96), Color("fff3d6"))
 		var pid: String = piles[k][0]
 		var n: int = piles[k][1]
 		for j in n:
 			var off := Vector2((float(j % 3) - float(mini(n, 3) - 1) * 0.5) * 40.0, -float(j / 3) * 24.0 + 10.0)
 			Art.item(ci, pid, Vector2(sz.x * 0.5, 84) + off, 92.0 - n * 4.0)
 		if k >= 4:
-			var seal := Art.star_pts(Vector2(30, 26), 36, 30, 12, 5)
-			Art.fill(ci, seal, Art.CLAY, 3.0))
+			Sprites.at(ci, "pop_seal", Vector2(30, 26)))
 	UI.hit(parent, Rect2(r.position + Vector2(8, 8), Vector2(r.size.x - 16, 114)), func(): G.main.open("item_info", Art.AMBER_ICON))
 	if k >= 4:
 		var hl := UI.lbl(parent, "超值", Rect2(r.position.x - 6, r.position.y + 8, 72, 36), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
@@ -406,12 +370,20 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 		Rewards.grant([[Art.AMBER_ICON, got]], func(_k): return b.get_global_rect().get_center() + Vector2(0, -100))
 		G.main.toast("演示版本：琥珀 ×%d 已到账" % got))
 
+## 集市卡片外框：阴影 + 墨边 + 按 col 染色的身子
+static func _card20(ci: CanvasItem, sz: Vector2, col: Color) -> void:
+	var full := Rect2(Vector2.ZERO, sz)
+	Sprites.draw(ci, "pop_card20_base", full)
+	Sprites.draw(ci, "pop_card20_fill", full, col)
+
+## 浅色格子：身子 + 细描边。big 用大圆角那套（奖励框、说明框）
+static func _slot(ci: CanvasItem, r: Rect2, fill: Color, line: Color = Color(0.6, 0.4, 0.2, 0.35), big := false) -> void:
+	Sprites.draw(ci, "pop_slot22_fill" if big else "pop_slot16_fill", r, fill)
+	Sprites.draw(ci, "pop_slot22_line" if big else "pop_slot16_line", r, line)
+
 static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
-	var r := Rect2(30, 236, 660, 262)
-	var b := Art.rrect(r, 24, 121, 1.0)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 10), r.size), 24, 121, 0.0), Color(0, 0, 0, 0.35))
-	Art.dilate(ci, b, 3.0, Art.INK)
-	ci.draw_colored_polygon(b, Art.OCHRE)
+	var r := PS.STORE_HERO
+	Sprites.draw(ci, "pop_store_hero", r)
 	var ir := Rect2(r.position + Vector2(12, 12), Vector2(r.size.x - 24, 150))
 	Paint.vgrad(ci, ir, Color("2c3b78"), Color("6a4d9a"))
 	for i in 20:
@@ -420,23 +392,18 @@ static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
 	for k in 6:
 		Art.item(ci, Art.AMBER_ICON, Vector2(70 + k * 34, 380 - (k % 2) * 10), 54)
 	Art.item(ci, "fire_4", Vector2(270, 330), 80)
-	var tag := Art.rrect(Rect2(470, 344, 160, 44), 10, 122, 0.6)
-	Art.dilate(ci, tag, 2.5, Art.INK)
-	ci.draw_colored_polygon(tag, Color("e9d8ff"))
+	var tag := Rect2(470, 344, 160, 44)
+	Sprites.draw(ci, "pop_tag_base", tag)
+	Sprites.draw(ci, "pop_tag_fill", tag, Color("e9d8ff"))
 	Art.item(ci, "pack_1", Vector2(480, 286), 60)
 
 static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, hot: bool) -> void:
 	UI.box(parent, r, func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 20, int(r.position.x), 1.0)
-		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 20, 3, 0.0), Color(0, 0, 0, 0.3))
-		Art.dilate(ci, b, 3.0, Art.INK)
-		ci.draw_colored_polygon(b, Art.OCHRE)
-		var ir := Rect2(10, 10, sz.x - 20, sz.y - 86)
-		ci.draw_colored_polygon(Art.rrect(ir, 14, 4, 0.6), Art.BONE)
+		_card20(ci, sz, Art.OCHRE)
+		Sprites.draw(ci, "pop_inner14", Rect2(10, 10, sz.x - 20, sz.y - 86), Art.BONE)
 		Art.item(ci, d["id"], Vector2(sz.x * 0.5, 82), 112)
 		if hot:
-			var seal := Art.star_pts(Vector2(30, 24), 38, 32, 12, 5)
-			Art.fill(ci, seal, Art.CLAY, 3.0))
+			Sprites.at(ci, "pop_seal", Vector2(30, 24), 38.0 / 36.0))
 	if hot:
 		var hl := UI.lbl(parent, "免费" if int(d["price"]) == 0 else "HOT", Rect2(r.position.x - 6, r.position.y + 6, 72, 36), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 		hl.rotation = -0.2
@@ -462,12 +429,8 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 ## 贝币小摊的一格：样子同热卖卡片，换成浅蓝底、价格按钮用贝币图标
 static func _shell_card(parent: Control, r: Rect2, d: Dictionary, key: String) -> void:
 	UI.box(parent, r, func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 20, int(r.position.x) + 7, 1.0)
-		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 20, 3, 0.0), Color(0, 0, 0, 0.3))
-		Art.dilate(ci, b, 3.0, Art.INK)
-		ci.draw_colored_polygon(b, Color("6f9fb8"))
-		var ir := Rect2(10, 10, sz.x - 20, sz.y - 86)
-		ci.draw_colored_polygon(Art.rrect(ir, 14, 5, 0.6), Color("eef6f2"))
+		_card20(ci, sz, Color("6f9fb8"))
+		Sprites.draw(ci, "pop_inner14", Rect2(10, 10, sz.x - 20, sz.y - 86), Color("eef6f2"))
 		Art.item(ci, d["id"], Vector2(sz.x * 0.5, 82), 112))
 	UI.hit(parent, Rect2(r.position + Vector2(8, 8), Vector2(r.size.x - 16, 114)), func(): G.main.open("item_info", str(d["id"])))
 	var left_lbl := UI.lbl(parent, "", Rect2(r.position.x, r.position.y + 128, r.size.x, 34), 22, Color("2f4f60"))
@@ -559,7 +522,7 @@ static func build(id: String) -> PopupBase:
 	if line_name != "":
 		sub = "%s产线 · %s" % [line_name, sub]
 	UI.box(p.box, Rect2(200, r.position.y + 54, 320, 40), func(ci, sz):
-		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2.ZERO, sz), 20, 131, 0.6), Color(0.6, 0.45, 0.25, 0.25)))
+		Sprites.draw(ci, "pop_pill20", Rect2(Vector2.ZERO, sz), Color(0.6, 0.45, 0.25, 0.25)))
 	UI.lbl(p.box, sub, Rect2(200, r.position.y + 54, 320, 40), 22, Color("7a5a3a"))
 	# 部件卡片 3 列
 	var cw := 180.0
@@ -584,9 +547,7 @@ static func build(id: String) -> PopupBase:
 	# 下一件的奖励
 	var box := Rect2(r.position.x + 36, by, r.size.x - 72, 150)
 	UI.box(p.box, box, func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, 132, 0.8)
-		ci.draw_colored_polygon(b, Color("ecd9b3"))
-		Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.3)))
+		_slot(ci, Rect2(Vector2.ZERO, sz), Color("ecd9b3"), Color(0.6, 0.4, 0.2, 0.3), true))
 	var rewards := G.build_rewards(id) if open and not done else []
 	var cost := G.build_cost(id)
 	if done:
@@ -631,16 +592,12 @@ static func build(id: String) -> PopupBase:
 	return p
 
 ## 部件卡片。state：0 已建 1 下一件 2 之后
-static func _build_card(ci: CanvasItem, sz: Vector2, kind: String, state: int, open: bool, seed: int) -> void:
+static func _build_card(ci: CanvasItem, sz: Vector2, kind: String, state: int, open: bool, _seed: int) -> void:
 	var r := Rect2(4, 4, sz.x - 8, sz.y - 8)
-	var b := Art.rrect(r, 16, 140 + seed, 0.7)
 	if state == 1 and open:
-		Art.dilate(ci, b, 4.0, Color("ffd23f"))
-		Art.dilate(ci, b, 2.0, Art.INK)
-		ci.draw_colored_polygon(b, Color("8cc6a0"))
+		Sprites.draw(ci, "pop_bcard_on", r)
 	else:
-		ci.draw_colored_polygon(b, Color("ecd9b3") if state == 0 else Color("dcc9a2"))
-		Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.35))
+		_slot(ci, r, Color("ecd9b3") if state == 0 else Color("dcc9a2"))
 	var art := Rect2(r.position + Vector2(12, 8), Vector2(r.size.x - 24, r.size.y - 58))
 	TribeArt.icon(ci, kind, art, state == 2 or not open)
 	if state == 0:
@@ -700,12 +657,8 @@ static func _book_place_tabs(btns: Array[TButton], line: int) -> void:
 		btns[i].pivot_offset = rect.size * 0.5
 		btns[i].queue_redraw()
 
-static func _book_tab_draw(ci: CanvasItem, sz: Vector2, on: bool, icon: String, seed: int) -> void:
-	var tag := Art.rrect(Rect2(0, 3, sz.x + 18, sz.y - 6), 14, 180 + seed, 0.7)
-	Art.dilate(ci, tag, 3.0, Art.INK)
-	ci.draw_colored_polygon(tag, Color("c47a3a") if on else Art.LEATHER_D)
-	var plate := Art.rrect(Rect2(7, 9, sz.x - 20, sz.y - 18), 12, 190 + seed, 0.5)
-	ci.draw_colored_polygon(plate, Color("f0d7b0") if on else Color("8a5a32"))
+static func _book_tab_draw(ci: CanvasItem, sz: Vector2, on: bool, icon: String, _seed: int) -> void:
+	Sprites.draw(ci, "pop_booktab_on" if on else "pop_booktab_off", Rect2(0, 3, sz.x + 18, sz.y - 6))
 	Art.item(ci, icon, Vector2(sz.x * 0.5 - 6.0, sz.y * 0.52), 58.0)
 
 ## 每条产线右缘页签上的图。
@@ -770,11 +723,9 @@ static func _book_chain(page: Control, r: Rect2, chain_id: String, y: float) -> 
 			y += 116
 	return y + 126.0
 
-static func _book_slot(page: Control, cell: Rect2, id: String, seed: int) -> void:
+static func _book_slot(page: Control, cell: Rect2, id: String, _seed: int) -> void:
 	var box := UI.box(page, cell, func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 18, seed + 150, 0.6)
-		ci.draw_colored_polygon(b, Color("ecd9b3"))
-		Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.35))
+		_slot(ci, Rect2(Vector2.ZERO, sz), Color("ecd9b3"))
 		if not G.discovered.has(id):
 			var f: Font = G.font_title
 			ci.draw_string(f, Vector2(sz.x * 0.5 - 18, sz.y * 0.5 + 20), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 60, Color(0.7, 0.55, 0.35, 0.6))
@@ -829,9 +780,7 @@ static func _info_item_grid(parent: Control, entries: Array, top: float, center_
 		var hit := UI.hit(parent, Rect2(x, y, tile, tile), func(): G.main.open("item_info", item_id))
 		hit.name = "related_" + item_id
 		hit.extra = func(ci, sz):
-			var shape := Art.rrect(Rect2(Vector2(3, 3), sz - Vector2(6, 6)), 16, 191, 0.0)
-			ci.draw_colored_polygon(shape, Color("ecd9b3"))
-			Art.outline(ci, shape, 2.0, Color(0.6, 0.4, 0.2, 0.35))
+			_slot(ci, Rect2(Vector2(3, 3), sz - Vector2(6, 6)), Color("ecd9b3"))
 			Art.item(ci, item_id, sz * 0.5, 76)
 		if entry.has("p"):
 			UI.lbl(parent, "%s%%" % str(entry["p"]), Rect2(x, y + 96, tile, 26), 18, Color("7a5a3a"))
@@ -907,12 +856,10 @@ static func item_info(id: String) -> PopupBase:
 		var cx := x0 + float(lv % cols) * step
 		var cy := y0 + float(lv / cols) * pitch
 		var cell := UI.box(p.box, Rect2(cx - half, cy, cell_w, cell_w), func(ci, sz):
-			var b := Art.rrect(Rect2(4, 4, sz.x - 8, sz.y - 8), 16, 190 + lv, 0.6)
 			var cur: bool = slot_id == str(state["id"])
 			var owned := _board_count(slot_id)
 			var seen := cur or G.discovered.has(slot_id) or owned > 0
-			ci.draw_colored_polygon(b, Color("a8d86a") if cur else Color("ecd9b3"))
-			Art.outline(ci, b, 2.0, Color(0.6, 0.4, 0.2, 0.35))
+			_slot(ci, Rect2(4, 4, sz.x - 8, sz.y - 8), Color("a8d86a") if cur else Color("ecd9b3"))
 			if seen:
 				Art.item(ci, slot_id, sz * 0.5, 76)
 			else:
@@ -922,7 +869,7 @@ static func item_info(id: String) -> PopupBase:
 			if owned > 0:
 				_draw_count(ci, Vector2(15, 15), owned)
 			if lv % cols != cols - 1 and lv < items.size() - 1:
-				ci.draw_colored_polygon(Art.poly([Vector2(sz.x + 3, sz.y * 0.5 - 7), Vector2(sz.x + 14, sz.y * 0.5), Vector2(sz.x + 3, sz.y * 0.5 + 7)], lv), Color(0.75, 0.6, 0.4, 0.8)))
+				Sprites.draw(ci, "pop_info_arrow", Rect2(sz.x + 3, sz.y * 0.5 - 7, 11, 14)))
 		cells.append(cell)
 		var hit := UI.hit(p.box, Rect2(cx - half, cy, cell_w, cell_w), func():
 			if not G.discovered.has(slot_id) and _board_count(slot_id) <= 0:
@@ -1183,12 +1130,8 @@ static func board_reward(entries: Array) -> PopupBase:
 			var r := slot * 0.5
 			for j in 4:
 				ci.draw_circle(c, r * (1.0 - 0.13 * float(j)), Color(1, 0.9, 0.55, 0.05 * appear))
-			var burst := Art.star_pts(c, r * 0.98, r * 0.62, 8, 40 + k, t * 0.5 + float(k))
-			ci.draw_colored_polygon(burst, Color(1, 0.95, 0.7, 0.08 * appear))
-			var plate := Art.ell(c + Vector2(0, r * 0.66), Vector2(r * 0.72, r * 0.2), 60 + k, 0.03, 22, 0.0, 0.0)
-			Art.dilate(ci, plate, 3.0, Color(Art.INK, appear))
-			ci.draw_colored_polygon(plate, Color(Art.LEATHER, appear))
-			ci.draw_colored_polygon(Art.ell(c + Vector2(0, r * 0.63), Vector2(r * 0.6, r * 0.12), 70 + k, 0.03, 20, 0.0, 0.0), Color(Art.OCHRE, appear * 0.9))
+			Sprites.at(ci, "pop_rw_burst", c, r / PS.RW_R, t * 0.5 + float(k), Color(1, 0.95, 0.7, 0.08 * appear))
+			Sprites.at(ci, "pop_rw_plate", c + Vector2(0, r * 0.66), r / PS.RW_R, 0.0, Color(1, 1, 1, appear))
 		for k in 14:
 			var sp := Vector2(40.0 + Art.srnd(k * 7 + 1) * 640.0, 200.0 + Art.srnd(k * 13 + 5) * 900.0)
 			if sp.distance_to(glow) < 120.0:
@@ -1196,7 +1139,7 @@ static func board_reward(entries: Array) -> PopupBase:
 			var tw := 0.5 + 0.5 * sin(t * (2.0 + Art.srnd(k) * 2.0) + float(k) * 1.7)
 			var sr := (3.0 + Art.srnd(k * 3) * 5.0) * (0.45 + 0.55 * tw) * open
 			if sr > 2.4:
-				ci.draw_colored_polygon(Art.star_pts(sp, sr * 2.2, sr * 0.6, 4, k), Color(1, 0.95, 0.75, 0.6 * tw))
+				Sprites.at(ci, "pop_sparkle", sp, sr / PS.SPARK_R, 0.0, Color(1, 0.95, 0.75, 0.6 * tw))
 		Paint.mascot(ci, Vector2(br.end.x - 36, br.position.y - 8), 74)
 		Paint.banner(ci, br, Color("c4532e")))
 	UI.title(p.box, "获得奖励", Rect2(br.position.x + 40, br.position.y + 4, br.size.x - 80, br.size.y - 10), 46, Color("fff1c4"))
@@ -1223,10 +1166,7 @@ static func board_reward(entries: Array) -> PopupBase:
 		var badge := Rect2(slot * 0.5 + slot * 0.16, slot * 0.66 - bh * 0.5, bw, bh)
 		badge.position.x = minf(badge.position.x, slot + 6.0 - bw)
 		UI.box(holder, badge, func(ci, sz):
-			var b := Art.rrect(Rect2(Vector2(3, 3), sz - Vector2(6, 6)), (sz.y - 6) * 0.5, 80 + k, 0.5)
-			Art.dilate(ci, b, 3.0, Art.INK)
-			ci.draw_colored_polygon(b, Color("5a3416"))
-			ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(9, 6), Vector2(sz.x - 18, sz.y * 0.28)), 6, 81 + k, 0.2), Color(1, 1, 1, 0.14)))
+			Sprites.draw(ci, "pop_rw_badge", Rect2(Vector2(3, 3), sz - Vector2(6, 6))))
 		UI.lbl(holder, text, badge, bfs, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 0, Art.INK, true)
 		var name_lbl: Label = null
 		if show_name and (Data.DISHES.has(id) or Data.CHAINS.has(Data.chain(id))):
@@ -1314,30 +1254,21 @@ static func level_info() -> PopupBase:
 		var br := Rect2(r.get_center().x - 220, r.position.y + 30, 440, 80)
 		Paint.banner(ci, br, Art.TEAL)
 		Paint.level_badge(ci, Vector2(r.get_center().x, r.position.y - 6), 130)
-		var art := Rect2(r.position.x + 40, r.position.y + 130, r.size.x - 80, 300)
-		var ab := Art.rrect(art, 22, 401, 0.8)
-		Art.dilate(ci, ab, 3.0, Art.INK)
+		var art := PS.LI_ART
+		Sprites.draw(ci, "pop_li_art_base", art)
 		Paint.vgrad(ci, art.grow(-3), Color("8fd0d4"), Color("f0deb0"))
-		var ground := []
-		for k in 13:
-			ground.append(Vector2(lerpf(art.position.x + 4, art.end.x - 4, float(k) / 12.0), art.position.y + 200 + sin(float(k) * 0.9) * 10.0))
-		ground.append(art.end - Vector2(4, 4))
-		ground.append(Vector2(art.position.x + 4, art.end.y - 4))
-		ci.draw_colored_polygon(Art.poly(ground, 404, 0.5), Color("8bb39a"))
+		Sprites.draw(ci, "pop_li_ground", art)
 		Paint._spot_hut(ci, Vector2(art.position.x + 120, art.position.y + 250), 6)
 		Paint.palm(ci, Vector2(art.end.x - 40, art.end.y - 6), 170, 3, Color("4a8a4a"))
 		Paint.heroine(ci, Vector2(art.get_center().x + 50, art.position.y + 160), 120)
 		Paint.book(ci, Vector2(art.get_center().x + 50, art.position.y + 236), 1.1)
-		Art.outline(ci, ab, 3.0, Art.LEATHER_D)
+		Sprites.draw(ci, "pop_li_art_line", art)
 		var bar := Rect2(r.position.x + 70, r.position.y + 560, 400, 44)
 		Paint.bar(ci, bar, float(G.xp) / float(G.xp_need()), Art.MOSS)
 		Art.item(ci, "xp_1", bar.position + Vector2(0, 22), 64)
 		Paint.level_badge(ci, Vector2(bar.end.x + 70, bar.get_center().y), 92)
-		var arr := Art.poly([Vector2(bar.end.x + 100, bar.position.y + 4), Vector2(bar.end.x + 122, bar.position.y - 20), Vector2(bar.end.x + 144, bar.position.y + 4), Vector2(bar.end.x + 130, bar.position.y + 4), Vector2(bar.end.x + 130, bar.position.y + 24), Vector2(bar.end.x + 114, bar.position.y + 24), Vector2(bar.end.x + 114, bar.position.y + 4)], 402)
-		Art.fill(ci, arr, Art.MOSS, 3.0)
-		var rb := Art.rrect(Rect2(r.position.x + 40, r.position.y + 680, r.size.x - 80, 280), 22, 403, 0.8)
-		ci.draw_colored_polygon(rb, Color("ecd9b3"))
-		Art.outline(ci, rb, 2.0, Color(0.6, 0.4, 0.2, 0.4)))
+		Sprites.draw(ci, "pop_li_arrow", PS.LI_ARROW)
+		_slot(ci, Rect2(r.position.x + 40, r.position.y + 680, r.size.x - 80, 280), Color("ecd9b3"), Color(0.6, 0.4, 0.2, 0.4), true))
 	UI.title(p.box, "主角等级", Rect2(r.get_center().x - 200, r.position.y + 50, 400, 60), 38, Color.WHITE)
 	UI.lbl(p.box, str(G.level), Rect2(r.get_center().x - 60, r.position.y - 44, 120, 80), 50, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	var tip := UI.lbl(p.box, "完成带 ★ 的订单，提升主角等级并领取奖励！", Rect2(r.position.x + 40, r.position.y + 446, r.size.x - 80, 90), 25, Color("6b4a2a"))
@@ -1388,16 +1319,12 @@ static func event() -> PopupBase:
 			G.main.open("album", a))
 		hit.extra = func(ci, sz):
 			var c := Vector2(sz.x * 0.5, 110)
-			var circ := Art.ell(c, Vector2(100, 100), 200 + a, 0.02, 32)
-			Art.dilate(ci, circ, 4.0, Art.INK)
-			ci.draw_colored_polygon(circ, Art.BONE)
-			ci.draw_colored_polygon(Art.ell(c, Vector2(88, 88), 210 + a, 0.0, 32), Paint.ALBUM_COL[a])
+			Sprites.at(ci, "pop_album_ring", c)
+			Sprites.at(ci, "pop_album_disc", c, 1.0, 0.0, Paint.ALBUM_COL[a])
 			Paint.card_art(ci, a, 0, Rect2(c - Vector2(62, 62), Vector2(124, 124)))
 			var ribbon_cols := [Art.OCHRE, Art.MOSS, Color("c463a5"), Color("8f6cd0"), Color("3fa0d8"), Art.CLAY]
-			var rr := Rect2(-6, 168, sz.x + 12, 56)
-			var rb := Art.poly([rr.position, Vector2(rr.end.x, rr.position.y), Vector2(rr.end.x - 14, rr.get_center().y), rr.end, Vector2(rr.position.x, rr.end.y), Vector2(rr.position.x + 14, rr.get_center().y)], a)
-			Art.dilate(ci, rb, 3.0, Art.INK)
-			ci.draw_colored_polygon(rb, ribbon_cols[a % ribbon_cols.size()])
+			Sprites.draw(ci, "pop_ribbon_base", PS.RIBBON)
+			Sprites.draw(ci, "pop_ribbon_fill", PS.RIBBON, ribbon_cols[a % ribbon_cols.size()])
 			Paint.bar(ci, Rect2(20, 240, sz.x - 40, 32), float(G.album_count(a)) / 9.0, Art.MOSS)
 		UI.lbl(hit, Data.ALBUMS[a]["name"], Rect2(0, 168, 220, 56), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 		UI.lbl(hit, "%d/9" % G.album_count(a), Rect2(0, 240, 220, 32), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
@@ -1416,15 +1343,7 @@ static func _paint_event(ci: CanvasItem, sz: Vector2) -> void:
 	ci.draw_circle(Vector2(600, 180), 50, Color(1, 0.95, 0.75, 0.25))
 	ci.draw_circle(Vector2(600, 180), 36, Color("fff1c4"))
 	Paint.hills(ci, 240, sz.x, 40, Color("2a2f5a"), 4, 300)
-	var string := []
-	for k in 9:
-		string.append(Vector2(sz.x * float(k) / 8.0, 200 + sin(float(k) / 8.0 * PI) * 40.0))
-	Art.pl(ci, string, 2.5, Art.BONE, 3)
-	for k in 8:
-		var q: Vector2 = string[k].lerp(string[k + 1], 0.5)
-		var cols := [Art.CLAY, Art.OCHRE, Art.TEAL, Art.BONE]
-		ci.draw_colored_polygon(Art.poly([q + Vector2(-16, -4), q + Vector2(16, -4), q + Vector2(0, 26)], k), cols[k % 4])
-	ci.draw_colored_polygon(Art.ell(Vector2(360, 250), Vector2(200, 40), 1, 0.0, 24), Color(1, 0.6, 0.2, 0.25))
+	Sprites.draw(ci, "pop_event_flags", PS.EVENT_FLAGS)
 	Art.item(ci, "fire_4", Vector2(360, 190), 130)
 	for k in 4:
 		var x := 120.0 + k * 160.0
@@ -1432,13 +1351,8 @@ static func _paint_event(ci: CanvasItem, sz: Vector2) -> void:
 			x += (1 if k == 2 else -1) * 60.0
 		Paint._hunter(ci, Vector2(x, 210), 1.6, Color("1a1430"), k)
 	Paint.mascot(ci, Vector2(90, 200), 80)
-	var tp := Art.rrect(Rect2(296, 350, 168, 44), 22, 220, 0.6)
-	Art.dilate(ci, tp, 2.5, Art.INK)
-	ci.draw_colored_polygon(tp, Art.BONE)
+	Sprites.draw(ci, "pop_event_panel", PS.EVENT_PANEL)
 	Paint.glyph(ci, "clock", Vector2(318, 372), 1.0)
-	var rb := Art.rrect(Rect2(60, 404, 600, 136), 22, 221, 0.8)
-	ci.draw_colored_polygon(rb, Color(0.1, 0.1, 0.25, 0.5))
-	Art.outline(ci, rb, 2.0, Color(1, 1, 1, 0.2))
 	Paint.bar(ci, Rect2(170, 552, 420, 34), float(G.cards_total()) / float(Data.ALBUMS.size() * 9), Art.MOSS)
 	Paint.cards_icon(ci, Vector2(160, 568), 0.6)
 	var got := G.tokens - G.token_claimed

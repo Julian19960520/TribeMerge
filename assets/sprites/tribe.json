@@ -1,0 +1,1294 @@
+{
+	"sprites": {
+		"tribe_anvilstone": {
+			"frames": 4,
+			"h": 63,
+			"pad": 2,
+			"w": 86
+		},
+		"tribe_anvilstone_flat": {
+			"frames": 4,
+			"h": 117,
+			"pad": 2,
+			"w": 159
+		},
+		"tribe_anvilstone_icon": {
+			"frames": 4,
+			"h": 117,
+			"pad": 2,
+			"w": 159
+		},
+		"tribe_basketrack": {
+			"frames": 4,
+			"h": 84,
+			"pad": 2,
+			"w": 82
+		},
+		"tribe_basketrack_flat": {
+			"frames": 4,
+			"h": 157,
+			"pad": 2,
+			"w": 154
+		},
+		"tribe_basketrack_icon": {
+			"frames": 4,
+			"h": 157,
+			"pad": 2,
+			"w": 154
+		},
+		"tribe_bench": {
+			"frames": 4,
+			"h": 48,
+			"pad": 2,
+			"w": 102
+		},
+		"tribe_bench_flat": {
+			"frames": 4,
+			"h": 91,
+			"pad": 2,
+			"w": 189
+		},
+		"tribe_bench_icon": {
+			"frames": 4,
+			"h": 91,
+			"pad": 2,
+			"w": 189
+		},
+		"tribe_berrybush": {
+			"frames": 4,
+			"h": 72,
+			"pad": 2,
+			"w": 87
+		},
+		"tribe_berrybush_flat": {
+			"frames": 4,
+			"h": 136,
+			"pad": 2,
+			"w": 161
+		},
+		"tribe_berrybush_icon": {
+			"frames": 4,
+			"h": 136,
+			"pad": 2,
+			"w": 161
+		},
+		"tribe_bigjar": {
+			"frames": 4,
+			"h": 92,
+			"pad": 2,
+			"w": 78
+		},
+		"tribe_bigjar_flat": {
+			"frames": 4,
+			"h": 173,
+			"pad": 2,
+			"w": 144
+		},
+		"tribe_bigjar_icon": {
+			"frames": 4,
+			"h": 173,
+			"pad": 2,
+			"w": 144
+		},
+		"tribe_bubble": {
+			"frames": 4,
+			"h": 80,
+			"nine": [
+				20,
+				20,
+				20,
+				20
+			],
+			"pad": 5,
+			"w": 240
+		},
+		"tribe_bubble_tail": {
+			"frames": 4,
+			"h": 23,
+			"pad": 4,
+			"w": 28
+		},
+		"tribe_build_ring": {
+			"frames": 1,
+			"h": 34,
+			"pad": 4,
+			"w": 80
+		},
+		"tribe_campfire": {
+			"frames": 4,
+			"h": 85,
+			"pad": 2,
+			"w": 106
+		},
+		"tribe_campfire_flat": {
+			"frames": 4,
+			"h": 158,
+			"pad": 2,
+			"w": 198
+		},
+		"tribe_campfire_icon": {
+			"frames": 4,
+			"h": 158,
+			"pad": 2,
+			"w": 198
+		},
+		"tribe_carvedpole": {
+			"frames": 4,
+			"h": 140,
+			"pad": 2,
+			"w": 89
+		},
+		"tribe_carvedpole_flat": {
+			"frames": 4,
+			"h": 261,
+			"pad": 2,
+			"w": 167
+		},
+		"tribe_carvedpole_icon": {
+			"frames": 4,
+			"h": 261,
+			"pad": 2,
+			"w": 167
+		},
+		"tribe_chiefhut": {
+			"frames": 4,
+			"h": 135,
+			"pad": 2,
+			"w": 158
+		},
+		"tribe_chiefhut_flat": {
+			"frames": 4,
+			"h": 253,
+			"pad": 2,
+			"w": 294
+		},
+		"tribe_chiefhut_icon": {
+			"frames": 4,
+			"h": 253,
+			"pad": 2,
+			"w": 294
+		},
+		"tribe_chopblock": {
+			"frames": 4,
+			"h": 77,
+			"pad": 2,
+			"w": 91
+		},
+		"tribe_chopblock_flat": {
+			"frames": 4,
+			"h": 143,
+			"pad": 2,
+			"w": 170
+		},
+		"tribe_chopblock_icon": {
+			"frames": 4,
+			"h": 143,
+			"pad": 2,
+			"w": 170
+		},
+		"tribe_claypit": {
+			"frames": 4,
+			"h": 54,
+			"pad": 2,
+			"w": 97
+		},
+		"tribe_claypit_flat": {
+			"frames": 4,
+			"h": 100,
+			"pad": 2,
+			"w": 182
+		},
+		"tribe_claypit_icon": {
+			"frames": 4,
+			"h": 100,
+			"pad": 2,
+			"w": 182
+		},
+		"tribe_clothesline": {
+			"frames": 4,
+			"h": 92,
+			"pad": 2,
+			"w": 108
+		},
+		"tribe_clothesline_flat": {
+			"frames": 4,
+			"h": 172,
+			"pad": 2,
+			"w": 202
+		},
+		"tribe_clothesline_icon": {
+			"frames": 4,
+			"h": 172,
+			"pad": 2,
+			"w": 202
+		},
+		"tribe_cookpit": {
+			"frames": 4,
+			"h": 77,
+			"pad": 2,
+			"w": 96
+		},
+		"tribe_cookpit_flat": {
+			"frames": 4,
+			"h": 143,
+			"pad": 2,
+			"w": 180
+		},
+		"tribe_cookpit_icon": {
+			"frames": 4,
+			"h": 143,
+			"pad": 2,
+			"w": 180
+		},
+		"tribe_drum": {
+			"frames": 4,
+			"h": 82,
+			"pad": 2,
+			"w": 78
+		},
+		"tribe_drum_flat": {
+			"frames": 4,
+			"h": 152,
+			"pad": 2,
+			"w": 144
+		},
+		"tribe_drum_icon": {
+			"frames": 4,
+			"h": 152,
+			"pad": 2,
+			"w": 144
+		},
+		"tribe_dryingmat": {
+			"frames": 4,
+			"h": 40,
+			"pad": 2,
+			"w": 100
+		},
+		"tribe_dryingmat_flat": {
+			"frames": 4,
+			"h": 74,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_dryingmat_icon": {
+			"frames": 4,
+			"h": 74,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_dust": {
+			"frames": 4,
+			"h": 30,
+			"pad": 3,
+			"w": 36
+		},
+		"tribe_dyepot": {
+			"frames": 4,
+			"h": 91,
+			"pad": 2,
+			"w": 72
+		},
+		"tribe_dyepot_flat": {
+			"frames": 4,
+			"h": 168,
+			"pad": 2,
+			"w": 132
+		},
+		"tribe_dyepot_icon": {
+			"frames": 4,
+			"h": 168,
+			"pad": 2,
+			"w": 132
+		},
+		"tribe_featherpole": {
+			"frames": 4,
+			"h": 139,
+			"pad": 2,
+			"w": 68
+		},
+		"tribe_featherpole_flat": {
+			"frames": 4,
+			"h": 260,
+			"pad": 2,
+			"w": 126
+		},
+		"tribe_featherpole_icon": {
+			"frames": 4,
+			"h": 260,
+			"pad": 2,
+			"w": 126
+		},
+		"tribe_firepit": {
+			"frames": 4,
+			"h": 87,
+			"pad": 2,
+			"w": 96
+		},
+		"tribe_firepit_flat": {
+			"frames": 4,
+			"h": 163,
+			"pad": 2,
+			"w": 180
+		},
+		"tribe_firepit_icon": {
+			"frames": 4,
+			"h": 163,
+			"pad": 2,
+			"w": 180
+		},
+		"tribe_firewood": {
+			"frames": 4,
+			"h": 73,
+			"pad": 2,
+			"w": 96
+		},
+		"tribe_firewood_flat": {
+			"frames": 4,
+			"h": 135,
+			"pad": 2,
+			"w": 180
+		},
+		"tribe_firewood_icon": {
+			"frames": 4,
+			"h": 135,
+			"pad": 2,
+			"w": 180
+		},
+		"tribe_flintpit": {
+			"frames": 4,
+			"h": 62,
+			"pad": 2,
+			"w": 100
+		},
+		"tribe_flintpit_flat": {
+			"frames": 4,
+			"h": 116,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_flintpit_icon": {
+			"frames": 4,
+			"h": 116,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_found_0": {
+			"frames": 4,
+			"h": 40,
+			"pad": 4,
+			"w": 72
+		},
+		"tribe_found_1": {
+			"frames": 4,
+			"h": 40,
+			"pad": 4,
+			"w": 72
+		},
+		"tribe_found_2": {
+			"frames": 4,
+			"h": 40,
+			"pad": 4,
+			"w": 72
+		},
+		"tribe_found_3": {
+			"frames": 4,
+			"h": 40,
+			"pad": 4,
+			"w": 72
+		},
+		"tribe_found_4": {
+			"frames": 4,
+			"h": 40,
+			"pad": 4,
+			"w": 72
+		},
+		"tribe_found_5": {
+			"frames": 4,
+			"h": 40,
+			"pad": 4,
+			"w": 72
+		},
+		"tribe_fruittree": {
+			"frames": 4,
+			"h": 148,
+			"pad": 2,
+			"w": 120
+		},
+		"tribe_fruittree_flat": {
+			"frames": 4,
+			"h": 277,
+			"pad": 2,
+			"w": 222
+		},
+		"tribe_fruittree_icon": {
+			"frames": 4,
+			"h": 277,
+			"pad": 2,
+			"w": 222
+		},
+		"tribe_grassstack": {
+			"frames": 4,
+			"h": 83,
+			"pad": 2,
+			"w": 88
+		},
+		"tribe_grassstack_flat": {
+			"frames": 4,
+			"h": 155,
+			"pad": 2,
+			"w": 162
+		},
+		"tribe_grassstack_icon": {
+			"frames": 4,
+			"h": 155,
+			"pad": 2,
+			"w": 162
+		},
+		"tribe_hammer": {
+			"frames": 4,
+			"h": 58,
+			"pad": 2,
+			"w": 92
+		},
+		"tribe_hidedry": {
+			"frames": 4,
+			"h": 93,
+			"pad": 2,
+			"w": 86
+		},
+		"tribe_hidedry_flat": {
+			"frames": 4,
+			"h": 175,
+			"pad": 2,
+			"w": 160
+		},
+		"tribe_hidedry_icon": {
+			"frames": 4,
+			"h": 175,
+			"pad": 2,
+			"w": 160
+		},
+		"tribe_hidetent": {
+			"frames": 4,
+			"h": 122,
+			"pad": 2,
+			"w": 104
+		},
+		"tribe_hidetent_flat": {
+			"frames": 4,
+			"h": 227,
+			"pad": 2,
+			"w": 192
+		},
+		"tribe_hidetent_icon": {
+			"frames": 4,
+			"h": 227,
+			"pad": 2,
+			"w": 192
+		},
+		"tribe_hunttent": {
+			"frames": 4,
+			"h": 102,
+			"pad": 2,
+			"w": 111
+		},
+		"tribe_hunttent_flat": {
+			"frames": 4,
+			"h": 190,
+			"pad": 2,
+			"w": 206
+		},
+		"tribe_hunttent_icon": {
+			"frames": 4,
+			"h": 190,
+			"pad": 2,
+			"w": 206
+		},
+		"tribe_kilndome": {
+			"frames": 4,
+			"h": 140,
+			"pad": 2,
+			"w": 100
+		},
+		"tribe_kilndome_flat": {
+			"frames": 4,
+			"h": 260,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_kilndome_icon": {
+			"frames": 4,
+			"h": 260,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_logpile": {
+			"frames": 4,
+			"h": 67,
+			"pad": 2,
+			"w": 93
+		},
+		"tribe_logpile_flat": {
+			"frames": 4,
+			"h": 125,
+			"pad": 2,
+			"w": 174
+		},
+		"tribe_logpile_icon": {
+			"frames": 4,
+			"h": 125,
+			"pad": 2,
+			"w": 174
+		},
+		"tribe_logs": {
+			"frames": 4,
+			"h": 80,
+			"pad": 2,
+			"w": 105
+		},
+		"tribe_logs_flat": {
+			"frames": 4,
+			"h": 149,
+			"pad": 2,
+			"w": 196
+		},
+		"tribe_logs_icon": {
+			"frames": 4,
+			"h": 149,
+			"pad": 2,
+			"w": 196
+		},
+		"tribe_loomframe": {
+			"frames": 4,
+			"h": 98,
+			"pad": 2,
+			"w": 86
+		},
+		"tribe_loomframe_flat": {
+			"frames": 4,
+			"h": 184,
+			"pad": 2,
+			"w": 160
+		},
+		"tribe_loomframe_icon": {
+			"frames": 4,
+			"h": 184,
+			"pad": 2,
+			"w": 160
+		},
+		"tribe_meatrack": {
+			"frames": 4,
+			"h": 97,
+			"pad": 2,
+			"w": 98
+		},
+		"tribe_meatrack_flat": {
+			"frames": 4,
+			"h": 181,
+			"pad": 2,
+			"w": 184
+		},
+		"tribe_meatrack_icon": {
+			"frames": 4,
+			"h": 181,
+			"pad": 2,
+			"w": 184
+		},
+		"tribe_obsidian": {
+			"frames": 4,
+			"h": 92,
+			"pad": 2,
+			"w": 93
+		},
+		"tribe_obsidian_flat": {
+			"frames": 4,
+			"h": 173,
+			"pad": 2,
+			"w": 173
+		},
+		"tribe_obsidian_icon": {
+			"frames": 4,
+			"h": 173,
+			"pad": 2,
+			"w": 173
+		},
+		"tribe_pass": {
+			"frames": 4,
+			"h": 155,
+			"pad": 10,
+			"w": 125
+		},
+		"tribe_pass_fill": {
+			"frames": 4,
+			"h": 11,
+			"nine": [
+				6,
+				5,
+				6,
+				5
+			],
+			"pad": 2,
+			"w": 81
+		},
+		"tribe_pass_prem": {
+			"frames": 4,
+			"h": 155,
+			"pad": 10,
+			"w": 125
+		},
+		"tribe_plot_any_lock": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_any_open": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_cook_lock": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_cook_open": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_fire_lock": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_fire_open": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_gather_lock": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_gather_open": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_hunt_lock": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_hunt_open": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_kiln_lock": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_kiln_open": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_stone_lock": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_stone_open": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_weave_lock": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_weave_open": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_wood_lock": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_plot_wood_open": {
+			"frames": 1,
+			"h": 168,
+			"pad": 4,
+			"w": 256
+		},
+		"tribe_potshelf": {
+			"frames": 4,
+			"h": 112,
+			"pad": 2,
+			"w": 100
+		},
+		"tribe_potshelf_flat": {
+			"frames": 4,
+			"h": 209,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_potshelf_icon": {
+			"frames": 4,
+			"h": 209,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_rockpile": {
+			"frames": 4,
+			"h": 57,
+			"pad": 2,
+			"w": 88
+		},
+		"tribe_rockpile_flat": {
+			"frames": 4,
+			"h": 107,
+			"pad": 2,
+			"w": 164
+		},
+		"tribe_rockpile_icon": {
+			"frames": 4,
+			"h": 107,
+			"pad": 2,
+			"w": 164
+		},
+		"tribe_rubble": {
+			"frames": 4,
+			"h": 49,
+			"pad": 2,
+			"w": 69
+		},
+		"tribe_rubble_flat": {
+			"frames": 4,
+			"h": 92,
+			"pad": 2,
+			"w": 128
+		},
+		"tribe_rubble_icon": {
+			"frames": 4,
+			"h": 92,
+			"pad": 2,
+			"w": 128
+		},
+		"tribe_sacredfire": {
+			"frames": 4,
+			"h": 127,
+			"pad": 2,
+			"w": 84
+		},
+		"tribe_sacredfire_flat": {
+			"frames": 4,
+			"h": 238,
+			"pad": 2,
+			"w": 156
+		},
+		"tribe_sacredfire_icon": {
+			"frames": 4,
+			"h": 238,
+			"pad": 2,
+			"w": 156
+		},
+		"tribe_sawhorse": {
+			"frames": 4,
+			"h": 68,
+			"pad": 2,
+			"w": 94
+		},
+		"tribe_sawhorse_flat": {
+			"frames": 4,
+			"h": 127,
+			"pad": 2,
+			"w": 174
+		},
+		"tribe_sawhorse_icon": {
+			"frames": 4,
+			"h": 127,
+			"pad": 2,
+			"w": 174
+		},
+		"tribe_seedjar": {
+			"frames": 4,
+			"h": 67,
+			"pad": 2,
+			"w": 74
+		},
+		"tribe_seedjar_flat": {
+			"frames": 4,
+			"h": 125,
+			"pad": 2,
+			"w": 137
+		},
+		"tribe_seedjar_icon": {
+			"frames": 4,
+			"h": 125,
+			"pad": 2,
+			"w": 137
+		},
+		"tribe_skullgate": {
+			"frames": 4,
+			"h": 122,
+			"pad": 2,
+			"w": 104
+		},
+		"tribe_skullgate_flat": {
+			"frames": 4,
+			"h": 227,
+			"pad": 2,
+			"w": 192
+		},
+		"tribe_skullgate_icon": {
+			"frames": 4,
+			"h": 227,
+			"pad": 2,
+			"w": 192
+		},
+		"tribe_smokehouse": {
+			"frames": 4,
+			"h": 132,
+			"pad": 2,
+			"w": 100
+		},
+		"tribe_smokehouse_flat": {
+			"frames": 4,
+			"h": 247,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_smokehouse_icon": {
+			"frames": 4,
+			"h": 247,
+			"pad": 2,
+			"w": 186
+		},
+		"tribe_snare": {
+			"frames": 4,
+			"h": 77,
+			"pad": 2,
+			"w": 76
+		},
+		"tribe_snare_flat": {
+			"frames": 4,
+			"h": 145,
+			"pad": 2,
+			"w": 143
+		},
+		"tribe_snare_icon": {
+			"frames": 4,
+			"h": 145,
+			"pad": 2,
+			"w": 143
+		},
+		"tribe_spears": {
+			"frames": 4,
+			"h": 105,
+			"pad": 2,
+			"w": 82
+		},
+		"tribe_spears_flat": {
+			"frames": 4,
+			"h": 195,
+			"pad": 2,
+			"w": 154
+		},
+		"tribe_spears_icon": {
+			"frames": 4,
+			"h": 195,
+			"pad": 2,
+			"w": 154
+		},
+		"tribe_spit": {
+			"frames": 4,
+			"h": 116,
+			"pad": 2,
+			"w": 104
+		},
+		"tribe_spit_flat": {
+			"frames": 4,
+			"h": 217,
+			"pad": 2,
+			"w": 192
+		},
+		"tribe_spit_icon": {
+			"frames": 4,
+			"h": 217,
+			"pad": 2,
+			"w": 192
+		},
+		"tribe_sprouts": {
+			"frames": 4,
+			"h": 43,
+			"pad": 2,
+			"w": 96
+		},
+		"tribe_sprouts_flat": {
+			"frames": 4,
+			"h": 80,
+			"pad": 2,
+			"w": 179
+		},
+		"tribe_sprouts_icon": {
+			"frames": 4,
+			"h": 80,
+			"pad": 2,
+			"w": 179
+		},
+		"tribe_star": {
+			"frames": 4,
+			"h": 26,
+			"pad": 3,
+			"w": 26
+		},
+		"tribe_stonestove": {
+			"frames": 4,
+			"h": 59,
+			"pad": 2,
+			"w": 96
+		},
+		"tribe_stonestove_flat": {
+			"frames": 4,
+			"h": 110,
+			"pad": 2,
+			"w": 178
+		},
+		"tribe_stonestove_icon": {
+			"frames": 4,
+			"h": 110,
+			"pad": 2,
+			"w": 178
+		},
+		"tribe_stumps": {
+			"frames": 4,
+			"h": 47,
+			"pad": 2,
+			"w": 95
+		},
+		"tribe_stumps_flat": {
+			"frames": 4,
+			"h": 87,
+			"pad": 2,
+			"w": 176
+		},
+		"tribe_stumps_icon": {
+			"frames": 4,
+			"h": 87,
+			"pad": 2,
+			"w": 176
+		},
+		"tribe_tag_any_lock": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_any_open": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_cook_lock": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_cook_open": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_fill": {
+			"frames": 4,
+			"h": 9,
+			"nine": [
+				5,
+				4,
+				5,
+				4
+			],
+			"pad": 2,
+			"w": 86
+		},
+		"tribe_tag_fire_lock": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_fire_open": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_gather_lock": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_gather_open": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_hunt_lock": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_hunt_open": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_kiln_lock": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_kiln_open": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_stone_lock": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_stone_open": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_weave_lock": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_weave_open": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_wood_lock": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_tag_wood_open": {
+			"frames": 4,
+			"h": 52,
+			"pad": 4,
+			"w": 148
+		},
+		"tribe_toolrack": {
+			"frames": 4,
+			"h": 100,
+			"pad": 2,
+			"w": 80
+		},
+		"tribe_toolrack_flat": {
+			"frames": 4,
+			"h": 188,
+			"pad": 2,
+			"w": 148
+		},
+		"tribe_toolrack_icon": {
+			"frames": 4,
+			"h": 188,
+			"pad": 2,
+			"w": 148
+		},
+		"tribe_totem": {
+			"frames": 4,
+			"h": 139,
+			"pad": 2,
+			"w": 96
+		},
+		"tribe_totem_flat": {
+			"frames": 4,
+			"h": 258,
+			"pad": 2,
+			"w": 180
+		},
+		"tribe_totem_icon": {
+			"frames": 4,
+			"h": 258,
+			"pad": 2,
+			"w": 180
+		},
+		"tribe_trophy": {
+			"frames": 4,
+			"h": 50,
+			"pad": 4,
+			"w": 64
+		},
+		"tribe_walker_0": {
+			"frames": 4,
+			"h": 127,
+			"pad": 2,
+			"w": 91
+		},
+		"tribe_walker_1": {
+			"frames": 4,
+			"h": 131,
+			"pad": 2,
+			"w": 106
+		},
+		"tribe_walker_2": {
+			"frames": 4,
+			"h": 93,
+			"pad": 2,
+			"w": 85
+		},
+		"tribe_walker_3": {
+			"frames": 4,
+			"h": 104,
+			"pad": 2,
+			"w": 84
+		},
+		"tribe_walker_4": {
+			"frames": 4,
+			"h": 130,
+			"pad": 2,
+			"w": 84
+		},
+		"tribe_walker_5": {
+			"frames": 4,
+			"h": 108,
+			"pad": 2,
+			"w": 90
+		},
+		"tribe_walker_6": {
+			"frames": 4,
+			"h": 99,
+			"pad": 2,
+			"w": 90
+		},
+		"tribe_walker_7": {
+			"frames": 4,
+			"h": 104,
+			"pad": 2,
+			"w": 89
+		},
+		"tribe_walker_8": {
+			"frames": 4,
+			"h": 107,
+			"pad": 2,
+			"w": 95
+		},
+		"tribe_walker_9": {
+			"frames": 4,
+			"h": 117,
+			"pad": 2,
+			"w": 91
+		},
+		"tribe_wheel": {
+			"frames": 4,
+			"h": 73,
+			"pad": 2,
+			"w": 77
+		},
+		"tribe_wheel_flat": {
+			"frames": 4,
+			"h": 137,
+			"pad": 2,
+			"w": 143
+		},
+		"tribe_wheel_icon": {
+			"frames": 4,
+			"h": 137,
+			"pad": 2,
+			"w": 143
+		},
+		"tribe_whetstone": {
+			"frames": 4,
+			"h": 61,
+			"pad": 2,
+			"w": 95
+		},
+		"tribe_whetstone_flat": {
+			"frames": 4,
+			"h": 114,
+			"pad": 2,
+			"w": 177
+		},
+		"tribe_whetstone_icon": {
+			"frames": 4,
+			"h": 114,
+			"pad": 2,
+			"w": 177
+		},
+		"tribe_wipe_badge": {
+			"frames": 4,
+			"h": 250,
+			"pad": 2,
+			"w": 250
+		},
+		"tribe_wipe_pole": {
+			"frames": 4,
+			"h": 30,
+			"pad": 6,
+			"w": 760
+		},
+		"tribe_woodshed": {
+			"frames": 4,
+			"h": 102,
+			"pad": 2,
+			"w": 122
+		},
+		"tribe_woodshed_flat": {
+			"frames": 4,
+			"h": 190,
+			"pad": 2,
+			"w": 228
+		},
+		"tribe_woodshed_icon": {
+			"frames": 4,
+			"h": 190,
+			"pad": 2,
+			"w": 228
+		}
+	}
+}

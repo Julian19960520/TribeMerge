@@ -633,8 +633,7 @@ func _draw_cell(i: int) -> void:
 		return
 	var prod := not Data.gen_stats(c["id"]).is_empty()
 	if c["lock"] == 0 and prod and reveal > 0.65:
-		draw_colored_polygon(Art.rrect(r.grow(-6), 14, i, 0.6), Color(1, 0.86, 0.45, 0.55))
-		Art.outline(self, Art.rrect(r.grow(-6), 14, i, 0.6), 2.0, Color(0.7, 0.45, 0.1, 0.6))
+		Sprites.draw(self, "board_prod_glow", r.grow(-6))
 	var breath := 1.0
 	var nudge := Vector2.ZERO
 	if i == _hint_a or i == _hint_b:
@@ -671,8 +670,7 @@ func _draw_cell(i: int) -> void:
 				_egen_pills.append([r, i, "×%d" % G.gen_left(i), Art.CLAY])
 			if G.energy >= G.gen_cost():
 				# 双倍火种模式：右下角换成紫火
-				var bolt := Art.flame_pts(r.position + Vector2(80, 78), 7, 18, i)
-				Art.fill(self, bolt, Art.FIRE_BOOST if G.boost_on() else Art.FIRE2, 2.0)
+				Sprites.at(self, "board_bolt_boost" if G.boost_on() else "board_bolt", r.position + Vector2(80, 78))
 
 ## 贝币、琥珀、沙漏、火种合到最高级后不能再合，右下角显示皇冠标志
 const MAX_BADGE_CHAINS := ["shell", "amber", "sand", "fire"]
@@ -705,10 +703,7 @@ func _draw_cook(i: int, r: Rect2, ck: Dictionary) -> void:
 	var ctr := r.get_center() + Vector2(0, -10) + Vector2(0, sin(_t * 7.0) * 1.2)
 	var into := G.now() - float(ck["t0"])
 	var secs := maxf(float(ck["secs"]), 0.1)
-	var pot := Art.poly([ctr + Vector2(-24, -2), ctr + Vector2(24, -2), ctr + Vector2(16, 18), ctr + Vector2(-16, 18)], seed, 0.7)
-	var lip := Art.ell(ctr + Vector2(0, -2), Vector2(24, 8), seed + 1, 0.04, 16)
-	Art.sil(self, [Art.P(pot, Art.CLAY, 1), Art.P(lip, Art.OCHRE, 0)], false, 2.4)
-	draw_colored_polygon(Art.ell(ctr + Vector2(0, 0), Vector2(14, 5), seed + 2, 0.03, 12), Color("e07a3a"))
+	Sprites.at(self, "board_cook_pot", ctr)
 	if into > 0.0:
 		for k in 3:
 			var ph := fmod(_t * 0.5 + float(k) * 0.33, 1.0)
@@ -728,8 +723,8 @@ func _draw_cook(i: int, r: Rect2, ck: Dictionary) -> void:
 		draw_line(ctr + dir * 6.0, ctr + dir * 22.0 + Vector2(0, -16), Art.WOOD_D, 4.0, true)
 		draw_circle(ctr + dir * 22.0 + Vector2(0, -16), 4.5, Art.WOOD)
 		var fh := 10.0 + sin(_t * 16.0) * 3.0
-		var flame := Art.flame_pts(ctr + Vector2(0, 20), 7.0, fh, seed + 4)
-		Art.fill(self, flame, Art.FIRE2, 2.0)
+		# 火苗图按 10 高生成，跳动时上下拉伸
+		Sprites.draw(self, "board_cook_flame", Rect2(ctr + Vector2(-8, 20.0 - fh * 0.5), Vector2(16, fh)))
 	var frac := 0.0 if into <= 0.0 else clampf(into / secs, 0.0, 1.0)
 	Paint.bar(self, Rect2(r.position.x + 10, r.end.y - 16, r.size.x - 20, 11), frac, Art.MOSS, seed + 9)
 
@@ -743,9 +738,8 @@ func _draw_egen_pill(r: Rect2, i: int, label: String, col: Color) -> void:
 	var f: Font = G.font_title
 	var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pill := Rect2(r.get_center().x - tw * 0.5 - 8, r.end.y - 18, tw + 16, 26)
-	var shape := Art.rrect(pill, 11, i + 700, 0.3)
-	Art.dilate(self, shape, 2.0, Art.INK)
-	draw_colored_polygon(shape, col)
+	Sprites.draw(self, "board_epill_ink", pill)
+	Sprites.draw(self, "board_epill_fill", pill, col)
 	var base := pill.position.y + 13.0 + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
 	draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
@@ -811,135 +805,10 @@ func _draw_fragment(k: int, pos: Vector2, rotation_value: float, scale_value: fl
 	draw_texture_rect_region(ROCK_BITS, Rect2(-32, -32, 64, 64), Rect2(k * 64, 0, 64, 64), Color(1, 1, 1, alpha))
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 
-## 藤蔓：两根弯曲的藤茎（墨线 + 深浅两层绿 + 高光）从格子上缘和下部绕过物品，
-## 沿茎交替长出带叶脉的双色叶子，末端卷须打圈；部分格子开一朵小白花。
-## 走上 / 下三分之一，物品中间留出来，看得清是什么。i 决定镜像和抖动，格格不同。
-const VINE_STEM := Color("5b7a32")
-const VINE_STEM_HI := Color("a8b878")
-const VINE_LEAF := Color("8fae55")
-const VINE_LEAF_D := Color("62813a")
-
+## 藤蔓：两根绕过物品的藤（画法见 scripts/sprites/board.gd）。back 是物品后面那段。
+## 按格子序号取一种样子，单双数决定镜像。
 func _draw_vine(r: Rect2, i: int, back: bool) -> void:
-	var p := r.position
-	var s := r.size.x / 96.0
-	var flip := i % 2 == 1
-	var j := func(k: int, amp: float) -> float: return Art.srnd(i * 13 + k) * amp
-	var pt := func(x: float, y: float, k: int) -> Vector2:
-		# 带沸腾线：控制点跟着全局 boil 帧轻轻抖
-		return p + Vector2((96.0 - x) if flip else x, y) * s + Art.jv(i * 97 + k * 29, 1.2 * s)
-	# 两根藤，一上一下：断口那头藏在物品后面，从物品侧边绕出来，
-	# 在前面弯一道，末端是尖尖的藤梢 + 卷须
-	var up_side: Vector2 = pt.call(12, 36 + j.call(1, 3), 1)
-	var lo_side: Vector2 = pt.call(84, 64 + j.call(2, 3), 2)
-	if back:
-		# 背后那段：从物品中间（看不见）拉到侧边，和前面那段接上
-		_vine_stroke(_bez(pt.call(46, 30, 3), pt.call(30, 24, 4), pt.call(16, 28, 5), up_side, 10), 5.5 * s, false, false)
-		_vine_stroke(_bez(pt.call(50, 70, 6), pt.call(66, 76, 7), pt.call(80, 72, 8), lo_side, 10), 5.5 * s, false, false)
-		return
-	# 物品整体压淡一点
-	draw_colored_polygon(Art.rrect(r.grow(-5), 14, i, 0.0), Color(0.93, 0.89, 0.8, 0.22))
-	var up := _bez(up_side, pt.call(30, 56 + j.call(3, 4), 9), pt.call(58, 24 + j.call(4, 4), 10), pt.call(82, 34 + j.call(5, 3), 11), 22)
-	var lo := _bez(lo_side, pt.call(66, 86 + j.call(6, 3), 12), pt.call(38, 58 + j.call(7, 4), 13), pt.call(16, 70 + j.call(8, 3), 14), 22)
-	_vine_stroke(up, 6.0 * s, false, true)
-	_vine_stroke(lo, 6.0 * s, false, true)
-	# 藤梢卷须
-	for c in [up, lo]:
-		var cv: PackedVector2Array = c
-		var d: Vector2 = (cv[cv.size() - 1] - cv[cv.size() - 3]).normalized()
-		_curl(cv[cv.size() - 1], d.orthogonal() * (-1.0 if c == up else 1.0) * (-1.0 if flip else 1.0), 6.0 * s, i + (0 if c == up else 1))
-	# 叶子：每根两片，左右错开
-	var n := 0
-	for c in [up, lo]:
-		var cv: PackedVector2Array = c
-		for k in [7, 15]:
-			var tan: Vector2 = (cv[k + 1] - cv[k - 1]).normalized()
-			var side := -1.0 if n % 2 == 0 else 1.0
-			var ang: float = tan.angle() + side * (1.0 + j.call(20 + n, 0.25)) + Art.jit(i * 7 + n) * 0.06
-			_leaf(cv[k], ang, (16.0 + j.call(40 + n, 2.0)) * s, i * 31 + n)
-			n += 1
-
-## 藤条：两头收尖的一条，墨边 + 灰绿芯
-func _vine_stroke(c: PackedVector2Array, w: float, taper_a := true, taper_b := true) -> void:
-	var left := PackedVector2Array()
-	var right := PackedVector2Array()
-	for k in c.size():
-		var u := float(k) / float(c.size() - 1)
-		var dir := (c[mini(k + 1, c.size() - 1)] - c[maxi(k - 1, 0)]).normalized()
-		var half := w * 0.5
-		if taper_a and u < 0.5: half *= clampf(u * 3.2, 0.25, 1.0)
-		if taper_b and u > 0.5: half *= clampf((1.0 - u) * 3.2, 0.12, 1.0)
-		left.append(c[k] + dir.orthogonal() * half)
-		right.append(c[k] - dir.orthogonal() * half)
-	right.reverse()
-	var shape := PackedVector2Array(left)
-	shape.append_array(right)
-	Art.dilate(self, shape, 2.2, Art.INK)
-	draw_colored_polygon(shape, VINE_STEM)
-	# 高光：偏上一道浅线
-	var hi := PackedVector2Array()
-	for k in range(3, c.size() - 3): hi.append(c[k] + Vector2(0, -w * 0.18))
-	draw_polyline(hi, Color(VINE_STEM_HI, 0.6), maxf(1.0, w * 0.18), true)
-
-func _bez(a: Vector2, b: Vector2, c: Vector2, d: Vector2, n: int) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for k in n + 1:
-		var t := float(k) / float(n)
-		var u := 1.0 - t
-		out.append(a * u * u * u + b * 3.0 * u * u * t + c * 3.0 * u * t * t + d * t * t * t)
-	return out
-
-## 一片叶子：base 处连茎，朝 ang 方向长 len；上半浅绿、下半深绿，中间一道叶脉 + 两根侧脉。
-func _leaf(base: Vector2, ang: float, len: float, seed: int) -> void:
-	var w := len * 0.42
-	var dir := Vector2.from_angle(ang)
-	var nrm := dir.orthogonal()
-	var left := PackedVector2Array()
-	var right := PackedVector2Array()
-	for k in 9:
-		var u := float(k) / 8.0
-		var half := w * pow(sin(u * PI), 0.85) * (1.0 - 0.25 * u)
-		var along := base + dir * (u * len)
-		left.append(along + nrm * half)
-		right.append(along - nrm * half)
-	var outline := PackedVector2Array(left)
-	for k in range(right.size() - 1, -1, -1): outline.append(right[k])
-	Art.dilate(self, outline, 2.2, Art.INK)
-	draw_colored_polygon(outline, VINE_LEAF)
-	var dark := PackedVector2Array()
-	for k in right.size(): dark.append(right[k])
-	for k in range(right.size() - 1, -1, -1): dark.append(base + dir * (float(k) / 8.0 * len))
-	draw_colored_polygon(dark, VINE_LEAF_D)
-	# 叶脉
-	draw_line(base + dir * len * 0.08, base + dir * len * 0.86, Color(Art.INK, 0.55), 1.4, true)
-	for k in [0.35, 0.6]:
-		var m: Vector2 = base + dir * len * k
-		draw_line(m, m + (dir + nrm * 0.9).normalized() * w * 0.6, Color(Art.INK, 0.4), 1.1, true)
-		draw_line(m, m + (dir - nrm * 0.9).normalized() * w * 0.6, Color(Art.INK, 0.4), 1.1, true)
-	# 一点高光
-	draw_line(left[2] - nrm * 1.5, left[5] - nrm * 1.5, Color(1, 1, 0.8, 0.45), 1.4, true)
-
-## 卷须：从 at 出发向 dir 方向打一圈半螺旋
-func _curl(at: Vector2, dir: Vector2, r: float, seed: int) -> void:
-	var pts := PackedVector2Array()
-	var a0 := dir.angle() + PI
-	var spin := 1.0 if seed % 2 == 0 else -1.0
-	var c := at + dir * r
-	for k in 16:
-		var t := float(k) / 15.0
-		var a := a0 + spin * t * TAU * 1.25
-		pts.append(c + Vector2.from_angle(a) * r * (1.0 - t * 0.75))
-	draw_polyline(pts, Art.INK, 5.0, true)
-	draw_polyline(pts, VINE_STEM, 2.6, true)
-
-func _flower(c: Vector2, r: float, seed: int) -> void:
-	for k in 5:
-		var q := c + Vector2.from_angle(TAU * k / 5.0 + seed * 0.7) * r * 0.85
-		draw_circle(q, r * 0.62, Art.INK)
-	for k in 5:
-		var q := c + Vector2.from_angle(TAU * k / 5.0 + seed * 0.7) * r * 0.85
-		draw_circle(q, r * 0.48, Color("fff4ea"))
-	draw_circle(c, r * 0.45, Art.INK)
-	draw_circle(c, r * 0.33, Art.FIRE2)
+	Sprites.draw(self, "board_vine_%s%d" % ["b" if back else "f", posmod(i, 8)], r)
 
 func _draw_burst(b: Dictionary) -> void:
 	var t: float = b["t"] / 0.6
@@ -949,8 +818,7 @@ func _draw_burst(b: Dictionary) -> void:
 	for k in 8:
 		var a := TAU * float(k) / 8.0 + float(b["seed"])
 		var q := p + Vector2(cos(a), sin(a)) * (30.0 + 80.0 * t)
-		var star := Art.star_pts(q, 10.0 * (1.0 - t) + 2.0, 4.0 * (1.0 - t) + 1.0, 4, k)
-		draw_colored_polygon(star, Color(Art.FIRE2, 1.0 - t))
+		Sprites.at(self, "board_burst_star", q, (10.0 * (1.0 - t) + 2.0) / 12.0, 0.0, Color(Art.FIRE2, 1.0 - t))
 	for k in 5:
 		var a := TAU * float(k) / 5.0 + 0.4 + float(b["seed"])
 		var q := p + Vector2(cos(a), sin(a)) * (20.0 + 50.0 * t) + Vector2(0, 30.0 * t * t)
@@ -1177,8 +1045,7 @@ func _draw_merge_bubble(i: int, ctr: Vector2, sc: float) -> void:
 	var f: Font = G.font_title
 	var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pill := Rect2(ctr.x - tw * 0.5 - 7, ctr.y + 19, tw + 14, 21)
-	var shape := Art.rrect(pill, 10, i + 600, 0.3)
-	Art.dilate(self, shape, 2.0, Art.INK)
-	draw_colored_polygon(shape, Art.CLAY if urgent else Color("2f6d93"))
+	Sprites.draw(self, "board_bpill_ink", pill)
+	Sprites.draw(self, "board_bpill_fill", pill, Art.CLAY if urgent else Color("2f6d93"))
 	var base := pill.position.y + 10.5 + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
 	draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)

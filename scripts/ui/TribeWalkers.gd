@@ -4,6 +4,8 @@ extends Control
 ## 点一下小人也会说一句。人数跟着开工的区域变多。只在小人身上接收点击，别处点击穿透到下面。
 
 const Meme := preload("res://scripts/Meme.gd")
+## 小人和气泡都贴预生成的图（tribe_walker_{角色}、tribe_bubble），这里只用它的尺寸常量
+const TribeSprites := preload("res://scripts/sprites/tribe.gd")
 
 ## 路口（主页坐标）和路口之间的小路
 const NODES := [
@@ -142,9 +144,33 @@ func _draw() -> void:
 	var order := _walkers.duplicate()
 	order.sort_custom(func(a, b): return float(a["pos"].y) < float(b["pos"].y))
 	for w in order:
-		Meme.walker(self, int(w["role"]), w["pos"], float(w["phase"]), float(w["face"]), float(w["wait"]) <= 0.0)
+		_walker(int(w["role"]), w["pos"], float(w["phase"]), float(w["wait"]) <= 0.0)
 	for w in order:
 		var st := float(w["say_t"])
 		if st > 0.0:
 			var a := clampf(st / 0.3, 0.0, 1.0) * clampf((SAY_TIME - st) / 0.15, 0.0, 1.0)
-			Meme.bubble(self, w["pos"] + Vector2(0, -104), str(w["say"]), a)
+			_bubble(w["pos"] + Vector2(0, -104), str(w["say"]), a)
+
+## 一蹦一蹦挪动的半身贴纸（和 Meme.walker 同一套动作）；脚下的影子是普通椭圆
+func _walker(role: int, feet: Vector2, t: float, moving: bool) -> void:
+	var h := TribeSprites.WALKER_H
+	var hop := absf(sin(t * 7.0)) * (7.0 if moving else 0.0)
+	var sh := 1.0 - hop / (h * 0.5)
+	draw_colored_polygon(Art.ell(feet + Vector2(0, 1), Vector2(22, 6) * sh, 5, 0.0, 14, 0.0, 0.0), Color(0, 0, 0, 0.22))
+	var box := TribeSprites.walker_box(role)
+	Sprites.draw(self, "tribe_walker_%d" % (role % TribeSprites.WALKER_BOUNDS.size()), Rect2(feet + Vector2(0, -hop) + box.position, box.size))
+
+## 头顶对话气泡（同 Meme.bubble 的排版）。anchor 是尾尖指向的点，a 是透明度。
+func _bubble(anchor: Vector2, text: String, a: float) -> void:
+	var f: Font = G.font_body
+	var fs := 18
+	var max_w := 250.0
+	var tw := minf(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, max_w)
+	var lines := f.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs)
+	var box := Vector2(tw + 28.0, lines.y + 20.0)
+	var x := clampf(anchor.x - box.x * 0.5, 8.0, 712.0 - box.x)
+	var r := Rect2(Vector2(x, anchor.y - 14.0 - box.y), box)
+	var mod := Color(1, 1, 1, a)
+	Sprites.draw(self, "tribe_bubble", r, mod)
+	Sprites.draw(self, "tribe_bubble_tail", Rect2(anchor + TribeSprites.TAIL_BOX.position, TribeSprites.TAIL_BOX.size), mod)
+	draw_multiline_string(f, r.position + Vector2(14, 10 + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs, -1, Color(Art.INK, a))

@@ -166,9 +166,8 @@ func _frontier(cells: Array, i: int, cols: int) -> bool:
 	return false
 
 func _glow(r: Rect2, col: Color, a: float) -> void:
-	var pts := Art.rrect(r.grow(-3), 14, 77, 0.0)
-	draw_colored_polygon(pts, Color(col, a * 0.35))
-	Art.outline(self, pts, 4.0, Color(col, a))
+	# 白色光框图，按颜色和亮度染色
+	Sprites.draw(self, "board_glow", r.grow(-3), Color(col, a))
 
 func _gui_input(e: InputEvent) -> void:
 	if animating or MergeEvent.busy: return

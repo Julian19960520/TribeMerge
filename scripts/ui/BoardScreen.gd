@@ -139,6 +139,10 @@ func _ready() -> void:
 
 	add_child(preload("res://scripts/ui/UfoEntry.gd").new())
 	var gm := UI.btn(self, Rect2(12, 156, 68, 42), "GM", "teal", func():
+		# 双倍火种不走服务器，先在本地解锁
+		G.boost_gm = true
+		G.dirty()
+		G.changed.emit()
 		if G.server_mode():
 			var result: Dictionary = await G._cloud().act("/v1/gm/activities")
 			if not result.get("ok", false):
@@ -148,7 +152,7 @@ func _ready() -> void:
 		G.save_game()
 		G.merge_event_changed.emit()
 		G.changed.emit()
-		G.main.toast("月石遗迹、香蕉活动已解锁"), 21)
+		G.main.toast("月石遗迹、香蕉活动、双倍火种已解锁"), 21)
 	gm.name = "gm_activities"
 	_boost_btn = UI.btn(self, Rect2(646, 118, 66, 66), "", "grey", _on_boost)
 	_boost_btn.is_round = true
@@ -176,28 +180,14 @@ func _paint_scene(ci: CanvasItem, sz: Vector2) -> void:
 	Paint.hills(ci, 300, sz.x, 60, Color("8bb39a"), 5, 400)
 	for i in 4:
 		Paint.palm(ci, Vector2(40 + i * 220, 380), 160 + i * 10, i + 10, Color("3c7a44"))
-	for side in [0, 1]:
-		var x0: float = 0.0 if side == 0 else sz.x
-		var dir: float = 1.0 if side == 0 else -1.0
-		var curtain := PackedVector2Array([Vector2(x0, 0), Vector2(x0 + dir * 90, 0), Vector2(x0 + dir * 60, 180), Vector2(x0 + dir * 30, 380), Vector2(x0, 380)])
-		ci.draw_colored_polygon(curtain, Color("c9955a"))
-		Art.outline(ci, Art.poly(Array(curtain), side), 3.0)
-		Art.dashed(ci, Art.poly([Vector2(x0 + dir * 70, 10), Vector2(x0 + dir * 46, 180), Vector2(x0 + dir * 20, 370)], side + 2, 0.0), 9, 6, Color("f3d7a2"), 2.0)
-	var log_r := Rect2(-10, 372, sz.x + 20, 50)
-	var lg := Art.rrect(log_r, 22, 33, 1.0)
-	Art.dilate(ci, lg, 3.0, Art.INK)
-	Art.shade(ci, lg, Art.WOOD, 1)
-	for i in 8:
-		Art.pl(ci, [Vector2(30 + i * 90, 384), Vector2(70 + i * 90, 388), Vector2(100 + i * 90, 384)], 2.0, Color(0.4, 0.2, 0.05, 0.5), i)
+	Sprites.draw(ci, "board_curtain_l", Rect2(0, 0, 90, 380))
+	Sprites.draw(ci, "board_curtain_r", Rect2(sz.x - 90, 0, 90, 380))
+	Sprites.draw(ci, "board_log", Rect2(-10, 372, sz.x + 20, 50))
 
 ## 暂存区：临时物品像卡片一样叠放，点击把最上面一张放到棋盘
 func _paint_stash(ci: CanvasItem, sz: Vector2) -> void:
 	var n := G.stash.size()
-	var tray := Rect2(6, 26, sz.x - 12, sz.y - 34)
-	var tb := Art.rrect(tray, 16, 41, 1.0)
-	Art.dilate(ci, tb, 3.0, Art.INK)
-	ci.draw_colored_polygon(tb, Color("8a5a32"))
-	Art.dashed(ci, Art.rrect(tray.grow(-6), 12, 42, 0.0), 8, 6, Color(1, 0.85, 0.6, 0.45), 2.0)
+	Sprites.draw(ci, "board_stash_tray", Rect2(6, 26, sz.x - 12, sz.y - 34))
 	var shown := mini(n, 4)
 	var top := G.stash_claim_index()
 	var order: Array[int] = []
@@ -210,12 +200,9 @@ func _paint_stash(ci: CanvasItem, sz: Vector2) -> void:
 		var off := Vector2(float(k) * 5.0, -float(k) * 9.0)
 		var rot := (Art.srnd(n - k) - 0.5) * 0.14 if k > 0 else 0.0
 		var cr := Rect2(Vector2(16, 44) + off, Vector2(sz.x - 36, 124))
-		var card := _rot_about(Art.rrect(cr, 14, 43 + k, 0.6), rot, cr.get_center())
-		ci.draw_colored_polygon(_rot_about(Art.rrect(Rect2(cr.position + Vector2(0, 5), cr.size), 14, 43 + k, 0.0), rot, cr.get_center() + Vector2(0, 5)), Color(0, 0, 0, 0.25))
-		Art.dilate(ci, card, 2.5, Art.INK)
-		ci.draw_colored_polygon(card, Art.BONE if k == 0 else Art.BONE2)
+		# 卡片图带阴影，绕卡片中心转
+		Sprites.at(ci, "board_stash_card_top" if k == 0 else "board_stash_card", cr.get_center(), 1.0, rot)
 		if k == 0:
-			Art.dashed(ci, Art.rrect(cr.grow(-6), 10, 44, 0.0), 7, 5, Color(0.65, 0.4, 0.2, 0.4), 2.0)
 			Art.item(ci, id, cr.get_center() + Vector2(0, -4), 90)
 	if n == 0:
 		ci.draw_string(G.font_body, Vector2(0, 116), "暂存区", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 22, Color(1, 0.9, 0.75, 0.6))
@@ -228,40 +215,18 @@ func _paint_stash(ci: CanvasItem, sz: Vector2) -> void:
 			ci.draw_string(G.font_body, Vector2(0, sz.y - 14), "%d级开启" % Data.CARD_LEVEL, HORIZONTAL_ALIGNMENT_CENTER, sz.x, 20, Art.BONE)
 		else:
 			var bob := 4.0 * sin(Time.get_ticks_msec() / 200.0)
-			var arr := Art.poly([Vector2(sz.x * 0.5 - 16, sz.y - 30 + bob), Vector2(sz.x * 0.5 + 16, sz.y - 30 + bob), Vector2(sz.x * 0.5, sz.y - 8 + bob)], 3)
-			Art.fill(ci, arr, Art.MOSS, 3.0)
-
-static func _rot_about(pts: PackedVector2Array, a: float, c: Vector2) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for p in pts:
-		out.append((p - c).rotated(a) + c)
-	return out
+			Sprites.draw(ci, "board_stash_arrow", Rect2(sz.x * 0.5 - 16, sz.y - 30 + bob, 32, 22))
 
 ## 主角阿焰的等级卡
 func _paint_hero(ci: CanvasItem, sz: Vector2) -> void:
-	var r := Rect2(4, 16, sz.x - 8, sz.y - 24)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 8), r.size), 18, 45, 0.0), Color(0, 0, 0, 0.3))
-	var b := Art.rrect(r, 18, 45, 1.0)
-	Art.dilate(ci, b, 3.0, Art.INK)
-	ci.draw_colored_polygon(b, Color("fbf0d6"))
-	Art.dashed(ci, Art.rrect(r.grow(-6), 12, 46, 0.0), 8, 6, Color(0.65, 0.4, 0.2, 0.45), 2.0)
-	var head_c := Vector2(sz.x * 0.5, 78)
-	var head := Art.ell(head_c, Vector2(44, 44), 47, 0.02, 20)
-	Art.dilate(ci, head, 3.0, Art.INK)
-	ci.draw_colored_polygon(head, Art.OCHRE.lightened(0.28))
-	ci.draw_colored_polygon(Art.ell(Vector2(sz.x * 0.5, 118), Vector2(42, 12), 46, 0.04, 16), Color("c9a56a"))
+	Sprites.draw(ci, "board_hero_card", Rect2(Vector2.ZERO, sz))
 	Paint.bust(ci, Vector2(sz.x * 0.5, 96), 54)
 	Paint.bar(ci, Rect2(12, 176, sz.x - 24, 24), float(G.xp) / float(G.xp_need()), Art.MOSS)
 	Art.item(ci, "xp_1", Vector2(16, 188), 36)
 
 ## 贝币够建下一段部落时出现，点了回村庄升级
 func _paint_hammer(ci: CanvasItem, sz: Vector2) -> void:
-	var r := Rect2(4, 16, sz.x - 8, sz.y - 24)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 8), r.size), 18, 48, 0.0), Color(0, 0, 0, 0.3))
-	var b := Art.rrect(r, 18, 48, 1.0)
-	Art.dilate(ci, b, 3.0, Art.INK)
-	ci.draw_colored_polygon(b, Color("ffe9a8"))
-	Art.dashed(ci, Art.rrect(r.grow(-6), 12, 49, 0.0), 8, 6, Color(0.65, 0.4, 0.2, 0.45), 2.0)
+	Sprites.draw(ci, "board_hammer_card", Rect2(Vector2.ZERO, sz))
 	var title := "升级"
 	var tfs := 22
 	var tw := G.font_title.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x
@@ -279,16 +244,9 @@ func _paint_hammer(ci: CanvasItem, sz: Vector2) -> void:
 	ci.draw_string(G.font_body, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
 func _paint_info(ci: CanvasItem, sz: Vector2) -> void:
-	var r := Rect2(4, 22, sz.x - 8, sz.y - 34)
-	var b := Art.rrect(r, 20, 51, 1.0)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 8), r.size), 20, 51, 0.0), Color(0, 0, 0, 0.3))
-	Art.dilate(ci, b, 3.0, Art.INK)
-	ci.draw_colored_polygon(b, Art.HIDE)
-	Art.dashed(ci, Art.rrect(r.grow(-8), 14, 52, 0.0), 9, 6, Color(0.65, 0.4, 0.2, 0.5), 2.0)
+	Sprites.draw(ci, "board_info_panel", Rect2(Vector2.ZERO, sz))
 	if board and (board.selected >= 0 or _undo_cell >= 0):
-		var tag := Art.poly([Vector2(26, 4), Vector2(330, 4), Vector2(312, 24), Vector2(330, 44), Vector2(26, 44)], 53)
-		Art.dilate(ci, tag, 3.0, Art.INK)
-		ci.draw_colored_polygon(tag, Art.OCHRE)
+		Sprites.draw(ci, "board_info_tag", Rect2(26, 4, 304, 40))
 
 # ---------------------------------------------------------------- 订单
 
@@ -470,9 +428,7 @@ func _paint_order(ci: CanvasItem, sz: Vector2, oi: int) -> void:
 	var phase := str(o.get("phase", "need"))
 	var ready := G.order_ready(o)
 	var r := Rect2(4, 20, sz.x - 8, sz.y - 24)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 8), r.size), 18, oi, 0.0), Color(0, 0, 0, 0.3))
-	var b := Art.rrect(r, 18, 60 + oi, 1.0)
-	Art.dilate(ci, b, 3.0, Art.INK)
+	Sprites.draw(ci, "board_card_base", r)
 	var bg := Color("fbf0d6")
 	if story:
 		bg = Color("ffe9a8")
@@ -482,11 +438,9 @@ func _paint_order(ci: CanvasItem, sz: Vector2, oi: int) -> void:
 		bg = Color("fff3c4")
 	if ready:
 		bg = Color("eaf6c8")
-	ci.draw_colored_polygon(b, bg)
-	Art.dashed(ci, Art.rrect(r.grow(-6), 12, 61 + oi, 0.0), 8, 6, Color(0.65, 0.4, 0.2, 0.45), 2.0)
-	var head := Art.ell(Vector2(46, 38), Vector2(38, 38), 62 + oi, 0.02, 20)
-	Art.dilate(ci, head, 3.0, Art.INK)
-	ci.draw_colored_polygon(head, Art.OCHRE.lightened(0.3) if story else Art.TEAL.lightened(0.3))
+	Sprites.draw(ci, "board_card_fill", r, bg)
+	Sprites.draw(ci, "board_card_dash", r)
+	Sprites.at(ci, "board_head_story" if story else "board_head_npc", Vector2(46, 38))
 	Meme.portrait(ci, int(o["who"]), Vector2(46, 37), 74)
 	if o["rw"].has("xp") and int(o["rw"]["xp"]) > 0:
 		var star := Vector2(sz.x - 20, 36)
@@ -501,7 +455,7 @@ func _paint_order(ci: CanvasItem, sz: Vector2, oi: int) -> void:
 		var dish_s := 58.0
 		var dc := Vector2(sz.x - 42.0, 50.0)
 		var from := _paint_formula(ci, o, sz.x)
-		ci.draw_colored_polygon(Art.ell(dc + Vector2(0, 3), Vector2(dish_s * 0.5, dish_s * 0.42), 63, 0.03, 18), Color(0.8, 0.65, 0.4, 0.35))
+		_spot_shadow(ci, dc + Vector2(0, 3), dish_s)
 		Art.item(ci, str(o.get("dish", "")), dc, dish_s)
 		if from.x >= 0.0:
 			var dir := Vector2(1, -1).normalized()
@@ -520,7 +474,7 @@ func _paint_order(ci: CanvasItem, sz: Vector2, oi: int) -> void:
 			var id := str(spot["id"])
 			var c: Vector2 = spot["c"]
 			var s: float = float(spot["s"])
-			ci.draw_colored_polygon(Art.ell(c + Vector2(0, 4), Vector2(s * 0.5, s * 0.42), 63 + ik, 0.03, 18), Color(0.8, 0.65, 0.4, 0.35))
+			_spot_shadow(ci, c + Vector2(0, 4), s)
 			Art.item(ci, id, c, s)
 			var cell := G.board_has(id, used)
 			if cell >= 0:
@@ -532,8 +486,7 @@ func _paint_order(ci: CanvasItem, sz: Vector2, oi: int) -> void:
 	for k in chips.size():
 		var t := str(chips[k][1])
 		var pill_w := _chip_w(int(chips[k][1]))
-		var pill := Art.rrect(Rect2(x, chip_y - 14.0, pill_w, 28.0), 14, 65 + k, 0.4)
-		ci.draw_colored_polygon(pill, Color(0.55, 0.35, 0.15, 0.18))
+		Sprites.draw(ci, "board_chip", Rect2(x, chip_y - 14.0, pill_w, 28.0))
 		Art.item(ci, str(chips[k][0]), Vector2(x + 12.0, chip_y), 36, false)
 		var pos := Vector2(x + 26.0, chip_y + 8.0)
 		ci.draw_string_outline(G.font_body, pos, t, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 5, Color.WHITE)
@@ -551,7 +504,7 @@ func _paint_formula(ci: CanvasItem, o: Dictionary, width: float) -> Vector2:
 		var id := str(spot["id"])
 		var c: Vector2 = spot["c"]
 		var icon: float = float(spot["s"])
-		ci.draw_colored_polygon(Art.ell(c + Vector2(0, 4), Vector2(icon * 0.5, icon * 0.42), 63 + k, 0.03, 18), Color(0.8, 0.65, 0.4, 0.35))
+		_spot_shadow(ci, c + Vector2(0, 4), icon)
 		Art.item(ci, id, c, icon)
 		if phase == "need":
 			var cell := G.board_has(id, used)
@@ -600,14 +553,15 @@ static func _formula_spots(o: Dictionary, width: float) -> Array:
 func _open_mat(id: String) -> void:
 	G.main.open("item_info", id)
 
+## 物品底下的浅色椭圆影子，s 是物品尺寸
+static func _spot_shadow(ci: CanvasItem, c: Vector2, s: float) -> void:
+	Sprites.draw(ci, "board_spot_shadow", Rect2(c - Vector2(s * 0.5, s * 0.42), Vector2(s, s * 0.84)))
+
+## 箭头图是横着的，转到方向后把中段拉到需要的长度
 static func _aim_arrow(ci: CanvasItem, a: Vector2, tip: Vector2) -> void:
-	var dir := (tip - a).normalized()
-	var n := dir.orthogonal()
-	var neck := tip - dir * 8.0
-	Art.pl(ci, [a, neck], 6.0, Color.WHITE, 4)
-	Art.pl(ci, [a, neck], 3.2, Art.INK, 4)
-	var head := Art.poly([tip, neck + n * 5.5, neck - n * 5.5], 6, 0.15)
-	Art.fill(ci, head, Art.INK, 2.0)
+	ci.draw_set_transform(a, (tip - a).angle(), Vector2.ONE)
+	Sprites.draw(ci, "board_aim_arrow", Rect2(0, -8, (tip - a).length(), 16))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 static func _sign(ci: CanvasItem, text: String, c: Vector2, fs: int) -> void:
 	var f := G.font_body
@@ -1009,13 +963,13 @@ func _clear_undo() -> void:
 # ---------------------------------------------------------------- 双倍火种
 
 func _sync_boost() -> void:
-	var open := G.level >= Data.BOOST_LEVEL
+	var open := G.boost_open()
 	_boost_btn.visible = open
 	_boost_btn.style = "purple" if G.boost_on() else "grey"
 	_boost_btn.queue_redraw()
 
 func _on_boost() -> void:
-	if G.level < Data.BOOST_LEVEL:
+	if not G.boost_open():
 		G.main.toast("%d级解锁双倍火种" % Data.BOOST_LEVEL)
 		return
 	G.set_boost(not G.boost)
@@ -1028,8 +982,7 @@ func _on_boost() -> void:
 func _paint_boost(ci: CanvasItem, sz: Vector2) -> void:
 	var on := G.boost_on()
 	var c := sz * 0.5 + Vector2(0, -6)
-	Art.fill(ci, Art.flame_pts(c, 15, 40, 7), Art.FIRE_BOOST if on else Art.FIRE2, 2.5)
-	Art.fill(ci, Art.flame_pts(c + Vector2(0, 7), 7, 18, 9), Color.WHITE if on else Art.FIRE, 0.0, Color(0, 0, 0, 0))
+	Sprites.at(ci, "board_boost_on" if on else "board_boost_off", c)
 	var at := Vector2(0, sz.y - 10)
 	ci.draw_string_outline(G.font_title, at, "×2", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, 6, Art.INK)
 	ci.draw_string(G.font_title, at, "×2", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, Color.WHITE)
@@ -1361,14 +1314,11 @@ func _paint_bubble_offer(ci: CanvasItem, sz: Vector2) -> void:
 	var tip_x := 60.0
 	if board != null and board.selected >= 0:
 		tip_x = clampf(board.cell_center(board.selected).x + BOARD_POS.x - _bubble_offer.position.x, 26, sz.x - 26)
-	var body := Art.rrect(card, 22, 204, 0.5)
-	var tail := PackedVector2Array([Vector2(tip_x - 15, OFFER_H - 4), Vector2(tip_x + 15, OFFER_H - 4), Vector2(tip_x + 2, OFFER_H + 16)])
-	ci.draw_colored_polygon(Art.rrect(Rect2(card.position + Vector2(0, 7), card.size), 22, 204, 0.0), Color(0, 0, 0, 0.25))
-	Art.dilate(ci, body, 3.0, Art.INK)
-	Art.dilate(ci, tail, 3.0, Art.INK)
-	ci.draw_colored_polygon(body, Art.BONE)
-	ci.draw_colored_polygon(tail, Art.BONE)
-	Art.dashed(ci, Art.rrect(card.grow(-7), 16, 205, 0.0), 9, 6, Color(0.65, 0.4, 0.2, 0.35), 2.0)
+	var tail := Rect2(tip_x - 15, OFFER_H - 4, 30, 20)
+	Sprites.draw(ci, "board_offer_under", card)
+	Sprites.draw(ci, "board_offer_tail_ink", tail)
+	Sprites.draw(ci, "board_offer_top", card)
+	Sprites.draw(ci, "board_offer_tail_fill", tail)
 	# 左边：泡泡里的物品
 	var c := Vector2(58, OFFER_H * 0.5)
 	ci.draw_circle(c, 44, Color(0.62, 0.88, 1.0, 0.35))
@@ -1463,11 +1413,7 @@ const HINT_INK := Color("6b4a2a")
 
 ## 图标底下的浅色圆角托盘，让每个图标都有同样大小的“格子”
 static func _hint_plate(ci: CanvasItem, c: Vector2, s: float, seed: int, hot: bool = false) -> void:
-	var r := Rect2(c - Vector2(s, s) * 0.5, Vector2(s, s))
-	var plate := Art.rrect(r, s * 0.24, 400 + seed, 0.4)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 3), r.size), s * 0.24, 400 + seed, 0.0), Color(0.42, 0.26, 0.12, 0.18))
-	ci.draw_colored_polygon(plate, Color("fff3d6") if hot else Color("f8ead0"))
-	Art.outline(ci, plate, 2.0, Color(0.55, 0.34, 0.16, 0.55 if not hot else 0.9))
+	Sprites.draw(ci, "board_plate_hot" if hot else "board_plate", Rect2(c - Vector2(s, s) * 0.5, Vector2(s, s)))
 
 ## 手绘的 + / = 号：白芯墨边，和标题字一个风格
 static func _hint_op(ci: CanvasItem, c: Vector2, op: String) -> void:

@@ -19,6 +19,8 @@ var _build_fx: Control
 const PASS_K := 0.8
 const RankPopupScript := preload("res://scripts/ui/RankPopup.gd")
 const TribeWalkersScript := preload("res://scripts/ui/TribeWalkers.gd")
+## 部落区域的界面图登记（这里只用它的尺寸常量）
+const TribeSprites := preload("res://scripts/sprites/tribe.gd")
 const CARD_YELLOW := Color("e7b45a")
 const CARD_YELLOW_L := Color("f2c66e")
 
@@ -55,7 +57,7 @@ func _ready() -> void:
 	# 排行榜：齿轮下面一枚奖杯
 	var rank := UI.btn(self, Rect2(626, 246, 80, 80), "", "teal", func(): RankPopupScript.open())
 	rank.is_round = true
-	rank.extra = func(ci, sz): _paint_trophy(ci, sz * 0.5)
+	rank.extra = func(ci, sz): Sprites.draw(ci, "tribe_trophy", Rect2(sz * 0.5 + TribeSprites.TROPHY_BOX.position, TribeSprites.TROPHY_BOX.size))
 	UI.lbl(self, "排行", Rect2(616, 322, 100, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 
 	var build := UI.btn(self, Rect2(16, 1316, 124, 128), "", "wood", _open_next_build)
@@ -80,55 +82,13 @@ func _ready() -> void:
 
 	G.changed.connect(_build_spots)
 
-## 排行榜按钮上的石杯奖杯
-func _paint_trophy(ci: CanvasItem, c: Vector2) -> void:
-	var cup := Art.poly([c + Vector2(-17, -18), c + Vector2(17, -18), c + Vector2(14, -2), c + Vector2(6, 6), c + Vector2(-6, 6), c + Vector2(-14, -2)], 61, 0.4)
-	for sx in [-1.0, 1.0]:
-		var ear := Art.ell(c + Vector2(19 * sx, -10), Vector2(7, 7), 62 + int(sx), 0.02, 12)
-		Art.dilate(ci, ear, 2.4, Art.INK)
-		ci.draw_colored_polygon(ear, Art.AMBER)
-	var stem := Art.poly([c + Vector2(-4, 5), c + Vector2(4, 5), c + Vector2(5, 13), c + Vector2(-5, 13)], 63, 0.2)
-	var base := Art.rrect(Rect2(c + Vector2(-14, 12), Vector2(28, 9)), 3, 64, 0.3)
-	for part in [stem, base]:
-		Art.dilate(ci, part, 2.4, Art.INK)
-		ci.draw_colored_polygon(part, Art.WOOD)
-	Art.dilate(ci, cup, 2.6, Art.INK)
-	ci.draw_colored_polygon(cup, Art.FIRE2)
-	ci.draw_colored_polygon(Art.poly([c + Vector2(-12, -15), c + Vector2(-5, -15), c + Vector2(-8, -3)], 65, 0.2), Color(1, 1, 1, 0.45))
-
 ## 通行证按钮：青色兽皮卡上一枚琥珀勋章（带当前等级）、两条飘带，底部是到下一级的进度；买了通行证换金边。
+## 卡底是预生成的图（tribe_pass / tribe_pass_prem），这里只叠等级数字、进度、时钟和红点。
 func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
 	var prem := G.pass_tier > 0
+	Sprites.draw(ci, "tribe_pass_prem" if prem else "tribe_pass", Rect2(Vector2.ZERO, TribeSprites.PASS_SIZE))
 	var card := Rect2(10, 4, sz.x - 20, 92)
-	var body := Art.rrect(card, 18, 91, 0.9)
-	ci.draw_colored_polygon(Art.rrect(Rect2(card.position + Vector2(0, 5), card.size), 18, 91, 0.0), Color(0, 0, 0, 0.28))
-	if prem:
-		Art.dilate(ci, body, 7.0, Art.INK)
-		Art.dilate(ci, body, 4.4, Art.CLAY)
-		Art.dilate(ci, body, 1.4, Art.INK)
-	else:
-		Art.dilate(ci, body, 3.2, Art.INK)
-	ci.draw_colored_polygon(body, CARD_YELLOW)
-	var inner := Art.rrect(card.grow(-6), 13, 92, 0.6)
-	ci.draw_colored_polygon(inner, CARD_YELLOW_L)
-	ci.draw_colored_polygon(Art.rrect(Rect2(card.position + Vector2(10, 8), Vector2(card.size.x - 20, 14)), 7, 93, 0.3), Color(1, 1, 1, 0.16))
-	# 兽皮缝线
-	Art.dashed(ci, Art.rrect(card.grow(-11), 9, 94, 0.0), 6, 5, Color(0.55, 0.32, 0.1, 0.45), 1.8)
-	# 飘带
 	var mc := Vector2(sz.x * 0.5, 38)
-	for sx in [-1.0, 1.0]:
-		var rib := Art.poly([mc + Vector2(8 * sx, 8), mc + Vector2(30 * sx, 14), mc + Vector2(40 * sx, 30), mc + Vector2(30 * sx, 28), mc + Vector2(28 * sx, 38), mc + Vector2(12 * sx, 22)], 95 + int(sx), 0.5)
-		Art.dilate(ci, rib, 2.4, Art.INK)
-		ci.draw_colored_polygon(rib, Art.TEAL)
-		ci.draw_colored_polygon(Art.poly([mc + Vector2(14 * sx, 11), mc + Vector2(28 * sx, 16), mc + Vector2(34 * sx, 24), mc + Vector2(18 * sx, 18)], 97 + int(sx), 0.3), Color(1, 1, 1, 0.2))
-	# 勋章：齿边琥珀 + 骨白内圈
-	var outer := Art.star_pts(mc, 31, 26, 12, 98, -PI * 0.5)
-	Art.dilate(ci, outer, 2.8, Art.INK)
-	ci.draw_colored_polygon(outer, Art.BONE)
-	var disc := Art.ell(mc, Vector2(20, 20), 99, 0.02, 18)
-	Art.dilate(ci, disc, 2.2, Art.INK)
-	ci.draw_colored_polygon(disc, Art.CLAY if prem else Art.AMBER)
-	ci.draw_colored_polygon(Art.ell(mc + Vector2(-6, -7), Vector2(7, 4), 100, 0.0, 10, -0.5, 0.3), Color(1, 1, 1, 0.45))
 	var f := G.font_title
 	var lv := str(maxi(G.pass_reached(), 0) + 1)
 	var fs := 24 if lv.length() < 2 else 20
@@ -138,16 +98,10 @@ func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
 	ci.draw_string(f, tp, lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 	# 到下一级的进度
 	var bar := Rect2(card.position.x + 12, card.end.y - 20, card.size.x - 24, 11)
-	var bb := Art.rrect(bar, 5.5, 101, 0.2)
-	Art.dilate(ci, bb, 2.0, Art.INK)
-	ci.draw_colored_polygon(bb, Color(0.3, 0.17, 0.06, 0.85))
 	var fr := G.pass_frac()
 	if fr > 0.0:
-		ci.draw_colored_polygon(Art.rrect(Rect2(bar.position, Vector2(maxf(11.0, bar.size.x * fr), bar.size.y)), 5.5, 102, 0.2), Art.MOSS)
-		ci.draw_colored_polygon(Art.rrect(Rect2(bar.position + Vector2(3, 2), Vector2(maxf(5.0, bar.size.x * fr - 6.0), 3)), 1.5, 103, 0.0), Color(1, 1, 1, 0.35))
+		Sprites.draw(ci, "tribe_pass_fill", Rect2(bar.position, Vector2(maxf(11.0, bar.size.x * fr), bar.size.y)))
 	# 剩余时间小牌
-	var pill := Art.rrect(Rect2(14, 123, sz.x - 28, 22), 11, 104, 0.4)
-	ci.draw_colored_polygon(pill, Color(0.17, 0.09, 0.03, 0.72))
 	Paint.glyph(ci, "clock", Vector2(24, 134), 0.55, Color("ffe7a8"))
 	if G.pass_claimable():
 		var c := Vector2(sz.x - 14, 8)
@@ -188,11 +142,7 @@ func _paint_tag(ci: CanvasItem, sz: Vector2, id: String) -> void:
 	var open := G.build_open(id)
 	var done := st >= total
 	var seed := absi(id.hash()) % 90
-	var r := Rect2(6, 6, sz.x - 12, sz.y - 12)
-	var plank := Art.rrect(r, 10, seed, 0.8)
-	Art.dilate(ci, plank, 3.0, Art.INK)
-	ci.draw_colored_polygon(plank, Art.WOOD if open else Color("8c8476"))
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(5, 3), Vector2(r.size.x - 10, 6)), 3, seed + 1, 0.3), Color(1, 1, 1, 0.22))
+	Sprites.draw(ci, TribeSprites.tag_key(id, open), Rect2(Vector2.ZERO, TribeSprites.TAG_SIZE))
 	var ic := Vector2(28, sz.y * 0.5)
 	if not open:
 		Paint.glyph(ci, "lock", ic, 0.9)
@@ -208,10 +158,9 @@ func _paint_tag(ci: CanvasItem, sz: Vector2, id: String) -> void:
 	ci.draw_string(f, tp, name, HORIZONTAL_ALIGNMENT_LEFT, sz.x - 56, fs, Color.WHITE)
 	if open:
 		var bar := Rect2(48, 33, sz.x - 62, 9)
-		ci.draw_colored_polygon(Art.rrect(bar, 4.5, seed + 2, 0.2), Color(0.2, 0.1, 0.03, 0.55))
 		if st > 0:
 			var fill := Rect2(bar.position, Vector2(maxf(9.0, bar.size.x * float(st) / float(maxi(total, 1))), bar.size.y))
-			ci.draw_colored_polygon(Art.rrect(fill, 4.5, seed + 3, 0.2), Art.MOSS if not done else Art.OCHRE)
+			Sprites.draw(ci, "tribe_tag_fill", fill, Art.MOSS if not done else Art.OCHRE)
 	else:
 		var t := "Lv.%d 开放" % Data.build_unlock(b)
 		ci.draw_string_outline(G.font_body, Vector2(48, 44), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Art.INK)
@@ -303,11 +252,8 @@ func _paint_build(ci: CanvasItem, at: Vector2, kind: String, h: float, t: float)
 	if t < 1.05:
 		# 施工中：半透明剪影一点点长高，锤子敲三下
 		var grow := clampf(t / 1.0, 0.0, 1.0)
-		TribeArt.flat = Color(1, 0.97, 0.88, 0.4 + 0.15 * sin(t * 30.0))
-		TribeArt.part(ci, kind, at, TribeArt.VS, Vector2(1.0, 0.15 + 0.55 * grow))
-		TribeArt.flat = Color(0, 0, 0, 0)
-		var dash := Art.ell(at, Vector2(36, 13), 5, 0.0, 18, 0.0, 0.0)
-		Art.dashed(ci, dash, 7, 6, Color(1, 1, 1, 0.9), 2.5)
+		TribeArt.part(ci, kind, at, TribeArt.VS, Vector2(1.0, 0.15 + 0.55 * grow), "_flat", Color(1, 0.97, 0.88, 0.4 + 0.15 * sin(t * 30.0)))
+		Sprites.draw(ci, "tribe_build_ring", Rect2(at - Vector2(40, 17), Vector2(80, 34)))
 		var swing := -1.2
 		if t >= 0.12:
 			var ph := fmod(t - 0.12, 0.3) / 0.3
@@ -335,7 +281,7 @@ func _paint_build(ci: CanvasItem, at: Vector2, kind: String, h: float, t: float)
 			var d := 30.0 + u * (90.0 + Art.srnd(k) * 50.0)
 			var p := c + Vector2(cos(a), sin(a) * 0.8) * d + Vector2(0, u * u * 40.0)
 			var r := 9.0 * (1.0 - u * 0.7)
-			ci.draw_colored_polygon(Art.star_pts(p, r, r * 0.42, 4, k), Color(1, 0.9 if k % 2 == 0 else 0.75, 0.4, 1.0 - u * u))
+			Sprites.at(ci, "tribe_star", p, r / TribeSprites.STAR_R, 0.0, Color(1, 0.9 if k % 2 == 0 else 0.75, 0.4, 1.0 - u * u))
 
 func _dust(ci: CanvasItem, at: Vector2, dt: float, n: int, seed: int) -> void:
 	if dt < 0.0 or dt > 0.6:
@@ -345,13 +291,12 @@ func _dust(ci: CanvasItem, at: Vector2, dt: float, n: int, seed: int) -> void:
 		var a := PI + PI * (float(k) + 0.5) / float(n) + (Art.srnd(seed + k) - 0.5) * 0.4
 		var p := at + Vector2(cos(a) * (20.0 + u * 60.0), sin(a) * (6.0 + u * 22.0) - u * 10.0 + 6.0)
 		var r := 10.0 + u * 12.0 + Art.srnd(seed + k * 3) * 6.0
-		ci.draw_colored_polygon(Art.ell(p, Vector2(r, r * 0.8), seed + k, 0.1, 12), Color(0.93, 0.85, 0.7, 0.75 * (1.0 - u)))
+		Sprites.at(ci, "tribe_dust", p, r / TribeSprites.DUST_R, 0.0, Color(0.93, 0.85, 0.7, 0.75 * (1.0 - u)))
 
 ## 锤子：pivot 是握把末端，ang 为 0 时锤头朝左敲在地基上
 func _hammer_at(ci: CanvasItem, pivot: Vector2, ang: float) -> void:
 	ci.draw_set_transform(pivot, ang, Vector2.ONE * 0.9)
-	Art.sil(ci, [Art.P(Art.capsule(Vector2(0, 0), Vector2(-46, 0), 5.0, 1), Art.WOOD, 1),
-		Art.P(Art.rrect(Rect2(-62, -17, 24, 34), 7, 2, 0.4), Art.STONE, 1)])
+	Sprites.draw(ci, "tribe_hammer", TribeSprites.HAMMER_BOX)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 # ---------------------------------------------------------------- 去合成

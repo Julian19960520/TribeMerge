@@ -41,7 +41,6 @@ const FISH := Color("6fb0c8")
 static var boil: int = 0
 ## 线条抖动倍率。生成图片时由配置里的幅度写入，平时为 1。
 static var wobble := 1.0
-static var force_live := false
 
 # ---------------------------------------------------------------- 随机与抖动
 
@@ -230,6 +229,7 @@ static func dashed(ci: CanvasItem, pts: PackedVector2Array, dash: float, gap: fl
 
 # ---------------------------------------------------------------- 物品图标
 
+## 游戏运行时画物品：只贴预生成的 PNG（见「物品绘制.md」），没有图就空着，绝不现场绘制。
 static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool = true, rot: float = 0.0) -> void:
 	if id == "":
 		return
@@ -242,6 +242,12 @@ static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool 
 		ci.draw_set_transform(c, rot, Vector2.ONE)
 		ci.draw_texture_rect(MergeEvent.texture(str(ChoiceChest.definition(id).get("icon", "res://assets/ui/choice_chest.svg"))), Rect2(-size / 2, -size / 2, size, size), false)
 		ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+		return
+	Items.blit(ci, id, c, size, rim, rot)
+
+## 用原始绘制代码现场画物品。只给生成 PNG 的工具和开发预览用，游戏里不要调用。
+static func draw_item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool = true, rot: float = 0.0) -> void:
+	if id == "":
 		return
 	if Data.is_dish(id):
 		_paint_dish(ci, id, c, size, rim, rot)
@@ -256,9 +262,6 @@ static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool 
 		ci.draw_set_transform(c, rot, Vector2.ONE * (size / 100.0))
 		_emberpot(ci, 41, rim)
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		return
-	if not force_live:
-		Items.blit(ci, id, c, size, rim, rot)
 		return
 	var ch := id.get_slice("_", 0)
 	var lv := int(id.get_slice("_", 1))
@@ -561,7 +564,7 @@ static func _amber_bug(ci: CanvasItem, c: Vector2, sz: float, a: float, s: int) 
 const SAND_GLASS := Color("e3f3f1")
 const SAND_FILL := Color("f2c35a")
 
-## 火种罐（体力生产器）：鼓肚陶罐，腰上一圈草绳，罐口冒火苗、飞火星。现场绘制，跟着 boil 抖动。
+## 火种罐（体力生产器）：鼓肚陶罐，腰上一圈草绳，罐口冒火苗、飞火星。生成 PNG 时按 boil 相位画出各帧。
 static func _emberpot(ci: CanvasItem, s: int, rim: bool) -> void:
 	ci.draw_colored_polygon(ell(Vector2(0, 44), Vector2(32, 6), 1, 0.0, 14, 0.0, 0.0), Color(0.2, 0.1, 0.0, 0.18))
 	var body := poly([Vector2(-20, -16), Vector2(-34, 0), Vector2(-36, 18), Vector2(-26, 38), Vector2(26, 38),

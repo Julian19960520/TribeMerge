@@ -119,11 +119,27 @@ func run() -> void:
 	main.close_all()
 
 	# 存档往返
-	var d: Dictionary = g.to_dict() if g.has_method("to_dict") else {}
+	var d: Dictionary = g.save_dict()
 	if not d.is_empty():
 		check(bool(d.get("boost", false)), "boost saved")
 
 	bs._on_boost()
 	check(not g.boost_on() and g.gen_cost() == 1, "toggle back off")
+	# GM 按钮：低等级也能解锁
+	g.level = 3
+	g.boost_gm = false
+	g.changed.emit()
+	check(not bs._boost_btn.visible and not g.boost_open(), "Lv3: toggle hidden")
+	var gm_btn = bs.get_node("gm_activities")
+	gm_btn.pressed.emit()
+	await create_timer(0.3).timeout
+	check(g.boost_gm and g.boost_open() and bs._boost_btn.visible, "GM button unlocks boost at Lv3")
+	bs._on_boost()
+	check(g.boost_on() and g.gen_cost() == 2, "Lv3 after GM: boost can be turned on")
+	var d2: Dictionary = g.save_dict()
+	if not d2.is_empty():
+		check(bool(d2.get("boost_gm", false)), "GM unlock saved")
+	main.close_all()
+	await _shot("gm_lv3")
 	print("DONE failures=%d" % failures)
 	quit(1 if failures > 0 else 0)

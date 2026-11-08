@@ -18,13 +18,14 @@ const VSTEPS := 26
 const CLOTH := Color("e6cfa2")
 const CLOTH_D := Color("d2b684")
 const CLOTH_L := Color("f1dfb8")
+## 皮章图相对中心的内容框（同 scripts/sprites/tribe.gd 的 BADGE_BOX）
+const BADGE_BOX := Rect2(-124, -120, 250, 250)
 
 var _t := -1.0
 var _swap := Callable()
 var _swapped := false
 var _icon := ""
 var _label := ""
-var _seed := 0
 
 func _init() -> void:
 	size = Vector2(W, H)
@@ -40,7 +41,6 @@ func play(to: String, swap: Callable) -> void:
 	_swap = swap
 	_swapped = false
 	_t = 0.0
-	_seed = randi() % 1000
 	if to == "board":
 		_icon = "basket_6"
 		_label = "去合成"
@@ -224,16 +224,10 @@ func _tie(st: Dictionary, mirror: bool) -> void:
 	draw_line(wall, wall.lerp(at, a), Art.ROPE, 7.0, true)
 	draw_line(wall, wall.lerp(at, a), Color(Art.INK, 0.5), 2.0, true)
 
-## 顶上的木杆，帘子挂在上面
+## 顶上的木杆，帘子挂在上面（预生成的图 tribe_wipe_pole）
 func _pole(presence: float) -> void:
 	var y := lerpf(-60.0, 10.0, presence)
-	var r := Rect2(-20, y, W + 40, 30)
-	Art.fill(self, Art.rrect(r, 14, 31, 0.6), Art.WOOD, 4.0)
-	draw_line(Vector2(-20, y + 9), Vector2(W + 20, y + 9), Color(1, 0.9, 0.7, 0.35), 4.0)
-	for x in [70.0, MID, W - 70.0]:
-		for k in 3:
-			var xx: float = x - 8.0 + float(k) * 8.0
-			draw_line(Vector2(xx - 3, y - 2), Vector2(xx + 3, y + 32), Art.ROPE, 4.0, true)
+	Sprites.draw(self, "tribe_wipe_pole", Rect2(-20, y, W + 40, 30))
 
 func _draw() -> void:
 	if _t < 0.0:
@@ -267,14 +261,8 @@ func _draw_badge() -> void:
 	var ctr := Vector2(MID, H * 0.5 - 40)
 	var wob := sin(_t * 4.0) * 0.03
 	draw_set_transform(ctr, wob, Vector2(s, s))
-	draw_colored_polygon(Art.ell(Vector2(4, 12), Vector2(116, 110), 7, 0.0, 28), Color(0, 0, 0, 0.28))
-	Art.fill(self, Art.ell(Vector2.ZERO, Vector2(112, 108), _seed, 0.05, 28), Art.LEATHER, 4.0)
-	# 皮章边上的一圈针脚
-	var ring := Art.ell(Vector2.ZERO, Vector2(96, 92), _seed + 1, 0.02, 40)
-	for k in ring.size():
-		if k % 2 == 0:
-			draw_line(ring[k], ring[(k + 1) % ring.size()], Art.ROPE, 4.0, true)
-	Art.fill(self, Art.ell(Vector2.ZERO, Vector2(80, 78), _seed + 2, 0.03, 28), Art.BONE, 3.0)
+	# 皮章（投影、皮面、针脚、骨白内圈）是预生成的图
+	Sprites.draw(self, "tribe_wipe_badge", BADGE_BOX)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	# Art.item 自己会设变换，所以按屏幕坐标画、用尺寸做缩放
 	Art.item(self, _icon, ctr + Vector2(0, -4) * s, 112.0 * s)

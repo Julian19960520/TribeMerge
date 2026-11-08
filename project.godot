@@ -20,6 +20,7 @@ boot_splash/bg_color=Color(0.231, 0.137, 0.078, 1)
 G="*res://scripts/Game.gd"
 Sfx="*res://scripts/Sfx.gd"
 Items="*res://scripts/ItemAnim.gd"
+Sprites="*res://scripts/Sprites.gd"
 Rank="*res://scripts/net/Rank.gd"
 Cloud="*res://scripts/net/Cloud.gd"
 

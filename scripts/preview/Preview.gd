@@ -20,6 +20,14 @@ func _ready() -> void:
 	var win := get_window()
 	win.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	win.size = Vector2i(W, H)
+	## 屏幕放不下 1640×1000 时整体等比缩小，否则右边的概率表会被裁掉
+	var usable := DisplayServer.screen_get_usable_rect(win.current_screen).size
+	var fit := minf(float(usable.x - 16) / float(W), float(usable.y - 48) / float(H))
+	if fit < 1.0 and not OS.get_cmdline_user_args().has("--prod-shots"):
+		win.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+		win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+		win.content_scale_size = Vector2i(W, H)
+		win.size = Vector2i(int(float(W) * fit), int(float(H) * fit))
 	win.move_to_center()
 	win.title = "产线设计预览"
 	size = Vector2(W, H)
@@ -88,13 +96,16 @@ func _draw() -> void:
 	var ng: int = (l["G"] as Array).size()
 	var nm: int = (l["M"] as Array).size()
 	var ns: int = (l["S"] as Array).size()
-	_txt("%s线 · 生产器「%s」" % [l["name"], l["gen"]], Vector2(22, 100), 30, Color("ffd23f"), true)
+	var title := "%s线 · 生产器「%s」" % [l["name"], l["gen"]]
+	_txt(title, Vector2(22, 100), 30, Color("ffd23f"), true)
+	## 副标题紧跟在标题后面，标题长时自动右移，不压字
+	var sub_x: float = maxf(400.0, 22.0 + G.font_title.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 30).x + 24.0)
 	var idle_n := int(l["idle"])
 	var gen_hint := "生产器 %d 级" % ng
 	if idle_n > 0:
 		gen_hint += "（1-%d 级不可生产）" % idle_n
 	_txt("%s   主产物「%s」%d 级   副产物「%s」%d 级" % [gen_hint, l["main_name"], nm, l["sub_name"], ns],
-		Vector2(400, 98), 18, Color("fff1c4"))
+		Vector2(sub_x, 98), 18, Color("fff1c4"))
 
 	var click_hint := "合成升级，每一级都能点击生产"
 	if idle_n > 0:

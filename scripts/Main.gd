@@ -1,6 +1,7 @@
 extends Control
 
 const BakeItemsScript := preload("res://scripts/BakeItems.gd")
+const BakeSpritesScript := preload("res://scripts/BakeSprites.gd")
 const PassPopupScript := preload("res://scripts/ui/PassPopup.gd")
 const CfgEditScript := preload("res://scripts/ui/CfgEdit.gd")
 const GuideScript := preload("res://scripts/ui/Guide.gd")
@@ -27,10 +28,10 @@ func _ready() -> void:
 	G.main = self
 	size = Vector2(720, 1480)
 	clip_contents = true
-	for a in OS.get_cmdline_user_args():
-		if a == "--bake-items":
-			BakeItemsScript.new().start(self)
-			return
+	var bake_args := OS.get_cmdline_user_args()
+	if bake_args.has("--bake-items") or bake_args.has("--bake-sprites"):
+		_bake(bake_args)
+		return
 	home = HomeScreen.new()
 	add_child(home)
 	board_screen = BoardScreen.new()
@@ -402,4 +403,16 @@ func _run_shots(names: PackedStringArray) -> void:
 		await RenderingServer.frame_post_draw
 		var img := get_viewport().get_texture().get_image()
 		img.save_png(dir.path_join(n.replace(":", "_") + ".png"))
+	get_tree().quit()
+
+## 「生成物品图.bat」：物品图和界面图都从原始绘制代码画成 PNG，画完退出。
+func _bake(args: PackedStringArray) -> void:
+	var only := false
+	for a in args:
+		only = only or a.begins_with("--only=")
+	# 带 --only= 时只重画那几张界面图，物品图不动
+	if args.has("--bake-items") and not only:
+		await BakeItemsScript.new().start(self)
+	if args.has("--bake-sprites"):
+		await BakeSpritesScript.new().start(self, int(BakeItemsScript._cfg()["frames"]))
 	get_tree().quit()

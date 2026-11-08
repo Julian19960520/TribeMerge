@@ -113,7 +113,5 @@ func _currency() -> void:
 		for lv in range(1, 7):
 			var id := "%s_%d" % [rows[r], lv]
 			var c := Vector2(150 + (lv - 1) * 250, 130 + r * 240)
-			Art.force_live = true
-			Art.item(self, id, c, 150)
-			Art.force_live = false
+			Art.draw_item(self, id, c, 150)
 			draw_string(G.font_body, c + Vector2(-110, 106), "%s  Lv.%d  得 %d" % [Data.name_of(id), lv, Data.value_of(id)], HORIZONTAL_ALIGNMENT_CENTER, 220, 20, Art.INK)

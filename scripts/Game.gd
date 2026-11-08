@@ -50,6 +50,8 @@ var rush := 0
 var energy_stamp := 0.0
 ## 双倍火种模式开关（Data.BOOST_LEVEL 级解锁）
 var boost := false
+## GM 按钮提前解锁了双倍火种（不看等级）
+var boost_gm := false
 var board: Array = []
 ## 最近一次合成解开的巨石格子，给崩坏动画用
 var opened: Array = []
@@ -369,6 +371,7 @@ func new_game() -> void:
 	rush = 0
 	energy_stamp = now()
 	boost = false
+	boost_gm = false
 	inv = []
 	inv_cap = int(Data.RULES.get("storage_initial", 5))
 	discovered = {}
@@ -452,7 +455,7 @@ func save_game() -> void:
 ## 整份存档。本地存档和云存档快照都用它。
 func save_dict() -> Dictionary:
 	return {
-		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "offers": offers, "local_race": local_race, "duel_race": duel_race, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "boost": boost, "shells": shells, "amber": amber, "rush": rush,
+		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "offers": offers, "local_race": local_race, "duel_race": duel_race, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "boost": boost, "boost_gm": boost_gm, "shells": shells, "amber": amber, "rush": rush,
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
 		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "story_done": story_done, "pending_orders": pending_orders, "builds": builds, "cards": cards,
 		"stash": stash, "tokens": tokens, "token_claimed": token_claimed, "settings": settings, "hot_bought": hot_bought, "hot_revision": hot_revision,
@@ -487,6 +490,7 @@ func load_game() -> bool:
 	rush = int(d.get("rush", 0))
 	energy_stamp = float(d["energy_stamp"])
 	boost = bool(d.get("boost", false))
+	boost_gm = bool(d.get("boost_gm", false))
 	board = d["board"]
 	for c in board:
 		c["lock"] = int(c["lock"])
@@ -1050,14 +1054,18 @@ func gen_wait(i: int) -> int:
 
 ## 双倍火种是否生效（开着且等级够）
 func boost_on() -> bool:
-	return boost and level >= Data.BOOST_LEVEL
+	return boost and boost_open()
+
+## 双倍火种开关是否已解锁：到 Data.BOOST_LEVEL 级，或被 GM 按钮解锁
+func boost_open() -> bool:
+	return boost_gm or level >= Data.BOOST_LEVEL
 
 ## 点一次（耗火种的）生产器要花多少火种
 func gen_cost() -> int:
 	return 2 if boost_on() else 1
 
 func set_boost(on: bool) -> void:
-	boost = on and level >= Data.BOOST_LEVEL
+	boost = on and boost_open()
 	dirty()
 	changed.emit()
 	board_changed.emit()

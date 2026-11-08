@@ -13,9 +13,7 @@ func _draw() -> void:
 	var prev_b := Art.boil
 	Art.wobble = amp
 	Art.boil = phase
-	Art.force_live = true
-	Art.item(self, item_id, Vector2(px, px) * 0.5, bake_size, rim)
-	Art.force_live = false
+	Art.draw_item(self, item_id, Vector2(px, px) * 0.5, bake_size, rim)
 	Art.wobble = prev_w
 	Art.boil = prev_b
 
@@ -92,7 +90,9 @@ func start(host: Node) -> void:
 	out.store_string(JSON.stringify(anim, "\t"))
 	out.close()
 	print("BAKED %d items, %d frames, amplitude %.2f" % [ok_ids.size(), nframes, amplitude])
-	host.get_tree().quit()
+	panel.queue_free()
+	label.queue_free()
+	vp.queue_free()
 
 static func _cfg() -> Dictionary:
 	var path := "res://assets/items/bake.json"
@@ -129,6 +129,8 @@ static func _ids() -> Array[String]:
 	for ch in Data.CHAINS:
 		for i in Data.CHAINS[ch]["items"].size():
 			out.append("%s_%d" % [ch, i + 1])
+	for id in Data.DISHES:
+		out.append(str(id))
 	return out
 
 static func _empty_dir(dir: String) -> void:
