@@ -48,6 +48,7 @@ var _base_btn: TButton
 var _hammer_btn: TButton
 var _pouch: TButton
 var _race_entry: Control
+var _tiger_entry: Control
 var _duel_entry: Control
 var _seven_entry: Control
 var _merge_event_entry: Control
@@ -106,6 +107,10 @@ func _ready() -> void:
 	_duel_entry.position = BASE_RECT.position
 	_duel_entry.size = Vector2(EVENT_W, BASE_RECT.size.y)
 	_orders.content.add_child(_duel_entry)
+	_tiger_entry = preload("res://scripts/ui/TigerEscapeEntry.gd").new()
+	_tiger_entry.position = BASE_RECT.position
+	_tiger_entry.size = Vector2(EVENT_W, BASE_RECT.size.y)
+	_orders.content.add_child(_tiger_entry)
 	_base_btn = UI.hit(_orders.content, BASE_RECT, func(): G.main.open("level"))
 	_base_btn.extra = _paint_hero
 	_lv_lbl = UI.lbl(_base_btn, "", Rect2(0, 140, BASE_RECT.size.x, 30), 18, Art.INK)
@@ -639,9 +644,9 @@ func _tribe_ready() -> bool:
 	var id := G.next_build_id()
 	return id != "" and G.shells >= G.build_cost(id)
 
-## 活动入口只显示已解锁的，顺序：香蕉竞速、月石遗迹、七日任务、双人竞速
+## 活动入口只显示已解锁的，顺序：香蕉竞速、月石遗迹、七日任务、双人竞速、剑齿虎逃生
 func _entries_shown() -> Array:
-	return [_race_entry.race.unlocked(), MergeEvent.available(MergeEvent.current()), true, DuelRace.unlocked()]
+	return [_race_entry.race.unlocked(), MergeEvent.available(MergeEvent.current()), true, DuelRace.unlocked(), TigerEscape.unlocked()]
 
 func _entries_w() -> float:
 	var shown := _entries_shown()
@@ -670,7 +675,7 @@ func _apply_row(animate: bool) -> void:
 	var hammer := _tribe_ready()
 	var shown := _entries_shown()
 	_shown_was = shown
-	var entries := [_race_entry, _merge_event_entry, _seven_entry, _duel_entry]
+	var entries := [_race_entry, _merge_event_entry, _seven_entry, _duel_entry, _tiger_entry]
 	var xs := []
 	var cx: float = BASE_RECT.position.x if open else STASH_RECT.position.x
 	for i in entries.size():
@@ -681,6 +686,7 @@ func _apply_row(animate: bool) -> void:
 	var event_x: float = xs[1]
 	var seven_x: float = xs[2]
 	var duel_x: float = xs[3]
+	var tiger_x: float = xs[4]
 	var base_x := cx
 	var hammer_x := base_x + BASE_RECT.size.x + ROW_GAP
 	var cards_x := _cards_x()
@@ -697,6 +703,7 @@ func _apply_row(animate: bool) -> void:
 		_merge_event_entry.position.x = event_x
 		_seven_entry.position.x = seven_x
 		_duel_entry.position.x = duel_x
+		_tiger_entry.position.x = tiger_x
 		_base_btn.position.x = base_x
 		_hammer_btn.visible = hammer
 		_hammer_btn.scale = Vector2.ONE
@@ -724,6 +731,7 @@ func _apply_row(animate: bool) -> void:
 	if hammer != hammer_was:
 		var hammer_dur := 0.22 if hammer else 0.16
 		_row_tween.tween_property(_hammer_btn, "scale", Vector2.ONE if hammer else Vector2.ZERO, hammer_dur).set_trans(Tween.TRANS_BACK if hammer else Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT if hammer else Tween.EASE_IN)
+	_row_tween.tween_property(_tiger_entry, "position:x", tiger_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_duel_entry, "position:x", duel_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_seven_entry, "position:x", seven_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_row_tween.tween_property(_merge_event_entry, "position:x", event_x, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)

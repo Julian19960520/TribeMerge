@@ -23,7 +23,7 @@ import time
 from .gamedata import CURRENCY, GameData
 
 SERVER_FIELDS = [
-    "duel_race",
+    "duel_race", "tiger_escape",
     "ufo_offer", "offers", "gm_activities", "seven_day", "merge_events", "amber", "shells", "level", "xp", "energy_buys", "deals_day", "hot_bought", "deals_bought", "inv_cap",
     "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season",
     "tokens", "token_claimed", "builds", "cards", "book_claimed", "shell_bought", "shell_period", "hot_revision",
@@ -81,7 +81,7 @@ class Economy:
     def adopt(self, st: dict, snap: dict) -> None:
         """账号的第一份快照（老存档第一次连上服务器）：服务器字段信一次客户端，额度按快照里的物品算。之后就以服务器为准。"""
         for k in SERVER_FIELDS:
-            if k in snap and k not in ("duel_race", "merge_events", "seven_day", "ufo_offer", "offers", "gm_activities"):
+            if k in snap and k not in ("duel_race", "tiger_escape", "merge_events", "seven_day", "ufo_offer", "offers", "gm_activities"):
                 st[k] = snap[k]
         st["amber"] = max(0, num(st.get("amber")))
         st["shells"] = max(0, num(st.get("shells")))
@@ -105,6 +105,8 @@ class Economy:
         return {k: st.get(k) for k in SERVER_FIELDS}
 
     def ensure_day(self, st: dict) -> None:
+        from . import tiger_escape
+        tiger_escape.tick(self, st)
         from . import seven_day
         seven_day.login(self, st)
         d = self.day()
@@ -649,6 +651,8 @@ class Economy:
             # Main board moves are client simulated. Never discard rapid legitimate
             # merges just because their next snapshot has not arrived yet.
             seven_day.record(self, st, "merges", 1)
+            from . import tiger_escape
+            tiger_escape.on_merge(self, st)
             roll = int(hashlib.sha256(str(ev["id"]).encode()).hexdigest()[:8], 16) / 4294967296
             if 0 <= num(ev.get("cell"), -1) < int(self.gd.rules.get("cols", 7)) * int(self.gd.rules.get("rows", 9)):
                 resource = self.gd.resource_drop("main", roll, num(st.get("level"), 1), iid)

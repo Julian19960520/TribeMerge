@@ -21,7 +21,7 @@ def _load(path: Path, default):
 
 class GameData:
     FILES = ["chains", "lines", "dishes", "store", "rules", "story", "levels", "pass", "builds", "albums",
-             "board", "amber_packs", "people", "store_shell", "merge_events", "choice_chests", "seven_day", "daily_deals", "ufo_offer", "duel_race", "offers"]
+             "board", "amber_packs", "people", "store_shell", "merge_events", "choice_chests", "seven_day", "daily_deals", "ufo_offer", "duel_race", "offers", "tiger_escape"]
 
     def __init__(self, data_dir: str):
         self.dir = Path(data_dir)
@@ -77,6 +77,7 @@ class GameData:
             self.ufo_offer = g("ufo_offer", {})
             self.offers = g("offers", {})
             self.duel_race = g("duel_race", {})
+            self.tiger_escape = g("tiger_escape", {})
             self.choice_chests = g("choice_chests", {})
             self._stamp = stamp
 

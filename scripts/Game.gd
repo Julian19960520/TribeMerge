@@ -33,6 +33,7 @@ var ufo_receipts: Array = []
 var offers: Dictionary = {}
 var local_race: Dictionary = {}
 var duel_race: Dictionary = {}
+var tiger_escape: Dictionary = {}
 var gm_activities := false
 var seven_day: Dictionary = {}
 signal seven_day_changed
@@ -162,6 +163,7 @@ func _process(delta: float) -> void:
 		_regen_t = 0.0
 		_check_day()
 		_tick_bubbles()
+		TigerEscape.tick()
 		_regen()
 	if _save_t >= 0.0:
 		_save_t -= delta
@@ -250,6 +252,8 @@ func set_server_field(k: String, v) -> void:
 			gm_activities = bool(v)
 		"seven_day":
 			seven_day = Data.ConfigFiles.ints(v) if v is Dictionary else {}
+		"tiger_escape":
+			tiger_escape = Data.ConfigFiles.ints(v) if v is Dictionary else {}
 		"duel_race":
 			duel_race = v.duplicate(true) if v is Dictionary else {}
 		"merge_events":
@@ -384,6 +388,7 @@ func new_game() -> void:
 	offers = {}
 	local_race = {}
 	duel_race = {}
+	tiger_escape = {}
 	gm_activities = false
 	seven_day = {}
 	merge_events = {}
@@ -455,7 +460,7 @@ func save_game() -> void:
 ## 整份存档。本地存档和云存档快照都用它。
 func save_dict() -> Dictionary:
 	return {
-		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "offers": offers, "local_race": local_race, "duel_race": duel_race, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "boost": boost, "boost_gm": boost_gm, "shells": shells, "amber": amber, "rush": rush,
+		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "offers": offers, "local_race": local_race, "duel_race": duel_race, "tiger_escape": tiger_escape, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "boost": boost, "boost_gm": boost_gm, "shells": shells, "amber": amber, "rush": rush,
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
 		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "story_done": story_done, "pending_orders": pending_orders, "builds": builds, "cards": cards,
 		"stash": stash, "tokens": tokens, "token_claimed": token_claimed, "settings": settings, "hot_bought": hot_bought, "hot_revision": hot_revision,
@@ -478,6 +483,7 @@ func load_game() -> bool:
 	ufo_receipts = d.get("ufo_receipts", []) if d.get("ufo_receipts", []) is Array else []
 	offers = d.get("offers", {}) if d.get("offers", {}) is Dictionary else {}
 	duel_race = d.get("duel_race", {}) if d.get("duel_race", {}) is Dictionary else {}
+	tiger_escape = Data.ConfigFiles.ints(d.get("tiger_escape", {})) if d.get("tiger_escape", {}) is Dictionary else {}
 	local_race = d.get("local_race", {}) if d.get("local_race", {}) is Dictionary else {}
 	gm_activities = bool(d.get("gm_activities", false))
 	seven_day = Data.ConfigFiles.ints(d.get("seven_day", {})) if d.get("seven_day", {}) is Dictionary else {}
@@ -965,6 +971,7 @@ func try_drop(a: int, b: int) -> String:
 	MergeGrid.apply_drop(board, a, b, result, Data.next_id)
 	if result == "merge":
 		SevenDay.record("merges", 1)
+		TigerEscape.on_merge()
 		var nx := str(board[b]["id"])
 		board[a].erase("gm")
 		board[b].erase("gm")

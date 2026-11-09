@@ -616,3 +616,11 @@ from .schemas import DuelActionReq
 def duel_action(req: DuelActionReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
     from . import duel_race
     return _action(request, auth, db, "duel." + req.action, lambda e, st: duel_race.action(e, st, req))
+
+
+from .schemas import TigerActionReq
+
+@router.post("/tiger/action", response_model=ActionResp)
+def tiger_action(req: TigerActionReq, request: Request, auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    from . import tiger_escape
+    return _action(request, auth, db, "tiger." + req.action, lambda e, st: tiger_escape.action(e, st, req))

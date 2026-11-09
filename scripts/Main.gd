@@ -140,6 +140,7 @@ func open(name: String, arg = null) -> PopupBase:
 			p = preload("res://scripts/ui/UfoPopup.gd").new()
 		"daily_ad":
 			p = preload("res://scripts/ui/DailyAdPopup.gd").new()
+		"tiger": p = preload("res://scripts/ui/TigerEscapePopup.gd").new()
 		"duel": p = preload("res://scripts/ui/DuelPopup.gd").new()
 		"seven_day":
 			p = preload("res://scripts/ui/SevenDayPopup.gd").new()

@@ -1,0 +1,18 @@
+{
+  "title": "逃离剑齿虎",
+  "unlock_level": 6,
+  "attack_interval_sec": 180,
+  "points_per_merge": 1,
+  "stages": [
+    {"points": 10, "rewards": [["fire_2", 15]]},
+    {"points": 15, "rewards": [["amber_2", 5], ["shell_2", 50]]},
+    {"points": 20, "rewards": [["fire_2", 20]]},
+    {"points": 25, "rewards": [["chest_1", 1], ["sand_2", 3]]},
+    {"points": 30, "rewards": [["fire_2", 30]]},
+    {"points": 35, "rewards": [["amber_2", 10], ["chest_1", 1]]},
+    {"points": 40, "rewards": [["fire_2", 40]]},
+    {"points": 45, "rewards": [["choice_1", 1], ["sand_2", 5]]},
+    {"points": 50, "rewards": [["fire_2", 50]]},
+    {"points": 60, "rewards": [["amber_2", 30], ["fire_2", 100], ["choice_1", 1]]}
+  ]
+}

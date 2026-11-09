@@ -181,3 +181,8 @@ class SevenDayClaimReq(Req):
 class DuelActionReq(Req):
     action: Literal["join", "refresh", "claim", "milestone"]
     milestone: int = Field(default=0, ge=0, le=12)
+
+
+class TigerActionReq(Req):
+    action: Literal["join", "restart", "refresh", "claim"]
+    node: int = Field(default=0, ge=0, le=100)
