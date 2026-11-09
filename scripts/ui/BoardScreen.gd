@@ -1022,7 +1022,7 @@ func _on_activate(i: int) -> void:
 			if not free and G.energy < cost:
 				if G.energy > 0:
 					G.main.toast("双倍火种每次要 %d 火种" % cost)
-				G.main.open("energy")
+				G.main.open("energy", "exhausted")
 				return
 			var to := _guide_spawn(i)
 			if to < 0:

@@ -2,7 +2,7 @@ class_name Offers
 extends Node
 ## 付费限时礼包（data/offers.json）：
 ## - spree「赶大集」：13 级起自动开一期（1 小时），开期时自动弹一次；每期限购 N 次；期满后冷却 20 小时。
-## - energy「火种大礼包」：体力用完点生产器、或点顶栏体力时开一期（10 分钟），三档各限购 1 次；期满后冷却 4 小时。
+## - energy「火种大礼包」：体力用完点生产器、或点顶栏体力关闭琥珀购买面板后开一期（60 分钟，16 级起），三档各限购 1 次；期满后冷却 4 小时。
 ## 状态在 G.offers：{kind: {"start", "end", "next_at", "bought": {档位: 次数}}}；赶大集这期弹没弹过记在 G.settings.spree_popped。
 ## 服务器模式：开期 POST /v1/offer/open，购买 POST /v1/offer/order → mock 支付回调到账（PayOrder kind = offer），
 ## 服务器按 server/app/offers.py 同一规则校验；单机（--cloud-off）按下面的本地规则，购买直接到账（演示）。
@@ -114,16 +114,15 @@ static func open_window(kind: String) -> bool:
 	G.save_game()
 	return true
 
-## 体力入口（体力用完点生产器、点顶栏体力）该不该先弹火种大礼包：这期还有没买完的，或者能开新一期
+## 体力入口（体力用完点生产器、点顶栏体力）关闭琥珀购买面板后能否弹火种大礼包：这期还有没买完的，或者能开新一期
 static func wants_energy() -> bool:
-	return (active("energy") and any_left("energy")) or can_open("energy")
+	return unlocked("energy") and ((active("energy") and any_left("energy")) or can_open("energy"))
 
-## 开火种大礼包（需要时先开期）；开不成就回到琥珀买体力。
+## 关闭琥珀购买面板后开火种礼包；开期失败时不重复弹回购买面板。
 static func open_energy() -> void:
 	if await open_window("energy") and any_left("energy") and is_instance_valid(G.main):
 		G.main.open("energy_offer")
 		return
-	if is_instance_valid(G.main): G.main.open("energy_amber")
 
 # ---------------------------------------------------------------- 购买
 

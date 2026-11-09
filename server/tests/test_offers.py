@@ -50,7 +50,7 @@ def test_spree_buy_limit_and_cooldown(player):
 
 
 def test_energy_tiers_and_stale_payment(player):
-    mutate(player, lambda st: st.update(level=13))
+    mutate(player, lambda st: st.update(level=16))
     player.post('/v1/offer/open', {'offer': 'energy'})
     o = player.post('/v1/offer/order', {'offer': 'energy', 'tier': 2}).json()
     paid = player.post('/v1/payments/mock/%s/pay' % o['order_id']).json()
@@ -68,3 +68,13 @@ def test_energy_tiers_and_stale_payment(player):
 
 def test_offers_cannot_be_uploaded(player):
     assert player.put(player.snapshot(offers={'spree': {'start': 0, 'end': 9e12, 'bought': {}}})).json()['state']['offers'] == {}
+
+
+def test_energy_offer_level_and_sixty_minute_window(player):
+    mutate(player, lambda st: st.update(level=15))
+    assert player.post('/v1/offer/open', {'offer': 'energy'}).json()['error'] == 'offer_locked'
+    mutate(player, lambda st: st.update(level=16))
+    response = player.post('/v1/offer/open', {'offer': 'energy'})
+    assert response.status_code == 200
+    window = response.json()['state']['offers']['energy']
+    assert window['end'] - window['start'] == 3600

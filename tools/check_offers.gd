@@ -120,13 +120,16 @@ func run() -> void:
 	check(offers.active("spree") and offers.left("spree", 0) == 5 and top_is("res://scripts/ui/SpreePopup.gd"), "new spree window resets limit and pops again")
 	await clear()
 
-	# ---- 火种大礼包：体力 0 点生产器 → 弹礼包（开 10 分钟）
+	# ---- 16级：先琥珀购买，关闭后礼包限时60分钟
+	g.level = 16
 	g.energy = 0
 	g.energy_stamp = g.now()
-	main.open("energy")
-	await create_timer(0.2).timeout
-	check(offers.active("energy") and offers.remaining("energy") == 600, "out of energy opens a 10 minute energy offer")
-	check(top_is("res://scripts/ui/EnergyOfferPopup.gd"), "energy offer popup shown instead of amber popup")
+	p = main.open("energy", "exhausted")
+	check(not offers.active("energy") and top_is("res://scripts/ui/PopupBase.gd"), "exhausted generator opens amber purchase first")
+	p.close()
+	await create_timer(0.3).timeout
+	check(offers.active("energy") and offers.remaining("energy") == 3600, "closing amber purchase opens sixty minute offer")
+	check(top_is("res://scripts/ui/EnergyOfferPopup.gd"), "cash offer follows closed amber popup")
 	p = top()
 	check(p.btns.size() == 3 and p.btns[0].text == "¥18" and p.btns[1].text == "¥30" and p.btns[2].text == "¥45", "three price cards ¥18 / ¥30 / ¥45")
 	check(p.find_child("energy_best", true, false) != null, "last card has best-value ribbon")
@@ -141,10 +144,10 @@ func run() -> void:
 	check(not p.btns[2].enabled and p.btns[2].text == "已购买" and p.btns[0].enabled, "bought tier disabled, others still buyable")
 	await shot("energy_bought")
 	await clear()
-	# 体力入口（顶栏「+」同一个 open("energy")）：还有没买的档位就还是礼包
+	# 顶栏体力始终打开琥珀购买，不抢先弹人民币礼包
 	main.open("energy")
 	await create_timer(0.2).timeout
-	check(top_is("res://scripts/ui/EnergyOfferPopup.gd"), "energy entry reopens offer while tiers remain")
+	check(top_is("res://scripts/ui/PopupBase.gd"), "top bar opens amber purchase even while offer is active")
 	await clear()
 	check((await offers.buy("energy", 0)).get("ok", false) and (await offers.buy("energy", 1)).get("ok", false), "tiers 1 and 2 buyable once")
 	check(not (await offers.buy("energy", 0)).get("ok", false), "tier cannot be bought twice")
@@ -153,11 +156,11 @@ func run() -> void:
 	check(top_is("res://scripts/ui/PopupBase.gd"), "all tiers bought: energy entry falls back to amber popup")
 	await clear()
 	# 期满 → 冷却 4 小时 → 再开
-	g.simulation_time += 601.0
+	g.simulation_time += 3601.0
 	check(not offers.active("energy") and not offers.wants_energy(), "energy offer expired, cooling down")
 	g.simulation_time += 14400.0
 	check(offers.wants_energy(), "energy offer available again after cooldown")
-	main.open("energy")
+	await offers.open_energy()
 	await create_timer(0.2).timeout
 	check(top_is("res://scripts/ui/EnergyOfferPopup.gd") and offers.left("energy", 2) == 1, "new energy window resets tier limits")
 	await clear()

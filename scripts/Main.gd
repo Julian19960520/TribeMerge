@@ -147,11 +147,12 @@ func open(name: String, arg = null) -> PopupBase:
 			p = preload("res://scripts/ui/MergeEventPopup.gd").new()
 			if arg is String: p.period_key = arg
 		"energy":
-			# 火种大礼包这期能买就先弹它（开期要问服务器，异步打开），否则琥珀买体力
-			if Offers.wants_energy():
-				Offers.open_energy()
-				return null
 			p = Popups.energy()
+			# 仅生产器体力不足触发后续礼包；购买成功补足体力则不打扰。
+			if arg == "exhausted":
+				p.closed.connect(func():
+					if is_instance_valid(G.main) and G.level >= 16 and G.energy < G.gen_cost() and Offers.wants_energy():
+						Offers.open_energy(), CONNECT_ONE_SHOT)
 		"energy_amber": p = Popups.energy()
 		"energy_offer": p = preload("res://scripts/ui/EnergyOfferPopup.gd").new()
 		"spree": p = preload("res://scripts/ui/SpreePopup.gd").new()
