@@ -642,6 +642,17 @@ class Economy:
 
     def apply_event(self, st: dict, ev: dict) -> dict:
         t = str(ev.get("type", ""))
+        at = ev.get("at")
+        if at is not None and at > self.now() + 120:
+            raise Reject("future_event", "操作时间晚于服务器时间", 400)
+        if t == "merge_board":
+            from . import merge_event
+            from .schemas import MergeEventReq
+            payload = ev.get("board_action")
+            if not payload or payload.get("action") == "claim" or at is None:
+                raise Reject("bad_event", "活动领奖必须由服务器单独确认", 400)
+            req = MergeEventReq.model_validate(payload)
+            return merge_event.action(self, st, req, replay_at=at, event_id=ev["id"])
         if t == "merge":
             import hashlib
             from . import seven_day
@@ -660,7 +671,7 @@ class Economy:
                     return out
             return {}
         if t == "order":
-            return self._ev_order(st, ev.get("order") if isinstance(ev.get("order"), dict) else {})
+            return self._ev_order(st, ev.get("order") if isinstance(ev.get("order"), dict) else {}, at=at)
         if t == "bubble":
             return self._ev_bubble(st, num(ev.get("cell"), -1))
         if t == "collect":
@@ -789,7 +800,7 @@ class Economy:
             st.setdefault("orders_used", []).append(fp)
         return ""
 
-    def _ev_order(self, st: dict, o: dict) -> dict:
+    def _ev_order(self, st: dict, o: dict, at=None) -> dict:
         key = self._check_order(st, o)
         if key:
             if st["done"].get(key):
@@ -799,7 +810,7 @@ class Economy:
         for iid in o.get("items") or []:
             self._seen_item(st, str(iid), credit=False, budget=False)
         from . import merge_event
-        merge_event.on_order(self, st, o)
+        merge_event.on_order(self, st, o, at=at)
         from . import duel_race
         duel_race.on_order(self, st, o)
         from . import tiger_escape

@@ -30,12 +30,17 @@ func _cloud() -> Node:
 	return get_node_or_null("/root/Cloud")
 
 func online() -> bool:
+	if Replay.active: return Replay.authorized
 	var c := _cloud()
 	return c != null and c.enabled and c.can_talk()
 
 # ---------------------------------------------------------------- 读
 
 func fetch() -> void:
+	if Replay.active:
+		_absorb(Replay.gift_view())
+		updated.emit()
+		return
 	if loading:
 		return
 	if not online():
@@ -108,6 +113,10 @@ static func _yuan(p: float) -> String:
 # ---------------------------------------------------------------- 领 / 买（返回 {"ok", "rewards"}；奖励由调用方播动画入账）
 
 func claim(i: int) -> Dictionary:
+	if Replay.active:
+		var result: Dictionary = Replay.perform("gift", {"step": i})
+		fetch()
+		return result
 	var s := step(i)
 	if s.is_empty() or is_paid(s):
 		return {"ok": false, "message": "这一步需要购买"}
@@ -120,6 +129,7 @@ func claim(i: int) -> Dictionary:
 	return _after(r, rw)
 
 func buy(i: int) -> Dictionary:
+	if Replay.active: return {"ok": false, "message": "购买需要联网验证，支付渠道尚未接通"}
 	var s := step(i)
 	if s.is_empty() or not is_paid(s):
 		return {"ok": false, "message": "这一步是免费的"}

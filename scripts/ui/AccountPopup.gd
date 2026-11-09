@@ -13,7 +13,7 @@ static func open() -> PopupBase:
 static func _build(p: PopupBase) -> void:
 	var r := R
 	Popups.frame(p, r, "账号与数据", Art.TEAL)
-	if not G.server_mode():
+	if not Cloud.enabled:
 		var offline := UI.lbl(p.box, "当前为本地试玩版\n进度自动保存在此浏览器\n云存档和换设备登录暂未开放", Rect2(72, 400, 576, 230), 28, Art.INK)
 		offline.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		return

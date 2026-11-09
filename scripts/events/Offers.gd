@@ -97,6 +97,7 @@ static func value(rewards: Array) -> float:
 
 ## 开一期。返回开没开成（已经在进行也算 true）。
 static func open_window(kind: String) -> bool:
+	if G.replay_input(): return bool((await Replay.perform("offer", {"kind": kind})).get("ok", false))
 	if active(kind): return true
 	if not can_open(kind) or busy: return false
 	if G.server_mode():
@@ -128,6 +129,7 @@ static func open_energy() -> void:
 
 ## 返回 {"ok", "rewards"} 或 {"ok": false, "message"}。成功时奖励已入账（调用方只播动画用 rewards 起点）。
 static func buy(kind: String, k: int, from: Callable = Callable()) -> Dictionary:
+	if Replay.active: return {"ok": false, "message": "购买需要联网验证，支付渠道尚未接通"}
 	if busy: return {"ok": false, "message": ""}
 	var t := tier(kind, k)
 	if t.is_empty(): return {"ok": false, "message": "没有这一档"}

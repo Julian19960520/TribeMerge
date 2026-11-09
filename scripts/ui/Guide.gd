@@ -169,6 +169,7 @@ func spawn_cell() -> int:
 	return -1
 
 func _on_world() -> void:
+	if Replay.active and Replay.executing: _on_world.call_deferred(); return
 	if _done:
 		return
 	if _step == "plain":
@@ -267,7 +268,7 @@ func _enter(step: String) -> void:
 		_raise_stash("basket_3")
 	if step == "byprod" or step == "submit_seed":
 		_ensure_seed_order()
-		if step == "byprod" and G.energy < 1:
+		if step == "byprod" and G.energy < 1 and not Replay.active:
 			G.energy = 5
 			G.changed.emit()
 	if step in ["submit1", "submit2", "submit_seed", "upgrade", "wait_pay", "take3", "byprod"]:
@@ -475,8 +476,11 @@ func _finish() -> void:
 		return
 	_done = true
 	_step = ""
-	G.seen_tutorial = true
-	G.tutorial_on = false
+	if Replay.active:
+		Replay.perform("tutorial_finish")
+	else:
+		G.seen_tutorial = true
+		G.tutorial_on = false
 	if G.main != null and G.main.board_screen != null:
 		G.main.board_screen.board.hide_drag = false
 	_ghost.visible = false
@@ -507,7 +511,7 @@ func _check_plain() -> void:
 	_finish()
 
 func _grant_normal_orders() -> void:
-	G.refill_orders()
+	if not Replay.active: G.refill_orders()
 
 func _place() -> void:
 	var bust_sz := Vector2(200, 292)
@@ -870,6 +874,7 @@ func _stash_has(id: String) -> bool:
 	return false
 
 func _raise_stash(id: String) -> void:
+	if Replay.active: return
 	var at := -1
 	for i in range(G.stash.size() - 1, -1, -1):
 		if str(G.stash[i]) == id:
@@ -892,6 +897,7 @@ func _seed_order_alive() -> bool:
 
 ## 引导最后一步的副产物订单。它是教学的一部分，不看速查表开没开草籽；声望算进 1 级要的 3 点里。
 func _ensure_seed_order() -> void:
+	if Replay.active: return
 	_gave_seed_order = true
 	if _seed_order_alive():
 		return

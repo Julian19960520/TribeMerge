@@ -27,6 +27,7 @@ static func start_ad() -> bool:
 static func cancel_ad() -> void:
 	ad_started = -1
 static func claim(key: String, origin := Vector2(360,740)) -> Dictionary:
+	if G.replay_input(): return await Replay.perform("daily", {"key": key})
 	if busy: return {"ok":false}
 	G._check_day()
 	var d := offer(key)

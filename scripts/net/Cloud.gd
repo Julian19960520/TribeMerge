@@ -9,7 +9,7 @@ extends Node
 ## 存档：本地照常存；关键事件后合并上传整份快照（PUT /v1/save，60 秒最多一次，切后台 / 关窗口补传，哈希相同不传）。
 ##   服务器字段（琥珀、贝币、等级、建造、通行证、卡册……）以服务器为准，每次同步把服务器的值写回本地。
 ##
-## 事件：交单、石头气泡、收取货币物品、丢弃退款先在本地生效，同时排队，随下一次上传交给服务器结算（离线就一直排着）。
+## 事件：主棋盘事件和活动棋盘操作先在本地生效，同时持久化排队，随下一次上传交给服务器结算（离线就一直排着）。
 ## 操作：买东西、建造、开宝箱 / 卡包、领奖都先问服务器（act），带幂等键；连不上就失败，提示稍后再试。
 ## 时间：G.now() / 「今天」都用服务器时间（本机时间 + 服务器给的差值）。
 
@@ -21,6 +21,9 @@ signal notice(text: String)
 signal synced(what: String, ok: bool)
 ## 账号状态变了（登录、换号、被顶下线、绑定）
 signal account_changed
+
+const ReplayTransport := preload("res://scripts/net/ReplayWire.gd")
+var replay_wire_stats: Dictionary = {}
 
 const DEFAULT_URL := "http://127.0.0.1:8765"
 const TIMEOUT := 6.0
@@ -112,6 +115,9 @@ func _ready() -> void:
 			_say.call_deferred(_kick_text(kicked))
 
 func _process(delta: float) -> void:
+	if Replay.active:
+		_replay_process(delta)
+		return
 	_day_t += delta
 	if _day_t >= 2.0:
 		_day_t = 0.0
@@ -183,15 +189,17 @@ func mark() -> void:
 func event(ev: Dictionary) -> void:
 	var e := ev.duplicate(true)
 	e["id"] = str(e.get("id", _uuid()))
+	e["at"] = server_now()
 	events.append(e)
-	if events.size() > 400:
-		events = events.slice(events.size() - 400)
 	mark()
 	_save_state()
 
 ## 马上补传（切后台、退出、手动「同步」按钮）
 func flush() -> void:
-	if can_talk() and not _busy and (pending or not events.is_empty()):
+	if Replay.active:
+		Replay.upload()
+		return
+	if can_talk() and not _busy and (pending or not events.is_empty() or (Replay.active and not Replay.pending.is_empty())):
 		_upload()
 
 ## 能和服务器说话：开着、启动完了、有 token、没被顶下线
@@ -202,15 +210,16 @@ func can_talk() -> bool:
 ## 返回服务器的 JSON；失败时 {"ok": false, "error": ..., "message": ...}。成功时已经把服务器状态写回 G。
 ## minus：这次奖励里 UI 还会再加一遍的货币（[[id, n], ...]），先减掉，UI 动画加回来后正好等于服务器的值。
 func act(path: String, body: Dictionary = {}, minus: Array = []) -> Dictionary:
+	if Replay.active: return {"ok": false, "message": "此操作需要服务器验证或尚未接入"}
 	if not can_talk():
 		var why := _kick_text(kicked) if kicked != "" else "连不上服务器，请稍后再试"
 		return {"ok": false, "error": "offline", "message": why}
 	while _busy:
 		await get_tree().process_frame
-	if not events.is_empty():
+	while not events.is_empty():
 		var fr := await _send_events()
 		if not fr:
-			return {"ok": false, "error": "offline", "message": "连不上服务器，请稍后再试"}
+			return {"ok": false, "error": "sync_pending", "message": "进度尚未同步完成，请稍后再试"}
 	var key := _uuid()
 	var res := []
 	for attempt in 2:
@@ -239,6 +248,10 @@ func act(path: String, body: Dictionary = {}, minus: Array = []) -> Dictionary:
 func apply_state(st: Dictionary, minus: Array = []) -> void:
 	for k in SERVER_FIELDS:
 		if st.has(k):
+			# A response can arrive while the player continues moving/merging.
+			# Do not replace those newer local board changes with an older state.
+			if k == "merge_events" and events.any(func(e): return str(e.get("type", "")) in ["merge_board", "order"]):
+				continue
 			G.set_server_field(k, st[k])
 	for rw in minus:
 		if rw is Array and rw.size() >= 2:
@@ -414,6 +427,9 @@ func _new_guest_after_reset() -> void:
 
 ## 拉服务器存档。服务器版本更新（或本机存档没了、或刚登录别的号）就用服务器的。
 func _pull_async(why: String) -> void:
+	if Replay.active:
+		await Replay.connect_session(why)
+		return
 	_busy = true
 	var r := await _call("GET", "/v1/save", null)
 	_busy = false
@@ -468,7 +484,7 @@ func _set_clock_ready() -> void:
 	var first := not clock_ready
 	clock_ready = true
 	_day = today()
-	if first or G.deals_day != _day:
+	if (first or G.deals_day != _day) and not Replay.active:
 		G._check_day()
 
 func _offline(what: String) -> void:
@@ -500,6 +516,9 @@ func _local_hash() -> String:
 	return _local_snapshot().md5_text()
 
 func _upload() -> void:
+	if Replay.active:
+		await Replay.upload()
+		return
 	_retry_t = -1.0
 	if _busy or token == "" or kicked != "":
 		return
@@ -526,6 +545,7 @@ func _upload() -> void:
 			version = int(d.get("version", version))
 			sent_hash = h
 			_drop_events(batch)
+			_check_event_results(d)
 			if gen == _mark_gen:
 				pending = false
 				_mark_t = -1.0
@@ -568,6 +588,13 @@ func _send_events() -> bool:
 	if r[1].get("state") is Dictionary and events.is_empty():
 		apply_state(r[1]["state"])
 	synced.emit("events", true)
+	return _check_event_results(r[1])
+
+func _check_event_results(response: Dictionary) -> bool:
+	for result in response.get("events", []):
+		if not result.get("ok", false):
+			_say("部分操作未通过校验，进度将按云端结果同步：" + str(result.get("message", "请稍后重试")))
+			return false
 	return true
 
 func _drop_events(batch: Array) -> void:
@@ -630,7 +657,7 @@ func _quit() -> void:
 		G.save_game()
 	# 通知分发过程中不能 add_child（HTTPRequest），等一帧
 	await get_tree().process_frame
-	if can_talk() and not _busy and (pending or not events.is_empty()):
+	if can_talk() and not _busy and (pending or not events.is_empty() or (Replay.active and not Replay.pending.is_empty())):
 		_upload()
 	var t0 := _ticks()
 	while _busy and _ticks() - t0 < QUIT_WAIT:
@@ -650,9 +677,20 @@ func _uuid() -> String:
 ## 401（被顶下线 / 过期）统一在这里处理。anon = 不带 token；use_token 指定用哪个 token（不触发下线处理）。
 func _call(method: String, path: String, body, idem := "", anon := false, use_token := "") -> Array:
 	var h := HTTPRequest.new()
-	h.timeout = TIMEOUT
+	h.timeout = 30.0 if path.begins_with("/v2/") else TIMEOUT
 	add_child(h)
+	var binary := PackedByteArray()
+	var compressed := path == "/v2/sync" and body is Dictionary
 	var headers := PackedStringArray(["Content-Type: application/json"])
+	if compressed:
+		var raw := ReplayTransport.encode(body)
+		if raw.is_empty():
+			h.queue_free()
+			return [0, {"error": "invalid_replay_log", "message": "操作日志无法编码，已保留本地记录"}]
+		binary = raw.compress(FileAccess.COMPRESSION_GZIP)
+		headers = PackedStringArray(["Content-Type: " + ReplayTransport.MIME, "Content-Encoding: gzip"])
+		replay_wire_stats = {"ops": body["ops"].size(), "json": JSON.stringify(body).to_utf8_buffer().size(),
+			"compact": raw.size(), "gzip": binary.size()}
 	var tk := use_token if use_token != "" else token
 	if not anon and tk != "":
 		headers.append("Authorization: Bearer " + tk)
@@ -663,7 +701,7 @@ func _call(method: String, path: String, body, idem := "", anon := false, use_to
 		"POST": m = HTTPClient.METHOD_POST
 		"PUT": m = HTTPClient.METHOD_PUT
 	var sent_at := Time.get_ticks_msec()
-	var err := h.request(url + path, headers, m, "" if body == null else JSON.stringify(body))
+	var err := h.request_raw(url + path, headers, m, binary) if compressed else h.request(url + path, headers, m, "" if body == null else JSON.stringify(body))
 	if err != OK:
 		h.queue_free()
 		await get_tree().process_frame
@@ -678,7 +716,10 @@ func _call(method: String, path: String, body, idem := "", anon := false, use_to
 	var code := int(res[1])
 	if d.has("now"):
 		var rtt := Time.get_ticks_msec() - sent_at
-		_srv_unix = float(d["now"]) + float(rtt) / 2000.0
+		# v2 timestamps are taken after replay; its CPU time is not network latency.
+		var estimate := float(d["now"]) + (0.0 if path.begins_with("/v2/") else float(rtt) / 2000.0)
+		if _srv_tick > 0: estimate = maxf(estimate, server_now())
+		_srv_unix = estimate
 		_srv_tick = Time.get_ticks_msec()
 		clock_offset = _srv_unix - Time.get_unix_time_from_system()
 	if code == 401 and not anon and use_token == "":
@@ -760,3 +801,17 @@ func accept_hot(day: String, revision: int, picks: Array) -> void:
 	_hot_day = day
 	_hot_revision = revision
 	_hot_picks = picks
+
+func _replay_process(delta: float) -> void:
+	if not enabled or _quitting or kicked != "" or _busy: return
+	if _retry_t > 0:
+		_retry_t -= delta
+		return
+	if not _boot_done:
+		_boot()
+		return
+	if token != "" and renew_after > 0 and server_now() > renew_after:
+		_refresh_token()
+		return
+	if not Replay.pending.is_empty() and _ticks() - _last_up >= UPLOAD_GAP:
+		Replay.upload()

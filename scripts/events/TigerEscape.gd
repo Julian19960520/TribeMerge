@@ -67,6 +67,7 @@ static func _tick_bots(m: Dictionary, now: float) -> void:
 		bot["status"] = status
 
 static func tick() -> void:
+	if G.replay_input(): return
 	if G.server_mode(): return
 	var m := round_state()
 	if m.is_empty(): return
@@ -140,6 +141,7 @@ static func local_action(action: String, node := 0) -> Dictionary:
 	return {"error": "未知操作"}
 
 static func act(action: String, node := 0) -> Dictionary:
+	if G.replay_input(): return await Replay.perform("tiger", {"action": action, "node": node})
 	if busy: return {"error": "正在处理"}
 	busy = true
 	var result: Dictionary

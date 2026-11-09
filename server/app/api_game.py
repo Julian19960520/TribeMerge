@@ -55,7 +55,7 @@ def _events(db: Session, econ: Economy, acc: Account, st: dict, events) -> list:
             results.append({"id": ev.id, "ok": True, "dup": True})
             continue
         try:
-            give = econ.apply_event(st, ev.model_dump(exclude_none=True))
+            give = econ.apply_event(st, ev.model_dump(exclude_none=True, by_alias=True))
             if ev.type == "order":  # 篝火竞速：按服务器收到的交付事件加分
                 race.on_order(db, acc, st, ev.order or {}, clock.now())
             results.append({"id": ev.id, "ok": True, "give": give})

@@ -11,6 +11,7 @@ import sys
 import tempfile
 
 root = Path(__file__).resolve().parents[1]
+subprocess.run([sys.executable, str(root / "tools/stamp_replay.py")], check=True)
 dist = root / "dist"
 dist.mkdir(exist_ok=True)
 subprocess.run([sys.argv[1], "--headless", "--path", str(root),

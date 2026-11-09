@@ -67,7 +67,9 @@ class TransferCodeResp(Resp):
 
 class Event(Req):
     id: str = Field(min_length=1, max_length=64)
-    type: Literal["order", "bubble", "collect", "refund", "found", "merge", "egen"]
+    type: Literal["order", "bubble", "collect", "refund", "found", "merge", "egen", "merge_board"]
+    at: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    board_action: "MergeEventReq | None" = None
     order: dict[str, Any] | None = None
     cell: int | None = None
     item: str | None = Field(default=None, max_length=32)
@@ -186,3 +188,6 @@ class DuelActionReq(Req):
 class TigerActionReq(Req):
     action: Literal["join", "restart", "refresh", "claim"]
     node: int = Field(default=0, ge=0, le=100)
+
+
+Event.model_rebuild()

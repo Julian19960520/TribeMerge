@@ -144,6 +144,10 @@ func _ready() -> void:
 
 	add_child(preload("res://scripts/ui/UfoEntry.gd").new())
 	var gm := UI.btn(self, Rect2(12, 156, 68, 42), "GM", "teal", func():
+		if Replay.active:
+			var result: Dictionary = Replay.perform("gm")
+			if result.has("error"): G.main.toast(str(result["error"]))
+			return
 		# 双倍火种不走服务器，先在本地解锁
 		G.boost_gm = true
 		G.dirty()
@@ -913,6 +917,12 @@ func _on_delete() -> void:
 		G.main.toast("做好的食物要交给订单")
 		Sfx.play("deny")
 		return
+	if Replay.active:
+		var result: Dictionary = Replay.perform("discard", {"cell": i})
+		if result.has("error"): return
+		_undo_cell = i; _undo_id = id; _undo_pay = 0
+		board.select(-1)
+		return
 	_undo_cell = i
 	_undo_id = id
 	_undo_pay = Data.value_of(id) if Data.type_of(id) == "item" else 0
@@ -936,6 +946,10 @@ func _on_rush(i: int) -> void:
 		G.main.toast("制作完成")
 
 func _on_undo() -> void:
+	if Replay.active:
+		Replay.perform("undo")
+		_clear_undo()
+		return
 	var i := _undo_cell
 	var id := _undo_id
 	if i < 0 or id == "":
@@ -956,6 +970,10 @@ func _on_undo() -> void:
 	Sfx.play("pop")
 
 func _clear_undo() -> void:
+	if Replay.active:
+		# Clear the selection state before emitting the reducer's change signals.
+		_undo_cell = -1; _undo_id = ""; _undo_pay = 0
+		if Replay.meta.has("trash"): Replay.perform("discard_finish")
 	if _undo_pay > 0:
 		G.cloud_event({"type": "refund", "item": _undo_id})
 		G.add_currency("shell", _undo_pay)
@@ -1005,6 +1023,16 @@ func _on_activate(i: int) -> void:
 	if G.cooking(i):
 		return
 	var id: String = G.board[i]["id"]
+	if Replay.active:
+		if Data.type_of(id) == "choice": G.main.open("choice_chest", i); return
+		if Data.type_of(id) == "pack": G.main.open("pack"); return
+		var result: Dictionary = await Replay.perform("tap", {"cell": i})
+		if result.has("error"):
+			if Data.type_of(id) in ["gen", "egen"] and G.energy < G.gen_cost(): G.main.open("energy", "exhausted")
+			else: G.main.toast(str(result["error"]))
+		elif result.get("kind", "") == "produce": board.fly_in(i, int(result["to"]), str(result["id"]))
+		else: board.burst(i); board.select(-1)
+		return
 	if Data.is_dish(id):
 		G.main.toast("点订单上的对勾交付")
 		Sfx.play("deny")
@@ -1105,6 +1133,10 @@ func _on_drop_outside(i: int, gp: Vector2) -> void:
 		Sfx.play("deny")
 		return
 	if _pouch.get_global_rect().has_point(gp):
+		if Replay.active:
+			Replay.perform("store", {"cell": i})
+			board.select(-1)
+			return
 		if Data.type_of(str(G.board[i]["id"])) == "egen":
 			# 冷却记在格子上，收进储物洞会丢掉；服务器也按账号限次，所以火种罐只能留在棋盘
 			G.main.toast("%s要留在棋盘上" % Data.name_of(str(G.board[i]["id"])))
@@ -1127,6 +1159,14 @@ func _on_drop_outside(i: int, gp: Vector2) -> void:
 		tw.tween_property(_pouch, "scale", Vector2.ONE, 0.15)
 
 func _on_stash() -> void:
+	if Replay.active:
+		var at := G.stash_claim_index()
+		if at < 0: return
+		if Data.type_of(str(G.stash[at])) == "pack": G.main.open("pack"); return
+		var result: Dictionary = await Replay.perform("stash", {"index": at})
+		if result.has("error"): G.main.toast(str(result["error"]))
+		elif result.has("to"): _fly_stash_to(str(result["id"]), int(result["to"]), 0.0)
+		return
 	if _stash_busy: return
 	if G.stash.is_empty():
 		G.main.toast("奖励、购买和放不下的物品会暂存在这里")

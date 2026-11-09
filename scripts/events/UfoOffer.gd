@@ -71,6 +71,7 @@ static func active() -> bool:
 static func remaining() -> int:
 	return maxi(0,int(ceil(float(state()["offer"].get("expires_at",0))-G.now())))
 static func local_visit() -> void:
+	if G.replay_input(): Replay.perform("ufo"); return
 	var s := state()
 	if G.now()<float(s["next_at"]): return
 	var items := candidate()
@@ -78,7 +79,7 @@ static func local_visit() -> void:
 		s["offer"] = {}
 		s["next_at"] = G.now()+int(config()["retry_sec"])
 	else:
-		s["offer"] = {"id":Crypto.new().generate_random_bytes(12).hex_encode(),"items":items,"expires_at":G.now()+int(config()["duration_sec"]),"paid":false}
+		s["offer"] = {"id":str(G.random_for("ufo").randi()) if Replay.active else Crypto.new().generate_random_bytes(12).hex_encode(),"items":items,"expires_at":G.now()+int(config()["duration_sec"]),"paid":false}
 		s["next_at"] = G.now()+int(config()["interval_sec"])
 	G.save_game()
 static func tick() -> void:
@@ -98,6 +99,10 @@ static func tick() -> void:
 static func open_panel() -> void:
 	if busy or not active(): return
 	if not G.server_mode():
+		if Replay.active:
+			Replay.perform("ufo_refresh")
+			G.main.open("ufo")
+			return
 		var items := candidate()
 		if items.is_empty():
 			state()["offer"]={}
@@ -113,6 +118,7 @@ static func open_panel() -> void:
 		if not result.get("ok",false) or not active(): return
 	G.main.open("ufo")
 static func buy(offer_id: String) -> Dictionary:
+	if Replay.active: return {"error": "购买需要联网验证，支付渠道尚未接通"}
 	if busy: return {"error":""}
 	var o: Dictionary = state()["offer"]
 	if not active() or str(o["id"])!=offer_id: return {"error":"飞碟已离开，下次再见"}

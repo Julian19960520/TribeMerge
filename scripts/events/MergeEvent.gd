@@ -242,7 +242,7 @@ static func _advance(c: Dictionary, s: Dictionary) -> void:
 		if not shifted: break
 
 ## Returns an error string or a result with animation cell indices.
-static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dictionary = {}) -> Dictionary:
+static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dictionary = {}, drop_roll := -1.0) -> Dictionary:
 	var cells: Array = s["cells"]
 	var cols := int(c["board"]["cols"])
 	var view := int(s["view"])
@@ -276,7 +276,7 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		var under := str(cells[b]["id"])
 		MergeGrid.apply_drop(cells, a, b, kind, next)
 		var revealed := MergeGrid.reveal_neighbors(cells, b, cols) if kind == "merge" else []
-		var drop := Data.resource_drop("event", G.rng.randf(), G.level) if kind == "merge" else ""
+		var drop := Data.resource_drop("event", drop_roll if drop_roll >= 0 else G.rng.randf(), G.level) if kind == "merge" else ""
 		s["discovered"][str(cells[b]["id"])] = true
 		if locked: s["discovered"][under] = true
 		result = {"kind": kind, "from": a, "to": b, "id": id, "under": under, "unlocked": locked, "revealed": revealed}
@@ -301,19 +301,33 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 	return result
 
 static func act(c: Dictionary, action: String, args: Dictionary = {}) -> Dictionary:
+	if G.replay_input():
+		var input := args.duplicate()
+		input["season"] = str(c["key"]); input["action"] = action
+		return await Replay.perform("activity", input)
 	if busy: return {"error": ""}
 	if action != "claim" and not active(c): return {"error": "本期活动已结束"}
 	busy = true
 	var result: Dictionary
 	var minus: Array = claim_rewards(c, claimable(c, state(c))) if action == "claim" else []
-	if G.server_mode():
+	if G.server_mode() and action == "claim":
 		var body: Dictionary = args.duplicate()
 		body["season"] = str(c["key"])
 		body["action"] = action
 		var response: Dictionary = await G._cloud().act("/v1/merge-event/action", body, minus)
 		result = response.get("give", {}) if response.get("ok", false) else {"error": str(response.get("message", "连不上服务器"))}
 	else:
-		result = local_action(c, state(c), action, args)
+		# The board never waits for HTTP. Keep actions in the same durable queue
+		# as orders so their points are credited before the corresponding spends.
+		var uid := Crypto.new().generate_random_bytes(16).hex_encode()
+		var roll := float(uid.sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
+		var body: Dictionary = args.duplicate()
+		body["season"] = str(c["key"])
+		body["action"] = action
+		body["view"] = int(state(c)["view"])
+		result = local_action(c, state(c), action, args, roll)
+		if not result.has("error") and G.server_mode():
+			G.cloud_event({"id": uid, "type": "merge_board", "board_action": body})
 	busy = false
 	if not result.has("error"):
 		_changed()

@@ -60,6 +60,7 @@ static func _replay(m: Dictionary, start: float, t: float, target: float) -> voi
 	m["finished_at"] = fin
 
 static func tick() -> void:
+	if G.replay_input(): return
 	var s := state()
 	var g: Dictionary = s.get("current", {}).get("group", {})
 	if g.is_empty() or g["state"] == "ended":
@@ -120,8 +121,9 @@ static func join() -> Dictionary:
 	var cur: Dictionary = s.get("current", {})
 	if not cur.is_empty() and cur.get("group", {}).get("state", "") != "ended":
 		return {"ok": true}  # 这一局还没比完：还是这一局
-	var rng := RandomNumberGenerator.new()
-	if G.simulation_time >= 0: rng.seed = G.rng.randi()
+	var rng := G.random_for("banana") if Replay.active else RandomNumberGenerator.new()
+	if Replay.active: pass
+	elif G.simulation_time >= 0: rng.seed = G.random_for("banana").randi()
 	else: rng.randomize()
 	var now := G.now()
 	var dur := float(rl.get("duration_sec", 14400))

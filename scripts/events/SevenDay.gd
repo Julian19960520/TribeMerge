@@ -73,6 +73,7 @@ static func find_entry(id: String, stage: bool) -> Dictionary:
 				if str(task["id"]) == id: return task
 	return {}
 static func claim(id: String, stage := false) -> Dictionary:
+	if G.replay_input(): return await Replay.perform("seven", {"id": id, "stage": stage})
 	if busy: return {"error": ""}
 	var entry := find_entry(id, stage)
 	if entry.is_empty(): return {"error": "任务不存在"}

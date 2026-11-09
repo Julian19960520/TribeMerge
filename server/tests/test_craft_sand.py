@@ -51,27 +51,27 @@ def test_merge_sand_drop(client):
     from app import services
     player = Player(client, player_id="TRBsandmerge", device="sand")
     rules = services.gamedata().rules
-    coin = float(rules["merge_coin"]["chance"])
-    sand = float(rules["merge_sand"]["chance"])
+    coin = float(rules["merge_resource_drops"]["main"][0]["chance"])
+    sand = float(rules["merge_resource_drops"]["main"][1]["chance"])
     assert sand > 0
     r = player.put(player.snapshot(level=3))
     assert r.json()["state"]["level"] == 3, r.json()
     hit = {"id": _id_in(coin, coin + sand), "type": "merge", "item": "fruit_3", "cell": 5}
-    miss = {"id": _id_in(coin + sand, 1.0), "type": "merge", "item": "fruit_3", "cell": 5}
+    miss = {"id": _id_in(sum(float(row["chance"]) for row in rules["merge_resource_drops"]["main"]), 1.0), "type": "merge", "item": "fruit_3", "cell": 5}
     big = {"id": _id_in(coin, coin + sand), "type": "merge", "item": "fruit_8", "cell": 5}
     gen = {"id": _id_in(coin, coin + sand), "type": "merge", "item": "basket_3", "cell": 5}
     res = player.post("/v1/events", {"events": [hit, miss, big, gen]}).json()["events"]
     assert res[0]["give"] == {"items": ["sand_1"]}
     assert res[1]["give"] == {}
-    assert res[2]["give"] == {"items": ["sand_2"]}
+    assert res[2]["give"] == {"items": ["sand_1"]}  # Current table drops level-one resources only.
     assert res[3]["give"] == {}  # 生产器合成不掉沙漏
 
 
 def test_merge_sand_needs_craft_level(client, player):
     from app import services
     rules = services.gamedata().rules
-    coin = float(rules["merge_coin"]["chance"])
-    sand = float(rules["merge_sand"]["chance"])
+    coin = float(rules["merge_resource_drops"]["main"][0]["chance"])
+    sand = float(rules["merge_resource_drops"]["main"][1]["chance"])
     hit = {"id": _id_in(coin, coin + sand), "type": "merge", "item": "fruit_3", "cell": 5}
     res = player.post("/v1/events", {"events": [hit]}).json()["events"]
-    assert res[0]["ok"] and res[0]["give"] == {}
+    assert res[0]["ok"] and not any(i.startswith("sand_") for i in res[0]["give"].get("items", []))

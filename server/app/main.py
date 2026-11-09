@@ -62,6 +62,8 @@ def create_app() -> FastAPI:
                  ms=round((time.perf_counter() - t0) * 1000, 1), ip=ip)
         return resp
 
+    from . import api_replay
+    app.include_router(api_replay.router)
     app.include_router(api_auth.router)
     app.include_router(api_game.router)
     app.include_router(race.router)

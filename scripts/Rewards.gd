@@ -23,6 +23,7 @@ static func items(ids: Array) -> Array:
 	return rewards
 
 static func grant(rewards: Array, from: Callable = Callable(), fly := true, apply := true, delivery: Dictionary = {}) -> void:
+	if G.replay_input(): apply = false
 	var item_flies: Array = []
 	var resource_flies: Array = []
 	var pack_n := 0

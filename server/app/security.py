@@ -82,6 +82,10 @@ def current(request: Request, db: Session = Depends(get_db)) -> Auth:
     acc = db.get(Account, sess.account_id)
     if acc is None or acc.disabled:
         raise ApiError(403, "account_disabled", "账号不可用")
+    if (acc.state or {}).get("replay") and request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        path = request.url.path
+        if path.startswith("/v1/") and not path.startswith(("/v1/auth/", "/v1/account/", "/v1/rank/name")):
+            raise ApiError(409, "replay_only", "该账号通过操作重放同步，不能直接修改存档或经济数据")
     account_var.set(acc.id)
     return Auth(acc, sess, token)
 

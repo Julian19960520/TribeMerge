@@ -8,6 +8,7 @@ static func definition(id: String) -> Dictionary:
 		if raw is Dictionary: _config = raw
 	return _config.get(id, {})
 static func choose(cell: int, box_id: String, option: int) -> Dictionary:
+	if G.replay_input(): return await Replay.perform("choice", {"cell": cell, "option": option})
 	if busy: return {"error": ""}
 	var c := definition(box_id)
 	var choices: Array = c.get("choices", [])

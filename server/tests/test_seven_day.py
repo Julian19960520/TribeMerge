@@ -54,10 +54,12 @@ def test_order_merge_and_refill_counters(player):
 
 def test_merge_drop_budget_and_retry(player):
     import hashlib
-    nonce=next(str(i) for i in range(1000) if int(hashlib.sha256(str(i).encode()).hexdigest()[:8],16)/4294967296 < .04)
+    from app.services import gamedata
+    chance=float(gamedata().rules["merge_resource_drops"]["main"][0]["chance"])
+    nonce=next(str(i) for i in range(10000) if int(hashlib.sha256(str(i).encode()).hexdigest()[:8],16)/4294967296 < chance)
     event={'id':nonce,'type':'merge','item':'fruit_2','cell':0}
     r=player.post('/v1/events',{'events':[event]}).json()
-    assert r['events'][0]['give']['items']==['shell_2']
+    assert r['events'][0]['give']['items']==['shell_1']
     from app.services import economy
     before=mutate(player,lambda st:st['budget'].get('shell',0))
     r=player.post('/v1/events',{'events':[event]}).json()

@@ -21,6 +21,14 @@ static var _path := ""
 
 ## 今天的热卖货单，每项 {"id", "price", "stock"}，下标和 hot_bought 的 "hot_%d" 对应
 static func today() -> Array:
+	if Replay.active:
+		var signature := G.today() + ":" + str(G.hot_revision)
+		var saved: Dictionary = Replay.meta.get("hot", {})
+		if saved.get("signature", "") == signature: return saved["list"]
+		if G.replay_input(): return Replay.perform("shop_view").get("list", [])
+		var rows := roll(Data.STORE_HOT, _wanted(), G.random_for("shop"))
+		Replay.meta["hot"] = {"signature": signature, "list": rows}
+		return rows
 	var cloud = _cloud()
 	var day: String = cloud.today() if cloud != null else Time.get_date_string_from_system()
 	var sig := _base_sig() + ":" + str(G.hot_revision)
@@ -214,8 +222,8 @@ static func _store(d: Dictionary) -> void:
 
 ## 花钻石刷新整组：每个货位都在其基础等级附近重新抽，排除该位置当前物品。
 static func reroll_all(previous: Array) -> Array:
-	var rng := RandomNumberGenerator.new()
-	rng.randomize()
+	var rng := G.random_for("shop") if Replay.active else RandomNumberGenerator.new()
+	if not Replay.active: rng.randomize()
 	var picks: Array = []
 	for k in Data.STORE_HOT.size():
 		var base: Dictionary = Data.STORE_HOT[k]
@@ -228,6 +236,7 @@ static func reroll_all(previous: Array) -> Array:
 			if candidate != old: pool.append(candidate)
 		picks.append({"slot": k, "id": pool[rng.randi_range(0, pool.size() - 1)] if not pool.is_empty() else id})
 	_cache = from_picks(Data.STORE_HOT, picks)
+	if Replay.active: Replay.meta["hot"] = {"signature": G.today() + ":" + str(G.hot_revision), "list": _cache}
 	var day := G.today()
 	var sig := _base_sig() + ":" + str(G.hot_revision)
 	_cache_day = day + sig

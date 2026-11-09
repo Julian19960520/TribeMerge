@@ -260,6 +260,9 @@ func _grant_board_now(batch: Array) -> void:
 		var cell: Dictionary = G.board[i]
 		if Layout.parse_reward(cell.get("rw", null)).is_empty():
 			continue
+		if Replay.active:
+			Replay.perform("bubble_reward", {"cell": i})
+			continue
 		cell.erase("rw")
 		G.cloud_event({"type": "bubble", "cell": i})
 		var id := str(e["id"])

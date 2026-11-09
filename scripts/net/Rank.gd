@@ -123,6 +123,7 @@ func set_nick(s: String) -> void:
 
 ## 上传当前进度。上一笔还没回来就排队，回来后再传一次。
 func submit() -> void:
+	if is_instance_valid(get_node_or_null("/root/Replay")) and Replay.active: return
 	_retry_t = -1.0
 	if _sending:
 		_again = true

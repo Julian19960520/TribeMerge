@@ -176,6 +176,9 @@ func _take(index: int) -> void:
 	if to < 0:
 		G.main.toast("棋盘满了！")
 		return
+	if Replay.active:
+		Replay.perform("inventory", {"index": index})
+		return
 	var id := str(G.inv[index])
 	G.inv.remove_at(index)
 	G.board[to]["id"] = id

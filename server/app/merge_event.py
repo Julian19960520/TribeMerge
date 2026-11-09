@@ -1,4 +1,4 @@
-"""Authoritative seasonal merge boards. Shares data/merge_events.json with Godot."""
+"""Seasonal boards: local play, ordered background replay, server-confirmed claims."""
 from datetime import datetime, timezone
 from .economy import Reject
 
@@ -76,8 +76,8 @@ def order_points(c, order, gd):
     return min(3, max(1, p['order_rewards'][min(tier, len(p['order_rewards'])-1)]))
 
 
-def on_order(econ, st, order):
-    c = current(econ.gd.merge_events, econ.now())
+def on_order(econ, st, order, at=None):
+    c = current(econ.gd.merge_events, econ.now() if at is None else at)
     if not c or (not st.get('gm_activities') and st.get('level', 1) < c.get('unlock_level', 1)):
         return
     s = state(st, c)
@@ -170,11 +170,14 @@ def advance(c, s):
             break
 
 
-def action(econ, st, req):
+def action(econ, st, req, *, replay_at=None, event_id=None):
     c = definition(econ.gd.merge_events, req.season)
     if not c or (not st.get('gm_activities') and st.get('level', 1) < c.get('unlock_level', 1)):
         raise Reject('event_unavailable', '活动尚未开放')
-    if req.action != 'claim' and current(econ.gd.merge_events, econ.now()).get('key') != req.season:
+    # Buffered actions belong to the period when they were played, even if
+    # reconnection happens after it ends. Claims always use server-side progress.
+    at = econ.now() if replay_at is None else replay_at
+    if req.action != 'claim' and current(econ.gd.merge_events, at).get('key') != req.season:
         raise Reject('event_ended', '本期活动已结束')
     if req.action == 'claim' and req.season not in (st.get('merge_events') or {}):
         raise Reject('not_completed', '尚未完成活动')
@@ -225,12 +228,17 @@ def action(econ, st, req):
         else:
             kind = 'swap' if under else 'move'
             ca['id'],cb['id'] = under,iid
+        if cb['id']:
+            s['discovered'][cb['id']] = True
         revealed = reveal_neighbors(cells, b, cols) if kind == 'merge' else []
         advance(c, s)
         out = dict(kind=kind, **{'from':a}, to=b, id=iid, under=under, unlocked=locked, revealed=revealed, advance_rows=view-s['view'])
         if kind == 'merge':
+            import hashlib
             import random
-            drop = econ.gd.resource_drop('event', random.SystemRandom().random(), int(st.get('level', 1)))
+            roll = (int(hashlib.sha256(event_id.encode()).hexdigest()[:8], 16) / 4294967296
+                    if event_id else random.SystemRandom().random())
+            drop = econ.gd.resource_drop('event', roll, int(st.get('level', 1)))
             if drop:
                 econ.give_item(st, drop, out)
                 out['drops'] = [drop]

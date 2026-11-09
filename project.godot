@@ -23,6 +23,7 @@ Items="*res://scripts/ItemAnim.gd"
 Sprites="*res://scripts/Sprites.gd"
 Rank="*res://scripts/net/Rank.gd"
 Cloud="*res://scripts/net/Cloud.gd"
+Replay="*res://scripts/replay/Replay.gd"
 
 [display]
 

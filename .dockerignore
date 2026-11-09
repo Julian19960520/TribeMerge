@@ -1,7 +1,13 @@
-# 服务器镜像只需要 data/ 和 server/（见 server/Dockerfile）
+# 服务器使用同一套 Godot 游戏规则进行重放。
 *
 !data
 !server
+!scripts
+!assets
+!shaders
+!addons
+!project.godot
+!*.tscn
 **/__pycache__
 **/*.db
 **/*.db-*

@@ -13,6 +13,9 @@ REPO_DIR = SERVER_DIR.parent
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=str(SERVER_DIR / ".env"), env_prefix="TRIBE_", extra="ignore")
 
+    replay_godot: str = ""
+    replay_timeout_sec: int = 20
+
     # 运行环境：dev / test / prod。prod 下关掉 mock 登录渠道和 mock 支付。
     env: str = "dev"
     # SQLAlchemy 连接串。本地默认 SQLite；正式环境用 postgresql+psycopg://user:pass@host/db

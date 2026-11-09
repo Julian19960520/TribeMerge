@@ -1217,7 +1217,10 @@ static func board_reward(entries: Array) -> PopupBase:
 				var cell: Dictionary = G.board[i]
 				if Layout.parse_reward(cell.get("rw", null)).is_empty():
 					continue
-				cell.erase("rw")
+				if Replay.active:
+					var result: Dictionary = Replay.perform("bubble_reward", {"cell": i})
+					if result.has("error"): continue
+				else: cell.erase("rw")
 				G.cloud_event({"type": "bubble", "cell": i})
 			rewards.append([str(e["id"]), int(e["n"])])
 		given["ok"] = true
@@ -1407,7 +1410,7 @@ static func pack() -> PopupBase:
 		var got: Array = await G.open_pack()
 		if got.is_empty():
 			# 连不上服务器：卡包放回暂存区
-			G.stash_push("pack_1")
+			if not Replay.active: G.stash_push("pack_1")
 			p.close()
 			return
 		for k in got.size():

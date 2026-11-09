@@ -106,6 +106,33 @@ var _boil_t := 0.0
 var _save_t := -1.0
 var _regen_t := 0.0
 var rng := RandomNumberGenerator.new()
+var random_seed := ""
+var random_streams: Dictionary = {}
+var replay_meta: Dictionary = {}
+var replay_local: Dictionary = {}
+
+func random_for(key: String) -> RandomNumberGenerator:
+	if random_seed == "": return rng
+	if not random_streams.has(key):
+		var generator := RandomNumberGenerator.new()
+		generator.seed = (random_seed + ":" + key).sha256_text().substr(0, 15).hex_to_int()
+		random_streams[key] = generator
+	return random_streams[key]
+
+func random_save() -> Dictionary:
+	var streams := {}
+	for key in random_streams:
+		streams[key] = str(random_streams[key].state)
+	return {"seed": random_seed, "streams": streams}
+
+func random_load(d: Dictionary) -> void:
+	random_seed = str(d.get("seed", ""))
+	random_streams = {}
+	for key in d.get("streams", {}): random_for(key).state = int(d["streams"][key])
+
+func replay_input() -> bool:
+	return is_instance_valid(get_node_or_null("/root/Replay")) and Replay.active and not Replay.executing
+
 
 func _ready() -> void:
 	_apply_rules()
@@ -118,7 +145,7 @@ func _ready() -> void:
 	loaded_save = load_game()
 	if not loaded_save:
 		new_game()
-	_check_day()
+	if replay_meta.is_empty(): _check_day()
 
 func _apply_rules() -> void:
 	var r: Dictionary = Data.RULES
@@ -162,18 +189,20 @@ func _process(delta: float) -> void:
 	_regen_t += delta
 	if _regen_t >= 1.0:
 		_regen_t = 0.0
-		_check_day()
-		_tick_bubbles()
-		TigerEscape.tick()
-		_regen()
+		if not Replay.active:
+			_check_day()
+			_tick_bubbles()
+			TigerEscape.tick()
+			_regen()
 	if _save_t >= 0.0:
 		_save_t -= delta
 		if _save_t < 0.0:
 			save_game()
-	_tick_cooks()
+	if not Replay.active: _tick_cooks()
 
 ## 服务器时间（Cloud 按服务器给的差值换算）；没有 Cloud 时用本机时间。体力回复、冷却、制作计时都用它。
 func now() -> float:
+	if is_instance_valid(get_node_or_null("/root/Replay")) and Replay.active and Replay.executing: return float(Replay.clock)
 	if simulation_time >= 0: return simulation_time
 	var c = get_node_or_null("/root/Cloud")
 	return c.server_now() if c != null else Time.get_unix_time_from_system()
@@ -218,12 +247,14 @@ func secs_to_midnight() -> int:
 
 ## 今天的日期：服务器的北京时间日期（Cloud），连不上时按本机时间
 func today() -> String:
+	if is_instance_valid(get_node_or_null("/root/Replay")) and Replay.active: return Time.get_date_string_from_unix_time(int(now()) + 28800)
 	if simulation_time >= 0: return Time.get_datetime_string_from_unix_time(int(simulation_time + 28800)).split("T")[0]
 	var c = get_node_or_null("/root/Cloud")
 	return c.today() if c != null else Time.get_date_string_from_system()
 
 ## 关键事件：让云存档记一笔待上传（交单、建造、升级、花/得琥珀、开卡包）
 func cloud_mark() -> void:
+	if is_instance_valid(get_node_or_null("/root/Replay")) and Replay.active: return
 	var c = get_node_or_null("/root/Cloud")
 	if c != null:
 		c.mark()
@@ -231,6 +262,7 @@ func cloud_mark() -> void:
 ## 服务器模式：云服务开着（正式玩法），花钱、领奖、开箱、建造都先问服务器。
 ## 关掉时（--cloud-off、测试脚本）走下面的本地规则。
 func server_mode() -> bool:
+	if is_instance_valid(get_node_or_null("/root/Replay")) and Replay.active: return false
 	var c = get_node_or_null("/root/Cloud")
 	return c != null and c.enabled
 
@@ -368,6 +400,8 @@ func dirty() -> void:
 	_save_t = 0.6
 
 func new_game() -> void:
+	if not is_instance_valid(get_node_or_null("/root/Replay")) or not Replay.active:
+		random_seed = ""; random_streams = {}
 	level = 1
 	xp = 0
 	energy = 100
@@ -451,17 +485,21 @@ func _init_board() -> void:
 			discover(k["id"])
 
 func save_game() -> void:
+	if is_instance_valid(get_node_or_null("/root/Replay")) and (Replay.worker or (Replay.active and Replay.executing)): return
 	if simulation_time >= 0: return # Simulator owns its reports/checkpoints; never writes a player save.
 	DirAccess.make_dir_recursive_absolute(save_path.get_base_dir())
-	var f := FileAccess.open(save_path, FileAccess.WRITE)
+	var f := FileAccess.open(save_path + ".tmp", FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(save_dict()))
+		f.close()
+		DirAccess.rename_absolute(save_path + ".tmp", save_path)
 	else:
 		push_error("save_game: cannot write %s (%s)" % [save_path, error_string(FileAccess.get_open_error())])
 
 ## 整份存档。本地存档和云存档快照都用它。
 func save_dict() -> Dictionary:
-	return {
+	var local := Replay.journal() if is_instance_valid(get_node_or_null("/root/Replay")) and Replay.active else replay_local
+	return {"replay_rng": random_save(), "replay_meta": replay_meta, "replay_local": local,
 		"ufo_offer": ufo_offer, "ufo_receipts": ufo_receipts, "offers": offers, "local_race": local_race, "duel_race": duel_race, "tiger_escape": tiger_escape, "tiger_escape_seen": tiger_escape_seen, "gm_activities": gm_activities, "seven_day": seven_day, "merge_events": merge_events, "level": level, "xp": xp, "energy": energy, "boost": boost, "boost_gm": boost_gm, "shells": shells, "amber": amber, "rush": rush,
 		"energy_stamp": energy_stamp, "board": board, "inv": inv, "inv_cap": inv_cap,
 		"discovered": discovered, "book_claimed": book_claimed, "orders": orders, "story_done": story_done, "pending_orders": pending_orders, "builds": builds, "cards": cards,
@@ -481,6 +519,12 @@ func load_game() -> bool:
 	var d = JSON.parse_string(f.get_as_text())
 	if typeof(d) != TYPE_DICTIONARY or not d.has("board"):
 		return false
+	return load_snapshot(d, not d.has("replay_meta") or d.get("replay_meta", {}).is_empty())
+
+func load_snapshot(d: Dictionary, reconcile := true) -> bool:
+	random_load(d.get("replay_rng", {}))
+	replay_meta = Data.ConfigFiles.ints(d.get("replay_meta", {}))
+	replay_local = d.get("replay_local", {})
 	ufo_offer = d.get("ufo_offer", {}) if d.get("ufo_offer", {}) is Dictionary else {}
 	ufo_receipts = d.get("ufo_receipts", []) if d.get("ufo_receipts", []) is Array else []
 	offers = d.get("offers", {}) if d.get("offers", {}) is Dictionary else {}
@@ -531,7 +575,7 @@ func load_game() -> bool:
 	stash = d["stash"]
 	tokens = int(d.get("tokens", 0))
 	token_claimed = int(d.get("token_claimed", 0))
-	settings = d["settings"]
+	settings = d.get("settings", settings)
 	if not settings.has("hint"):
 		settings["hint"] = true
 	hot_bought = d.get("hot_bought", {})
@@ -564,6 +608,7 @@ func load_game() -> bool:
 	pass_endless = int(d.get("pass_endless", 0))
 	pass_super_bonus = bool(d.get("pass_super_bonus", false))
 	pass_season = str(d.get("pass_season", ""))
+	if not reconcile: return true
 	check_pass_season()
 	_reconcile_cooks()
 	if not tutorial_on:
@@ -578,6 +623,7 @@ func load_game() -> bool:
 	return true
 
 func reset_game() -> void:
+	if replay_input(): Replay.perform("reset"); return
 	new_game()
 	save_game()
 	board_changed.emit()
@@ -635,6 +681,7 @@ func energy_price() -> int:
 	return mini(base + step * energy_buys, maxi(top, base))
 
 func buy_energy() -> bool:
+	if replay_input(): return bool((await Replay.perform("energy")).get("ok", false))
 	if server_mode():
 		var r: Dictionary = await _cloud().act("/v1/energy/buy")
 		if not r.get("ok", false):
@@ -653,6 +700,7 @@ func storage_price() -> int:
 
 var _storage_busy := false
 func expand_storage() -> bool:
+	if replay_input(): return bool((await Replay.perform("expand")).get("ok", false))
 	if _storage_busy: return false
 	_storage_busy = true
 	var success := false
@@ -671,6 +719,7 @@ func expand_storage() -> bool:
 
 ## 领一次升级奖励。成功返回奖励列表；已经领过返回 []；连不上返回 null（奖励留着，稍后再领）。
 func claim_level(lv: int):
+	if replay_input(): return (await Replay.perform("level", {"level": lv})).get("rewards", [])
 	var rw := Data.level_rewards(lv)
 	if not server_mode():
 		return rw
@@ -684,6 +733,7 @@ func claim_level(lv: int):
 
 ## 集市购买。返回 {"ok", "message"}；成功时服务器已扣琥珀（贝币小摊 key "shell_N" 扣贝币）、记了已购数。
 func shop_buy(key: String, id: String, _price: int, _deal: bool) -> Dictionary:
+	if replay_input(): return await Replay.perform("shop", {"key": key, "id": id})
 	if key.begins_with("deal_"): return {"ok":false,"message":"请从每日商品入口领取"}
 	if server_mode():
 		return await _cloud().act("/v1/shop/buy", {"key": key, "item": id})
@@ -723,6 +773,7 @@ func has_free_daily() -> bool:
 	return false
 
 func refresh_hot() -> Dictionary:
+	if replay_input(): return await Replay.perform("hot_refresh")
 	if _hot_refresh_busy:
 		return {"ok": false, "message": "正在刷新"}
 	_hot_refresh_busy = true
@@ -766,9 +817,9 @@ func _maybe_spawn_bubble(id: String, near: int) -> void:
 		offer = r.get("give", {}).get("offer", {})
 	else:
 		var rule := Data.bubble_rule()
-		if rng.randf() >= float(rule.get("chance", 0.1)):
+		if random_for("bubbles").randf() >= float(rule.get("chance", 0.1)):
 			return
-		offer = {"uid": "%s-%s" % [Time.get_ticks_usec(), rng.randi()], "item": id,
+		offer = {"uid": "%s-%s" % [int(now()), random_for("bubbles").randi()], "item": id,
 			"expires": now() + float(rule.get("seconds", 60)), "price": Data.bubble_price(id)}
 	if tutorial_on or offer.is_empty() or float(offer.get("expires", 0)) <= now():
 		return
@@ -794,6 +845,7 @@ func _tick_bubbles() -> void:
 		board_changed.emit()
 
 func buy_bubble(i: int) -> Dictionary:
+	if replay_input(): return await Replay.perform("bubble_buy", {"cell": i})
 	if not is_merge_bubble(i) or bubble_left(i) <= 0:
 		_tick_bubbles()
 		return {"ok": false, "message": "泡泡已经消失了"}
@@ -821,6 +873,7 @@ func buy_bubble(i: int) -> Dictionary:
 
 ## 琥珀礼包：服务器下单 → 支付渠道（现在是 mock）回调到账。返回到账的琥珀数，失败 0。
 func buy_amber_pack(k: int) -> int:
+	if Replay.active: return 0
 	var n := int(Data.AMBER_PACKS[k].get("n", 0)) if k >= 0 and k < Data.AMBER_PACKS.size() else 0
 	if not server_mode():
 		return n
@@ -931,6 +984,7 @@ func book_prize_count() -> int:
 
 ## 领走这份图鉴奖。返回火苗数量（等于物品等级），已经领过或还没发现则是 0。
 func claim_book(id: String) -> int:
+	if replay_input(): return int((await Replay.perform("book", {"id": id})).get("energy", 0))
 	if not book_prize(id):
 		return 0
 	if server_mode():
@@ -964,6 +1018,7 @@ func unlock_around(i: int) -> Array:
 	return MergeGrid.reveal_neighbors(board, i, COLS)
 
 func try_drop(a: int, b: int) -> String:
+	if replay_input(): return str(Replay.perform("drop", {"from": a, "to": b}).get("kind", ""))
 	opened = []
 	if a < 0 or b < 0 or a >= board.size() or b >= board.size() or a == b: return ""
 	if is_merge_bubble(a) or is_merge_bubble(b): return _drop_bubble(a, b)
@@ -1075,6 +1130,7 @@ func gen_cost() -> int:
 	return 2 if boost_on() else 1
 
 func set_boost(on: bool) -> void:
+	if replay_input(): Replay.perform("boost", {"on": on}); return
 	boost = on and boost_open()
 	dirty()
 	changed.emit()
@@ -1096,7 +1152,7 @@ func gen_use(i: int) -> void:
 	dirty()
 
 func _pick(dist: Array) -> int:
-	var r := rng.randf() * 100.0
+	var r := random_for("orders").randf() * 100.0
 	for k in dist.size():
 		r -= float(dist[k])
 		if r < 0.0:
@@ -1109,7 +1165,7 @@ func roll_produce(gen_id: String) -> String:
 	var total := 0.0
 	for d in drops:
 		total += float(d["p"])
-	var r := rng.randf() * total
+	var r := random_for("energy_produce" if Data.type_of(gen_id) == "egen" else "produce:" + gen_id).randf() * total
 	for d in drops:
 		r -= float(d["p"])
 		if r < 0.0:
@@ -1136,10 +1192,10 @@ func roll_chest() -> Array:
 	for l in open:
 		pool.append_array(["%s_2" % l["main"], "%s_3" % l["main"], "%s_1" % l["sub"]])
 	for i in 3:
-		if rng.randf() < 0.1:
-			out.append("%s_1" % open[rng.randi() % open.size()]["gen"])
+		if random_for("chests").randf() < 0.1:
+			out.append("%s_1" % open[random_for("chests").randi() % open.size()]["gen"])
 		else:
-			out.append(pool[rng.randi() % pool.size()])
+			out.append(pool[random_for("chests").randi() % pool.size()])
 	return out
 
 # ---------------------------------------------------------------- 订单
@@ -1267,8 +1323,8 @@ func _make_order(target: int = -1, avoid: Array = []) -> Dictionary:
 	var bounds := Data.random_bounds(level)
 	var t := target
 	if t < 1:
-		t = bounds.x if bounds.x >= bounds.y else rng.randi_range(bounds.x, bounds.y)
-	var made: Dictionary = Roll.make(level, float(t), rng, avoid)
+		t = bounds.x if bounds.x >= bounds.y else random_for("orders").randi_range(bounds.x, bounds.y)
+	var made: Dictionary = Roll.make(level, float(t), random_for("orders"), avoid)
 	if made.is_empty():
 		made = _make_order_free()
 	return _spice(made)
@@ -1276,35 +1332,35 @@ func _make_order(target: int = -1, avoid: Array = []) -> Dictionary:
 func _spice(made: Dictionary) -> Dictionary:
 	if made.is_empty() or not (made.get("rw") is Dictionary):
 		return made
-	if rng.randf() < 0.25 and level >= Data.CARD_LEVEL:
+	if random_for("orders").randf() < 0.25 and level >= Data.CARD_LEVEL:
 		made["rw"]["pack"] = 1
-	if rng.randf() < 0.5:
-		made["rw"]["token"] = rng.randi_range(1, 3) * (made.get("items", []) as Array).size()
+	if random_for("orders").randf() < 0.5:
+		made["rw"]["token"] = random_for("orders").randi_range(1, 3) * (made.get("items", []) as Array).size()
 	return made
 
 func _make_order_free() -> Dictionary:
-	var r := rng.randf()
+	var r := random_for("orders").randf()
 	var n := 1 if level < 2 or r < 0.45 else (2 if r < 0.85 else 3)
 	var items := []
 	var shell := 0
 	var top: int = 2 + level / 2
 	var open := Data.unlocked_lines(level)
 	for i in n:
-		var ln: Dictionary = open[rng.randi() % open.size()]
+		var ln: Dictionary = open[random_for("orders").randi() % open.size()]
 		var sub := str(ln.get("sub", ""))
-		if level >= 2 and sub != "" and Data.product_open(level, sub) and rng.randf() < 0.15:
-			var sl := rng.randi_range(1, mini(3, 1 + level / 3))
+		if level >= 2 and sub != "" and Data.product_open(level, sub) and random_for("orders").randf() < 0.15:
+			var sl := random_for("orders").randi_range(1, mini(3, 1 + level / 3))
 			items.append("%s_%d" % [sub, sl])
-			shell += 12 * int(pow(2, sl - 1)) + rng.randi_range(0, 4)
+			shell += 12 * int(pow(2, sl - 1)) + random_for("orders").randi_range(0, 4)
 			continue
 		var ch: String = ln["main"]
 		if not Data.product_open(level, ch):
 			continue
-		var l := rng.randi_range(1 if level < 2 else 2, mini(top, Data.max_lv(ch)))
+		var l := random_for("orders").randi_range(1 if level < 2 else 2, mini(top, Data.max_lv(ch)))
 		items.append("%s_%d" % [ch, l])
-		shell += 3 * int(pow(2, l - 1)) + rng.randi_range(0, 4)
+		shell += 3 * int(pow(2, l - 1)) + random_for("orders").randi_range(0, 4)
 	var rw := {"shell": shell}
-	return {"who": rng.randi() % Data.PEOPLE.size(), "items": items, "rw": rw, "story": false}
+	return {"who": random_for("orders").randi() % Data.PEOPLE.size(), "items": items, "rw": rw, "story": false}
 
 func _craft_count() -> int:
 	var n := 0
@@ -1326,7 +1382,7 @@ func _pick_dish(avoid: Array = []) -> Dictionary:
 		if not discovered.has(str(d["id"])):
 			return d
 	var recent := pool.slice(maxi(0, pool.size() - 8))
-	return recent[rng.randi() % recent.size()]
+	return recent[random_for("orders").randi() % recent.size()]
 
 func _craft_order(d: Dictionary) -> Dictionary:
 	if d.is_empty():
@@ -1336,13 +1392,13 @@ func _craft_order(d: Dictionary) -> Dictionary:
 	for id in mats:
 		shell += 4 * int(pow(2.0, float(Data.lv(str(id)) - 1)))
 	var rw := {"shell": shell}
-	if rng.randf() < 0.4:
-		rw["token"] = rng.randi_range(1, 3)
+	if random_for("orders").randf() < 0.4:
+		rw["token"] = random_for("orders").randi_range(1, 3)
 	var sand := Data.craft_sand(str(d["id"]))
 	if sand != "":
 		rw["rewards"] = [sand]
 	return {
-		"who": rng.randi() % Data.PEOPLE.size(),
+		"who": random_for("orders").randi() % Data.PEOPLE.size(),
 		"kind": "craft",
 		"dish": str(d["id"]),
 		"mats": mats,
@@ -1353,7 +1409,7 @@ func _craft_order(d: Dictionary) -> Dictionary:
 		"phase": "need",
 		"cell": -1,
 		"t0": 0.0,
-		"uid": "c%d" % rng.randi(),
+		"uid": "c%d" % random_for("orders").randi(),
 	}
 
 ## 经验订单之后有空位时，保留制作单（同时最多 Data.craft_cap 张，菜不重复）；正在制作的订单不挤掉。
@@ -1562,6 +1618,7 @@ func cook_left(i: int) -> int:
 
 ## 用沙漏加速这一格的制作：每份快 Data.rush_sec() 秒，一次用到做完为止（沙漏不够就全用上）。返回用了几份。
 func rush_cook(i: int) -> int:
+	if replay_input(): return int(Replay.perform("rush", {"cell": i}).get("used", 0))
 	if not cooking(i) or rush < 1:
 		return 0
 	var n := mini(rush, rush_need(i))
@@ -1601,6 +1658,7 @@ func _gather_anchor(cells: Array) -> int:
 
 ## 材料飞向同一格并开始计时。返回每件材料的飞行：from、to、id、delay。
 func begin_craft(oi: int) -> Array:
+	if replay_input(): return Replay.perform("craft", {"cell": oi}).get("flights", [])
 	if oi < 0 or oi >= orders.size():
 		return []
 	var o: Dictionary = orders[oi]
@@ -1645,7 +1703,7 @@ func _reconcile_cooks() -> void:
 		if str(o.get("kind", "")) != "craft":
 			continue
 		if str(o.get("uid", "")) == "":
-			o["uid"] = "c%d" % rng.randi()
+			o["uid"] = "c%d" % random_for("orders").randi()
 		var phase := str(o.get("phase", "need"))
 		if phase == "cook":
 			var uid := str(o["uid"])
@@ -1695,6 +1753,7 @@ func _tick_cooks() -> void:
 
 ## 交付订单，返回被移除的格子
 func complete_order(oi: int) -> Array:
+	if replay_input(): return Replay.perform("order", {"cell": oi}).get("cells", [])
 	var o: Dictionary = orders[oi]
 	var craft := str(o.get("kind", "")) == "craft"
 	if craft and str(o.get("phase", "")) != "ready":
@@ -1791,6 +1850,7 @@ func pass_claimable() -> bool:
 	return pass_endless_ready() > 0
 
 func claim_pass_free(lv: int) -> Array:
+	if replay_input(): return (await Replay.perform("pass", {"track": "free", "level": lv})).get("rewards", [])
 	check_pass_season()
 	if server_mode():
 		return await _claim_pass_srv("free", lv)
@@ -1804,6 +1864,7 @@ func claim_pass_free(lv: int) -> Array:
 	return Data.PASS_LEVELS[lv - 1]["free"]
 
 func claim_pass_prem(lv: int) -> Array:
+	if replay_input(): return (await Replay.perform("pass", {"track": "prem", "level": lv})).get("rewards", [])
 	check_pass_season()
 	if server_mode():
 		return await _claim_pass_srv("prem", lv)
@@ -1822,6 +1883,7 @@ func claim_pass_prem(lv: int) -> Array:
 
 ## 超级贵宾那一列：只有超级贵宾能领
 func claim_pass_super(lv: int) -> Array:
+	if replay_input(): return (await Replay.perform("pass", {"track": "super", "level": lv})).get("rewards", [])
 	check_pass_season()
 	if server_mode():
 		return await _claim_pass_srv("super", lv)
@@ -1852,6 +1914,7 @@ func _claim_pass_srv(track: String, lv: int) -> Array:
 	return rw
 
 func claim_pass_endless() -> Array:
+	if replay_input(): return (await Replay.perform("pass", {"track": "endless"})).get("rewards", [])
 	check_pass_season()
 	if server_mode():
 		return await _claim_pass_srv("endless", 0)
@@ -1879,6 +1942,7 @@ func pass_cny(tier: String) -> int:
 
 ## 人民币买贵宾（¥30）：服务器下单 → 支付渠道（现在是 mock）回调开通。没连服务器的单机版直接开通。
 func buy_pass_vip() -> bool:
+	if Replay.active: return false
 	if pass_tier >= 1:
 		if main:
 			main.toast("已经拥有")
@@ -1891,6 +1955,7 @@ func buy_pass_vip() -> bool:
 
 ## 人民币买超级贵宾（¥68）：贵宾、超级两列奖励都能领，一次性 +10 积分。
 func buy_pass_super() -> bool:
+	if Replay.active: return false
 	if pass_tier >= 2:
 		if main:
 			main.toast("已经拥有")
@@ -1981,6 +2046,7 @@ func build_rewards(id: String) -> Array:
 
 ## 花贝币建下一件部件。成功返回 {"idx": 部件下标, "rewards": [...]}，失败返回空。
 func do_build(id: String) -> Dictionary:
+	if replay_input(): return await Replay.perform("build", {"id": id})
 	if not build_can(id):
 		return {}
 	if server_mode():
@@ -2004,6 +2070,7 @@ func do_build(id: String) -> Dictionary:
 	return {"idx": st, "rewards": rewards}
 
 func open_pack() -> Array:
+	if replay_input(): return (await Replay.perform("pack")).get("cards", [])
 	if level < Data.CARD_LEVEL:
 		if main: main.toast("典藏卡在 %d 级解锁" % Data.CARD_LEVEL)
 		return []
@@ -2022,8 +2089,8 @@ func open_pack() -> Array:
 		return got
 	var out := []
 	for i in 2:
-		var a := rng.randi() % Data.ALBUMS.size()
-		var c := rng.randi() % 9
+		var a := random_for("cards").randi() % Data.ALBUMS.size()
+		var c := random_for("cards").randi() % 9
 		var key := "%d_%d" % [a, c]
 		cards[key] = int(cards.get(key, 0)) + 1
 		out.append([a, c])
@@ -2047,6 +2114,7 @@ func cards_total() -> int:
 
 var _shell_refresh_busy := false
 func refresh_shell() -> Dictionary:
+	if replay_input(): return await Replay.perform("shell_refresh")
 	if _shell_refresh_busy: return {"ok": false, "message": "正在刷新"}
 	_shell_refresh_busy = true
 	var result: Dictionary
@@ -2064,7 +2132,7 @@ func refresh_shell() -> Dictionary:
 	return result
 
 func _merge_coin(merged: String, origin: int) -> void:
-	var uid := ("sim-%s-%s" % [int(now()*1000000), rng.randi()]) if simulation_time >= 0 else Crypto.new().generate_random_bytes(16).hex_encode()
+	var uid := str(random_for("merge_drops").randi()) if Replay.active else (("sim-%s-%s" % [int(now()*1000000), rng.randi()]) if simulation_time >= 0 else Crypto.new().generate_random_bytes(16).hex_encode())
 	var to := find_empty_near(origin) if not tutorial_on else -1
 	cloud_event({"id": uid, "type": "merge", "item": merged, "cell": to})
 	if to < 0: return

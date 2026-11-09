@@ -269,7 +269,7 @@ func _on_order(_items: Array) -> void:
 		return
 	_my_dash_ms = Time.get_ticks_msec()
 	if not G.server_mode():
-		LocalRace.order(_items)
+		if not Replay.active: LocalRace.order(_items)
 		_absorb(LocalRace.state())
 		updated.emit()
 		return
@@ -292,7 +292,7 @@ func _flush_events() -> void:
 
 func join() -> Dictionary:
 	if not G.server_mode():
-		var r:=LocalRace.join()
+		var r: Dictionary = Replay.perform("race_join") if Replay.active else LocalRace.join()
 		_disp.clear()
 		_absorb(LocalRace.state())
 		if r.get("ok",false):_match_until=Time.get_ticks_msec()+int(MATCH_SEC*1000)
@@ -313,7 +313,7 @@ func join() -> Dictionary:
 ## 领一场的奖励。成功时服务器已经发了（货币先减掉，UI 动画再加回来），返回 rewards。
 func claim(res: Dictionary) -> Dictionary:
 	if not G.server_mode():
-		var r:=LocalRace.claim(str(res.get("group",{}).get("id","")))
+		var r: Dictionary = Replay.perform("race_claim", {"id": str(res.get("group",{}).get("id",""))}) if Replay.active else LocalRace.claim(str(res.get("group",{}).get("id","")))
 		_absorb(LocalRace.state())
 		updated.emit()
 		return r

@@ -27,6 +27,7 @@ static func _finish(won: bool, at: float) -> void:
 	if won: s["wins"]=int(s["wins"])+1
 	G.dirty()
 static func tick() -> void:
+	if G.replay_input(): return
 	if G.server_mode(): return
 	var m: Dictionary=state()["match"]
 	if m.is_empty() or m["status"]!="running": return
@@ -56,6 +57,7 @@ static func pending() -> bool:
 	var m: Dictionary=state()["match"]
 	return (not m.is_empty() and m["status"] in ["won","lost"] and not m.get("claimed",false)) or not ready_milestones().is_empty()
 static func act(action: String, milestone:=0) -> Dictionary:
+	if G.replay_input(): return await Replay.perform("duel", {"action": action, "milestone": milestone})
 	if busy: return {"error":"正在处理"}
 	busy=true
 	var result: Dictionary
@@ -85,9 +87,9 @@ static func local_action(action: String, milestone:=0) -> Dictionary:
 			if not m.is_empty() and (m["status"]=="running" or not m.get("claimed",false)): return {"error":"请先完成当前比赛并领取奖励"}
 			var target:=int(config()["target"])
 			var seconds: Array=config()["opponent_seconds"]
-			var duration:=G.rng.randf_range(float(seconds[0]),float(seconds[1]))
+			var duration:=G.random_for("duel").randf_range(float(seconds[0]),float(seconds[1]))
 			var curve:=[]
-			for score in range(1,target+1): curve.append([duration*(float(score)-G.rng.randf_range(0,0.4))/target,score])
+			for score in range(1,target+1): curve.append([duration*(float(score)-G.random_for("duel").randf_range(0,0.4))/target,score])
 			s["rounds"]=int(s["rounds"])+1
 			s["match"]={"id":int(s["rounds"]),"start":G.now(),"target":target,"me":0,"opponent":0,"status":"running","claimed":false,"opponent_curve":curve}
 			return {}
