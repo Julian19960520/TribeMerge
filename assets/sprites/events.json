@@ -1,0 +1,1180 @@
+{
+	"sprites": {
+		"ev_clock_pill": {
+			"frames": 4.0,
+			"h": 50.0,
+			"pad": 6.0,
+			"w": 192.0
+		},
+		"ev_disc": {
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 4.0,
+			"w": 100.0
+		},
+		"ev_duel_flag_0": {
+			"frames": 4.0,
+			"h": 42.0,
+			"pad": 5.0,
+			"w": 34.0
+		},
+		"ev_duel_flag_1": {
+			"frames": 4.0,
+			"h": 42.0,
+			"pad": 5.0,
+			"w": 34.0
+		},
+		"ev_duel_mound": {
+			"frames": 4.0,
+			"h": 40.0,
+			"pad": 6.0,
+			"w": 260.0
+		},
+		"ev_duel_vs": {
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 6.0,
+			"w": 96.0
+		},
+		"ev_ell_shadow": {
+			"frames": 4.0,
+			"h": 24.0,
+			"pad": 4.0,
+			"w": 100.0
+		},
+		"ev_energy_best": {
+			"frames": 4.0,
+			"h": 56.0,
+			"pad": 6.0,
+			"w": 234.0
+		},
+		"ev_energy_card_0": {
+			"frames": 4.0,
+			"h": 600.0,
+			"pad": 20.0,
+			"w": 206.0
+		},
+		"ev_energy_card_1": {
+			"frames": 4.0,
+			"h": 600.0,
+			"pad": 20.0,
+			"w": 206.0
+		},
+		"ev_energy_card_2": {
+			"frames": 4.0,
+			"h": 600.0,
+			"pad": 20.0,
+			"w": 206.0
+		},
+		"ev_energy_hill": {
+			"frames": 4.0,
+			"h": 150.0,
+			"pad": 8.0,
+			"w": 528.0
+		},
+		"ev_energy_vines": {
+			"frames": 4.0,
+			"h": 276.0,
+			"pad": 10.0,
+			"w": 720.0
+		},
+		"ev_entry_duel": {
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
+		},
+		"ev_entry_duel_grey": {
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
+		},
+		"ev_entry_race": {
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
+		},
+		"ev_entry_race_grey": {
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
+		},
+		"ev_entry_ruins": {
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
+		},
+		"ev_entry_ruins_grey": {
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
+		},
+		"ev_entry_seven": {
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
+		},
+		"ev_entry_seven_grey": {
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
+		},
+		"ev_gift_badge_free": {
+			"frames": 4.0,
+			"h": 52.0,
+			"pad": 5.0,
+			"w": 56.0
+		},
+		"ev_gift_badge_paid": {
+			"frames": 4.0,
+			"h": 52.0,
+			"pad": 5.0,
+			"w": 56.0
+		},
+		"ev_gift_card_live": {
+			"frames": 4.0,
+			"h": 236.0,
+			"pad": 8.0,
+			"w": 580.0
+		},
+		"ev_gift_card_lock": {
+			"frames": 4.0,
+			"h": 236.0,
+			"pad": 8.0,
+			"w": 580.0
+		},
+		"ev_gift_lock": {
+			"frames": 4.0,
+			"h": 236.0,
+			"pad": 8.0,
+			"w": 580.0
+		},
+		"ev_gift_rope": {
+			"frames": 4.0,
+			"h": 640.0,
+			"pad": 8.0,
+			"w": 420.0
+		},
+		"ev_gift_seal_live": {
+			"frames": 4.0,
+			"h": 38.0,
+			"pad": 6.0,
+			"w": 150.0
+		},
+		"ev_gift_seal_lock": {
+			"frames": 4.0,
+			"h": 38.0,
+			"pad": 6.0,
+			"w": 150.0
+		},
+		"ev_giftcard_base": {
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 6.0,
+			"w": 100.0
+		},
+		"ev_giftcard_box": {
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 6.0,
+			"w": 100.0
+		},
+		"ev_info_badge": {
+			"frames": 4.0,
+			"h": 30.0,
+			"pad": 6.0,
+			"w": 30.0
+		},
+		"ev_me_banner": {
+			"frames": 4.0,
+			"h": 116.0,
+			"pad": 6.0,
+			"w": 420.0
+		},
+		"ev_me_fill": {
+			"frames": 4.0,
+			"h": 20.0,
+			"nine": [
+				10.0,
+				10.0,
+				10.0,
+				10.0
+			],
+			"pad": 3.0,
+			"w": 508.0
+		},
+		"ev_me_groove": {
+			"frames": 4.0,
+			"h": 20.0,
+			"nine": [
+				12.0,
+				10.0,
+				12.0,
+				10.0
+			],
+			"pad": 6.0,
+			"w": 508.0
+		},
+		"ev_me_node_big_0": {
+			"frames": 4.0,
+			"h": 72.0,
+			"pad": 6.0,
+			"w": 72.0
+		},
+		"ev_me_node_big_1": {
+			"frames": 4.0,
+			"h": 72.0,
+			"pad": 6.0,
+			"w": 72.0
+		},
+		"ev_me_node_big_2": {
+			"frames": 4.0,
+			"h": 72.0,
+			"pad": 6.0,
+			"w": 72.0
+		},
+		"ev_me_node_small_0": {
+			"frames": 4.0,
+			"h": 56.0,
+			"pad": 6.0,
+			"w": 56.0
+		},
+		"ev_me_node_small_1": {
+			"frames": 4.0,
+			"h": 56.0,
+			"pad": 6.0,
+			"w": 56.0
+		},
+		"ev_me_node_small_2": {
+			"frames": 4.0,
+			"h": 56.0,
+			"pad": 6.0,
+			"w": 56.0
+		},
+		"ev_me_reward_card": {
+			"frames": 4.0,
+			"h": 200.0,
+			"nine": [
+				26.0,
+				26.0,
+				26.0,
+				26.0
+			],
+			"pad": 6.0,
+			"w": 170.0
+		},
+		"ev_me_socket": {
+			"frames": 4.0,
+			"h": 50.0,
+			"pad": 4.0,
+			"w": 50.0
+		},
+		"ev_me_tag_off": {
+			"frames": 4.0,
+			"h": 26.0,
+			"pad": 5.0,
+			"w": 54.0
+		},
+		"ev_me_tag_on": {
+			"frames": 4.0,
+			"h": 26.0,
+			"pad": 5.0,
+			"w": 62.0
+		},
+		"ev_me_timer_fill": {
+			"frames": 4.0,
+			"h": 36.0,
+			"pad": 4.0,
+			"w": 292.0
+		},
+		"ev_me_timer_line": {
+			"frames": 4.0,
+			"h": 36.0,
+			"pad": 4.0,
+			"w": 292.0
+		},
+		"ev_medal_0": {
+			"frames": 4.0,
+			"h": 44.0,
+			"pad": 5.0,
+			"w": 44.0
+		},
+		"ev_medal_1": {
+			"frames": 4.0,
+			"h": 44.0,
+			"pad": 5.0,
+			"w": 44.0
+		},
+		"ev_medal_2": {
+			"frames": 4.0,
+			"h": 44.0,
+			"pad": 5.0,
+			"w": 44.0
+		},
+		"ev_medal_3": {
+			"frames": 4.0,
+			"h": 44.0,
+			"pad": 5.0,
+			"w": 44.0
+		},
+		"ev_pass_base": {
+			"frames": 4.0,
+			"h": 70.0,
+			"pad": 6.0,
+			"w": 272.0
+		},
+		"ev_pass_burst": {
+			"frames": 4.0,
+			"h": 260.0,
+			"pad": 4.0,
+			"w": 260.0
+		},
+		"ev_pass_card_endless_idle": {
+			"frames": 4.0,
+			"h": 148.0,
+			"nine": [
+				56.0,
+				28.0,
+				28.0,
+				46.0
+			],
+			"pad": 16.0,
+			"w": 414.0
+		},
+		"ev_pass_card_endless_ready": {
+			"frames": 4.0,
+			"h": 148.0,
+			"nine": [
+				56.0,
+				28.0,
+				28.0,
+				46.0
+			],
+			"pad": 16.0,
+			"w": 414.0
+		},
+		"ev_pass_card_free_idle": {
+			"frames": 4.0,
+			"h": 148.0,
+			"nine": [
+				56.0,
+				28.0,
+				28.0,
+				46.0
+			],
+			"pad": 16.0,
+			"w": 202.0
+		},
+		"ev_pass_card_free_ready": {
+			"frames": 4.0,
+			"h": 148.0,
+			"nine": [
+				56.0,
+				28.0,
+				28.0,
+				46.0
+			],
+			"pad": 16.0,
+			"w": 202.0
+		},
+		"ev_pass_card_prem_idle": {
+			"frames": 4.0,
+			"h": 148.0,
+			"nine": [
+				56.0,
+				28.0,
+				28.0,
+				46.0
+			],
+			"pad": 16.0,
+			"w": 202.0
+		},
+		"ev_pass_card_prem_ready": {
+			"frames": 4.0,
+			"h": 148.0,
+			"nine": [
+				56.0,
+				28.0,
+				28.0,
+				46.0
+			],
+			"pad": 16.0,
+			"w": 202.0
+		},
+		"ev_pass_card_shade": {
+			"frames": 4.0,
+			"h": 148.0,
+			"nine": [
+				56.0,
+				28.0,
+				28.0,
+				46.0
+			],
+			"pad": 4.0,
+			"w": 202.0
+		},
+		"ev_pass_card_super_idle": {
+			"frames": 4.0,
+			"h": 148.0,
+			"nine": [
+				56.0,
+				28.0,
+				28.0,
+				46.0
+			],
+			"pad": 16.0,
+			"w": 202.0
+		},
+		"ev_pass_card_super_ready": {
+			"frames": 4.0,
+			"h": 148.0,
+			"nine": [
+				56.0,
+				28.0,
+				28.0,
+				46.0
+			],
+			"pad": 16.0,
+			"w": 202.0
+		},
+		"ev_pass_endless_dim": {
+			"frames": 4.0,
+			"h": 104.0,
+			"pad": 14.0,
+			"w": 104.0
+		},
+		"ev_pass_endless_lit": {
+			"frames": 4.0,
+			"h": 104.0,
+			"pad": 14.0,
+			"w": 104.0
+		},
+		"ev_pass_endless_shade": {
+			"frames": 4.0,
+			"h": 66.0,
+			"pad": 3.0,
+			"w": 66.0
+		},
+		"ev_pass_flame": {
+			"frames": 4.0,
+			"h": 36.0,
+			"pad": 6.0,
+			"w": 56.0
+		},
+		"ev_pass_medal": {
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 6.0,
+			"w": 96.0
+		},
+		"ev_pass_node_cur": {
+			"frames": 4.0,
+			"h": 68.0,
+			"pad": 14.0,
+			"w": 68.0
+		},
+		"ev_pass_node_done": {
+			"frames": 4.0,
+			"h": 68.0,
+			"pad": 14.0,
+			"w": 68.0
+		},
+		"ev_pass_node_idle": {
+			"frames": 4.0,
+			"h": 68.0,
+			"pad": 14.0,
+			"w": 68.0
+		},
+		"ev_pass_note": {
+			"frames": 4.0,
+			"h": 104.0,
+			"pad": 6.0,
+			"w": 186.0
+		},
+		"ev_pass_price": {
+			"frames": 4.0,
+			"h": 38.0,
+			"pad": 6.0,
+			"w": 92.0
+		},
+		"ev_pass_stamp": {
+			"frames": 4.0,
+			"h": 92.0,
+			"pad": 6.0,
+			"w": 92.0
+		},
+		"ev_pass_tab_0": {
+			"frames": 4.0,
+			"h": 38.0,
+			"pad": 6.0,
+			"w": 202.0
+		},
+		"ev_pass_tab_1": {
+			"frames": 4.0,
+			"h": 38.0,
+			"pad": 6.0,
+			"w": 202.0
+		},
+		"ev_pass_tab_2": {
+			"frames": 4.0,
+			"h": 38.0,
+			"pad": 6.0,
+			"w": 202.0
+		},
+		"ev_pass_ticket_super": {
+			"frames": 4.0,
+			"h": 686.0,
+			"pad": 14.0,
+			"w": 288.0
+		},
+		"ev_pass_ticket_vip": {
+			"frames": 4.0,
+			"h": 686.0,
+			"pad": 14.0,
+			"w": 288.0
+		},
+		"ev_pass_totem": {
+			"frames": 4.0,
+			"h": 60.0,
+			"pad": 6.0,
+			"w": 68.0
+		},
+		"ev_pill_bronze": {
+			"frames": 4.0,
+			"h": 26.0,
+			"nine": [
+				14.0,
+				13.0,
+				14.0,
+				13.0
+			],
+			"pad": 6.0,
+			"w": 80.0
+		},
+		"ev_pill_go": {
+			"frames": 4.0,
+			"h": 26.0,
+			"nine": [
+				14.0,
+				13.0,
+				14.0,
+				13.0
+			],
+			"pad": 6.0,
+			"w": 80.0
+		},
+		"ev_pill_gold": {
+			"frames": 4.0,
+			"h": 26.0,
+			"nine": [
+				14.0,
+				13.0,
+				14.0,
+				13.0
+			],
+			"pad": 6.0,
+			"w": 80.0
+		},
+		"ev_pill_lock": {
+			"frames": 4.0,
+			"h": 26.0,
+			"nine": [
+				14.0,
+				13.0,
+				14.0,
+				13.0
+			],
+			"pad": 6.0,
+			"w": 80.0
+		},
+		"ev_pill_num": {
+			"frames": 4.0,
+			"h": 26.0,
+			"nine": [
+				14.0,
+				13.0,
+				14.0,
+				13.0
+			],
+			"pad": 6.0,
+			"w": 80.0
+		},
+		"ev_pill_silver": {
+			"frames": 4.0,
+			"h": 26.0,
+			"nine": [
+				14.0,
+				13.0,
+				14.0,
+				13.0
+			],
+			"pad": 6.0,
+			"w": 80.0
+		},
+		"ev_pill_teal": {
+			"frames": 4.0,
+			"h": 26.0,
+			"nine": [
+				14.0,
+				13.0,
+				14.0,
+				13.0
+			],
+			"pad": 6.0,
+			"w": 80.0
+		},
+		"ev_pill_time": {
+			"frames": 4.0,
+			"h": 26.0,
+			"nine": [
+				14.0,
+				13.0,
+				14.0,
+				13.0
+			],
+			"pad": 6.0,
+			"w": 80.0
+		},
+		"ev_race_bubble": {
+			"frames": 4.0,
+			"h": 142.0,
+			"nine": [
+				24.0,
+				24.0,
+				24.0,
+				24.0
+			],
+			"pad": 5.0,
+			"w": 200.0
+		},
+		"ev_race_chest_0": {
+			"frames": 4.0,
+			"h": 76.0,
+			"pad": 6.0,
+			"w": 88.0
+		},
+		"ev_race_chest_1": {
+			"frames": 4.0,
+			"h": 76.0,
+			"pad": 6.0,
+			"w": 88.0
+		},
+		"ev_race_chest_2": {
+			"frames": 4.0,
+			"h": 76.0,
+			"pad": 6.0,
+			"w": 88.0
+		},
+		"ev_race_pill_me": {
+			"frames": 4.0,
+			"h": 38.0,
+			"nine": [
+				20.0,
+				19.0,
+				20.0,
+				19.0
+			],
+			"pad": 5.0,
+			"w": 100.0
+		},
+		"ev_race_pill_other": {
+			"frames": 4.0,
+			"h": 38.0,
+			"nine": [
+				20.0,
+				19.0,
+				20.0,
+				19.0
+			],
+			"pad": 5.0,
+			"w": 100.0
+		},
+		"ev_race_pill_time": {
+			"frames": 4.0,
+			"h": 40.0,
+			"nine": [
+				20.0,
+				19.0,
+				20.0,
+				19.0
+			],
+			"pad": 5.0,
+			"w": 240.0
+		},
+		"ev_race_result_me": {
+			"frames": 4.0,
+			"h": 72.0,
+			"nine": [
+				18.0,
+				18.0,
+				18.0,
+				18.0
+			],
+			"pad": 5.0,
+			"w": 536.0
+		},
+		"ev_race_result_other": {
+			"frames": 4.0,
+			"h": 72.0,
+			"nine": [
+				18.0,
+				18.0,
+				18.0,
+				18.0
+			],
+			"pad": 5.0,
+			"w": 536.0
+		},
+		"ev_race_row": {
+			"frames": 4.0,
+			"h": 52.0,
+			"nine": [
+				18.0,
+				18.0,
+				18.0,
+				18.0
+			],
+			"pad": 4.0,
+			"w": 536.0
+		},
+		"ev_race_seat_me": {
+			"frames": 4.0,
+			"h": 140.0,
+			"pad": 8.0,
+			"w": 140.0
+		},
+		"ev_race_seat_off": {
+			"frames": 4.0,
+			"h": 140.0,
+			"pad": 8.0,
+			"w": 140.0
+		},
+		"ev_race_seat_on": {
+			"frames": 4.0,
+			"h": 140.0,
+			"pad": 8.0,
+			"w": 140.0
+		},
+		"ev_race_seat_shade": {
+			"frames": 4.0,
+			"h": 140.0,
+			"pad": 4.0,
+			"w": 140.0
+		},
+		"ev_race_tube_me": {
+			"frames": 4.0,
+			"h": 582.0,
+			"nine": [
+				28.0,
+				28.0,
+				28.0,
+				28.0
+			],
+			"pad": 8.0,
+			"w": 84.0
+		},
+		"ev_race_tube_other": {
+			"frames": 4.0,
+			"h": 582.0,
+			"nine": [
+				28.0,
+				28.0,
+				28.0,
+				28.0
+			],
+			"pad": 8.0,
+			"w": 84.0
+		},
+		"ev_rank_avatar_1": {
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 4.0,
+			"w": 100.0
+		},
+		"ev_rank_avatar_1_me": {
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 4.0,
+			"w": 100.0
+		},
+		"ev_rank_avatar_2": {
+			"frames": 4.0,
+			"h": 88.0,
+			"pad": 4.0,
+			"w": 88.0
+		},
+		"ev_rank_avatar_2_me": {
+			"frames": 4.0,
+			"h": 88.0,
+			"pad": 4.0,
+			"w": 88.0
+		},
+		"ev_rank_avatar_3": {
+			"frames": 4.0,
+			"h": 88.0,
+			"pad": 4.0,
+			"w": 88.0
+		},
+		"ev_rank_avatar_3_me": {
+			"frames": 4.0,
+			"h": 88.0,
+			"pad": 4.0,
+			"w": 88.0
+		},
+		"ev_rank_crown": {
+			"frames": 4.0,
+			"h": 40.0,
+			"pad": 5.0,
+			"w": 60.0
+		},
+		"ev_rank_row_me": {
+			"frames": 4.0,
+			"h": 66.0,
+			"nine": [
+				18.0,
+				18.0,
+				18.0,
+				18.0
+			],
+			"pad": 5.0,
+			"w": 584.0
+		},
+		"ev_rank_row_other": {
+			"frames": 4.0,
+			"h": 66.0,
+			"nine": [
+				18.0,
+				18.0,
+				18.0,
+				18.0
+			],
+			"pad": 5.0,
+			"w": 584.0
+		},
+		"ev_rank_step_1": {
+			"frames": 4.0,
+			"h": 160.0,
+			"pad": 6.0,
+			"w": 192.0
+		},
+		"ev_rank_step_2": {
+			"frames": 4.0,
+			"h": 124.0,
+			"pad": 6.0,
+			"w": 192.0
+		},
+		"ev_rank_step_3": {
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 6.0,
+			"w": 192.0
+		},
+		"ev_sd_flame": {
+			"frames": 4.0,
+			"h": 40.0,
+			"pad": 5.0,
+			"w": 30.0
+		},
+		"ev_sd_grand_rib": {
+			"frames": 4.0,
+			"h": 24.0,
+			"pad": 5.0,
+			"w": 60.0
+		},
+		"ev_sd_more": {
+			"frames": 4.0,
+			"h": 22.0,
+			"pad": 5.0,
+			"w": 26.0
+		},
+		"ev_sd_ready_rib": {
+			"frames": 4.0,
+			"h": 30.0,
+			"pad": 5.0,
+			"w": 96.0
+		},
+		"ev_sd_rope": {
+			"frames": 4.0,
+			"h": 30.0,
+			"pad": 4.0,
+			"w": 6.0
+		},
+		"ev_sd_row_claimed": {
+			"frames": 4.0,
+			"h": 124.0,
+			"pad": 8.0,
+			"w": 624.0
+		},
+		"ev_sd_row_glow": {
+			"frames": 4.0,
+			"h": 124.0,
+			"pad": 10.0,
+			"w": 624.0
+		},
+		"ev_sd_row_idle": {
+			"frames": 4.0,
+			"h": 124.0,
+			"pad": 8.0,
+			"w": 624.0
+		},
+		"ev_sd_row_ready": {
+			"frames": 4.0,
+			"h": 124.0,
+			"pad": 8.0,
+			"w": 624.0
+		},
+		"ev_sd_stone_off": {
+			"frames": 4.0,
+			"h": 44.0,
+			"pad": 6.0,
+			"w": 48.0
+		},
+		"ev_sd_stone_on": {
+			"frames": 4.0,
+			"h": 44.0,
+			"pad": 6.0,
+			"w": 48.0
+		},
+		"ev_sd_tag_10": {
+			"frames": 4.0,
+			"h": 84.0,
+			"pad": 8.0,
+			"w": 80.0
+		},
+		"ev_sd_tag_15": {
+			"frames": 4.0,
+			"h": 84.0,
+			"pad": 8.0,
+			"w": 80.0
+		},
+		"ev_sd_tag_20": {
+			"frames": 4.0,
+			"h": 84.0,
+			"pad": 8.0,
+			"w": 80.0
+		},
+		"ev_sd_tag_25": {
+			"frames": 4.0,
+			"h": 84.0,
+			"pad": 8.0,
+			"w": 80.0
+		},
+		"ev_sd_tag_30": {
+			"frames": 4.0,
+			"h": 84.0,
+			"pad": 8.0,
+			"w": 80.0
+		},
+		"ev_sd_tag_claimed": {
+			"frames": 4.0,
+			"h": 84.0,
+			"pad": 8.0,
+			"w": 80.0
+		},
+		"ev_sd_track": {
+			"frames": 4.0,
+			"h": 206.0,
+			"pad": 6.0,
+			"w": 632.0
+		},
+		"ev_sd_wip": {
+			"frames": 4.0,
+			"h": 56.0,
+			"pad": 5.0,
+			"w": 128.0
+		},
+		"ev_spark4": {
+			"frames": 4.0,
+			"h": 20.0,
+			"pad": 4.0,
+			"w": 20.0
+		},
+		"ev_spree_bags_back": {
+			"frames": 4.0,
+			"h": 700.0,
+			"pad": 6.0,
+			"w": 592.0
+		},
+		"ev_spree_bags_front": {
+			"frames": 4.0,
+			"h": 700.0,
+			"pad": 6.0,
+			"w": 592.0
+		},
+		"ev_spree_bg": {
+			"frames": 4.0,
+			"h": 700.0,
+			"pad": 6.0,
+			"w": 592.0
+		},
+		"ev_spree_bunting": {
+			"frames": 4.0,
+			"h": 700.0,
+			"pad": 6.0,
+			"w": 592.0
+		},
+		"ev_spree_burst": {
+			"frames": 4.0,
+			"h": 136.0,
+			"pad": 8.0,
+			"w": 150.0
+		},
+		"ev_spree_card_back": {
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 6.0,
+			"w": 100.0
+		},
+		"ev_spree_card_front": {
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 6.0,
+			"w": 100.0
+		},
+		"ev_spree_grid": {
+			"frames": 4.0,
+			"h": 286.0,
+			"pad": 5.0,
+			"w": 536.0
+		},
+		"ev_spree_scene": {
+			"frames": 4.0,
+			"h": 700.0,
+			"pad": 6.0,
+			"w": 592.0
+		},
+		"ev_spree_top": {
+			"frames": 4.0,
+			"h": 700.0,
+			"pad": 6.0,
+			"w": 592.0
+		},
+		"ev_ufo_arrow": {
+			"frames": 4.0,
+			"h": 44.0,
+			"pad": 6.0,
+			"w": 70.0
+		},
+		"ev_ufo_back": {
+			"frames": 4.0,
+			"h": 140.0,
+			"pad": 8.0,
+			"w": 150.0
+		},
+		"ev_ufo_bonus_tag": {
+			"frames": 4.0,
+			"h": 28.0,
+			"pad": 6.0,
+			"w": 60.0
+		},
+		"ev_ufo_clock": {
+			"frames": 4.0,
+			"h": 48.0,
+			"pad": 6.0,
+			"w": 158.0
+		},
+		"ev_ufo_front": {
+			"frames": 4.0,
+			"h": 140.0,
+			"pad": 14.0,
+			"w": 150.0
+		},
+		"ev_ufo_light_off": {
+			"frames": 4.0,
+			"h": 10.0,
+			"pad": 4.0,
+			"w": 10.0
+		},
+		"ev_ufo_light_on": {
+			"frames": 4.0,
+			"h": 10.0,
+			"pad": 4.0,
+			"w": 10.0
+		},
+		"ev_ufo_saucer": {
+			"frames": 4.0,
+			"h": 44.0,
+			"pad": 6.0,
+			"w": 88.0
+		},
+		"ev_ufo_sky": {
+			"frames": 4.0,
+			"h": 300.0,
+			"nine": [
+				40.0,
+				40.0,
+				40.0,
+				40.0
+			],
+			"pad": 8.0,
+			"w": 588.0
+		},
+		"ev_ufo_sky_line": {
+			"frames": 4.0,
+			"h": 300.0,
+			"nine": [
+				40.0,
+				40.0,
+				40.0,
+				40.0
+			],
+			"pad": 8.0,
+			"w": 588.0
+		},
+		"ev_ufo_stamp": {
+			"frames": 4.0,
+			"h": 80.0,
+			"pad": 8.0,
+			"w": 300.0
+		},
+		"ev_ufo_star": {
+			"frames": 4.0,
+			"h": 128.0,
+			"pad": 8.0,
+			"w": 128.0
+		},
+		"ev_ufo_strike": {
+			"frames": 4.0,
+			"h": 52.0,
+			"pad": 6.0,
+			"w": 116.0
+		},
+		"ev_ufo_tile_bone": {
+			"frames": 4.0,
+			"h": 102.0,
+			"nine": [
+				22.0,
+				22.0,
+				22.0,
+				22.0
+			],
+			"pad": 6.0,
+			"w": 102.0
+		},
+		"ev_ufo_tile_bonus": {
+			"frames": 4.0,
+			"h": 102.0,
+			"nine": [
+				22.0,
+				22.0,
+				22.0,
+				22.0
+			],
+			"pad": 6.0,
+			"w": 102.0
+		},
+		"ev_ufo_tray": {
+			"frames": 4.0,
+			"h": 186.0,
+			"pad": 14.0,
+			"w": 588.0
+		}
+	}
+}

@@ -52,13 +52,8 @@ func _refresh() -> void:
 	_state.text = txt
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	var r := Rect2(10, 3, sz.x - 20, sz.x - 20)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 4), r.size), 14, 292, 0.0), Color(0, 0, 0, 0.28))
-	var b := Art.rrect(r, 14, 292, 0.9)
-	Art.dilate(ci, b, 2.6, Art.INK)
-	ci.draw_colored_polygon(b, CARD_YELLOW)
-	ci.draw_colored_polygon(Art.rrect(r.grow(-5), 10, 293, 0.5), CARD_YELLOW_L)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(8, 6), Vector2(r.size.x - 16, 10)), 5, 294, 0.3), Color(1, 1, 1, 0.22))
+	# 卡底、礼盒是预生成贴图（scripts/sprites/events.gd）
+	Sprites.draw(ci, "ev_giftcard_base", Rect2(0, 0, sz.x, sz.x))
 	# 背后一圈慢转的光芒
 	var c0 := Vector2(sz.x * 0.5, 44)
 	var t := float(Time.get_ticks_msec()) / 1000.0
@@ -69,24 +64,13 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	Art.item(ci, "pack_1", Vector2(24, 52), 28, true, -0.3)
 	Art.item(ci, Art.AMBER_ICON, Vector2(sz.x - 24, 54), 28, true, 0.25)
 	# 主角：红色礼盒 + 金色缎带 + 蝴蝶结
-	var bx := Rect2(c0.x - 22, 40, 44, 32)
-	var lid := Rect2(c0.x - 26, 30, 52, 13)
-	ci.draw_colored_polygon(Art.rrect(Rect2(bx.position + Vector2(0, 3), bx.size), 4, 301, 0), Color(0, 0, 0, 0.22))
-	Art.fill(ci, Art.rrect(bx, 4, 302, 0.4), Art.CLAY, 2.4)
-	ci.draw_rect(Rect2(bx.position.x, bx.position.y + 2, 6, bx.size.y - 4), Color(1, 1, 1, 0.18))
-	Art.fill(ci, Art.rrect(lid, 4, 303, 0.4), Color("e8673f"), 2.4)
-	ci.draw_rect(Rect2(c0.x - 5, lid.position.y + 1.5, 10, bx.end.y - lid.position.y - 3), Art.FIRE2)
-	ci.draw_rect(Rect2(bx.position.x + 1.5, bx.position.y + 12, bx.size.x - 3, 8), Art.FIRE2)
-	for side in [-1, 1]:
-		var loop := Art.ell(Vector2(c0.x + side * 11, lid.position.y - 6), Vector2(11, 7), 304 + side, 0.05, 12, side * 0.4)
-		Art.fill(ci, loop, Art.FIRE2, 2.2)
-	ci.draw_circle(Vector2(c0.x, lid.position.y - 3), 5.5, Art.INK)
-	ci.draw_circle(Vector2(c0.x, lid.position.y - 3), 4, Color("ffb02e"))
+	Sprites.draw(ci, "ev_giftcard_box", Rect2(0, 0, sz.x, sz.x))
 	# 闪光
 	for j in 2:
 		var tw := 0.5 + 0.5 * sin(t * 3.0 + j * 2.0)
 		var sp: Vector2 = [Vector2(16, 20), Vector2(sz.x - 16, 24)][j]
-		ci.draw_colored_polygon(Art.star_pts(sp, 3 + tw * 4, 1.2, 4, 310 + j), Color(1, 1, 1, 0.5 + tw * 0.5))
+		var sr := 3 + tw * 4
+		Sprites.draw(ci, "ev_spark4", Rect2(sp - Vector2(sr, sr), Vector2(sr, sr) * 2.0), Color(1, 1, 1, 0.5 + tw * 0.5))
 	if chain.free_ready():
 		var c := Vector2(sz.x - 14, 8)
 		c.y -= absf(sin(float(Time.get_ticks_msec()) / 260.0)) * 4.0

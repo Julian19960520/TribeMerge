@@ -144,38 +144,24 @@ static func _podium(pod: Control, top: Array) -> void:
 		if rk == 1:
 			UI.box(pod, Rect2(ac + Vector2(-30, -ar - 40), Vector2(60, 40)), func(ci, sz): _paint_crown(ci, sz))
 
+## 领奖台台阶、头像底、皇冠都是预生成贴图（scripts/sprites/events.gd）
 static func _paint_step(ci: CanvasItem, sz: Vector2, rk: int) -> void:
-	var body := Art.rrect(Rect2(Vector2(2, 2), sz - Vector2(4, 0)), 12, 70 + rk, 0.6)
-	Art.dilate(ci, body, 3.0, Art.INK)
-	ci.draw_colored_polygon(body, MEDAL[rk - 1].darkened(0.12))
-	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(10, 10), Vector2(sz.x - 20, sz.y - 12)), 8, 73 + rk, 0.4), MEDAL[rk - 1])
-	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(16, 14), Vector2(sz.x - 32, 12)), 6, 76 + rk, 0.3), Color(1, 1, 1, 0.3))
+	Sprites.draw(ci, "ev_rank_step_%d" % rk, Rect2(Vector2.ZERO, sz))
 
 static func _paint_avatar(ci: CanvasItem, c: Vector2, rad: float, rk: int, mine: bool) -> void:
-	var ring := Art.ell(c, Vector2(rad + 5, rad + 5), 80 + rk, 0.02, 22)
-	Art.dilate(ci, ring, 2.6, Art.INK)
-	ci.draw_colored_polygon(ring, Art.CLAY if mine else MEDAL[rk - 1])
-	var disc := Art.ell(c, Vector2(rad, rad), 83 + rk, 0.02, 22)
-	Art.dilate(ci, disc, 1.8, Art.INK)
-	ci.draw_colored_polygon(disc, [Art.TEAL, Art.LEATHER, Art.MOSS_D][rk - 1])
+	Sprites.draw(ci, "ev_rank_avatar_%d%s" % [rk, "_me" if mine else ""], Rect2(c - Vector2(rad + 8, rad + 8), Vector2(rad + 8, rad + 8) * 2.0))
 
 static func _paint_crown(ci: CanvasItem, sz: Vector2) -> void:
-	var pts := [Vector2(4, sz.y - 4), Vector2(2, 10), Vector2(17, 22), Vector2(sz.x * 0.5, 2), Vector2(sz.x - 17, 22), Vector2(sz.x - 2, 10), Vector2(sz.x - 4, sz.y - 4)]
-	Art.fill(ci, Art.poly(pts, 90, 0.3), Art.FIRE2, 2.6)
+	Sprites.draw(ci, "ev_rank_crown", Rect2(Vector2.ZERO, sz))
 
 ## 一行：名次（前三名奖牌）、昵称、进度。mine 为真时高亮。
 static func _row(parent: Control, e: Dictionary, mine: bool) -> void:
 	var w := parent.size.x
 	var rk := int(e.get("rank", 0))
 	UI.box(parent, Rect2(0, 4, w, ROW - 8), func(ci, sz):
-		if mine:
-			_card(ci, sz, Color("ffe08a"), Art.CLAY, 4)
-		else:
-			_card(ci, sz, Art.BONE, Color("c9a77a"), 2)
+		Sprites.draw(ci, "ev_rank_row_" + ("me" if mine else "other"), Rect2(Vector2(2, 2), sz - Vector2(4, 4)))
 		if rk >= 1 and rk <= 3:
-			var m := Art.ell(Vector2(48, sz.y * 0.5), Vector2(24, 24), 40 + rk, 0.03, 18)
-			Art.dilate(ci, m, 2.6, Art.INK)
-			ci.draw_colored_polygon(m, MEDAL[rk - 1])
+			Sprites.draw(ci, "ev_medal_%d" % (rk - 1), Rect2(Vector2(24, sz.y * 0.5 - 24), Vector2(48, 48)))
 	, false)
 	var rank_txt := "未上榜" if rk <= 0 else str(rk)
 	var fs := 18 if rk <= 0 else (30 if rk < 100 else 22)
@@ -188,7 +174,3 @@ static func _row(parent: Control, e: Dictionary, mine: bool) -> void:
 	UI.lbl(parent, "%d 件" % int(e.get("progress", 0)), Rect2(w - 190, 4, 170, ROW - 8), 28,
 		Art.CLAY if mine else Color("6b4a2a"), HORIZONTAL_ALIGNMENT_RIGHT, 0, Art.INK, true)
 
-static func _card(ci: CanvasItem, sz: Vector2, fill: Color, line: Color, lw: float) -> void:
-	var b := Art.rrect(Rect2(Vector2(2, 2), sz - Vector2(4, 4)), 14, 7, 0.4)
-	ci.draw_colored_polygon(b, fill)
-	Art.outline(ci, b, lw, line)

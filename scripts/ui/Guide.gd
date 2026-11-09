@@ -542,9 +542,7 @@ func _set_bubble(r: Rect2, point_left: bool) -> void:
 func _paint_frames(ci: CanvasItem, _sz: Vector2) -> void:
 	if _strong():
 		for h in _holes:
-			var frame := Art.rrect(h.grow(7), 16, 4, 0.45)
-			Art.outline(ci, frame, 6.0, Color("ffe7a8"))
-			Art.outline(ci, frame, 2.6, Art.INK)
+			Sprites.draw(ci, "pop_guide_frame", h.grow(7))
 	if not _arrow_on:
 		return
 	_paint_merge_arrow(ci)

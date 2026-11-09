@@ -86,7 +86,8 @@ var scroll_drag := false
 ## 有列表正在拖动或惯性滑动。这时推迟线条沸腾，避免整屏重绘把滚动卡住。
 var scroll_moving := false
 var _boil_hold := false
-var settings := {"music": true, "sound": true, "vibrate": true, "hint": true}
+## boil：沸腾线（线条每 0.125 秒换一帧抖动）。关掉后线条定格，不再按节拍重绘。
+var settings := {"music": true, "sound": true, "vibrate": true, "hint": true, "boil": true}
 var hot_bought := {}
 var hot_revision := 0
 var _hot_refresh_busy := false
@@ -171,11 +172,21 @@ func _sysfont(names: Array, weight: int) -> Font:
 	f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
 	return f
 
+## 开关沸腾线。关掉时定格在第 0 帧并通知所有界面重画一次。
+func set_boil(on: bool) -> void:
+	settings["boil"] = on
+	_boil_hold = false
+	if not on and Art.boil != 0:
+		Art.boil = 0
+		boil_tick.emit()
+
 func _process(delta: float) -> void:
 	var moving := scroll_moving
 	scroll_moving = false
 	_boil_t += delta
-	if _boil_t >= Items.frame_sec:
+	if not settings.get("boil", true):
+		_boil_t = 0.0
+	elif _boil_t >= Items.frame_sec:
 		_boil_t = fmod(_boil_t, Items.frame_sec)
 		Art.boil = (Art.boil + 1) % 4
 		if moving:
@@ -578,6 +589,9 @@ func load_snapshot(d: Dictionary, reconcile := true) -> bool:
 	settings = d.get("settings", settings)
 	if not settings.has("hint"):
 		settings["hint"] = true
+	if not settings.has("boil"):
+		settings["boil"] = true
+	set_boil(bool(settings["boil"]))
 	hot_bought = d.get("hot_bought", {})
 	hot_revision = int(d.get("hot_revision", 0))
 	deals_bought = d.get("deals_bought", {})

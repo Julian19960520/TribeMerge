@@ -117,7 +117,7 @@ static func _en_duel(ci: CanvasItem) -> void:
 		ci.draw_circle(c, 20, _c(Art.BONE))
 		# Meme 内部会改画布变换：换回屏幕坐标画，画完再恢复
 		ci.draw_set_transform_matrix(Transform2D.IDENTITY)
-		Meme.portrait(ci, side, _xf * (c + Vector2(0, 2)), 42 * _xf.get_scale().x)
+		Meme.live_portrait(ci, side, _xf * (c + Vector2(0, 2)), 42 * _xf.get_scale().x)
 		ci.draw_set_transform_matrix(_xf)
 		if _grey: ci.draw_circle(c, 25, Color(0.55, 0.53, 0.5, 0.55))
 	for k in 4:

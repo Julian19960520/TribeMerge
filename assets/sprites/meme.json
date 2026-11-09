@@ -1,0 +1,94 @@
+{
+	"sprites": {
+		"meme_portrait_0": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"meme_portrait_1": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"meme_portrait_2": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"meme_portrait_3": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"meme_portrait_4": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"meme_portrait_5": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"meme_portrait_6": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"meme_portrait_7": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"meme_portrait_8": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"meme_portrait_9": {
+			"frames": 4,
+			"h": 218,
+			"pad": 12,
+			"w": 184
+		},
+		"tiger_bush": {
+			"frames": 1,
+			"h": 58,
+			"pad": 6,
+			"w": 152
+		},
+		"tiger_frag": {
+			"frames": 1,
+			"h": 28,
+			"pad": 6,
+			"w": 52
+		},
+		"tiger_head": {
+			"frames": 4,
+			"h": 152,
+			"pad": 10,
+			"w": 152
+		},
+		"tiger_header": {
+			"frames": 1,
+			"h": 243,
+			"pad": 12,
+			"w": 652
+		},
+		"tiger_node": {
+			"frames": 1,
+			"h": 106,
+			"pad": 8,
+			"w": 220
+		}
+	}
+}

@@ -76,7 +76,9 @@ static func parts(ci: CanvasItem, sz: Vector2) -> void:
 			T.flat = Color(0, 0, 0, 0)
 			T.live_part(ci, "kilndome", at + Vector2(140, 0), TribeArt.VS, Vector2(0.88, 1.22))
 			ci.draw_set_transform(at + Vector2(300, -40), -0.4, Vector2.ONE * 0.9)
-			T.live_hammer(ci, Vector2.ZERO)
+			# live_hammer 自己设变换，这里照它的画法在旋转缩放下画
+			Art.sil(ci, [Art.P(Art.capsule(Vector2(0, 0), Vector2(-46, 0), 5.0, 1), Art.WOOD, 1),
+				Art.P(Art.rrect(Rect2(-62, -17, 24, 34), 7, 2, 0.4), Art.STONE, 1)])
 		else:
 			TribeArt.part(ci, "kilndome", at, TribeArt.VS, Vector2(1.0, 0.5), "_flat", fc)
 			TribeArt.part(ci, "kilndome", at + Vector2(140, 0), TribeArt.VS, Vector2(0.88, 1.22))

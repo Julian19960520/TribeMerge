@@ -457,15 +457,27 @@ static func settings() -> PopupBase:
 	var p := PopupBase.new()
 	var r := Rect2(46, 300, 628, 820)
 	frame(p, r, "设置", Art.TEAL)
-	var keys := ["music", "sound", "vibrate", "hint"]
-	for k in 4:
+	var keys := ["music", "sound", "vibrate", "hint", "boil"]
+	var names := ["音乐", "音效", "振动", "提示", "沸腾线"]
+	for k in keys.size():
 		var key: String = keys[k]
-		var b := UI.btn(p.box, Rect2(122 + k * 126, r.position.y + 90, 96, 96), "", "teal" if G.settings[key] else "grey", Callable())
+		var x := 80.0 + k * 116.0
+		var b := UI.btn(p.box, Rect2(x, r.position.y + 76, 96, 96), "", "teal" if G.settings.get(key, true) else "grey", Callable())
 		b.is_round = true
-		b.glyph = key
+		if key == "boil":
+			# 没有现成小图标，用字代替
+			b.text = "沸"
+			b.font_size = 40
+		else:
+			b.glyph = key
+		UI.lbl(p.box, names[k], Rect2(x - 12, r.position.y + 176, 120, 34), 22, Color("6b5640"))
 		b.pressed.connect(func():
-			G.settings[key] = not G.settings[key]
-			b.style = "teal" if G.settings[key] else "grey"
+			var on: bool = not G.settings.get(key, true)
+			if key == "boil":
+				G.set_boil(on)
+			else:
+				G.settings[key] = on
+			b.style = "teal" if on else "grey"
 			b.queue_redraw()
 			G.dirty()
 			if key == "music":

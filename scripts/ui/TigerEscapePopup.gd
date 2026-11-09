@@ -1,5 +1,6 @@
 extends PopupBase
 const Meme := preload("res://scripts/Meme.gd")
+const MemeSprites := preload("res://scripts/sprites/meme.gd")
 const GAP := 178.0
 var path: Scroller
 var trail: DrawBox
@@ -215,12 +216,11 @@ func _background(ci: CanvasItem, sz: Vector2) -> void:
 	for side in [-1, 1]:
 		for k in 9:
 			var center := Vector2(24 if side < 0 else 696, 440 + k * 114)
-			ci.draw_colored_polygon(Art.ell(center, Vector2(72, 25), k, 0.06, 14, side * 0.7), Color("41734c"))
+			Sprites.at(ci, "tiger_bush", center, 1.0, side * 0.7)
 	ci.draw_rect(Rect2(0, 1232, 720, 248), Color("203e35"))
 
 func _header(ci: CanvasItem, sz: Vector2) -> void:
-	Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 30, 83, 0.2), Color("507456"), 5)
-	ci.draw_colored_polygon(Art.ell(Vector2(326, 117), Vector2(137, 78), 35, 0, 28), Color("65864c"))
+	Sprites.draw(ci, "tiger_header", Rect2(Vector2.ZERO, sz))
 	Art.item(ci, "choice_1", Vector2(326, 98), 132)
 	Art.item(ci, "fire_4", Vector2(248, 139), 73)
 	Art.item(ci, "amber_4", Vector2(407, 139), 70)
@@ -242,14 +242,10 @@ func _trail(ci: CanvasItem, _sz: Vector2) -> void:
 		if gone:
 			for j in 4:
 				var fragment := at + Vector2((j - 1.5) * 37, (j % 2) * 22)
-				Art.fill(ci, Art.ell(fragment, Vector2(22, 10), n + j, 0.1, 8, j * 0.4), Color("574b39"), 2)
+				Sprites.at(ci, "tiger_frag", fragment, 1.0, j * 0.4)
 			EventEntryArt.text(ci, "已摧毁", at + Vector2(0, 62), 21, Color("c88369"), 3)
 			continue
-		ci.draw_colored_polygon(Art.ell(at + Vector2(0, 26), Vector2(103, 32), n, 0, 24), Color(0.05, 0.12, 0.08, 0.5))
-		Art.fill(ci, Art.ell(at + Vector2(0, 10), Vector2(98, 43), n, 0.04, 22), Color("795035"), 4)
-		Art.fill(ci, Art.ell(at, Vector2(98, 35), n + 1, 0.04, 24), Color("b99859"), 3)
-		ci.draw_arc(at, 73, PI * 0.15, PI * 0.87, 20, Color("775234"), 3, true)
-		ci.draw_colored_polygon(Art.ell(at + Vector2(0, -10), Vector2(88, 22), n, 0.05, 22), Color("71984d"))
+		Sprites.at(ci, "tiger_node", at + MemeSprites.NODE_BOX.get_center())
 		if n > 0:
 			var claimed: bool = n in m.get("claimed", [])
 			if n != stage:

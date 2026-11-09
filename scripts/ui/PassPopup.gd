@@ -261,33 +261,9 @@ static func _paint_card(ci: CanvasItem, size: Vector2, track: String, lv: int) -
 	var rewards := _rewards(track, lv)
 	var r := Rect2(Vector2(GLOW, GLOW), size)
 	var seed := lv * 3 + ["free", "prem", "super", "endless"].find(track) + 40
-	var b := Art.rrect(r, 18, seed, 0.6)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 6), r.size), 18, seed, 0.0), Color(0, 0, 0, 0.3))
-	if st == "ready":
-		Art.dilate(ci, b, 11.0, Color(Art.FIRE2, 0.35))
-		Art.dilate(ci, b, 7.0, Art.FIRE2)
-		Art.dilate(ci, b, 4.0, Art.INK)
-	else:
-		Art.dilate(ci, b, 3.0, Art.INK)
-	var body := CLOTH_L
-	var band_col := CLOTH_D
-	if track == "prem" or track == "endless":
-		body = PREM
-		band_col = PREM_D
-	elif track == "super":
-		body = SUPER
-		band_col = SUPER_D
-	ci.draw_colored_polygon(b, body)
-	# 底边的布条，状态写在上面
+	# 卡底（外框、布面、布条、缝线、骨珠）是预生成贴图；压暗用同形状的白图染色
+	Sprites.draw(ci, "ev_pass_card_%s_%s" % [track, "ready" if st == "ready" else "idle"], r)
 	var band := Rect2(r.position.x, r.end.y - BAND_H, r.size.x, BAND_H)
-	ci.draw_colored_polygon(_clip_bottom(b, band.position.y), band_col)
-	ci.draw_line(Vector2(r.position.x + 4, band.position.y), Vector2(r.end.x - 4, band.position.y), Color(Art.INK, 0.35), 2.0)
-	# 缝线
-	var stitch := Art.rrect(r.grow(-8), 12, seed + 3, 0.3)
-	stitch.append(stitch[0])
-	Art.dashed(ci, stitch, 7.0, 6.0, Color(Art.LEATHER_D, 0.45), 2.0)
-	if track != "free":
-		_corner_beads(ci, r, 2 if track == "prem" else 3)
 	_paint_rewards(ci, Rect2(r.position, Vector2(r.size.x, r.size.y)), rewards)
 	var bc := band.get_center()
 	match st:
@@ -298,11 +274,11 @@ static func _paint_card(ci: CanvasItem, size: Vector2, track: String, lv: int) -
 			if lv == 0 and G.pass_endless_ready() > 1:
 				_count_badge(ci, Vector2(r.end.x - 18, r.position.y + 18), G.pass_endless_ready())
 		"done":
-			ci.draw_colored_polygon(b, Color(0.32, 0.2, 0.1, 0.38))
+			Sprites.draw(ci, "ev_pass_card_shade", r, Color(0.32, 0.2, 0.1, 0.38))
 			_band_text(ci, bc, "已领取", Color("5a3d24"))
 			Paint.check_mark(ci, Vector2(r.end.x - 26, r.position.y + 26), 1.5)
 		"future":
-			ci.draw_colored_polygon(b, Color(0.14, 0.08, 0.04, 0.42))
+			Sprites.draw(ci, "ev_pass_card_shade", r, Color(0.14, 0.08, 0.04, 0.42))
 			if lv == 0:
 				_band_text(ci, bc, "每 %d 分开一箱" % Data.pass_need(Data.PASS_LEVELS.size() - 1), Color("f1dfb8"))
 			else:
@@ -310,7 +286,7 @@ static func _paint_card(ci: CanvasItem, size: Vector2, track: String, lv: int) -
 				_band_text(ci, bc + Vector2(14, 0), "%d 级解锁" % lv, Color("f1dfb8"))
 		"lock":
 			if lv == 0:
-				ci.draw_colored_polygon(b, Color(0.14, 0.08, 0.04, 0.3))
+				Sprites.draw(ci, "ev_pass_card_shade", r, Color(0.14, 0.08, 0.04, 0.3))
 			Paint.glyph(ci, "lock", Vector2(bc.x - 56, bc.y + 1), 1.1)
 			_band_text(ci, bc + Vector2(14, 0), "贵宾可领" if track == "prem" else "超级贵宾", Color.WHITE)
 
@@ -327,13 +303,6 @@ static func _clip_bottom(pts: PackedVector2Array, cut: float) -> PackedVector2Ar
 			var t := (cut - a.y) / (b.y - a.y)
 			out.append(a.lerp(b, t))
 	return out
-
-## 左上角的骨珠：贵宾两颗，超级贵宾三颗
-static func _corner_beads(ci: CanvasItem, r: Rect2, count: int) -> void:
-	for k in count:
-		var c := Vector2(r.position.x + 20 + k * 13, r.position.y + 15)
-		ci.draw_circle(c, 6.0, Art.INK)
-		ci.draw_circle(c, 4.2, [Art.TEAL, Art.BONE, Art.CLAY][k])
 
 static func _count_badge(ci: CanvasItem, c: Vector2, n: int) -> void:
 	ci.draw_circle(c, 17, Art.INK)
@@ -358,7 +327,7 @@ static func _paint_rewards(ci: CanvasItem, rect: Rect2, rewards: Array) -> void:
 	for i in n:
 		var text := "×%d" % int(rewards[i][1])
 		var c: Vector2 = spots[i]
-		ci.draw_colored_polygon(Art.ell(c + Vector2(0, icon_s * 0.36), Vector2(icon_s * 0.36, icon_s * 0.1), i + 3, 0.0, 16), Color(0.35, 0.2, 0.08, 0.18))
+		Sprites.draw(ci, "ev_ell_shadow", Rect2(c + Vector2(-icon_s * 0.36, icon_s * 0.26), Vector2(icon_s * 0.72, icon_s * 0.2)), Color(0.35, 0.2, 0.08, 0.18))
 		Art.item(ci, str(rewards[i][0]), c, icon_s)
 		var baseline := c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5 + icon_s * 0.12
 		_outlined(ci, Vector2(c.x + icon_s * 0.3, baseline), text, fs, Color.WHITE, f)
@@ -367,12 +336,7 @@ static func _paint_rewards(ci: CanvasItem, rect: Rect2, rewards: Array) -> void:
 
 static func _burst(p: PopupBase, c: Vector2) -> void:
 	var d := UI.box(p.box, Rect2(c - Vector2(130, 130), Vector2(260, 260)), func(ci, sz):
-		var o: Vector2 = sz * 0.5
-		ci.draw_colored_polygon(Art.star_pts(o, 120, 46, 12, 7), Color(Art.FIRE2, 0.55))
-		ci.draw_colored_polygon(Art.star_pts(o, 76, 30, 8, 9, 0.2), Color(1, 1, 1, 0.75))
-		for k in 8:
-			var a := TAU * float(k) / 8.0 + 0.3
-			ci.draw_colored_polygon(Art.star_pts(o + Vector2(cos(a), sin(a)) * 104.0, 12, 4, 4, k), Color.WHITE)
+		Sprites.draw(ci, "ev_pass_burst", Rect2(Vector2.ZERO, sz))
 	, false)
 	d.pivot_offset = d.size * 0.5
 	d.scale = Vector2(0.3, 0.3)
@@ -480,7 +444,7 @@ static func _ticket(p: PopupBase, r: Rect2, super_vip: bool) -> void:
 static func _stamp(p: PopupBase, r: Rect2) -> void:
 	var s := Rect2(r.end.x - 78, r.position.y - 8, 92, 92)
 	UI.box(p.box, s, func(ci, sz):
-		Art.fill(ci, Art.star_pts(sz * 0.5, 40, 32, 14, 4, 0.2), Art.CLAY, 3.0))
+		Sprites.draw(ci, "ev_pass_stamp", Rect2(Vector2.ZERO, sz)))
 	var lab := UI.lbl(p.box, "超值", Rect2(s.position.x, s.position.y + 26, s.size.x, 40), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	lab.pivot_offset = lab.size * 0.5
 	lab.rotation = 0.18
@@ -527,14 +491,7 @@ static func _paint_head(ci: CanvasItem, sz: Vector2) -> void:
 	Art.dashed(ci, PackedVector2Array([Vector2(8, band.end.y - 14), Vector2(sz.x - 8, band.end.y - 14)]), 9.0, 7.0, Art.ROPE, 2.0)
 	# 等级徽章：一块嵌在兽皮上的赭石圆章
 	var mc := Vector2(74, band.position.y + 70)
-	var medal := Art.ell(mc, Vector2(44, 44), 61, 0.03, 26)
-	Art.dilate(ci, medal, 3.5, Art.INK)
-	ci.draw_colored_polygon(medal, Art.OCHRE)
-	ci.draw_colored_polygon(Art.ell(mc, Vector2(35, 35), 62, 0.03, 24), Color("d98d2a"))
-	ci.draw_colored_polygon(Art.ell(mc + Vector2(-10, -18), Vector2(16, 7), 63, 0.0, 12, -0.4), Color(1, 1, 1, 0.3))
-	for k in 8:
-		var a := TAU * float(k) / 8.0
-		ci.draw_circle(mc + Vector2(cos(a), sin(a)) * 40.0, 2.6, Art.BONE)
+	Sprites.draw(ci, "ev_pass_medal", Rect2(mc - Vector2(48, 48), Vector2(96, 96)))
 	# 进度条
 	Paint.bar(ci, Rect2(134, band.position.y + 54, 264, 36), G.pass_frac(), Art.FIRE, 14)
 	# 列标题：左边布、右边赭石
@@ -543,9 +500,7 @@ static func _paint_head(ci: CanvasItem, sz: Vector2) -> void:
 	var tabs := [[LEFT_X, CLOTH, 0], [VIP_X, Art.OCHRE, 1], [SUPER_X, Art.TEAL, 2]]
 	for k in tabs.size():
 		var x: float = tabs[k][0]
-		var tb := Art.rrect(Rect2(x, 308, CARD_W, 38), 12, 71 + k, 0.4)
-		Art.dilate(ci, tb, 3.0, Art.INK)
-		ci.draw_colored_polygon(tb, tabs[k][1])
+		Sprites.draw(ci, "ev_pass_tab_%d" % k, Rect2(x, 308, CARD_W, 38))
 		var need: int = tabs[k][2]
 		if need == 0:
 			continue
@@ -554,29 +509,13 @@ static func _paint_head(ci: CanvasItem, sz: Vector2) -> void:
 		else:
 			Paint.check_mark(ci, Vector2(x + 24, 327), 0.95)
 	# 图腾柱顶：一张刻出来的脸
-	_totem_head(ci, Vector2(MID_X, 326))
-
-static func _totem_head(ci: CanvasItem, c: Vector2) -> void:
-	var head := Art.rrect(Rect2(c.x - 30, c.y - 24, 60, 52), 12, 81, 0.5)
-	Art.dilate(ci, head, 3.0, Art.INK)
-	ci.draw_colored_polygon(head, Art.WOOD)
-	ci.draw_colored_polygon(Art.rrect(Rect2(c.x - 30, c.y - 24, 60, 12), 6, 82, 0.0), Art.TEAL)
-	ci.draw_line(Vector2(c.x - 30, c.y - 12), Vector2(c.x + 30, c.y - 12), Art.INK, 2.5)
-	for s in [-1.0, 1.0]:
-		var e := c + Vector2(13.0 * s, 0)
-		ci.draw_circle(e, 7.0, Art.BONE)
-		ci.draw_circle(e, 7.0, Art.INK, false, 2.0, true)
-		ci.draw_circle(e + Vector2(0, 1), 3.0, Art.INK)
-	ci.draw_rect(Rect2(c.x - 10, c.y + 13, 20, 6), Art.CLAY)
-	ci.draw_rect(Rect2(c.x - 10, c.y + 13, 20, 6), Art.INK, false, 2.0)
+	Sprites.draw(ci, "ev_pass_totem", Rect2(MID_X - 34, 326 - 28, 68, 60))
 
 ## 购买按钮右上角的价签：人民币价格（贵宾 ¥30，超级贵宾 ¥68）
 static func _price_tag(ci: CanvasItem, sz: Vector2) -> void:
 	var price := "¥%d" % G.pass_cny("super" if G.pass_tier == 1 else "vip")
 	var r := Rect2(sz.x - 84, -20, 92, 38)
-	var b := Art.rrect(r, 16, 91, 0.4)
-	Art.dilate(ci, b, 3.0, Art.INK)
-	ci.draw_colored_polygon(b, Art.CLAY)
+	Sprites.draw(ci, "ev_pass_price", r)
 	# 标题字体里没有「¥」，价签用正文字体
 	var f := G.font_body
 	var w := f.get_string_size(price, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
@@ -622,8 +561,7 @@ static func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		_lash(ci, y, fill_y <= y)
 	# 火光顶端的小火苗
 	if reached < n:
-		var fl := Art.flame_pts(Vector2(MID_X, fill_y - 6), 22, 30, 5)
-		Art.fill(ci, fl, Art.FIRE2, 2.5)
+		Sprites.draw(ci, "ev_pass_flame", Rect2(MID_X - 28, fill_y - 6 - 18, 56, 36))
 	# 节点
 	for lv in range(1, n + 1):
 		_node(ci, lv, reached)
@@ -655,21 +593,7 @@ static func _node(ci: CanvasItem, lv: int, reached: int) -> void:
 	var c := Vector2(MID_X, _node_y(lv))
 	var done := lv <= reached
 	var cur := lv == reached + 1
-	var col := Color("6b5a4a")
-	var inner := Color("5a4a3c")
-	if done:
-		col = Art.OCHRE
-		inner = Color("f4c35a")
-	elif cur:
-		col = Art.TEAL
-		inner = Color("6cc0b5")
-	var disk := Art.ell(c, Vector2(NODE_R, NODE_R), 100 + lv, 0.03, 24)
-	if done:
-		Art.dilate(ci, disk, 9.0, Color(Art.FIRE2, 0.3))
-	Art.dilate(ci, disk, 3.5, Art.INK)
-	ci.draw_colored_polygon(disk, col)
-	ci.draw_colored_polygon(Art.ell(c, Vector2(NODE_R - 7, NODE_R - 7), 120 + lv, 0.03, 22), inner)
-	ci.draw_colored_polygon(Art.ell(c + Vector2(-9, -15), Vector2(12, 5), 140 + lv, 0.0, 12, -0.4), Color(1, 1, 1, 0.3 if done or cur else 0.1))
+	Sprites.draw(ci, "ev_pass_node_" + ("done" if done else ("cur" if cur else "idle")), Rect2(c - Vector2(NODE_R, NODE_R), Vector2(NODE_R, NODE_R) * 2.0))
 	if done or cur:
 		_center_text(ci, c, str(lv), 28)
 	else:
@@ -679,14 +603,10 @@ static func _node(ci: CanvasItem, lv: int, reached: int) -> void:
 
 static func _endless_node(ci: CanvasItem, lit: bool) -> void:
 	var c := Vector2(MID_X, _node_y(Data.PASS_LEVELS.size() + 1))
-	var pts := Art.star_pts(c, 50, 38, 10, 150, -PI * 0.5)
-	if lit:
-		Art.dilate(ci, pts, 10.0, Color(Art.FIRE2, 0.3))
-	Art.fill(ci, pts, Art.CLAY if lit else Color("6b5a4a"), 3.5)
-	ci.draw_colored_polygon(Art.ell(c, Vector2(32, 32), 151, 0.03, 22), Art.OCHRE if lit else Color("5a4a3c"))
+	Sprites.draw(ci, "ev_pass_endless_" + ("lit" if lit else "dim"), Rect2(c - Vector2(52, 52), Vector2(104, 104)))
 	Art.item(ci, "chest_1", c + Vector2(0, -4), 52)
 	if not lit:
-		ci.draw_colored_polygon(Art.ell(c, Vector2(32, 32), 151, 0.03, 22), Color(0.2, 0.13, 0.08, 0.5))
+		Sprites.draw(ci, "ev_pass_endless_shade", Rect2(c - Vector2(33, 33), Vector2(66, 66)), Color(0.2, 0.13, 0.08, 0.5))
 
 ## 循环那一行左边的说明，挂一块小木牌
 static func _endless_note(ci: CanvasItem) -> void:
@@ -695,10 +615,7 @@ static func _endless_note(ci: CanvasItem) -> void:
 	for x in [r.position.x + 30, r.end.x - 30]:
 		ci.draw_line(Vector2(x, r.position.y - 20), Vector2(x, r.position.y + 6), Art.INK, 5.0)
 		ci.draw_line(Vector2(x, r.position.y - 20), Vector2(x, r.position.y + 6), Art.ROPE, 2.5)
-	var b := Art.rrect(r, 12, 160, 0.6)
-	Art.dilate(ci, b, 3.0, Art.INK)
-	ci.draw_colored_polygon(b, Art.WOOD_D)
-	ci.draw_colored_polygon(Art.rrect(r.grow(-6), 9, 161, 0.4), Color("8a5a2c"))
+	Sprites.draw(ci, "ev_pass_note", r)
 	var f := G.font_title
 	var lines := ["满级之后", "每 %d 分再开一箱" % Data.pass_need(Data.PASS_LEVELS.size() - 1)]
 	for i in lines.size():
@@ -709,11 +626,7 @@ static func _endless_note(ci: CanvasItem) -> void:
 ## 柱脚：石堆上一团篝火，写着「起点」
 static func _base(ci: CanvasItem, y: float) -> void:
 	var c := Vector2(MID_X, y)
-	ci.draw_colored_polygon(Art.ell(c + Vector2(0, 40), Vector2(130, 30), 170, 0.04, 26), Color(1, 0.55, 0.15, 0.16))
-	for k in 7:
-		var a := PI * (0.08 + 0.84 * float(k) / 6.0)
-		var sc := c + Vector2(-cos(a) * 66.0, 30.0 - sin(a) * 6.0)
-		Art.fill(ci, Art.ell(sc, Vector2(22, 15), 171 + k, 0.1, 14), Art.STONE if k % 2 == 0 else Color("bdb6aa"), 2.5)
+	Sprites.draw(ci, "ev_pass_base", Rect2(c + Vector2(-136, 6), Vector2(272, 70)))
 	Art.item(ci, "fire_3", c + Vector2(0, -4), 92)
 	var f := G.font_title
 	var w := f.get_string_size("起点", HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
@@ -722,27 +635,11 @@ static func _base(ci: CanvasItem, y: float) -> void:
 # ---------------------------------------------------------------- 购买页画面
 
 static func _paint_ticket(ci: CanvasItem, sz: Vector2, vip: bool) -> void:
-	var r := Rect2(2, 8, sz.x - 4, sz.y - 14)
-	var b := Art.rrect(r, 18, 21 if vip else 22, 0.75)
-	Art.dilate(ci, b, 3.0, Art.INK)
-	ci.draw_colored_polygon(b, Art.OCHRE if vip else Art.TEAL)
-	var inner := r.grow(-11)
-	ci.draw_colored_polygon(Art.rrect(inner, 12, 23, 0.5), Art.HIDE)
-	var band := Rect2(r.position.x + 16, r.position.y + 14, r.size.x - 32, 54)
-	var bb := Art.rrect(band, 10, 24, 0.45)
-	Art.dilate(ci, bb, 2.5, Art.INK)
-	ci.draw_colored_polygon(bb, Art.LEATHER if vip else Art.TEAL.darkened(0.12))
-	var stripe := Rect2(r.position.x + 18, r.position.y + 78, r.size.x - 36, 8)
-	ci.draw_colored_polygon(Art.rrect(stripe, 3, 25, 0.2), Art.OCHRE)
-	for side in 2:
-		var x := r.position.x if side == 0 else r.end.x
-		var hole := Art.ell(Vector2(x, r.get_center().y), Vector2(11, 11), 26 + side, 0.0, 14)
-		ci.draw_colored_polygon(hole, Art.HIDE)
-		Art.outline(ci, hole, 2.0, Art.LEATHER_D)
+	Sprites.draw(ci, "ev_pass_ticket_" + ("vip" if vip else "super"), Rect2(2, 8, sz.x - 4, sz.y - 14))
 
 
 static func _paint_hoard(ci: CanvasItem, sz: Vector2) -> void:
-	ci.draw_colored_polygon(Art.ell(Vector2(sz.x * 0.5, sz.y * 0.78), Vector2(sz.x * 0.38, 28), 2, 0.05, 20), Color(0.45, 0.24, 0.08, 0.28))
+	Sprites.draw(ci, "ev_ell_shadow", Rect2(sz.x * 0.12, sz.y * 0.78 - 28, sz.x * 0.76, 56), Color(0.45, 0.24, 0.08, 0.28))
 	var spots := [Vector2(0.18, 0.60), Vector2(0.34, 0.70), Vector2(0.50, 0.74), Vector2(0.66, 0.70), Vector2(0.82, 0.60), Vector2(0.28, 0.50), Vector2(0.72, 0.48)]
 	var scales := [58.0, 70.0, 62.0, 72.0, 56.0, 54.0, 60.0]
 	var tilt := [-0.3, 0.15, -0.1, 0.25, 0.35, -0.2, 0.1]

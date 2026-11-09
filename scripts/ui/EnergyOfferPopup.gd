@@ -26,10 +26,7 @@ func _ready() -> void:
 	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
 	# 倒计时
 	UI.box(box, Rect2(264, 556, 192, 50), func(ci, sz):
-		var p := Art.rrect(Rect2(Vector2.ZERO, sz), 25, 701, 0.5)
-		Art.dilate(ci, p, 3.0, Art.INK)
-		ci.draw_colored_polygon(p, Art.BONE)
-		ci.draw_circle(Vector2(27, sz.y * 0.5), 18, Art.OCHRE)
+		Sprites.draw(ci, "ev_clock_pill", Rect2(Vector2.ZERO, sz))
 		Paint.glyph(ci, "clock", Vector2(27, sz.y * 0.5), 0.9, Color.WHITE))
 	clock = UI.lbl(box, "", Rect2(304, 556, 148, 50), 28, Color("6b3d1a"))
 	for k in Offers.tiers(KIND).size():
@@ -44,30 +41,9 @@ func _ready() -> void:
 
 ## 标题两侧的藤蔓野花 + 草丘、宝箱、火种和琥珀堆
 func _paint_head(ci: CanvasItem, _sz: Vector2) -> void:
-	for side in [-1.0, 1.0]:
-		var base := Vector2(360 + side * 290, 330)
-		var vine: Array = []
-		for k in 9:
-			var u := float(k) / 8.0
-			vine.append(base + Vector2(side * -sin(u * 2.4) * 40.0 - side * u * 30.0, -u * 230.0))
-		Art.pl(ci, vine, 7.0, Art.INK, 711)
-		Art.pl(ci, vine, 4.0, Art.LEAF_D, 711)
-		for k in range(1, 8):
-			var p: Vector2 = vine[k]
-			var leaf := Art.ell(p + Vector2(side * 16, 0), Vector2(18, 8), 712 + k, 0.08, 10, side * 0.6 + (k % 2) * 0.8)
-			Art.fill(ci, leaf, Art.LEAF, 2.2)
-		for k in [2, 5, 8]:
-			var p: Vector2 = vine[k]
-			_flower(ci, p + Vector2(side * -14, -6), Art.BERRY if k == 5 else Color("f39ab0"), 720 + k)
-	# 草丘
-	var hill := Art.ell(Vector2(360, 452), Vector2(250, 62), 730, 0.04, 30)
-	ci.draw_colored_polygon(Art.ell(Vector2(360, 466), Vector2(252, 60), 731, 0.04, 30), Color(0, 0, 0, 0.3))
-	Art.dilate(ci, hill, 3.0, Art.INK)
-	ci.draw_colored_polygon(hill, Color("8a6038"))
-	ci.draw_colored_polygon(Art.ell(Vector2(360, 440), Vector2(240, 48), 732, 0.05, 28), Art.LEAF)
-	for k in 12:
-		var p := Vector2(150 + Art.srnd(k * 5 + 1) * 420, 418 + Art.srnd(k * 3 + 7) * 34)
-		Art.pl(ci, [p, p + Vector2(-4, -12), p + Vector2(2, -4), p + Vector2(6, -14)], 2.0, Art.LEAF_D, 733 + k)
+	# 藤蔓野花、草丘是预生成贴图（头图坐标）
+	Sprites.draw(ci, "ev_energy_vines", Rect2(0, 74, 720, 276))
+	Sprites.draw(ci, "ev_energy_hill", Rect2(96, 384, 528, 150))
 	# 宝箱后面的光
 	var c := Vector2(360, 330)
 	for j in 12:
@@ -84,39 +60,13 @@ func _paint_head(ci: CanvasItem, _sz: Vector2) -> void:
 		Art.item(ci, "fire_2" if k % 4 != 1 else "amber_3", p, 56, true, (Art.srnd(k + 40) - 0.5) * 0.8)
 	for k in 5:
 		var p := Vector2(120 + Art.srnd(k * 19 + 2) * 480, 200 + Art.srnd(k * 23 + 4) * 140)
-		ci.draw_colored_polygon(Art.star_pts(p, 12, 3.5, 4, 740 + k), Color(1, 1, 0.9, 0.85))
-
-func _flower(ci: CanvasItem, c: Vector2, col: Color, seed: int) -> void:
-	for k in 5:
-		var a := TAU * k / 5.0
-		Art.fill(ci, Art.ell(c + Vector2.from_angle(a) * 9, Vector2(8, 6), seed + k, 0.1, 8, a), col, 2.0)
-	ci.draw_circle(c, 5, Art.FIRE2)
+		Sprites.draw(ci, "ev_spark4", Rect2(p - Vector2(12, 12), Vector2(24, 24)), Color(1, 1, 0.9, 0.85))
 
 func _card(k: int) -> void:
 	var t := Offers.tier(KIND, k)
 	var r := Rect2(float(CARD_X[k]), CARD_Y, CARD_W, CARD_H)
-	var head: Color = HEAD[k]
-	var body: Color = BODY[k]
-	UI.box(box, r, func(ci, sz):
-		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 10), sz), 24, 750 + k, 0.0), Color(0, 0, 0, 0.3))
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 24, 751 + k, 0.8)
-		Art.dilate(ci, b, 3.0, Art.INK)
-		ci.draw_colored_polygon(b, head)
-		ci.draw_colored_polygon(Art.rrect(Rect2(8, 8, sz.x - 16, sz.y - 16), 18, 754 + k, 0.6), body)
-		# 竖条纹
-		for j in 6:
-			var x: float = 22.0 + j * (sz.x - 44) / 5.0
-			Art.ln(ci, Vector2(x, 14), Vector2(x, sz.y - 14), 10.0, Color(1, 1, 1, 0.12), 757 + j)
-		# 顶上的叶子和小花
-		for j in 7:
-			var p := Vector2(16 + j * (sz.x - 32) / 6.0, 4 + (j % 2) * 6)
-			Art.fill(ci, Art.ell(p, Vector2(20, 10), 760 + j + k * 7, 0.08, 10, -0.5 + j * 0.17), Art.LEAF, 2.2)
-		_flower(ci, Vector2(sz.x * 0.36, 0), Color("f39ab0"), 780 + k * 5)
-		_flower(ci, Vector2(sz.x * 0.68, 6), Color("8fc7ff") if k == 0 else Art.BERRY, 790 + k * 5)
-		# 内衬
-		var inner := Art.rrect(Rect2(16, 92, sz.x - 32, 360), 16, 800 + k, 0.5)
-		ci.draw_colored_polygon(inner, Color("f5e7cf"))
-		Art.outline(ci, inner, 2.0, Color(0, 0, 0, 0.15)))
+	# 卡身（条纹、叶子小花、内衬）是预生成贴图，配色见 scripts/sprites/events.gd 的 EN_HEAD / EN_BODY
+	UI.box(box, r, func(ci, sz): Sprites.draw(ci, "ev_energy_card_%d" % k, Rect2(Vector2.ZERO, sz)))
 	UI.lbl(box, "超值 %d%%!" % int(t.get("value_pct", 100)), Rect2(r.position.x, r.position.y + 34, r.size.x, 50), 30, Color("ffe14a"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	var rw: Array = t.get("rewards", [])
 	for j in mini(rw.size(), 3):
@@ -131,9 +81,7 @@ func _card(k: int) -> void:
 			info.extra = func(ci, _sz): SpreePopupScript._info_badge(ci, Vector2(76, 12))
 	if bool(t.get("best", false)):
 		var rib := UI.box(box, Rect2(r.position.x - 14, r.position.y + 446, r.size.x + 28, 56), func(ci, sz):
-			var p := Art.poly([Vector2(0, 6), Vector2(sz.x, 0), Vector2(sz.x - 14, sz.y * 0.5), Vector2(sz.x, sz.y), Vector2(0, sz.y - 4), Vector2(12, sz.y * 0.5)], 820)
-			Art.fill(ci, p, Color("e8577a"), 3.0)
-			Art.dashed(ci, Art.poly([Vector2(16, 12), Vector2(sz.x - 18, 8), Vector2(sz.x - 18, sz.y - 10), Vector2(16, sz.y - 10)], 821), 7, 5, Color(1, 0.9, 0.9, 0.7), 2.0))
+			Sprites.draw(ci, "ev_energy_best", Rect2(Vector2.ZERO, sz)))
 		rib.name = "energy_best"
 		rib.rotation = -0.03
 		UI.lbl(rib, "最划算", Rect2(0, 0, rib.size.x, rib.size.y), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Color("8a1d3a"), true)

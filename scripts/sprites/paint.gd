@@ -757,8 +757,8 @@ static func live_palm_crown(ci: CanvasItem, top: Vector2, seed: int, col: Color)
 static func live_campfire_scene(ci: CanvasItem, c: Vector2, s: float) -> void:
 	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
 	ci.draw_colored_polygon(Art.ell(Vector2(0, 30), Vector2(90, 26), 1, 0.03, 24), Color(1, 0.6, 0.2, 0.2))
-	Art.item(ci, "fire_4", Vector2.ZERO, 100)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Art.item(ci, "fire_4", c, 100.0 * s)
 
 ## s 是整体缩放（原来按 st 算：0.9 + 0.08 * st）
 static func live_spot_hut(ci: CanvasItem, c: Vector2, st: int, s: float = -1.0) -> void:

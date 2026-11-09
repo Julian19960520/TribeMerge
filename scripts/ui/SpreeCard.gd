@@ -30,21 +30,10 @@ func _refresh() -> void:
 const SpreePopupScript := preload("res://scripts/ui/SpreePopup.gd")
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	var r := Rect2(10, 3, sz.x - 20, sz.x - 20)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 4), r.size), 14, 492, 0.0), Color(0, 0, 0, 0.28))
-	var b := Art.rrect(r, 14, 492, 0.9)
-	Art.dilate(ci, b, 2.6, Art.INK)
-	ci.draw_colored_polygon(b, Color("e7b45a"))
-	ci.draw_colored_polygon(Art.rrect(r.grow(-5), 10, 493, 0.5), Color("f2c66e"))
-	# 小草编袋，袋口冒琥珀
+	# 卡底 + 袋子提手、袋身 + 爆炸贴是两层预生成贴图，物品夹在中间
+	var box := Rect2(0, 0, sz.x, sz.x)
+	Sprites.draw(ci, "ev_spree_card_back", box)
 	var c := Vector2(sz.x * 0.5, 50)
-	Art.pl(ci, [c + Vector2(-16, -10), c + Vector2(-10, -30), c + Vector2(10, -30), c + Vector2(16, -10)], 4.0, Art.INK, 494)
-	Art.pl(ci, [c + Vector2(-16, -10), c + Vector2(-10, -30), c + Vector2(10, -30), c + Vector2(16, -10)], 2.2, Art.ROPE, 494)
 	Art.item(ci, Art.AMBER_ICON, c + Vector2(-8, -12), 26, true, -0.3)
 	Art.item(ci, "fire_3", c + Vector2(9, -14), 24, true, 0.2)
-	var bag := Art.poly([c + Vector2(-24, -8), c + Vector2(24, -8), c + Vector2(28, 20), c + Vector2(-28, 20)], 495)
-	Art.fill(ci, bag, Art.WOOD, 2.4)
-	ci.draw_colored_polygon(Art.poly([c + Vector2(-26, 0), c + Vector2(26, 0), c + Vector2(27, 7), c + Vector2(-27, 7)], 496), Art.CLAY)
-	# 红色小爆炸贴
-	var s := Art.star_pts(Vector2(sz.x - 16, 14), 15, 11, 10, 497)
-	Art.fill(ci, s, Color("e5483a"), 2.0)
+	Sprites.draw(ci, "ev_spree_card_front", box)

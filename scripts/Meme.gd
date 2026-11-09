@@ -218,7 +218,13 @@ static func _pixel_shades(ci: CanvasItem, c: Vector2) -> void:
 # ---------------------------------------------------------------- 组合
 
 ## 订单卡片、配置页用的头像：原图半身，上面叠衣服和装饰。c 是头的中心附近，s 和 Paint.portrait 的尺寸差不多。
+## 只贴 scripts/sprites/meme.gd 生成的图（按 s=140 画，这里按比例缩）。
 static func portrait(ci: CanvasItem, role: int, c: Vector2, s: float) -> void:
+	var k := s / 140.0
+	Sprites.at(ci, "meme_portrait_%d" % (role % BODY.size()), c + Vector2(0, -15) * k, k)
+
+## 头像的原始画法：只给生成界面图用
+static func live_portrait(ci: CanvasItem, role: int, c: Vector2, s: float) -> void:
 	var k := s / 100.0
 	var rot: float = TILT[role % TILT.size()]
 	var hc := c + Vector2(0, -4) * k

@@ -96,7 +96,8 @@ static func paint(ci: CanvasItem, sz: Vector2) -> void:
 			ci.draw_rect(cr, Art.HIDE)
 			if live: B.live_vine(ci, cr, k, true)
 			else: Sprites.draw(ci, "board_vine_b%d" % k, cr)
-			Art.item(ci, "berry_2", cr.get_center(), 84)
+			# 物品位置用圆点代替（--script 模式下没有物品数据）
+			ci.draw_circle(cr.get_center(), 30, Color("d8324a"))
 			if live: B.live_vine(ci, cr, k, false)
 			else: Sprites.draw(ci, "board_vine_f%d" % k, cr)
 		var cr2 := Rect2(o + Vector2(10, 980), Vector2(96, 96))

@@ -80,9 +80,13 @@ func at(ci: CanvasItem, key: String, c: Vector2, s: float = 1.0, rot: float = 0.
 	if rot == 0.0:
 		ci.draw_texture_rect(tex, Rect2(c - full * 0.5, full), false, mod)
 		return
-	ci.draw_set_transform(c, rot, Vector2.ONE)
-	ci.draw_texture_rect(tex, Rect2(-full * 0.5, full), false, mod)
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# 旋转时直接算四个角画贴图多边形，不动画布变换（调用方可能自己设了变换）
+	var h := full * 0.5
+	var pts := PackedVector2Array()
+	for p in [Vector2(-h.x, -h.y), Vector2(h.x, -h.y), Vector2(h.x, h.y), Vector2(-h.x, h.y)]:
+		pts.append(c + p.rotated(rot))
+	ci.draw_polygon(pts, PackedColorArray([mod, mod, mod, mod]),
+		PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]), tex)
 
 func _current(key: String) -> Texture2D:
 	var arr := _frames(key)

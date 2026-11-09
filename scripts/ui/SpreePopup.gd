@@ -20,10 +20,7 @@ func _ready() -> void:
 	UI.box(box, ART, _paint_market)
 	# 倒计时
 	UI.box(box, Rect2(R.get_center().x - 96, R.position.y + 48, 192, 50), func(ci, sz):
-		var p := Art.rrect(Rect2(Vector2.ZERO, sz), 25, 901, 0.5)
-		Art.dilate(ci, p, 3.0, Art.INK)
-		ci.draw_colored_polygon(p, Art.BONE)
-		ci.draw_circle(Vector2(27, sz.y * 0.5), 18, Art.OCHRE)
+		Sprites.draw(ci, "ev_clock_pill", Rect2(Vector2.ZERO, sz))
 		Paint.glyph(ci, "clock", Vector2(27, sz.y * 0.5), 0.9, Color.WHITE))
 	clock = UI.lbl(box, "", Rect2(R.get_center().x - 52, R.position.y + 48, 140, 50), 28, Color("6b3d1a"))
 	_grid(t.get("rewards", []))
@@ -36,11 +33,10 @@ func _ready() -> void:
 	_refresh()
 
 ## 集市：暖色天空、兽皮棚子、一串彩旗、两边货架，阿焰站中间拎着两只鼓鼓的草编袋
+## 手绘部分分层预生成（scripts/sprites/events.gd 的 ev_spree_*），物品图标夹在层之间
 func _paint_market(ci: CanvasItem, sz: Vector2) -> void:
 	var r := Rect2(Vector2.ZERO, sz)
-	var bg := Art.rrect(r, 22, 911, 0.6)
-	Art.dilate(ci, bg, 3.0, Art.INK)
-	ci.draw_colored_polygon(bg, Color("f7d59a"))
+	Sprites.draw(ci, "ev_spree_bg", r)
 	Paint.vgrad(ci, Rect2(10, 10, sz.x - 20, 300), Color("ffc7a0"), Color("f7e3b4"))
 	# 远处的太阳光芒
 	var sun := Vector2(sz.x * 0.5, 170)
@@ -48,81 +44,37 @@ func _paint_market(ci: CanvasItem, sz: Vector2) -> void:
 		var a := TAU * j / 14.0
 		ci.draw_colored_polygon(PackedVector2Array([sun, sun + Vector2.from_angle(a - 0.09) * 360, sun + Vector2.from_angle(a + 0.09) * 360]), Color(1, 0.95, 0.75, 0.28))
 	ci.draw_circle(sun, 64, Color(1, 0.93, 0.68, 0.8))
-	# 地面
-	var ground := PackedVector2Array([Vector2(10, 330), Vector2(sz.x * 0.3, 318), Vector2(sz.x * 0.7, 324), Vector2(sz.x - 10, 312), Vector2(sz.x - 10, sz.y - 12), Vector2(10, sz.y - 12)])
-	ci.draw_colored_polygon(Art.poly(Array(ground), 912), Color("d9b47a"))
-	for k in 18:
-		var p := Vector2(30 + Art.srnd(k * 3 + 5) * (sz.x - 60), 350 + Art.srnd(k * 7 + 1) * (sz.y - 380))
-		ci.draw_colored_polygon(Art.ell(p, Vector2(6 + Art.srnd(k) * 6, 3), 913 + k, 0.2, 8), Color(0.55, 0.38, 0.2, 0.25))
-	# 两边的兽皮棚子
-	_stall(ci, Rect2(6, 120, 170, 230), Art.CLAY, 914)
-	_stall(ci, Rect2(sz.x - 176, 110, 170, 240), Art.TEAL, 920)
+	# 地面、土坑、两边的兽皮棚子
+	Sprites.draw(ci, "ev_spree_scene", r)
+	_goods(ci, Rect2(6, 120, 170, 230), 914)
+	_goods(ci, Rect2(sz.x - 176, 110, 170, 240), 920)
 	# 彩旗：绳子从左上垂到右上
-	var rope: Array = []
-	for k in 13:
-		var u := float(k) / 12.0
-		rope.append(Vector2(14 + u * (sz.x - 28), 40 + sin(u * PI) * 54))
-	Art.pl(ci, rope, 3.0, Art.WOOD_D, 915)
-	var flags := [Art.CLAY, Art.OCHRE, Art.TEAL, Art.MOSS, Art.BONE, Art.BERRY]
-	for k in 12:
-		var a: Vector2 = rope[k]
-		var b: Vector2 = rope[k + 1]
-		var m := a.lerp(b, 0.5)
-		var f := Art.poly([a.lerp(b, 0.15) + Vector2(0, 2), a.lerp(b, 0.85) + Vector2(0, 2), m + Vector2(0, 30)], 930 + k)
-		Art.fill(ci, f, flags[k % flags.size()], 2.2)
-	# 阿焰 + 两只草编袋
+	Sprites.draw(ci, "ev_spree_bunting", r)
+	# 阿焰 + 两只草编袋（提手 → 袋口物品 → 袋身）
 	Paint.bust(ci, Vector2(sz.x * 0.5, 330), 150)
-	_bag(ci, Vector2(sz.x * 0.5 - 150, 330), -0.18, Art.OCHRE, 940)
-	_bag(ci, Vector2(sz.x * 0.5 + 150, 322), 0.16, Art.TEAL, 950)
-	# 闪光
-	for k in 7:
-		var p := Vector2(60 + Art.srnd(k * 13 + 3) * (sz.x - 120), 70 + Art.srnd(k * 17 + 9) * 260)
-		ci.draw_colored_polygon(Art.star_pts(p, 10, 3, 4, 960 + k), Color(1, 1, 1, 0.75))
-	Art.outline(ci, bg, 3.0, Art.INK)
+	Sprites.draw(ci, "ev_spree_bags_back", r)
+	_bag_items(ci, Vector2(sz.x * 0.5 - 150, 330), -0.18)
+	_bag_items(ci, Vector2(sz.x * 0.5 + 150, 322), 0.16)
+	Sprites.draw(ci, "ev_spree_bags_front", r)
+	# 闪光 + 外框墨线
+	Sprites.draw(ci, "ev_spree_top", r)
 
-## 兽皮棚：两根木杆 + 一块条纹皮顶，棚下摆几样货
-func _stall(ci: CanvasItem, r: Rect2, col: Color, seed: int) -> void:
-	for x in [r.position.x + 18, r.end.x - 18]:
-		Art.ln(ci, Vector2(x, r.position.y + 30), Vector2(x, r.end.y), 9.0, Art.INK, seed)
-		Art.ln(ci, Vector2(x, r.position.y + 30), Vector2(x, r.end.y), 5.5, Art.WOOD, seed)
-	var roof := Art.poly([r.position + Vector2(-6, 50), r.position + Vector2(r.size.x * 0.5, 0), Vector2(r.end.x + 6, r.position.y + 50), Vector2(r.end.x, r.position.y + 78), r.position + Vector2(0, 78)], seed + 1)
-	Art.fill(ci, roof, col, 3.0)
-	for k in 4:
-		var x := r.position.x + 18 + k * (r.size.x - 36) / 3.0
-		Art.ln(ci, Vector2(x, r.position.y + 30 - absf(k - 1.5) * 4), Vector2(x, r.position.y + 76), 6.0, Color(1, 1, 1, 0.3), seed + 2 + k)
-	var shelf := Art.rrect(Rect2(r.position.x + 4, r.end.y - 56, r.size.x - 8, 22), 6, seed + 6, 0.6)
-	Art.fill(ci, shelf, Art.WOOD, 2.5)
+## 兽皮棚下的几样货
+func _goods(ci: CanvasItem, r: Rect2, seed: int) -> void:
 	var goods := ["fruit_4", "pot_3", "fruit_6"] if seed % 2 == 0 else ["tool_4", "cloth_4", "veg_3"]
 	for k in 3:
 		Art.item(ci, goods[k], Vector2(r.position.x + 32 + k * (r.size.x - 64) / 2.0, r.end.y - 74), 50)
 
-## 鼓鼓的草编袋，袋口冒出琥珀和火种（Art.item 会重置画布变换，所以这里手动旋转各点）
-func _bag(ci: CanvasItem, c: Vector2, rot: float, band: Color, seed: int) -> void:
-	var f := func(pts: Array) -> Array:
-		var out: Array = []
-		for p in pts: out.append(c + (p as Vector2).rotated(rot))
-		return out
-	var handle: Array = f.call([Vector2(-34, -40), Vector2(-20, -92), Vector2(20, -92), Vector2(34, -40)])
-	Art.pl(ci, handle, 6.0, Art.INK, seed)
-	Art.pl(ci, handle, 3.5, Art.ROPE, seed)
+## 草编袋口冒出的琥珀和火种（Art.item 会重置画布变换，所以这里手动旋转各点）
+func _bag_items(ci: CanvasItem, c: Vector2, rot: float) -> void:
 	Art.item(ci, Art.AMBER_ICON, c + Vector2(-18, -48).rotated(rot), 50, true, rot - 0.3)
 	Art.item(ci, "fire_3", c + Vector2(17, -52).rotated(rot), 48, true, rot + 0.2)
 	Art.item(ci, "amber_3", c + Vector2(2, -40).rotated(rot), 40, true, rot + 0.1)
-	var body := Art.poly(f.call([Vector2(-52, -38), Vector2(52, -38), Vector2(60, 56), Vector2(42, 74), Vector2(-42, 74), Vector2(-60, 56)]), seed + 1)
-	Art.dilate(ci, body, 3.0, Art.INK)
-	ci.draw_colored_polygon(body, Art.WOOD)
-	for k in 5:
-		var y := -26.0 + k * 20.0
-		Art.pl(ci, f.call([Vector2(-52, y), Vector2(0, y + 4), Vector2(52, y)]), 2.0, Art.WOOD_D, seed + 2 + k)
-	ci.draw_colored_polygon(Art.poly(f.call([Vector2(-56, -12), Vector2(56, -12), Vector2(57, 6), Vector2(-57, 6)]), seed + 8), band)
-	Art.outline(ci, body, 3.0, Art.INK)
 
 ## 奖励格：半透明底板 3×2，每格图标 + ×数量；实物（宝箱 / 卡包 / 生产器）右上角 i，点开看详情
 func _grid(rewards: Array) -> void:
 	UI.box(box, GRID, func(ci, sz):
-		var p := Art.rrect(Rect2(Vector2.ZERO, sz), 22, 970, 0.6)
-		ci.draw_colored_polygon(p, Color(0.24, 0.15, 0.08, 0.5))
-		Art.outline(ci, p, 2.5, Color(1, 0.95, 0.85, 0.5)))
+		Sprites.draw(ci, "ev_spree_grid", Rect2(Vector2.ZERO, sz)))
 	var cols := 3
 	var cw := GRID.size.x / cols
 	var ch := GRID.size.y / 2.0
@@ -139,20 +91,12 @@ func _grid(rewards: Array) -> void:
 			info.extra = func(ci, _sz): _info_badge(ci, Vector2(84, 14))
 
 static func _info_badge(ci: CanvasItem, c: Vector2) -> void:
-	var b := Art.ell(c, Vector2(15, 15), 980, 0.04, 14)
-	Art.dilate(ci, b, 2.5, Color.WHITE)
-	ci.draw_colored_polygon(b, Color("3d8fd1"))
-	ci.draw_circle(c + Vector2(0, -7), 2.6, Color.WHITE)
-	ci.draw_rect(Rect2(c.x - 2.2, c.y - 2, 4.4, 11), Color.WHITE)
+	Sprites.draw(ci, "ev_info_badge", Rect2(c - Vector2(15, 15), Vector2(30, 30)))
 
 ## 红色爆炸贴：多送 xx%
 func _burst(extra: int) -> void:
 	var st := UI.box(box, Rect2(504, 1018, 150, 136), func(ci, sz):
-		var c: Vector2 = sz * 0.5
-		var s := Art.star_pts(c, 70, 58, 16, 990)
-		Art.dilate(ci, s, 3.5, Art.INK)
-		ci.draw_colored_polygon(s, Color("e5483a"))
-		Art.dashed(ci, Art.ell(c, Vector2(50, 50), 991, 0.03, 24), 7, 5, Color(1, 0.9, 0.8, 0.8), 2.0))
+		Sprites.draw(ci, "ev_spree_burst", Rect2(Vector2.ZERO, sz)))
 	st.rotation = 0.2
 	st.pivot_offset = st.size * 0.5
 	st.name = "spree_burst"

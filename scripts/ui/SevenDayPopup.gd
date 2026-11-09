@@ -128,17 +128,14 @@ func _fill_x(pts: int) -> float:
 
 func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 	# 皮子底板
-	Art.fill(ci, Art.rrect(Rect2(0, 0, sz.x, sz.y), 22, 711, 0.6), Color("f3dfb2"), 3)
-	Art.fill(ci, Art.rrect(Rect2(8, RAIL_Y - 30, sz.x - 16, 62), 16, 712, 0.4), Color("e6cb95"), 0)
+	Sprites.draw(ci, "ev_sd_track", Rect2(Vector2.ZERO, sz))
 	var stages: Array = SevenDay.config()["milestones"]
 	var pts := SevenDay.points()
 	# 绳子轨道 + 火光填充
 	var fx := _fill_x(pts)
 	Paint.bar(ci, Rect2(14, RAIL_Y - 13, sz.x - 28, 26), (fx - 14.0) / (sz.x - 28.0), Color("ffb02e"), 713)
 	if pts > 0 and fx < sz.x - 20:
-		var fl := Art.flame_pts(Vector2(fx, RAIL_Y - 14), 11, 34, 714, 20)
-		Art.fill(ci, fl, Art.FIRE, 2.4)
-		ci.draw_colored_polygon(Art.flame_pts(Vector2(fx, RAIL_Y - 8), 5, 16, 715, 16), Art.FIRE2)
+		Sprites.draw(ci, "ev_sd_flame", Rect2(fx - 15, RAIL_Y - 34, 30, 40))
 	for k in stages.size():
 		var st: Dictionary = stages[k]
 		var x := _node_x(k)
@@ -147,9 +144,7 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		var ready := reached and not got
 		var grand := bool(st.get("grand", false))
 		# 轨道上的积分石
-		var disc := Art.ell(Vector2(x, RAIL_Y), Vector2(23, 21), 720 + k, 0.05, 16)
-		Art.dilate(ci, disc, 3.0, Art.INK)
-		Art.shade(ci, disc, Color("ffcf4a") if reached else Color("c9bfae"), 1)
+		Sprites.draw(ci, "ev_sd_stone_on" if reached else "ev_sd_stone_off", Rect2(x - 24, RAIL_Y - 22, 48, 44))
 		var label := str(int(st["points"]))
 		var f: Font = G.font_title
 		var fs := 18 if label.length() < 3 else 16
@@ -157,7 +152,7 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		ci.draw_string_outline(f, Vector2(x - tw * 0.5, RAIL_Y + 7), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color.WHITE if reached else Color("f3ecdc"))
 		ci.draw_string(f, Vector2(x - tw * 0.5, RAIL_Y + 7), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Art.INK)
 		# 泡泡和积分石之间的挂绳
-		Art.ln(ci, Vector2(x, 98), Vector2(x, RAIL_Y - 22), 3.0, Color("a07a4a"), 725 + k)
+		Sprites.draw(ci, "ev_sd_rope", Rect2(x - 3, 98, 6, 30))
 		# 奖励泡泡：可领的上下跳、外圈发光；已领的变灰打勾；大奖更大、带光芒
 		var lift := sin(_t * 5.0 + k) * 4.0 if ready else 0.0
 		var c := Vector2(x, 62 + lift)
@@ -181,13 +176,12 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 			Paint.badge_num(ci, c + Vector2(-rad * 0.72, -rad * 0.7), 740 + k, 9)
 		if grand:
 			var rib := Rect2(c.x - 30, c.y + rad - 6, 60, 24)
-			Art.fill(ci, Art.rrect(rib, 8, 750, 0.4), Art.CLAY, 2.6)
+			Sprites.draw(ci, "ev_sd_grand_rib", rib)
 			EventEntryArt.text(ci, "大奖", Vector2(c.x, rib.position.y + 19), 17, Color.WHITE, 4)
 
 ## 「+1」小角标：这一档不止一样奖励
 func _more(ci: CanvasItem, c: Vector2, n: int) -> void:
-	var b := Art.ell(c, Vector2(13, 11), 760 + n, 0.03, 14)
-	Art.fill(ci, b, Art.TEAL, 2.4)
+	Sprites.draw(ci, "ev_sd_more", Rect2(c - Vector2(13, 11), Vector2(26, 22)))
 	EventEntryArt.text(ci, "+%d" % n, c + Vector2(0, 6), 15, Color.WHITE, 3)
 
 # ---------------------------------------------------------------- 任务行
@@ -201,23 +195,16 @@ func _task(task: Dictionary, y: float, k: int) -> void:
 	var paid := str(task["metric"]) == "paid_cents"
 	var progress := "%d/%d" % [current, target]
 	if paid: progress = "¥%d/%d" % [current / 100, target / 100]
-	var tier: Color = TIER.get(pts, TIER[30] if pts > 30 else TIER[10])
+	var tier_key: int = pts if TIER.has(pts) else (30 if pts > 30 else 10)
 	var ready := done and not claimed
 	UI.box(tasks_root, Rect2(48, y, 624, ROW_H), func(ci, sz):
-		var body := Art.rrect(Rect2(Vector2.ZERO, sz), 20, 731 + k, 0.5)
 		if ready:
 			# 可领：外圈呼吸金光 + 亮黄底 + 绿描边
 			var glow := 0.35 + 0.25 * sin(_t * 5.0 + k)
-			Art.dilate(ci, body, 7.0, Color(1.0, 0.82, 0.25, glow))
-		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 5), sz), 20, 731 + k, 0.5), Color(0.3, 0.18, 0.08, 0.22 if ready else 0.0))
-		var bg := Color("d2ccbf") if claimed else (Color("dcf0b4") if ready else Color("f6ecd8"))
-		Art.fill(ci, body, bg, 3 if ready else 2, Art.INK if ready else Color("b8a582"))
-		if ready:
-			Art.outline(ci, Art.rrect(Rect2(Vector2(5, 5), sz - Vector2(10, 10)), 16, 732 + k, 0.3), 5, Art.MOSS_D)
+			Sprites.draw(ci, "ev_sd_row_glow", Rect2(Vector2.ZERO, sz), Color(1.0, 0.82, 0.25, glow))
+		Sprites.draw(ci, "ev_sd_row_" + ("claimed" if claimed else ("ready" if ready else "idle")), Rect2(Vector2.ZERO, sz))
 		# 积分牌：一块石头挂牌，越难颜色越热；已领变灰
-		var tag := Art.ell(Vector2(56, sz.y * 0.5), Vector2(38, 40), 733 + k, 0.06, 18)
-		Art.dilate(ci, tag, 3.0, Color("9a8e7c") if claimed else Art.INK)
-		Art.shade(ci, tag, Color("bdb5a6") if claimed else tier, 0)
+		Sprites.draw(ci, "ev_sd_tag_claimed" if claimed else "ev_sd_tag_%d" % tier_key, Rect2(Vector2(16, sz.y * 0.5 - 42), Vector2(80, 84)))
 		EventEntryArt.text(ci, str(pts), Vector2(56, sz.y * 0.5 + 6), 32, Color.WHITE, 6)
 		EventEntryArt.text(ci, "积分", Vector2(56, sz.y * 0.5 + 30), 15, Color.WHITE, 4)
 		# 进度条
@@ -240,13 +227,13 @@ func _task(task: Dictionary, y: float, k: int) -> void:
 		elif ready:
 			# 「可领取」角标
 			var rib := Rect2(sz.x - 118, -12, 96, 30)
-			Art.fill(ci, Art.rrect(rib, 10, 736 + k, 0.4), Art.CLAY, 2.6)
+			Sprites.draw(ci, "ev_sd_ready_rib", rib)
 			EventEntryArt.text(ci, "可领取", rib.get_center() + Vector2(0, 7), 18, Color.WHITE, 4))
 	UI.lbl(tasks_root, str(task["title"]), Rect2(160, y + 12, 330, 44), 25, Color("8a7a66") if claimed else Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
 	if claimed: return
 	if not done:
 		UI.box(tasks_root, Rect2(530, y + 34, 128, 56), func(ci, sz):
-			Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 16, 737 + k, 0.4), Color("e8dcc2"), 2.5, Color("b5a688"))
+			Sprites.draw(ci, "ev_sd_wip", Rect2(Vector2.ZERO, sz))
 			EventEntryArt.text(ci, "进行中", Vector2(sz.x * 0.5, sz.y * 0.5 + 8), 22, Color("9a8a70"), 0), false)
 		return
 	var b := UI.btn(tasks_root, Rect2(526, y + 28, 136, 70), "领取", "green", func(): _claim(str(task["id"]), false), 28)

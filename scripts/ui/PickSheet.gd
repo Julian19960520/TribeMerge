@@ -46,10 +46,7 @@ func _ready() -> void:
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_panel)
 	UI.box(_panel, Rect2(Vector2.ZERO, _panel.size), func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 28, 8, 0.2)
-		Art.dilate(ci, b, 3.0, Art.INK)
-		ci.draw_colored_polygon(b, Art.BONE)
-		Art.outline(ci, b, 3.0, Art.INK)
+		Sprites.draw(ci, "pop_sheet", Rect2(Vector2.ZERO, sz))
 	, false)
 	_title = UI.lbl(_panel, "", Rect2(24, 28, 500, 52), 32, Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
 	_title.clip_text = true
@@ -62,9 +59,7 @@ func _ready() -> void:
 	_tabs.visible = false
 	_panel.add_child(_tabs)
 	_search_box = UI.box(_panel, Rect2(24, 96, 592, 56), func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2(1, 1), sz - Vector2(2, 2)), 12, 2, 0.15)
-		ci.draw_colored_polygon(b, Color.WHITE)
-		Art.outline(ci, b, 2.0, Color("c9a774"))
+		Sprites.draw(ci, "pop_field", Rect2(Vector2(1, 1), sz - Vector2(2, 2)))
 	, false)
 	_search = LineEdit.new()
 	_search.position = Vector2(24, 96)
@@ -317,10 +312,7 @@ func _choice(r: Rect2, pick_id: String, icon: String, nm: String, on: bool) -> v
 			cb.call(pick_id))
 	b.extra = func(ci, sz):
 		var side: float = sz.x
-		var box := Art.rrect(Rect2(Vector2(4, 6), Vector2(side - 8, side - 12)), 16, 5, 0.3)
-		Art.dilate(ci, box, 3.0, Art.INK)
-		ci.draw_colored_polygon(box, Art.BONE)
-		Art.outline(ci, box, 5.0 if on else 2.5, Art.MOSS_D if on else Art.INK)
+		Sprites.draw(ci, "pop_choice_on" if on else "pop_choice_off", Rect2(Vector2(4, 6), Vector2(side - 8, side - 12)))
 		if icon != "":
 			Art.item(ci, icon, Vector2(side * 0.5, side * 0.46), side * 0.66)
 	var cap := UI.lbl(_root, nm, Rect2(r.position.x, r.position.y + r.size.x - 4, r.size.x, 32), 16, Art.MOSS_D if on else Color("6b4a2a"))

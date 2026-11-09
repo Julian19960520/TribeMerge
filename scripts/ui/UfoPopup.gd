@@ -37,21 +37,14 @@ func _ready() -> void:
 	var price := int(UfoOffer.config()["price_cny"])
 	var off := int(round(price * 10.0 / original))
 	var star := UI.box(box, Rect2(78, 400, 128, 128), func(ci, sz):
-		var c: Vector2 = sz * 0.5
-		var s := Art.star_pts(c, 62, 50, 14, 731)
-		Art.dilate(ci, s, 3.5, Art.INK)
-		ci.draw_colored_polygon(s, Art.CLAY)
-		ci.draw_colored_polygon(Art.ell(c, Vector2(42, 42), 732, 0.03, 22), Color("e86a3c"))
-		ci.draw_arc(c, 42, 0, TAU, 32, Color("ffd23f"), 3.0, true))
+		Sprites.draw(ci, "ev_ufo_star", Rect2(Vector2.ZERO, sz)))
 	star.rotation = -0.16
 	star.pivot_offset = star.size * 0.5
 	UI.lbl(star, "%d折" % off, Rect2(0, 30, 128, 52), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	UI.lbl(star, "限时", Rect2(0, 78, 128, 24), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
 	# 倒计时
 	UI.box(box, Rect2(482, 398, 158, 48), func(ci, sz):
-		var p := Art.rrect(Rect2(Vector2.ZERO, sz), 24, 733, 0.4)
-		Art.dilate(ci, p, 3.0, Art.INK)
-		ci.draw_colored_polygon(p, Color(0.07, 0.1, 0.16, 0.85))
+		Sprites.draw(ci, "ev_ufo_clock", Rect2(Vector2.ZERO, sz))
 		Paint.glyph(ci, "clock", Vector2(26, sz.y * 0.5), 1.0, Color("ffd23f")))
 	clock = UI.lbl(box, "", Rect2(526, 398, 108, 48), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 4, Color("0f1a24"))
 	# 礼包物品
@@ -60,10 +53,7 @@ func _ready() -> void:
 		ci.draw_colored_polygon(Art.rrect(Rect2(Vector2.ZERO, sz), 20, 741, 0.0), Color(0.18, 0.12, 0.08, 0.45)), false)
 	shade.visible = false
 	stamp = UI.box(box, Rect2(TRAY.get_center().x - 150, TRAY.get_center().y - 40, 300, 80), func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 16, 743, 0.8)
-		Art.dilate(ci, b, 3.5, Art.INK)
-		ci.draw_colored_polygon(b, Color("c0452a"))
-		Art.dashed(ci, Art.rrect(Rect2(Vector2.ZERO, sz).grow(-8), 10, 744, 0.0), 9, 6, Color("ffd9b0"), 2.5))
+		Sprites.draw(ci, "ev_ufo_stamp", Rect2(Vector2.ZERO, sz)))
 	UI.lbl(stamp, "飞碟已飞走", Rect2(0, 4, 300, 72), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	stamp.pivot_offset = stamp.size * 0.5
 	stamp.rotation = -0.12
@@ -73,11 +63,9 @@ func _ready() -> void:
 	UI.lbl(box, "原价", Rect2(120, row_y + 6, 80, 60), 24, Color("8a7560"), HORIZONTAL_ALIGNMENT_RIGHT)
 	UI.lbl(box, "¥%d" % original, Rect2(204, row_y, 120, 72), 40, Color("8a7560"))
 	UI.box(box, Rect2(206, row_y + 10, 116, 52), func(ci, sz):
-		Art.ln(ci, Vector2(4, sz.y - 10), Vector2(sz.x - 4, 12), 7.0, Art.INK, 741)
-		Art.ln(ci, Vector2(4, sz.y - 10), Vector2(sz.x - 4, 12), 4.0, Color("d8324a"), 741))
+		Sprites.draw(ci, "ev_ufo_strike", Rect2(Vector2.ZERO, sz)))
 	UI.box(box, Rect2(334, row_y + 14, 70, 44), func(ci, sz):
-		var a := PackedVector2Array([Vector2(4, 14), Vector2(38, 14), Vector2(38, 2), Vector2(66, 22), Vector2(38, 42), Vector2(38, 30), Vector2(4, 30)])
-		Art.fill(ci, Art.poly(Array(a), 742, 0.5), Art.OCHRE, 3.0))
+		Sprites.draw(ci, "ev_ufo_arrow", Rect2(Vector2.ZERO, sz)))
 	UI.lbl(box, "¥%d" % price, Rect2(410, row_y - 8, 190, 88), 66, Color("ffb347"), HORIZONTAL_ALIGNMENT_LEFT, 12, Art.INK)
 	buy_btn = UI.btn(box, Rect2(170, 984, 380, 94), "¥%d 购买" % price, "green", _buy, 42)
 	buy_btn.title_font = false
@@ -87,9 +75,7 @@ func _ready() -> void:
 
 ## 夜空、远山、星星（飞碟和光束单独一层，好做飞走动画）
 func _paint_back(ci: CanvasItem, _sz: Vector2) -> void:
-	var sky := Art.rrect(SKY, 22, 721, 0.6)
-	Art.dilate(ci, sky, 3.0, Art.INK)
-	ci.draw_colored_polygon(sky, SKY_TOP)
+	Sprites.draw(ci, "ev_ufo_sky", SKY)
 	Paint.vgrad(ci, Rect2(SKY.position + Vector2(10, 14), SKY.size - Vector2(20, 22)), SKY_TOP, SKY_BOT)
 	for k in 34:
 		var p := SKY.position + Vector2(18 + Art.srnd(k * 3 + 1) * (SKY.size.x - 36), 14 + Art.srnd(k * 5 + 2) * 170)
@@ -97,7 +83,7 @@ func _paint_back(ci: CanvasItem, _sz: Vector2) -> void:
 		ci.draw_circle(p, r, Color(1, 0.97, 0.8, 0.55 + Art.srnd(k) * 0.45))
 	for k in 3:
 		var p := SKY.position + Vector2(90 + k * 210 + Art.srnd(k + 40) * 60, 40 + Art.srnd(k + 50) * 70)
-		ci.draw_colored_polygon(Art.star_pts(p, 9, 3, 4, 722 + k), Color(1, 0.95, 0.7, 0.9))
+		Sprites.draw(ci, "ev_spark4", Rect2(p - Vector2(9, 9), Vector2(18, 18)), Color(1, 0.95, 0.7, 0.9))
 	# 月牙
 	var m := SKY.position + Vector2(SKY.size.x - 70, 92)
 	ci.draw_circle(m, 20, Color("fff1b7"))
@@ -109,14 +95,9 @@ func _paint_back(ci: CanvasItem, _sz: Vector2) -> void:
 	ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 	Paint.palm(ci, Vector2(SKY.position.x + 48, SKY.end.y - 22), 80, 725, Color("17302f"))
 	Paint.palm(ci, Vector2(SKY.end.x - 60, SKY.end.y - 26), 64, 726, Color("17302f"))
-	Art.outline(ci, sky, 3.0, Art.INK)
+	Sprites.draw(ci, "ev_ufo_sky_line", SKY)
 	# 托盘
-	ci.draw_colored_polygon(Art.rrect(Rect2(TRAY.position + Vector2(0, 8), TRAY.size), 20, 727, 0.0), Color(0, 0, 0, 0.25))
-	var tray := Art.rrect(TRAY, 20, 728, 0.7)
-	Art.dilate(ci, tray, 3.0, Art.INK)
-	ci.draw_colored_polygon(tray, Art.WOOD)
-	ci.draw_colored_polygon(Art.rrect(TRAY.grow(-9), 14, 729, 0.5), Color("fff3d6"))
-	Art.dashed(ci, Art.rrect(TRAY.grow(-15), 12, 730, 0.0), 10, 7, Color("e0c08a"), 2.0)
+	Sprites.draw(ci, "ev_ufo_tray", TRAY)
 
 func _paint_beam(ci: CanvasItem, sz: Vector2) -> void:
 	var cx: float = sz.x * 0.5
@@ -145,10 +126,8 @@ func _items() -> void:
 		var is_bonus: bool = bonus.has(id) and not offer.get("items", []).has(id)
 		var cx := x0 + cell * (k + 0.5)
 		UI.box(box, Rect2(cx - tile * 0.5, cy - tile * 0.5, tile, tile), func(ci, sz):
-			var b := Art.rrect(Rect2(Vector2.ZERO, sz), 16, 750 + k, 0.5)
-			Art.dilate(ci, b, 2.5, Art.INK)
-			ci.draw_colored_polygon(b, Color("ffe3a0") if is_bonus else Art.BONE)
-			ci.draw_colored_polygon(Art.ell(Vector2(sz.x * 0.5, sz.y - 16), Vector2(sz.x * 0.32, 6), 760 + k, 0.0, 14), Color(0, 0, 0, 0.12)))
+			Sprites.draw(ci, "ev_ufo_tile_bonus" if is_bonus else "ev_ufo_tile_bone", Rect2(Vector2.ZERO, sz))
+			Sprites.draw(ci, "ev_ell_shadow", Rect2(sz.x * 0.18, sz.y - 22, sz.x * 0.64, 12), Color(0, 0, 0, 0.12)))
 		UI.icon(box, id, Vector2(cx, cy - 3), tile * 0.8)
 		var h := UI.hit(box, Rect2(cx - tile * 0.5, cy - tile * 0.5, tile, tile), func(): G.main.open("item_info", id))
 		h.sound = "tap"
@@ -160,9 +139,7 @@ func _items() -> void:
 		UI.lbl(box, cap, Rect2(cx - cell * 0.5, cy + tile * 0.5 + 4, cell, 28), 18, Color("6b3d1a") if is_bonus else Color("6b4a2a"))
 		if is_bonus:
 			var tg := UI.box(box, Rect2(cx - 30, cy - tile * 0.5 - 16, 60, 28), func(ci, sz):
-				var t := Art.rrect(Rect2(Vector2.ZERO, sz), 10, 770 + k, 0.4)
-				Art.dilate(ci, t, 2.5, Art.INK)
-				ci.draw_colored_polygon(t, Art.MOSS))
+				Sprites.draw(ci, "ev_ufo_bonus_tag", Rect2(Vector2.ZERO, sz)))
 			tg.pivot_offset = tg.size * 0.5
 			tg.rotation = -0.08
 			UI.lbl(tg, "加赠", Rect2(0, 0, 60, 28), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 4, Art.MOSS_D, true)

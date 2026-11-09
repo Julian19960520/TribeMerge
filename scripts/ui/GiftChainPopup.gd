@@ -204,22 +204,10 @@ func _card(i: int, live: bool) -> Control:
 
 func _paint_card(ci: CanvasItem, sz: Vector2, i: int, live: bool, paid: bool, cnt: int) -> void:
 	var r := Rect2(Vector2.ZERO, sz - Vector2(0, 8))
-	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), r.size), 22, 700 + i, 0.0), Color(0, 0, 0, 0.32))
-	var b := Art.rrect(r, 22, 710 + i, 1.0)
-	Art.dilate(ci, b, 3.0, Art.INK)
-	ci.draw_colored_polygon(b, BODY if live else BODY_LOCK)
-	# 木纹
-	for k in 4:
-		var y := 16.0 + k * 52.0 + Art.srnd(i * 7 + k) * 10.0
-		Art.ln(ci, Vector2(24, y), Vector2(sz.x - 24, y + (Art.srnd(i + k * 3) - 0.5) * 6.0), 1.6, Color(0.25, 0.12, 0.05, 0.18), i * 10 + k)
-	var ir := Rect2(70, 22, sz.x - 140, 148)
-	var inner := Art.rrect(ir, 16, 720 + i, 0.6)
-	ci.draw_colored_polygon(inner, INNER if live else INNER_LOCK)
-	Art.dashed(ci, Art.rrect(ir.grow(-6), 12, 730 + i, 0.0), 6, 5, Color(0.55, 0.32, 0.1, 0.4), 1.6)
+	# 卡底（陶土板、木纹、内衬）、步数徽章、印章、锁都是预生成贴图（scripts/sprites/events.gd）
+	Sprites.draw(ci, "ev_gift_card_" + ("live" if live else "lock"), Rect2(Vector2.ZERO, sz))
 	# 步数徽章（陶土圆片）
-	var badge := Art.ell(Vector2(34, 34), Vector2(26, 24), 740 + i, 0.05, 16)
-	Art.dilate(ci, badge, 2.6, Art.INK)
-	ci.draw_colored_polygon(badge, Art.CLAY if paid else Color("8a6a3a"))
+	Sprites.draw(ci, "ev_gift_badge_" + ("paid" if paid else "free"), Rect2(6, 8, 56, 52))
 	# 奖励图标
 	var s: Dictionary = chain.step(i)
 	var rw: Array = s.get("rewards", [])
@@ -231,35 +219,17 @@ func _paint_card(ci: CanvasItem, sz: Vector2, i: int, live: bool, paid: bool, cn
 		Art.item(ci, Art.AMBER_ICON if id.begins_with("amber_") else id, c, minf(96.0, cell - 10.0))
 	# 标签印章
 	if str(s.get("tag", "")) != "":
-		var seal := Art.rrect(Rect2(sz.x - 150, -8, 150, 38), 12, 750 + i, 0.8)
-		Art.fill(ci, seal, Art.CLAY if live else Color("8a4a2e"), 2.6)
+		Sprites.draw(ci, "ev_gift_seal_" + ("live" if live else "lock"), Rect2(sz.x - 150, -8, 150, 38))
 	if not live:
 		# 锁着：压暗 + 绳子捆上 + 石锁
-		ci.draw_colored_polygon(b, Color(0.12, 0.06, 0.02, 0.38))
-		Art.ln(ci, Vector2(sz.x * 0.5 - 6, 0), Vector2(sz.x * 0.5 + 6, r.size.y), 7.0, Art.ROPE, i * 3 + 1)
-		Art.ln(ci, Vector2(sz.x * 0.5 - 6, 0), Vector2(sz.x * 0.5 + 6, r.size.y), 2.0, Color(0.45, 0.3, 0.12, 0.8), i * 3 + 2)
+		Sprites.draw(ci, "ev_gift_lock", Rect2(Vector2.ZERO, sz))
 		var lc := Vector2(sz.x - 36, r.size.y * 0.5 + 6)
-		var plate := Art.ell(lc, Vector2(28, 28), 760 + i, 0.06, 14)
-		Art.dilate(ci, plate, 2.6, Art.INK)
-		ci.draw_colored_polygon(plate, Art.STONE)
 		Paint.glyph(ci, "lock", lc, 1.5)
 
 ## 卡片之间串着的两股绳子 + 绳结
 func _paint_rope(ci: CanvasItem, _sz: Vector2) -> void:
-	var top := SLOT0 - 24.0
-	for k in 3:
-		var y0 := top + _slot_y(k) + CARD_H - 30.0
-		var y1 := top + _slot_y(k + 1) + 20.0
-		if k == 2:
-			y1 = R.end.y - 90.0
-		for side in [-1.0, 1.0]:
-			var x: float = CARD_X + CARD_W * 0.5 + side * 200.0
-			Art.ln(ci, Vector2(x, y0), Vector2(x + side * 4.0, y1), 8.0, Art.INK, k * 4 + int(side))
-			Art.ln(ci, Vector2(x, y0), Vector2(x + side * 4.0, y1), 5.0, Art.ROPE, k * 4 + int(side) + 1)
-			var m := Vector2(x + side * 2.0, (y0 + y1) * 0.5)
-			var knot := Art.ell(m, Vector2(9, 8), 770 + k * 2 + int(side), 0.08, 10)
-			Art.dilate(ci, knot, 2.0, Art.INK)
-			ci.draw_colored_polygon(knot, Color("c9a35e"))
+	# 绳子位置跟 SLOT0 / CARD_H / GAP / R 一致，整段预生成（scripts/sprites/events.gd 的 GIFT_ROPE）
+	Sprites.draw(ci, "ev_gift_rope", Rect2(150, 570, 420, 640))
 
 # ---------------------------------------------------------------- 操作
 

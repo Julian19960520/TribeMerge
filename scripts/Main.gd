@@ -269,11 +269,7 @@ func toast(text: String) -> void:
 	t.position = Vector2(50, 640)
 	fx_layer.add_child(t)
 	var w: float = min(600.0, G.font_body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x + 70.0)
-	UI.box(t, Rect2((620 - w) * 0.5, 0, w, 70), func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2.ZERO, sz), 28, 301, 0.8)
-		Art.dilate(ci, b, 3.0, Art.INK)
-		ci.draw_colored_polygon(b, Color(0.24, 0.15, 0.08, 0.92))
-		Art.dashed(ci, Art.rrect(Rect2(Vector2.ZERO, sz).grow(-6), 22, 302, 0.0), 8, 6, Color(1, 0.85, 0.6, 0.5), 2.0))
+	UI.box(t, Rect2((620 - w) * 0.5, 0, w, 70), func(ci, sz): Sprites.draw(ci, "toast", Rect2(Vector2.ZERO, sz)))
 	UI.lbl(t, text, Rect2(0, 0, 620, 70), 26, Color("fff1c4"))
 	t.modulate.a = 0.0
 	var tw := t.create_tween()

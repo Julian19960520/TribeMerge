@@ -1,4 +1,5 @@
 extends PopupBase
+const PS := preload("res://scripts/sprites/popups.gd")
 ## 储物洞：山洞石壁上一层层木搁板，每层 5 格，往下无限加层（需求 #33：无限格子、可滚动、每格 +10、行距小）。
 ## 已开的格子是石壁里凿出的小龛；下一格是可扩建的虚线格（点它或底部按钮扩建）；同一层剩下的位置是碎石堵着。
 ## 只给看得见的几层建控件（POOL_ROWS 层循环复用），格子再多界面节点数也不变。
@@ -50,46 +51,18 @@ func _ready() -> void:
 
 ## 山洞外框：粗糙石壁 + 洞里暗处；顶上挂皮袋和木牌
 func _paint_frame(ci: CanvasItem, _sz: Vector2) -> void:
-	ci.draw_colored_polygon(Art.rrect(Rect2(FR.position + Vector2(0, 12), FR.size), 40, 161, 0.0), Color(0, 0, 0, 0.35))
-	var outer := Art.rrect(FR, 40, 161, 2.2, 30.0)
-	Art.dilate(ci, outer, 3.5, Art.INK)
-	ci.draw_colored_polygon(outer, Color("7d776c"))
-	# 石块纹理
-	for k in 42:
-		var q := FR.position + Vector2(Art.srnd(k * 3) * FR.size.x, Art.srnd(k * 5 + 1) * FR.size.y)
-		var rr := 6.0 + Art.srnd(k) * 16.0
-		ci.draw_colored_polygon(Art.ell(q, Vector2(rr, rr * 0.7), 170 + k, 0.12, 10), Color("6a645a") if k % 2 == 0 else Color("8c867a"))
-	# 洞口（暗）
-	var cave := Art.rrect(Rect2(VIEW.position - Vector2(10, 62), VIEW.size + Vector2(20, 76)), 30, 162, 1.6, 34.0)
-	Art.dilate(ci, cave, 3.0, Art.INK)
-	ci.draw_colored_polygon(cave, Color("3a2a1f"))
+	# 石壁、石块纹理、洞口
+	Sprites.draw(ci, "pop_inv_frame", PS.INV_FRAME)
 	Paint.vgrad(ci, Rect2(VIEW.position + Vector2(10, -50), Vector2(VIEW.size.x - 20, 60)), Color("2c2018"), Color("3a2a1f"))
-	ci.draw_colored_polygon(Art.rrect(Rect2(VIEW.position.x, VIEW.end.y - 6, VIEW.size.x, 20), 8, 163, 0.0), Color(0, 0, 0, 0.25))
-	# 底部石台
-	var ledge := Art.rrect(Rect2(FR.position.x + 18, 1040, FR.size.x - 36, 110), 22, 164, 1.0)
-	Art.dilate(ci, ledge, 3.0, Art.INK)
-	ci.draw_colored_polygon(ledge, Color("5c4636"))
+	# 洞底阴影 + 底部石台
+	Sprites.draw(ci, "pop_inv_ledge", PS.INV_LEDGE)
 	# 木牌 + 皮袋
-	var sign := Art.rrect(Rect2(240, 318, 240, 70), 14, 165, 0.8)
-	ci.draw_line(Vector2(270, 300), Vector2(282, 320), Art.ROPE, 5.0, true)
-	ci.draw_line(Vector2(450, 300), Vector2(438, 320), Art.ROPE, 5.0, true)
-	ci.draw_colored_polygon(Art.rrect(Rect2(240, 326, 240, 70), 14, 165, 0.0), Color(0, 0, 0, 0.3))
-	Art.dilate(ci, sign, 3.0, Art.INK)
-	ci.draw_colored_polygon(sign, Art.WOOD)
-	Art.pl(ci, [Vector2(256, 342), Vector2(360, 338), Vector2(464, 344)], 2.0, Art.WOOD_D, 166)
-	Art.pl(ci, [Vector2(256, 370), Vector2(360, 374), Vector2(464, 368)], 2.0, Art.WOOD_D, 167)
+	Sprites.draw(ci, "pop_inv_sign", PS.INV_SIGN)
 	Paint.pouch(ci, Vector2(176, 318), 0.8)
 
 ## 一层木搁板：板子横穿整行，两头石钉托着（不再是每格一小截橙条）
-func _paint_shelf(ci: CanvasItem, sz: Vector2) -> void:
-	var y := SLOT + 4.0
-	ci.draw_colored_polygon(Art.rrect(Rect2(4, y + 10, sz.x - 8, 10), 4, 171, 0.0), Color(0, 0, 0, 0.3))
-	var plank := Art.rrect(Rect2(2, y, sz.x - 4, 15), 5, 172, 0.5, 60.0)
-	Art.dilate(ci, plank, 2.5, Art.INK)
-	ci.draw_colored_polygon(plank, Color("a06a36"))
-	ci.draw_colored_polygon(Art.rrect(Rect2(8, y + 2, sz.x - 16, 4), 2, 173, 0.0), Color("c98b4a"))
-	for x in [14.0, sz.x - 14.0]:
-		ci.draw_colored_polygon(Art.poly([Vector2(x - 8, y + 14), Vector2(x + 8, y + 14), Vector2(x + 3, y + 26), Vector2(x - 3, y + 26)], 174), Art.STONE_D)
+func _paint_shelf(ci: CanvasItem, _sz: Vector2) -> void:
+	Sprites.draw(ci, "pop_inv_shelf", PS.INV_SHELF)
 
 func _paint_slot(ci: CanvasItem, sz: Vector2, index: int) -> void:
 	if index < 0: return
@@ -97,24 +70,13 @@ func _paint_slot(ci: CanvasItem, sz: Vector2, index: int) -> void:
 	var r := Rect2(Vector2(4, 4), sz - Vector2(8, 6))
 	if index < cap:
 		# 凿出来的石龛
-		var niche := Art.rrect(r, 20, 180 + index % 30, 0.6)
-		ci.draw_colored_polygon(niche, Color("241912"))
-		ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(4, 4), r.size - Vector2(8, 8)), 16, 181 + index % 30, 0.4), Color("4a3628"))
-		ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(6, 4), Vector2(r.size.x - 12, 14)), 8, 182, 0.0), Color(0, 0, 0, 0.25))
-		Art.outline(ci, niche, 2.0, Color("1a110b"))
+		Sprites.draw(ci, "pop_inv_niche", r)
 		if index < G.inv.size():
-			ci.draw_colored_polygon(Art.ell(Vector2(sz.x * 0.5, sz.y - 14), Vector2(32, 6), index % 30, 0.0, 14), Color(0, 0, 0, 0.35))
+			Sprites.at(ci, "pop_spot_shadow", Vector2(sz.x * 0.5, sz.y - 14), 1.0, 0.0, Color(0, 0, 0, 0.35))
 			Art.item(ci, str(G.inv[index]), sz * 0.5 + Vector2(0, -2), 86)
 	elif index == cap:
 		# 下一格：虚线框 + 加号 + 价格（点它扩建）
-		var niche := Art.rrect(r, 20, 183, 0.6)
-		ci.draw_colored_polygon(niche, Color(0.36, 0.27, 0.2, 0.75))
-		Art.dashed(ci, Art.rrect(r.grow(-3), 18, 184, 0.0), 9, 6, Color("ffd98a"), 2.5)
-		var c := Vector2(sz.x * 0.5, 40)
-		ci.draw_circle(c, 18, Art.INK)
-		ci.draw_circle(c, 15, Art.MOSS)
-		ci.draw_line(c + Vector2(-8, 0), c + Vector2(8, 0), Color.WHITE, 4.0, true)
-		ci.draw_line(c + Vector2(0, -8), c + Vector2(0, 8), Color.WHITE, 4.0, true)
+		Sprites.draw(ci, "pop_inv_next", r)
 		Art.item(ci, Art.AMBER_ICON, Vector2(30, 82), 30, false)
 		var f: Font = G.font_body
 		var t := str(G.storage_price())
@@ -122,12 +84,7 @@ func _paint_slot(ci: CanvasItem, sz: Vector2, index: int) -> void:
 		ci.draw_string(f, Vector2(46, 91), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
 	else:
 		# 还没挖开：碎石堵着（离可扩建那格越远越暗）
-		var rocks := [[Vector2(36, 70), Vector2(30, 24)], [Vector2(72, 66), Vector2(28, 28)], [Vector2(54, 42), Vector2(26, 20)]]
-		for k in rocks.size():
-			var e := Art.ell(rocks[k][0], rocks[k][1], 190 + index * 3 + k, 0.12, 12)
-			Art.dilate(ci, e, 2.5, Art.INK)
-			ci.draw_colored_polygon(e, Color("6f6a63") if k != 1 else Color("847d72"))
-			ci.draw_colored_polygon(Art.ell(rocks[k][0] - Vector2(6, 8), rocks[k][1] * 0.35, 195 + k, 0.1, 10), Color(1, 1, 1, 0.12))
+		Sprites.draw(ci, "pop_inv_rocks", r)
 
 func _process(_delta: float) -> void:
 	if scroll != null: _layout()

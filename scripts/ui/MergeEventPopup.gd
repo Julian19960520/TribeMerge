@@ -52,8 +52,8 @@ func _build() -> void:
 	var banner := UI.box(box, br.grow(8), func(ci, sz): Paint.banner(ci, Rect2(Vector2(8, 8), sz - Vector2(16, 16)), _c("banner", "2f6377")))
 	box.move_child(banner, 2)
 	UI.box(box, Rect2(214, 224, 292, 36), func(ci, sz):
-		var pill := Art.rrect(Rect2(Vector2.ZERO, sz), sz.y / 2, 51, 0.4)
-		Art.fill(ci, pill, Color(0.05, 0.12, 0.16, 0.75), 2.0, Color(_c("glow", "bff3f0"), 0.35))
+		Sprites.draw(ci, "ev_me_timer_fill", Rect2(Vector2.ZERO, sz))
+		Sprites.draw(ci, "ev_me_timer_line", Rect2(Vector2.ZERO, sz), Color(_c("glow", "bff3f0"), 0.35))
 		Paint.glyph(ci, "clock", Vector2(24, sz.y / 2), 0.9))
 	timer = UI.lbl(box, "", Rect2(244, 224, 256, 36), 20, Color("d6f3ef"))
 	_build_track()
@@ -89,12 +89,10 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 	var bar := Rect2(BAR.position - o, BAR.size)
 	var total := float(MergeEvent.goal_total(cfg))
 	var frac := clampf(float(MergeEvent.progress(cfg, s)) / total, 0.0, 1.0)
-	var groove := Art.rrect(bar, bar.size.y / 2, 408, 0.3)
-	Art.dilate(ci, groove, 3.0, INK)
-	ci.draw_colored_polygon(groove, Color("10232a"))
+	Sprites.draw(ci, "ev_me_groove", bar)
 	if frac > 0.0:
 		var fill := Rect2(bar.position, Vector2(maxf(bar.size.y, bar.size.x * frac), bar.size.y))
-		ci.draw_colored_polygon(Art.rrect(fill, bar.size.y / 2, 409, 0.2), _c("accent", "8cdece"))
+		Sprites.draw(ci, "ev_me_fill", fill, _c("accent", "8cdece"))
 		ci.draw_colored_polygon(Art.rrect(Rect2(fill.position + Vector2(6, 3), Vector2(fill.size.x - 12, 6)), 3, 410, 0.0), Color(1, 1, 1, 0.5))
 		var shine := fmod(_t * 0.35, 1.0) * fill.size.x
 		ci.draw_circle(fill.position + Vector2(shine, fill.size.y / 2), 6, Color(1, 1, 1, 0.35))
@@ -109,10 +107,7 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		if state == 1:
 			c.y -= absf(sin(_t * 4.0)) * 6.0
 			ci.draw_circle(c, r + 12 + 3 * sin(_t * 6.0), Color(1, 0.93, 0.55, 0.28))
-		var disc := Art.ell(c, Vector2(r, r), 420 + k, 0.03, 22)
-		Art.dilate(ci, disc, 3.0, INK)
-		ci.draw_colored_polygon(disc, Color("f2c14e") if state == 1 else (Color("3d6a6f") if state == 2 else Color("2e5058")))
-		ci.draw_colored_polygon(Art.ell(c + Vector2(0, 3), Vector2(r - 6, r - 7), 430 + k, 0.03, 20), Color(0, 0, 0, 0.18))
+		Sprites.draw(ci, "ev_me_node_%s_%d" % ["big" if last else "small", state], Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0))
 		Art.item(ci, _featured(ms[k]["rewards"]), c, r * (1.55 if last else 1.45))
 		if state == 2:
 			ci.draw_circle(c, r - 2, Color(0.1, 0.2, 0.22, 0.45))
@@ -121,7 +116,7 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		if str(cfg["board"].get("goal", "")) == "discover_all" and not last and state != 1: tag = "%d件" % int(ms[k]["at"])
 		var tw := 62.0 if state == 1 else 54.0
 		var pill := Rect2(c + Vector2(-tw / 2, r - 4), Vector2(tw, 26))
-		Art.fill(ci, Art.rrect(pill, 13, 440 + k, 0.3), Color("8cc63f") if state == 1 else Color("10232a"), 2.2, INK)
+		Sprites.draw(ci, "ev_me_tag_on" if state == 1 else "ev_me_tag_off", pill)
 		var font: Font = G.font_title if state == 1 else G.font_body
 		var fs := 18
 		var w := font.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
@@ -195,9 +190,7 @@ func _paint_collection(ci: CanvasItem, sz: Vector2) -> void:
 	for k in chain.size():
 		var c := Vector2(12 + gap * (k + 0.5), sz.y / 2 + 4)
 		var id := str(chain[k]["id"])
-		var socket := Art.ell(c, Vector2(gap * 0.43, 25), 710 + k, 0.03, 18)
-		ci.draw_colored_polygon(socket, Color("223b42"))
-		Art.outline(ci, socket, 2.0, Color(0, 0, 0, 0.35))
+		Sprites.draw(ci, "ev_me_socket", Rect2(c - Vector2(gap * 0.43, 25), Vector2(gap * 0.86, 50)))
 		if s["discovered"].has(id):
 			if k == top: ci.draw_circle(c, 30 + 2 * sin(_t * 3.0), Color(_c("glow", "bff3f0"), 0.22))
 			MergeEvent.draw_item(ci, cfg, id, c + Vector2(0, -6), gap * 0.86)
@@ -274,7 +267,7 @@ func _preview_rewards(k: int) -> void:
 		var reward: Array = rewards[j]
 		var x := 90 + gap * j
 		UI.box(p.box, Rect2(x + 6, 636, gap - 12, 200), func(ci, sz):
-			Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 20, 480 + j, 0.4), Color("24404a"), 3.0, INK)
+			Sprites.draw(ci, "ev_me_reward_card", Rect2(Vector2.ZERO, sz))
 			ci.draw_circle(Vector2(sz.x / 2, 82), 52, Color(_c("glow", "bff3f0"), 0.15))
 			Art.item(ci, str(reward[0]), Vector2(sz.x / 2, 82), minf(112, gap - 30)))
 		UI.lbl(p.box, "×%d" % int(reward[1]), Rect2(x, 770, gap, 50), 32, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, INK, true)
@@ -334,7 +327,8 @@ class Fx extends Control:
 			match str(q["k"]):
 				"star":
 					var a := 1.0 - t
-					draw_colored_polygon(Art.star_pts(p, float(q["r"]) * a + 2, float(q["r"]) * 0.4 * a + 1, 4, 3), Color(1, 0.95, 0.6, a))
+					var sr := float(q["r"]) * a + 2
+					Sprites.draw(self, "ev_spark4", Rect2(p - Vector2(sr, sr), Vector2(sr, sr) * 2.0), Color(1, 0.95, 0.6, a))
 				"ring":
 					draw_arc(p, 14 + t * float(q["r"]), 0, TAU, 28, Color(1, 0.95, 0.65, 1 - t), 5 * (1 - t) + 1, true)
 				"leaf":
@@ -365,7 +359,7 @@ class Fx extends Control:
 					var sc := 0.8 + 0.2 * minf(1.0, t * 6.0)
 					draw_set_transform(p, 0, Vector2.ONE * sc)
 					var r := Rect2(-210, -58, 420, 116)
-					Art.fill(self, Art.rrect(r, 26, 901, 0.4), Color(0.12, 0.25, 0.3, 0.94 * a), 3.0, Color(Art.INK, a))
+					Sprites.draw(self, "ev_me_banner", r, Color(1, 1, 1, a))
 					draw_circle(Vector2(-140, 0), 50, Color(0.75, 1, 0.97, 0.25 * a))
 					MergeEvent.draw_item(self, cfg, str(q["id"]), Vector2(-140, -2), 96, Color(1, 1, 1, a))
 					draw_string(G.font_body, Vector2(-80, -14), "解锁图鉴", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.75, 0.95, 0.92, a))

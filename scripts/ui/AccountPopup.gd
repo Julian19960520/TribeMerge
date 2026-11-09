@@ -157,9 +157,7 @@ static func _after_login(p: PopupBase, c, res: Dictionary) -> void:
 
 static func _line(parent: Node, r: Rect2, hint: String) -> LineEdit:
 	UI.box(parent, r, func(ci, sz):
-		var b := Art.rrect(Rect2(Vector2(1, 1), sz - Vector2(2, 2)), 12, 2, 0.15)
-		ci.draw_colored_polygon(b, Color.WHITE)
-		Art.outline(ci, b, 2.0, Color("c9a774")), false).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		Sprites.draw(ci, "pop_field", Rect2(Vector2(1, 1), sz - Vector2(2, 2))), false).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var e := LineEdit.new()
 	e.position = r.position
 	e.size = r.size

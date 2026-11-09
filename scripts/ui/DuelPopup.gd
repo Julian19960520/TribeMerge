@@ -220,17 +220,15 @@ func _progress_panel(m: Dictionary) -> void:
 	for side in 2:
 		var x:=200.0 if side==0 else 520.0
 		var points: int=scores[side]
-		var tint:=Art.MOSS if side==0 else Art.CLAY
 		var pile:=UI.box(body,Rect2(x-140,670,280,330),func(ci,sz):
 			var base_y: float=sz.y-30
 			var apex: Vector2=Vector2(sz.x*0.5,46)
 			# 地面土堆
-			Art.fill(ci,Art.ell(Vector2(sz.x*0.5,base_y+8),Vector2(130,20),930+side,0.05,22),Color("c9a46a"),2.5)
+			Sprites.draw(ci,"ev_duel_mound",Rect2(sz.x*0.5-130,base_y-12,260,40))
 			# 目标轮廓：虚线锥形 + 顶上的小旗
 			var cone:=PackedVector2Array([Vector2(16,base_y),apex,Vector2(sz.x-16,base_y),Vector2(16,base_y)])
 			Art.dashed(ci,cone,10,7,Color(0.48,0.3,0.13,0.45),2.5)
-			Art.ln(ci,apex,apex+Vector2(0,-34),3,Art.INK)
-			Art.fill(ci,PackedVector2Array([apex+Vector2(0,-34),apex+Vector2(26,-26),apex+Vector2(0,-18)]),tint,2)
+			Sprites.draw(ci,"ev_duel_flag_%d"%side,Rect2(apex+Vector2(-4,-38),Vector2(34,42)))
 			# 由下往上一层层堆，越往上越窄
 			var rows:=[8,7,6,5,4,3,2,1]
 			var total:=36
@@ -354,9 +352,9 @@ func _rays(ci: CanvasItem, c: Vector2, r: float, col: Color, n: int, rot: float)
 		ci.draw_colored_polygon(PackedVector2Array([c,c+Vector2.from_angle(a-w)*r,c+Vector2.from_angle(a+w)*r]),col)
 
 func _vs(ci: CanvasItem, c: Vector2, r: float) -> void:
-	ci.draw_colored_polygon(Art.star_pts(c+Vector2(0,4),r*1.15,r*0.8,10,970),Color(0,0,0,0.2))
-	Art.fill(ci,Art.star_pts(c,r*1.15,r*0.8,10,971),Art.CLAY,3)
-	ci.draw_circle(c,r*0.72,Color("e8673f"))
+	# 星章底是预生成贴图（按 r=40 画的）
+	var k:=r/40.0
+	Sprites.at(ci,"ev_duel_vs",c+Vector2(0,2)*k,k)
 	var f: Font=G.font_title if G.font_title else ThemeDB.fallback_font
 	var fs:=int(r*0.85)
 	var tw:=f.get_string_size("VS",HORIZONTAL_ALIGNMENT_LEFT,-1,fs).x

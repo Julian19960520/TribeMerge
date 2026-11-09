@@ -51,7 +51,29 @@ static func entries() -> Array:
 		"draw": func(ci, r): live_speech_tail(ci, r.get_center(), true)})
 	out.append({"key": "speech_tail_r", "w": 80, "h": 64, "pad": 6,
 		"draw": func(ci, r): live_speech_tail(ci, r.get_center(), false)})
+	out.append({"key": "toast", "w": 420, "h": 70, "pad": 8, "nine": [34, 30, 34, 30],
+		"draw": func(ci, r): live_toast(ci, r)})
+	# 主页村庄地面：篝火广场 + 散落的草丛。坐标对应主页 720×1480 里 y≥450 的部分
+	out.append({"key": "village_ground", "w": 720, "h": 1030, "pad": 4,
+		"draw": func(ci, r): live_village_ground(ci, r)})
 	return out
+
+## 底部提示气泡
+static func live_toast(ci: CanvasItem, r: Rect2) -> void:
+	var b := Art.rrect(r, 28, 301, 0.8)
+	Art.dilate(ci, b, 3.0, Art.INK)
+	ci.draw_colored_polygon(b, Color(0.24, 0.15, 0.08, 0.92))
+	Art.dashed(ci, Art.rrect(r.grow(-6), 22, 302, 0.0), 8, 6, Color(1, 0.85, 0.6, 0.5), 2.0)
+
+## 原来 Paint.village 里现场画的广场和草丛（r.position 对应主页的 (0, 450)）
+static func live_village_ground(ci: CanvasItem, r: Rect2) -> void:
+	var o := r.position - Vector2(0, 450)
+	var sz := Vector2(720, 1480)
+	var hub := TribeArt.area_at("fire")
+	ci.draw_colored_polygon(Art.ell(o + hub + Vector2(0, -10), Vector2(180, 96), 2, 0.04, 30, 0.0, 0.0), Color("d9b778"))
+	for i in 40:
+		var p := o + Vector2(Art.srnd(i * 5) * sz.x, 510 + Art.srnd(i * 9) * (sz.y - 530))
+		Art.pl(ci, [p, p + Vector2(-4, -10), p + Vector2(0, -2), p + Vector2(5, -11)], 2.0, Color("4f7a1f"), i)
 
 static func _bar_bg(ci: CanvasItem, r: Rect2) -> void:
 	var b := Art.rrect(r, r.size.y * 0.5, 9, 0.5)

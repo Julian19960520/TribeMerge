@@ -82,12 +82,8 @@ static func start(again := false) -> PopupBase:
 	return p
 
 static func _reward_row(ci: CanvasItem, sz: Vector2, rk: int, rw: Array) -> void:
-	var b := Art.rrect(Rect2(Vector2(2, 2), sz - Vector2(4, 4)), 14, 200 + rk, 0.4)
-	ci.draw_colored_polygon(b, Art.BONE)
-	Art.outline(ci, b, 2.0, Color("c9a77a"))
-	var m := Art.ell(Vector2(30, sz.y * 0.5), Vector2(22, 22), 210 + rk, 0.03, 18)
-	Art.dilate(ci, m, 2.4, Art.INK)
-	ci.draw_colored_polygon(m, MEDAL[rk - 1])
+	Sprites.draw(ci, "ev_race_row", Rect2(Vector2(2, 2), sz - Vector2(4, 4)))
+	_medal(ci, Vector2(30, sz.y * 0.5), 22.0, rk)
 	for k in rw.size():
 		Art.item(ci, str(rw[k][0]), Vector2(84 + k * 108, sz.y * 0.5), 46)
 
@@ -141,11 +137,8 @@ static func _paint_matching(ci: CanvasItem, sz: Vector2, race: Node, el: float) 
 		if locked:
 			found += 1
 		# 座位：圆底
-		var seat := Art.ell(c + Vector2(0, 8), Vector2(70, 70), 500 + i, 0.03, 22)
-		Art.dilate(ci, seat, 3.0, Art.INK)
-		ci.draw_colored_polygon(seat, Color("ffe08a") if i == 0 else (Color("f3dfb4") if locked else Color("d9c3a0")))
-		if i == 0:
-			Art.outline(ci, seat, 4.0, Art.CLAY)
+		var seat := Rect2(c + Vector2(-70, -62), Vector2(140, 140))
+		Sprites.draw(ci, "ev_race_seat_" + ("me" if i == 0 else ("on" if locked else "off")), seat)
 		var role := int(me.get("avatar", 0)) if i == 0 else int(el * 9.0 + i * 3) % 8
 		var name := "我"
 		if i > 0 and locked:
@@ -155,7 +148,7 @@ static func _paint_matching(ci: CanvasItem, sz: Vector2, race: Node, el: float) 
 		var pop := 1.0 + 0.18 * maxf(0.0, 1.0 - (el - lock_at) / 0.25) if locked and i > 0 else 1.0
 		Meme.portrait(ci, role, c, 116.0 * pop)
 		if not locked:
-			ci.draw_colored_polygon(seat, Color(0.42, 0.29, 0.16, 0.45))
+			Sprites.draw(ci, "ev_race_seat_shade", seat, Color(0.42, 0.29, 0.16, 0.45))
 			_txt(ci, "?", c + Vector2(0, 6), 56, Color.WHITE, 7)
 		_txt(ci, name if locked else "…", c + Vector2(0, 96), 22, Art.CLAY if i == 0 else Art.INK)
 	var dots := ".".repeat(1 + int(el * 3.0) % 3)
@@ -229,23 +222,10 @@ static func _member_at(race: Node, col: int) -> Dictionary:
 
 ## 金银铜宝箱：箱体用名次色，箱盖更亮，深色箍带 + 锁扣
 static func _rank_chest(ci: CanvasItem, c: Vector2, rank: int, s: float) -> void:
-	var col: Color = MEDAL[rank]
 	var k := s / 64.0
-	ci.draw_colored_polygon(Art.ell(c + Vector2(0, 24 * k), Vector2(30 * k, 7 * k), 470 + rank, 0.05, 14), Color(0, 0, 0, 0.22))
-	var body := Art.rrect(Rect2(c + Vector2(-27, -6) * k, Vector2(54, 30) * k), 5 * k, 471 + rank, 0.5)
-	Art.fill(ci, body, col.darkened(0.12), 2.6)
-	var lid := Art.rrect(Rect2(c + Vector2(-30, -24) * k, Vector2(60, 20) * k), 8 * k, 472 + rank, 0.5)
-	Art.fill(ci, lid, col.lightened(0.15), 2.6)
-	ci.draw_colored_polygon(Art.rrect(Rect2(c + Vector2(-24, -21) * k, Vector2(48, 5) * k), 2 * k, 473 + rank, 0.2), Color(1, 1, 1, 0.45))
-	for x in [-17.0, 17.0]:
-		ci.draw_rect(Rect2(c + Vector2(x - 3, -23) * k, Vector2(6, 46) * k), col.darkened(0.45))
-	var lock := Art.rrect(Rect2(c + Vector2(-7, -10) * k, Vector2(14, 15) * k), 3 * k, 474 + rank, 0.3)
-	Art.fill(ci, lock, Color("5a3a1e"), 2.0)
-	ci.draw_circle(c + Vector2(0, -3) * k, 2.2 * k, col.lightened(0.4))
-	# 名次章
+	# 箱子和名次章是按 s = 64 预生成的贴图，图心在 (0, -2)
+	Sprites.at(ci, "ev_race_chest_%d" % rank, c + Vector2(0, -2) * k, k)
 	var mc := c + Vector2(26, -24) * k
-	var medal := Art.ell(mc, Vector2(13, 13) * k, 475 + rank, 0.03, 14)
-	Art.fill(ci, medal, col, 2.2)
 	_txt(ci, str(rank + 1), mc, int(16 * k), Color.WHITE, 4)
 
 static func _toggle_rank_bubble(p: PopupBase, layer: Control, race: Node, rank: int, x: float, y: float) -> void:
@@ -267,7 +247,7 @@ static func _toggle_rank_bubble(p: PopupBase, layer: Control, race: Node, rank: 
 	b.extra = func(ci, sz):
 		var ptr := PackedVector2Array([Vector2(tip - 14, 4), Vector2(tip, -14), Vector2(tip + 14, 4)])
 		Art.fill(ci, ptr, Art.BONE, 2.4)
-		Art.fill(ci, Art.rrect(Rect2(Vector2.ZERO, sz), 18, 480, 0.4), Art.BONE, 2.6)
+		Sprites.draw(ci, "ev_race_bubble", Rect2(Vector2.ZERO, sz))
 		ci.draw_colored_polygon(ptr, Art.BONE)
 		_txt(ci, "第 %d 名奖励" % rank, Vector2(sz.x * 0.5, 24), 22, Color("8a5a30"))
 		for j in rw.size():
@@ -280,7 +260,7 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 	var tg: float = race.target()
 	var t := float(Time.get_ticks_msec()) / 1000.0
 	# 顶部：剩余时间 + 前三名奖励
-	_pill(ci, Rect2(sz.x * 0.5 - 120, 2, 240, 40), "还剩 %s" % G.fmt_time(race.secs_left()), Color("8a5a30"), Color.WHITE)
+	_pill(ci, Rect2(sz.x * 0.5 - 120, 2, 240, 40), "还剩 %s" % G.fmt_time(race.secs_left()), "time", Color.WHITE)
 	# 自己放最左边，其他按位置
 	var ms := _sorted_members(race)
 	var cw := sz.x / 5.0
@@ -302,15 +282,10 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 		var mine := bool(m.get("me", false))
 		var tr := Rect2(cx - TUBE_W * 0.5, TUBE_TOP, TUBE_W, tube_bot - TUBE_TOP)
 		# 竹筒：外框、深色内壁、一侧高光、竹节
-		var tube := Art.rrect(tr, 24, 400 + i, 0.4)
-		Art.dilate(ci, tube, 3.0, Art.INK)
-		ci.draw_colored_polygon(tube, Color("7a5230") if mine else Color("5e3f25"))
-		ci.draw_colored_polygon(Art.rrect(Rect2(tr.position + Vector2(8, 10), Vector2(10, tr.size.y - 20)), 5, 420 + i, 0.2), Color(1, 1, 1, 0.08))
+		Sprites.draw(ci, "ev_race_tube_" + ("me" if mine else "other"), tr)
 		for q in range(1, 4):
 			var ny := tr.position.y + tr.size.y * q / 4.0
 			ci.draw_line(Vector2(tr.position.x + 4, ny), Vector2(tr.end.x - 4, ny), Color(0, 0, 0, 0.18), 2.0)
-		if mine:
-			Art.outline(ci, tube, 4.0, Color("ffd23f"))
 		if m.is_empty():
 			continue
 		var s: float = race.score_of(m)
@@ -329,27 +304,28 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 		if m.get("finished_at") != null:
 			Art.item(ci, "fire_2", Vector2(cx, TUBE_TOP + 30), 44)
 		# 进度下面：香蕉数、头像（带名次牌）、名字
-		_pill(ci, Rect2(cx - 50, tube_bot + 20, 100, 38), "%d" % int(s), Color("ffd23f") if mine else Color("6b4a2a"),
+		_pill(ci, Rect2(cx - 50, tube_bot + 20, 100, 38), "%d" % int(s), "me" if mine else "other",
 			Art.INK if mine else Color.WHITE)
 		var dash: float = race.dash_of(m)
 		var hc := Vector2(cx, tube_bot + 140 - absf(sin(t * 18.0)) * 8.0 * dash)
 		if mine:
-			ci.draw_colored_polygon(Art.ell(hc + Vector2(0, 6), Vector2(52, 52), 430, 0.03, 20), Color(1.0, 0.86, 0.35, 0.9))
+			Sprites.draw(ci, "ev_disc", Rect2(hc + Vector2(-52, -46), Vector2(104, 104)), Color(1.0, 0.86, 0.35, 0.9))
 		Meme.portrait(ci, int(m.get("avatar", 0)), hc, 88.0)
 		var rk: int = race.place_of(m)
 		var mc := hc + Vector2(36, 30)
-		var medal := Art.ell(mc, Vector2(17, 17), 40 + rk, 0.03, 16)
-		Art.dilate(ci, medal, 2.4, Art.INK)
-		ci.draw_colored_polygon(medal, MEDAL[rk - 1] if rk <= 3 else Color("a08a70"))
+		_medal(ci, mc, 17.0, rk)
 		_txt(ci, str(rk), mc, 19, Color.WHITE, 4)
 		_txt(ci, "我" if mine else str(m.get("name", "")), Vector2(cx, sz.y - 46), 21, Art.CLAY if mine else Color("6b4a2a"))
 	_txt(ci, "交付订单收香蕉，先收满的赢！", Vector2(sz.x * 0.5, sz.y - 14), 20, Color("a08a70"))
 
-static func _pill(ci: CanvasItem, r: Rect2, s: String, bg: Color, fg: Color) -> void:
-	var b := Art.rrect(r, r.size.y * 0.5, 600, 0.3)
-	Art.dilate(ci, b, 2.4, Art.INK)
-	ci.draw_colored_polygon(b, bg)
+## style：time 倒计时 / me 自己的香蕉数 / other 别人的
+static func _pill(ci: CanvasItem, r: Rect2, s: String, style: String, fg: Color) -> void:
+	Sprites.draw(ci, "ev_race_pill_" + style, r)
 	_txt(ci, s, r.get_center(), int(r.size.y * 0.62), fg, 4 if fg == Color.WHITE else 0)
+
+## 名次章：前三名金银铜，其余灰褐（预生成贴图）
+static func _medal(ci: CanvasItem, c: Vector2, rad: float, rk: int) -> void:
+	Sprites.draw(ci, "ev_medal_%d" % (rk - 1 if rk >= 1 and rk <= 3 else 3), Rect2(c - Vector2(rad, rad), Vector2(rad, rad) * 2.0))
 
 static func _txt(ci: CanvasItem, s: String, c: Vector2, fs: int, col: Color, ol: int = 0) -> void:
 	var f: Font = G.font_body
@@ -427,14 +403,10 @@ static func result(res: Dictionary) -> PopupBase:
 
 static func _result_row(ci: CanvasItem, sz: Vector2, m: Dictionary, tg: float) -> void:
 	var mine := bool(m.get("me", false))
-	var b := Art.rrect(Rect2(Vector2(2, 2), sz - Vector2(4, 4)), 14, 7, 0.4)
-	ci.draw_colored_polygon(b, Color("ffe08a") if mine else Art.BONE)
-	Art.outline(ci, b, 4.0 if mine else 2.0, Art.CLAY if mine else Color("c9a77a"))
+	Sprites.draw(ci, "ev_race_result_" + ("me" if mine else "other"), Rect2(Vector2(2, 2), sz - Vector2(4, 4)))
 	var rk := int(m.get("place", 0))
 	var mc := Vector2(34, sz.y * 0.5)
-	var medal := Art.ell(mc, Vector2(22, 22), 40 + rk, 0.03, 18)
-	Art.dilate(ci, medal, 2.4, Art.INK)
-	ci.draw_colored_polygon(medal, MEDAL[rk - 1] if rk >= 1 and rk <= 3 else Color("a08a70"))
+	_medal(ci, mc, 22.0, rk)
 	_txt(ci, str(rk), mc, 24, Color.WHITE, 5)
 	Meme.portrait(ci, int(m.get("avatar", 0)), Vector2(100, sz.y * 0.5 + 6), 62.0)
 	var f: Font = G.font_body
