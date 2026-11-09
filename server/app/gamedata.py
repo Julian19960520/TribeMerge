@@ -311,6 +311,12 @@ class GameData:
         return None
 
     def resource_drop(self, scope: str, roll: float, level: int, merged: str = "") -> str:
+        if scope == 'main':
+            if not self.valid_item(merged) or self.type_of(merged) != 'item' or self.lv(merged) < 2:
+                return ''
+            allowed = self.rules.get('merge_resource_lines', [])
+            if not any(line['id'] in allowed and level >= int(line['unlock']) and self.chain(merged) in (line['main'], line['sub']) for line in self.lines):
+                return ''
         total = 0.0
         for entry in self.rules.get("merge_resource_drops", {}).get(scope, []):
             if level < int(entry.get("min_level", 1)):

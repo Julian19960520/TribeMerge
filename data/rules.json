@@ -95,11 +95,11 @@
 		"main": [
 			{
 				"item": "shell_1",
-				"chance": 0.04
+				"chance": 0.01
 			},
 			{
 				"item": "sand_1",
-				"chance": 0.03,
+				"chance": 0.005,
 				"min_level": 3,
 				"items_only": true
 			},
@@ -118,5 +118,14 @@
 				"chance": 0.25
 			}
 		]
-	}
+	},
+	"merge_resource_lines": [
+		"food",
+		"tool",
+		"cloth",
+		"hunt",
+		"fire",
+		"wood",
+		"pot"
+	]
 }

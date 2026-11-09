@@ -695,6 +695,14 @@ static func craft_sand(dish_id: String) -> String:
 
 ## 每次合成最多掉一件资源；按顺序占用概率区间，剩余概率不掉落。
 static func resource_drop(scope: String, roll: float, level: int, merged: String = "") -> String:
+	if scope == "main":
+		if type_of(merged) != "item" or lv(merged) < 2 or lv(merged) > max_lv(chain(merged)): return ""
+		var allowed := false
+		for line in LINES:
+			if str(line["id"]) in RULES.get("merge_resource_lines", []) and level >= int(line["unlock"]) and chain(merged) in [str(line["main"]), str(line["sub"])]:
+				allowed = true
+				break
+		if not allowed: return ""
 	var total := 0.0
 	for entry in RULES.get("merge_resource_drops", {}).get(scope, []):
 		if level < int(entry.get("min_level", 1)): continue

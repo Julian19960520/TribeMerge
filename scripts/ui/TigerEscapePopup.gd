@@ -5,6 +5,7 @@ var path: Scroller
 var trail: DrawBox
 var runners: DrawBox
 var title: Label
+var cohort_label: Label
 var clock_label: Label
 var stage_label: Label
 var score_label: Label
@@ -20,6 +21,11 @@ var focused_round := -1
 var focused_stage := -1
 var focus_tween: Tween
 var refresh_elapsed := 0.0
+var attack_active := false
+var attack_node := -1
+var attack_time := 0.0
+var attack_duration := 1.15
+var next_refresh_ms := 0
 
 func _ready() -> void:
 	set_meta("fullscreen", true)
@@ -32,6 +38,7 @@ func _ready() -> void:
 	UI.box(box, Rect2(34, 204, 652, 243), _header, false)
 	stage_label = UI.lbl(box, "", Rect2(48, 222, 170, 83), 27, Color("fff2ce"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.WOOD_D)
 	clock_label = UI.lbl(box, "", Rect2(460, 225, 208, 80), 26, Color("ffe3a1"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.WOOD_D)
+	cohort_label = UI.lbl(box, "", Rect2(43, 316, 192, 42), 21, Color("ffe3a1"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.WOOD_D)
 	status_label = UI.lbl(box, "抵达终点，赢取逃生大奖", Rect2(62, 371, 596, 50), 30, Color("ffecc2"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.WOOD_D)
 	path = Scroller.new()
 	path.position = Vector2(20, 466)
@@ -48,7 +55,7 @@ func _ready() -> void:
 	action_button = UI.btn(box, Rect2(150, 1302, 420, 100), "开始逃生", "green", _primary, 40)
 	action_button.name = "tiger_primary"
 	UI.box(box, Rect2(22, 1260, 110, 115), func(ci, sz): TigerArt.draw(ci, sz * 0.5, 82), false)
-	UI.lbl(box, "主棋盘每次合成 +%d 积分" % int(TigerEscape.config()["points_per_merge"]), Rect2(130, 1418, 460, 35), 23, Color("bbceb1"))
+	UI.lbl(box, "每完成一张订单 +%d 积分" % int(TigerEscape.config()["points_per_order"]), Rect2(130, 1418, 460, 35), 23, Color("bbceb1"))
 	TigerEscape.tick()
 	visual_stage = float(TigerEscape.round_state().get("stage", 0))
 	_refresh(true)
@@ -56,6 +63,15 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if _closing: return
+	if attack_active:
+		attack_time += delta
+		trail.queue_redraw()
+		runners.queue_redraw()
+		if attack_time >= attack_duration:
+			attack_active = false
+			TigerEscape.acknowledge_attack(TigerEscape.round_state(), attack_node)
+			_focus(int(TigerEscape.round_state().get("stage", 0)), true)
+			_refresh()
 	elapsed += delta
 	refresh_elapsed += delta
 	var m := TigerEscape.round_state()
@@ -68,13 +84,15 @@ func _process(delta: float) -> void:
 		TigerEscape.tick()
 		_refresh()
 		runners.queue_redraw()
-	if G.server_mode() and refresh_elapsed >= 3 and not refreshing and not working:
+	var deadline_due: bool = not m.is_empty() and m["status"] == "running" and G.now() >= float(m["start"]) + (int(m["destroyed"]) + 2) * float(m["interval"])
+	if G.server_mode() and (refresh_elapsed >= 30 or deadline_due) and Time.get_ticks_msec() >= next_refresh_ms and not refreshing and not working:
 		refresh_elapsed = 0
 		_server_refresh()
 
 func _server_refresh() -> void:
 	if refreshing: return
 	refreshing = true
+	next_refresh_ms = Time.get_ticks_msec() + 10000
 	await TigerEscape.act("refresh")
 	refreshing = false
 	if is_inside_tree() and not _closing: _refresh()
@@ -95,33 +113,41 @@ func _refresh(first := false) -> void:
 	var m := TigerEscape.round_state()
 	var stage := int(m.get("stage", 0))
 	var status := str(m.get("status", "idle"))
+	if not m.is_empty() and int(m.get("destroyed", -1)) > TigerEscape.seen_attack(m) and not attack_active:
+		attack_node = int(m["destroyed"])
+		attack_time = 0
+		attack_active = true
+		_focus(attack_node, not first)
+	if attack_active: status = "attacking"
+	cohort_label.text = "同行存活 %d / %d" % [TigerEscape.survivors(m), m.get("bots", []).size() + 1 if not m.is_empty() else int(TigerEscape.config()["bots"]["count"]) + 1]
 	stage_label.text = "已逃离\n%d / %d" % [stage, count]
-	clock_label.text = "下次扑击\n%s" % G.fmt_time(TigerEscape.attack_left()) if status == "running" else "每处落脚点\n%d分钟" % (int(TigerEscape.config()["attack_interval_sec"]) / 60)
+	clock_label.text = "下次扑击\n%s" % G.fmt_time(TigerEscape.attack_left()) if status == "running" else "每次追击间隔\n%s" % G.fmt_time(int(TigerEscape.config()["attack_interval_sec"]))
 	if status == "won": clock_label.text = "终点已抵达\n成功逃脱"
 	elif status == "lost": clock_label.text = "本局已出局\n再试一次"
+	if attack_active: clock_label.text = "剑齿虎\n扑过来了！"
 	clock_label.modulate = Color("ff9585") if status == "running" and stage <= int(m.get("destroyed", -1)) + 1 else Color.WHITE
 	var rows: Array = m.get("stages", TigerEscape.config()["stages"])
 	var need := int(rows[mini(stage, count - 1)]["points"])
-	score_label.text = "下一跳  %d / %d" % [int(m.get("points", 0)), need] if status == "running" else "合成攒满进度，就能跳往下一处落脚点"
-	status_label.text = {"idle": "抵达终点，赢取逃生大奖", "running": "别停下，剑齿虎正在靠近！", "won": "成功逃脱！终点大奖已解锁", "lost": "被追上了！已到达的礼包仍可领取"}.get(status, "")
-	action_button.text = {"idle": "开始逃生", "running": "去合成", "won": "领取并再逃一次", "lost": "再逃一次"}.get(status, "开始逃生")
+	score_label.text = "下一跳  %d / %d" % [int(m.get("points", 0)), need] if status == "running" else "完成订单攒满进度，就能向前跳"
+	status_label.text = {"idle": "抵达终点，赢取逃生大奖", "running": "别停下，剑齿虎正在靠近！", "won": "成功逃脱！终点大奖已解锁", "lost": "被追上了！已到达的礼包仍可领取", "attacking": "剑齿虎发起攻击！"}.get(status, "")
+	action_button.text = {"idle": "开始逃生", "running": "去完成订单", "won": "领取并再逃一次", "lost": "再逃一次", "attacking": "追击中…"}.get(status, "开始逃生")
 	if status in ["won", "lost"]:
 		score_label.text = "已通过%d处落脚点，本局补给已保留" % stage
 		action_button.text = "领取并再逃一次" if not TigerEscape.pending_rewards(m).is_empty() else "再逃一次"
 	action_button.style = "orange" if status == "lost" else "green"
-	action_button.enabled = not working and not TigerEscape.busy
+	action_button.enabled = not working and not TigerEscape.busy and not attack_active
 	action_button.queue_redraw()
 	var sig := str([m.get("id", 0), stage, status, m.get("destroyed", -1), m.get("claimed", [])])
 	if sig != signature:
 		signature = sig
 		trail.queue_redraw()
-		if first or stage != focused_stage or int(m.get("id", 0)) != focused_round:
+		if not attack_active and (first or stage != focused_stage or int(m.get("id", 0)) != focused_round):
 			_focus(stage, not first)
 			focused_stage = stage
 			focused_round = int(m.get("id", 0))
 
 func _primary() -> void:
-	if working or refreshing or TigerEscape.busy: return
+	if working or refreshing or TigerEscape.busy or attack_active: return
 	var m := TigerEscape.round_state()
 	if m.get("status", "") == "running":
 		close()
@@ -139,7 +165,7 @@ func _primary() -> void:
 	_refresh(true)
 
 func _preview(n: int) -> void:
-	if working or _closing: return
+	if working or _closing or attack_active: return
 	var m := TigerEscape.round_state()
 	var rows: Array = m.get("stages", TigerEscape.config()["stages"])
 	var rewards: Array = rows[n - 1]["rewards"]
@@ -174,7 +200,7 @@ func _instructions() -> void:
 	var p := PopupBase.new()
 	Popups.frame(p, Rect2(68, 400, 584, 610), "逃生法则", Art.OCHRE)
 	var interval := int(TigerEscape.config()["attack_interval_sec"])
-	var text := "主棋盘合成获得积分，攒满就向前跳。\n\n剑齿虎每%s摧毁后方一处落脚点。\n你还站在那一处，就会被淘汰。\n\n抵达的礼包随时可领，出局也不丢失。\n离开游戏后，追击仍会继续。" % G.fmt_time(interval)
+	var text := "完成主棋盘订单获得积分，攒满就向前跳。\n\n剑齿虎每%s摧毁后方一处落脚点。\n你还站在那一处，就会被淘汰。\n\n抵达的礼包随时可领，出局也不丢失。\n离开游戏后，追击仍会继续。\n同场同行者为模拟角色，也会前进与淘汰。" % G.fmt_time(interval)
 	var label := UI.lbl(p.box, text, Rect2(108, 508, 504, 390), 26, Art.INK)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	UI.btn(p.box, Rect2(225, 914, 270, 64), "明白了", "green", p.close, 30)
@@ -202,7 +228,7 @@ func _header(ci: CanvasItem, sz: Vector2) -> void:
 func _trail(ci: CanvasItem, _sz: Vector2) -> void:
 	var m := TigerEscape.round_state()
 	var stage := int(m.get("stage", 0))
-	var destroyed := int(m.get("destroyed", -1))
+	var destroyed := attack_node - 1 if attack_active and attack_time / attack_duration < 0.62 else int(m.get("destroyed", -1))
 	for n in range(count):
 		var from := _node_pos(n)
 		var to := _node_pos(n + 1)
@@ -211,6 +237,7 @@ func _trail(ci: CanvasItem, _sz: Vector2) -> void:
 			ci.draw_circle(at, 3, Color("d3bf7c") if n >= destroyed else Color("4a5241"))
 	for n in range(count + 1):
 		var at := _node_pos(n)
+		if attack_active and n == attack_node: at.x += sin(attack_time * 80) * 5
 		var gone := n <= destroyed
 		if gone:
 			for j in 4:
@@ -236,16 +263,45 @@ func _trail(ci: CanvasItem, _sz: Vector2) -> void:
 func _runners(ci: CanvasItem, _sz: Vector2) -> void:
 	var m := TigerEscape.round_state()
 	var stage := int(m.get("stage", 0))
+	var phase := clampf(attack_time / attack_duration, 0, 1) if attack_active else 0.0
+	for node in range(count + 1):
+		var group: Array = []
+		for bot in m.get("bots", []):
+			if int(bot["stage"]) == node and (bot["status"] != "lost" or (attack_active and node == attack_node)):
+				group.append(bot)
+		var shown := mini(group.size(), 4)
+		for j in shown:
+			var pos := _node_pos(node) + Vector2((j - (shown - 1) * 0.5) * 38, -66 if node != stage else -110)
+			var scale := 1.0 - clampf((phase - 0.42) / 0.35, 0, 1) if attack_active and node == attack_node else 1.0
+			if scale > 0.01:
+				Meme.portrait(ci, int(group[j]["avatar"]), pos, 43 * scale)
+				EventEntryArt.text(ci, str(group[j]["name"]), pos + Vector2(0, 35), 15, Color("e5e6c4"), 3)
+		if group.size() > shown: EventEntryArt.text(ci, "+%d" % (group.size() - shown), _node_pos(node) + Vector2(80, -62), 19, Color("fff0c7"), 4)
 	var low := clampi(int(floor(visual_stage)), 0, count)
 	var high := mini(low + 1, count)
 	var progress := visual_stage - low
 	var at := _node_pos(low).lerp(_node_pos(high), progress)
 	at.y -= sin(progress * PI) * 90
-	Meme.portrait(ci, 0, at + Vector2(0, -58), 102)
-	if m.get("status", "") == "running":
+	var eaten: bool = attack_active and stage == attack_node and m.get("status", "") == "lost"
+	var hero_scale := 1.0 - clampf((phase - 0.42) / 0.35, 0, 1) if eaten else 1.0
+	if hero_scale > 0.01 and not (m.get("status", "") == "lost" and not attack_active):
+		Meme.portrait(ci, Meme.HERO, at + Vector2(0, -58), 102 * hero_scale)
+		EventEntryArt.text(ci, "你", at + Vector2(0, -9), 21, Color("ffdb71"), 4)
+	if m.get("status", "") == "running" and not attack_active:
 		var need := int(m["stages"][stage]["points"])
 		Paint.bar(ci, Rect2(at + Vector2(-77, -7), Vector2(154, 20)), float(m["points"]) / need, Art.MOSS)
 		EventEntryArt.text(ci, "%d/%d" % [int(m["points"]), need], at + Vector2(0, 10), 20, Color.WHITE, 4)
 	var tiger_node := clampi(mini(stage, int(m.get("destroyed", -1)) + 1), 0, count)
 	var tiger_at := _node_pos(tiger_node) + Vector2(-137, 60)
-	TigerArt.draw(ci, tiger_at, 103)
+	if attack_active:
+		var target := _node_pos(attack_node) + Vector2(0, -38)
+		var jump := clampf(phase / 0.5, 0, 1)
+		tiger_at = (target + Vector2(-155, 108)).lerp(target, 1.0 - pow(1.0 - jump, 2))
+		tiger_at.y -= sin(jump * PI) * 95
+		if phase > 0.45: tiger_at += Vector2(sin(phase * 90) * 6, sin(phase * 68) * 4)
+		if phase > 0.6:
+			for k in 8:
+				var angle := k * TAU / 8
+				var burst := target + Vector2.from_angle(angle) * (phase - 0.6) * 180
+				ci.draw_circle(burst, maxf(1, (1 - phase) * 12), Color("c5a46a"))
+	TigerArt.draw(ci, tiger_at, 103 * (1.0 + sin(phase * PI) * 0.3))

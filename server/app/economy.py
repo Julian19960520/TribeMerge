@@ -651,8 +651,6 @@ class Economy:
             # Main board moves are client simulated. Never discard rapid legitimate
             # merges just because their next snapshot has not arrived yet.
             seven_day.record(self, st, "merges", 1)
-            from . import tiger_escape
-            tiger_escape.on_merge(self, st)
             roll = int(hashlib.sha256(str(ev["id"]).encode()).hexdigest()[:8], 16) / 4294967296
             if 0 <= num(ev.get("cell"), -1) < int(self.gd.rules.get("cols", 7)) * int(self.gd.rules.get("rows", 9)):
                 resource = self.gd.resource_drop("main", roll, num(st.get("level"), 1), iid)
@@ -804,6 +802,8 @@ class Economy:
         merge_event.on_order(self, st, o)
         from . import duel_race
         duel_race.on_order(self, st, o)
+        from . import tiger_escape
+        tiger_escape.on_order(self, st, o)
         from . import seven_day
         seven_day.record(self, st, "orders", 1)
         rw = self._norm(o.get("rw") or {})

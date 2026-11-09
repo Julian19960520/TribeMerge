@@ -19,24 +19,74 @@ static func round_state() -> Dictionary:
 static func unlocked() -> bool:
 	return G.gm_activities or G.level >= int(config()["unlock_level"])
 
+static func _fraction(m: Dictionary, bot: int, leg: int) -> float:
+	var key := "%d:%d:%d:%d" % [int(m["id"]), int(m["start"]), bot, leg]
+	return float(key.sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
+
+static func _create_bots(m: Dictionary) -> Array:
+	var rules: Dictionary = config().get("bots", {})
+	var names: Array = rules.get("names", ["同行者"])
+	var bots: Array = []
+	for i in clampi(int(rules.get("count", 15)), 0, 50):
+		var pace := lerpf(float(rules.get("pace_min", 0.45)), float(rules.get("pace_max", 1.4)), _fraction(m, i, -1))
+		var elapsed := 0.0
+		var arrivals: Array = []
+		for leg in m["stages"].size():
+			elapsed += float(m["interval"]) * pace * (0.8 + 0.4 * _fraction(m, i, leg))
+			arrivals.append(elapsed)
+		bots.append({"name": str(names[i % names.size()]) if not names.is_empty() else "同行者", "avatar": i % 8, "arrivals": arrivals, "stage": 0, "status": "running"})
+	return bots
+
+static func _migrate(m: Dictionary) -> void:
+	if m.is_empty() or int(m.get("rule_version", 0)) == 2: return
+	m["rule_version"] = 2
+	m["interval"] = config()["attack_interval_sec"]
+	m["points_per_order"] = maxi(1, int(config()["points_per_order"]))
+	m["points"] = 0
+	if m["status"] == "running":
+		m["stages"] = config()["stages"].duplicate(true)
+		m["destroyed"] = -1
+	m["bots"] = _create_bots(m)
+	G.dirty()
+
+static func _tick_bots(m: Dictionary, now: float) -> void:
+	var elapsed := maxf(0, minf(now, float(m.get("finished_at", now))) - float(m["start"]))
+	for bot in m.get("bots", []):
+		var stage := 0
+		var status := "running"
+		for arrival in bot["arrivals"]:
+			var deadline := (stage + 1) * float(m["interval"])
+			if float(arrival) >= deadline:
+				if elapsed >= deadline: status = "lost"
+				break
+			if elapsed < float(arrival): break
+			stage += 1
+		if stage == m["stages"].size(): status = "won"
+		if int(bot["stage"]) != stage or bot["status"] != status: G.dirty()
+		bot["stage"] = stage
+		bot["status"] = status
+
 static func tick() -> void:
 	if G.server_mode(): return
 	var m := round_state()
-	if m.is_empty() or m["status"] != "running": return
-	var destroyed := mini(m["stages"].size() - 1, int(maxf(0, G.now() - float(m["start"])) / float(m["interval"])) - 1)
-	var previous := int(m["destroyed"])
-	m["destroyed"] = maxi(previous, mini(destroyed, int(m["stage"])))
-	if destroyed >= int(m["stage"]):
-		m["status"] = "lost"
-		m["finished_at"] = float(m["start"]) + (int(m["stage"]) + 1) * float(m["interval"])
-	if previous != int(m["destroyed"]): G.dirty()
+	if m.is_empty(): return
+	_migrate(m)
+	if m["status"] == "running":
+		var destroyed := mini(m["stages"].size() - 1, int(maxf(0, G.now() - float(m["start"])) / float(m["interval"])) - 1)
+		var previous := int(m["destroyed"])
+		m["destroyed"] = maxi(previous, mini(destroyed, int(m["stage"])))
+		if destroyed >= int(m["stage"]):
+			m["status"] = "lost"
+			m["finished_at"] = float(m["start"]) + (int(m["stage"]) + 1) * float(m["interval"])
+		if previous != int(m["destroyed"]): G.dirty()
+	_tick_bots(m, G.now())
 
-static func on_merge() -> void:
+static func on_order(_order: Dictionary) -> void:
 	if G.server_mode(): return
 	tick()
 	var m := round_state()
 	if m.is_empty() or m["status"] != "running": return
-	m["points"] = int(m["points"]) + int(m["points_per_merge"])
+	m["points"] = int(m["points"]) + int(m["points_per_order"])
 	while int(m["stage"]) < m["stages"].size() and int(m["points"]) >= int(m["stages"][int(m["stage"])]["points"]):
 		m["points"] = int(m["points"]) - int(m["stages"][int(m["stage"])]["points"])
 		m["stage"] = int(m["stage"]) + 1
@@ -45,6 +95,20 @@ static func on_merge() -> void:
 		m["points"] = 0
 		m["finished_at"] = G.now()
 	G.dirty()
+
+static func seen_attack(m: Dictionary) -> int:
+	return int(G.tiger_escape_seen.get("destroyed", -1)) if int(G.tiger_escape_seen.get("round_id", -1)) == int(m.get("id", 0)) and int(G.tiger_escape_seen.get("rule_version", 0)) == int(m.get("rule_version", 0)) else -1
+
+static func acknowledge_attack(m: Dictionary, node: int) -> void:
+	G.tiger_escape_seen = {"round_id": int(m["id"]), "destroyed": node, "rule_version": int(m.get("rule_version", 2))}
+	G.dirty()
+
+static func survivors(m: Dictionary) -> int:
+	if m.is_empty(): return int(config().get("bots", {}).get("count", 15)) + 1
+	var left := 0 if m["status"] == "lost" else 1
+	for bot in m.get("bots", []):
+		if bot["status"] != "lost": left += 1
+	return left
 
 static func pending_rewards(m: Dictionary) -> Array:
 	var rewards: Array = []
@@ -66,7 +130,8 @@ static func local_action(action: String, node := 0) -> Dictionary:
 		s["rounds"] = int(s["rounds"]) + 1
 		s["round"] = {"id": s["rounds"], "start": G.now(), "stage": 0, "points": 0, "destroyed": -1,
 			"status": "running", "claimed": [], "stages": config()["stages"].duplicate(true),
-			"interval": config()["attack_interval_sec"], "points_per_merge": maxi(1, int(config()["points_per_merge"]))}
+			"interval": config()["attack_interval_sec"], "points_per_order": maxi(1, int(config()["points_per_order"])), "rule_version": 2}
+		s["round"]["bots"] = _create_bots(s["round"])
 		return {"rewards": rewards}
 	if action == "claim":
 		if m.is_empty() or node < 1 or node > int(m["stage"]) or node in m["claimed"]: return {"error": "礼包尚未到达或已领取"}
