@@ -692,3 +692,15 @@ static func craft_sand(dish_id: String) -> String:
 		if t is Array and t.size() >= 2 and secs >= int(t[0]):
 			out = str(t[1])
 	return out
+
+## 每次合成最多掉一件资源；按顺序占用概率区间，剩余概率不掉落。
+static func resource_drop(scope: String, roll: float, level: int, merged: String = "") -> String:
+	var total := 0.0
+	for entry in RULES.get("merge_resource_drops", {}).get(scope, []):
+		if level < int(entry.get("min_level", 1)): continue
+		if bool(entry.get("items_only", false)) and type_of(merged) != "item": continue
+		var id := str(entry.get("item", ""))
+		if not CHAINS.has(chain(id)) or not type_of(id) in ["shell", "amber", "energy", "sand"]: continue
+		total += clampf(float(entry.get("chance", 0)), 0.0, 1.0)
+		if roll < total: return "%s_1" % chain(id)
+	return ""

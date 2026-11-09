@@ -45,4 +45,6 @@ func validate() -> String:
 				return "%d 级有奖励没有物品" % n
 			if int(rw[1]) < 1:
 				return "%d 级的奖励数量至少是 1" % n
+			if n < Data.CARD_LEVEL and Data.type_of(str(rw[0])) == "pack":
+				return "收藏卡 %d 级解锁，%d 级奖励不能配置卡包" % [Data.CARD_LEVEL, n]
 	return ""

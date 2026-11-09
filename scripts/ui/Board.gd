@@ -84,6 +84,11 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	_tick_hint(delta)
+	if dragging and not G.can_move(drag_from):
+		dragging = false
+		drag_from = -1
+		press_cell = -1
+		queue_redraw()
 	if dragging:
 		drag_vis = drag_pos
 	for m in moves:
@@ -398,7 +403,7 @@ func _gui_input(e: InputEvent) -> void:
 		if not dragging and e.position.distance_to(press_pos) > 10.0:
 			var c: Dictionary = G.board[press_cell]
 			var held: bool = str(c["id"]) != "" or G.cooking(press_cell)
-			if held and c["lock"] == 0 and _settle(press_cell):
+			if held and G.can_move(press_cell) and _settle(press_cell):
 				dragging = true
 				drag_from = press_cell
 				drag_vis = e.position
@@ -442,6 +447,9 @@ func _tap(i: int) -> void:
 
 func _drop(p: Vector2) -> void:
 	var from := drag_from
+	if not G.can_move(from):
+		select(-1)
+		return
 	var vis := drag_vis + DRAG_LIFT
 	var id_from := G.cell_id(from)
 	var cook_from := _cook_copy(from)
@@ -542,6 +550,8 @@ func _draw() -> void:
 		var cook: Dictionary = m.get("cook", {})
 		if not cook.is_empty():
 			_draw_cook(int(m["to"]), Rect2(p - Vector2(CELL, CELL) * 0.5, Vector2(CELL, CELL)), cook)
+		elif G.is_merge_bubble(int(m["to"])):
+			_draw_merge_bubble(int(m["to"]), p, 1.0)
 		else:
 			Art.item(self, m["id"], p, ITEM * lerpf(1.15, 1.0, clampf(m["t"] * 1.5, 0.0, 1.0)))
 		if m["to"] == selected and m["under"] == "":
@@ -581,13 +591,15 @@ func _draw() -> void:
 		draw_rect(r0.grow(-6), Color(0.3, 0.2, 0.1, 0.12))
 		var hov := cell_at(drag_pos)
 		if hov >= 0 and hov != drag_from and not G.cooking(drag_from):
-			var ok: bool = G.board[hov]["id"] == G.board[drag_from]["id"] and Data.next_id(G.board[drag_from]["id"]) != "" and G.board[hov]["lock"] != 2
+			var ok := MergeGrid.drop_kind(G.board, drag_from, hov, Data.next_id) == "merge"
 			if ok:
 				draw_colored_polygon(Art.rrect(cell_rect(hov).grow(-3), 16, hov, 0.0), Color(1, 0.85, 0.2, 0.45))
 		if not hide_drag:
 			var at := drag_vis + DRAG_LIFT
 			if G.cooking(drag_from):
 				_draw_cook(drag_from, Rect2(at - Vector2(CELL, CELL) * 0.5, Vector2(CELL, CELL)), G.board[drag_from]["ck"])
+			elif G.is_merge_bubble(drag_from):
+				_draw_merge_bubble(drag_from, at, 1.15)
 			else:
 				var tilt := clampf((drag_pos.x - drag_vis.x) * 0.004, -0.25, 0.25)
 				Art.item(self, G.board[drag_from]["id"], at, ITEM * 1.15, true, tilt)

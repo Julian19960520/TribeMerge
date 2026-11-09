@@ -90,5 +90,33 @@
 				"sand_3"
 			]
 		]
+	},
+	"merge_resource_drops": {
+		"main": [
+			{
+				"item": "shell_1",
+				"chance": 0.04
+			},
+			{
+				"item": "sand_1",
+				"chance": 0.03,
+				"min_level": 3,
+				"items_only": true
+			},
+			{
+				"item": "amber_1",
+				"chance": 0.001
+			}
+		],
+		"event": [
+			{
+				"item": "amber_1",
+				"chance": 0.2
+			},
+			{
+				"item": "fire_1",
+				"chance": 0.25
+			}
+		]
 	}
 }

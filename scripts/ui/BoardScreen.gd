@@ -984,8 +984,8 @@ func _paint_boost(ci: CanvasItem, sz: Vector2) -> void:
 	var c := sz * 0.5 + Vector2(0, -6)
 	Sprites.at(ci, "board_boost_on" if on else "board_boost_off", c)
 	var at := Vector2(0, sz.y - 10)
-	ci.draw_string_outline(G.font_title, at, "×2", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, 6, Art.INK)
-	ci.draw_string(G.font_title, at, "×2", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, Color.WHITE)
+	ci.draw_string_outline(G.font_title, at, "×2" if on else "×1", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, 6, Art.INK)
+	ci.draw_string(G.font_title, at, "×2" if on else "×1", HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, Color.WHITE)
 
 func _on_activate(i: int) -> void:
 	if i < 0 or i >= G.board.size() or int(G.board[i]["lock"]) != 0:
@@ -1090,7 +1090,7 @@ func _on_activate(i: int) -> void:
 			board.shake(i)
 
 func _on_drop_outside(i: int, gp: Vector2) -> void:
-	if G.cooking(i):
+	if G.cooking(i) or not G.is_free(i):
 		return
 	if Data.is_dish(str(G.board[i]["id"])):
 		G.main.toast("做好的食物留在棋盘上，点订单交付")

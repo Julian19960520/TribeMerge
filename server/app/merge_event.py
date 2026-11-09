@@ -227,7 +227,14 @@ def action(econ, st, req):
             ca['id'],cb['id'] = under,iid
         revealed = reveal_neighbors(cells, b, cols) if kind == 'merge' else []
         advance(c, s)
-        return dict(kind=kind, **{'from':a}, to=b, id=iid, under=under, unlocked=locked, revealed=revealed, advance_rows=view-s['view'])
+        out = dict(kind=kind, **{'from':a}, to=b, id=iid, under=under, unlocked=locked, revealed=revealed, advance_rows=view-s['view'])
+        if kind == 'merge':
+            import random
+            drop = econ.gd.resource_drop('event', random.SystemRandom().random(), int(st.get('level', 1)))
+            if drop:
+                econ.give_item(st, drop, out)
+                out['drops'] = [drop]
+        return out
     if req.action == 'recycle':
         i = req.cell
         if not lo <= i < hi or cells[i]['lock'] or not cells[i]['id']:

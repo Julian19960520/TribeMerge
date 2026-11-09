@@ -651,17 +651,10 @@ class Economy:
             seven_day.record(self, st, "merges", 1)
             roll = int(hashlib.sha256(str(ev["id"]).encode()).hexdigest()[:8], 16) / 4294967296
             if 0 <= num(ev.get("cell"), -1) < int(self.gd.rules.get("cols", 7)) * int(self.gd.rules.get("rows", 9)):
-                coin = self.merge_coin_item(iid)
-                if coin and roll < self.merge_coin_chance():
+                resource = self.gd.resource_drop("main", roll, num(st.get("level"), 1), iid)
+                if resource:
                     out = {}
-                    self.give_item(st, coin, out)
-                    return out
-                # 掉沙漏：掷点落在 [贝币概率, 贝币概率 + 沙漏概率)（客户端 Game._merge_coin 同一套）
-                sand = self.gd.merge_sand_item(iid, num(st.get("level"), 1))
-                lo = self.merge_coin_chance() if coin else 0.0
-                if sand and lo <= roll < lo + self.gd.merge_sand_chance():
-                    out = {}
-                    self.give_item(st, sand, out)
+                    self.give_item(st, resource, out)
                     return out
             return {}
         if t == "order":

@@ -276,9 +276,11 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		var under := str(cells[b]["id"])
 		MergeGrid.apply_drop(cells, a, b, kind, next)
 		var revealed := MergeGrid.reveal_neighbors(cells, b, cols) if kind == "merge" else []
+		var drop := Data.resource_drop("event", G.rng.randf(), G.level) if kind == "merge" else ""
 		s["discovered"][str(cells[b]["id"])] = true
 		if locked: s["discovered"][under] = true
 		result = {"kind": kind, "from": a, "to": b, "id": id, "under": under, "unlocked": locked, "revealed": revealed}
+		if drop != "": result["drops"] = [drop]
 	elif action == "recycle":
 		var at := int(args.get("cell", -1))
 		if at < lo or at >= hi or int(cells[at]["lock"]) != 0 or str(cells[at]["id"]) == "": return {"error": "请选择一个未锁定的物品"}
@@ -315,6 +317,8 @@ static func act(c: Dictionary, action: String, args: Dictionary = {}) -> Diction
 	busy = false
 	if not result.has("error"):
 		_changed()
+		for id in result.get("drops", []):
+			Rewards.grant([[str(id), 1, "physical"]], Callable(), false)
 		if action == "claim":
 			var rewards: Array = result.get("rewards", minus)
 			Rewards.grant(rewards, Callable(), false)

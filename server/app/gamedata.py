@@ -308,3 +308,18 @@ class GameData:
         if isinstance(r, list) and len(r) >= 2 and str(r[0]) and int(r[1]) >= 1:
             return [str(r[0]), int(r[1])]
         return None
+
+    def resource_drop(self, scope: str, roll: float, level: int, merged: str = "") -> str:
+        total = 0.0
+        for entry in self.rules.get("merge_resource_drops", {}).get(scope, []):
+            if level < int(entry.get("min_level", 1)):
+                continue
+            if entry.get("items_only", False) and self.type_of(merged) != "item":
+                continue
+            iid = str(entry.get("item", ""))
+            if not self.valid_item(iid) or self.type_of(iid) not in ("shell", "amber", "energy", "sand"):
+                continue
+            total += min(1.0, max(0.0, float(entry.get("chance", 0))))
+            if roll < total:
+                return self.chain(iid) + "_1"
+        return ""

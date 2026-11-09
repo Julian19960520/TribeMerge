@@ -957,6 +957,7 @@ func unlock_around(i: int) -> Array:
 func try_drop(a: int, b: int) -> String:
 	opened = []
 	if a < 0 or b < 0 or a >= board.size() or b >= board.size() or a == b: return ""
+	if is_merge_bubble(a) or is_merge_bubble(b): return _drop_bubble(a, b)
 	if cooking(a) or cooking(b): return _drop_cook(a, b)
 	var result := MergeGrid.drop_kind(board, a, b, Data.next_id)
 	if result == "": return ""
@@ -2059,10 +2060,28 @@ func _merge_coin(merged: String, origin: int) -> void:
 	if to < 0: return
 	var roll := float(uid.sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
 	# 掷点用事件 id 的哈希，服务器按同一个 id 复算，结果一致
-	var id := Data.merge_coin_item(merged)
-	if id == "" or roll >= Data.merge_coin_chance():
-		id = Data.merge_sand_item(merged, level)
-		var lo := Data.merge_coin_chance() if Data.merge_coin_item(merged) != "" else 0.0
-		if id == "" or roll < lo or roll >= lo + Data.merge_sand_chance(): return
+	var id := Data.resource_drop("main", roll, level, merged)
+	if id == "": return
 	Rewards.grant([[id, 1, "physical"]], Callable(), false, true, {"board_origin": to})
 	if is_instance_valid(main): main.board_screen.board.fly_in(origin, to, id)
+
+func can_move(i: int) -> bool:
+	if i < 0 or i >= board.size(): return false
+	if is_merge_bubble(i):
+		return bubble_left(i) > 0 and not _bubble_busy.has(str(board[i]["bubble"].get("uid", "")))
+	return is_free(i) and (cell_id(i) != "" or cooking(i))
+
+func _drop_bubble(a: int, b: int) -> String:
+	if not can_move(a) or (not is_free(b) and not can_move(b)): return ""
+	var onto_empty := _vacant(b)
+	for key in ["id", "lock", "bubble", "gm", "ck"]:
+		var va = board[a].get(key)
+		var vb = board[b].get(key)
+		board[a].erase(key)
+		board[b].erase(key)
+		if va != null: board[b][key] = va
+		if vb != null: board[a][key] = vb
+	_sync_cook_cells()
+	dirty()
+	board_changed.emit()
+	return "move" if onto_empty else "swap"

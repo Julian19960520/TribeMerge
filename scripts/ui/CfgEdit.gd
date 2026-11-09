@@ -2436,6 +2436,9 @@ func _validate(path: String) -> String:
 			var level_msg := _check_rewards([row["rewards"]], "升到 %d 级" % n)
 			if level_msg != "":
 				return level_msg
+			for rw in row["rewards"]:
+				if n < Data.CARD_LEVEL and Data.type_of(str(rw[0])) == "pack":
+					return "收藏卡 %d 级解锁，%d 级奖励不能配置卡包" % [Data.CARD_LEVEL, n]
 	elif path == Files.RANDOM_ORDERS:
 		var curves = _pages[path].get("curves", [])
 		if not (curves is Array) or curves.size() != 2:
