@@ -162,6 +162,7 @@ func dispatch(name: String, a: Dictionary):
 			if step != int(view["step"]) or step >= view["steps"].size() or float(view["steps"][step]["price"]) > 0: return {"error": "礼包不可领取"}
 			meta["gift_cycle"] = view["cycle"]; meta["gift_step"] = step + 1
 			var rw: Array = view["steps"][step]["rewards"]; grant(rw); return {"ok": true, "rewards": rw}
+		"grant": return apply_grant(str(a.get("id", "")), a.get("content", {}))
 		"ufo_refresh":
 			if UfoOffer.active(): UfoOffer.state()["offer"]["items"] = UfoOffer.candidate()
 			return {}
@@ -169,6 +170,41 @@ func dispatch(name: String, a: Dictionary):
 			if int(G.builds.get("fire", 0)) < 2 or G.rules.orders.board_has("seed_1") >= 0 or not meta.get("seed_order", false): return {"error": "引导尚未完成"}
 			G.tutorial_on = false; G.seen_tutorial = true; G.rules.orders.refill_orders(); return {}
 		_: return {"error": "不支持的操作"}
+
+## Server-issued paid content (scripts/net/Payments.gd). The grant id is recorded in
+## replay_meta.grants, so a grant applies once per save however often it is delivered.
+func apply_grant(id: String, content) -> Dictionary:
+	if not id.begins_with("gr_") or not content is Dictionary: return {"error": "权益数据无效"}
+	var applied: Dictionary = meta.get("grants", {})
+	if applied.has(id): return {"error": "已经到账", "duplicate": true}
+	var amber := int(content.get("amber", 0))
+	if amber > 0: G.rules.progression.add_currency("amber", amber)
+	var pass_info = content.get("pass", {})
+	if pass_info is Dictionary and int(pass_info.get("tier", 0)) > 0:
+		G.rules.clock.check_pass_season()
+		G.pass_tier = maxi(G.pass_tier, clampi(int(pass_info["tier"]), 0, 2))
+	var rewards: Array = content.get("rewards", []) if content.get("rewards", []) is Array else []
+	grant(rewards)
+	var offer = content.get("offer", {})
+	if offer is Dictionary and G.offers.get(str(offer.get("kind", ""))) is Dictionary:
+		var window: Dictionary = G.offers[str(offer["kind"])]
+		var bought: Dictionary = window.get("bought", {})
+		var key := str(int(offer.get("tier", 0)))
+		bought[key] = int(bought.get(key, 0)) + 1
+		window["bought"] = bought
+	var ufo := str(content.get("ufo", ""))
+	if ufo != "" and G.ufo_offer.get("offer") is Dictionary and str(G.ufo_offer["offer"].get("id", "")) == ufo:
+		G.ufo_offer["offer"]["paid"] = true
+	var gift = content.get("gift", {})
+	if gift is Dictionary and gift.has("step"):
+		var view := gift_view()
+		if int(gift.get("cycle", -1)) == int(view["cycle"]) and int(gift["step"]) == int(view["step"]):
+			meta["gift_cycle"] = view["cycle"]; meta["gift_step"] = int(gift["step"]) + 1
+	applied[id] = runtime.clock
+	meta["grants"] = applied
+	G.dirty()
+	G.changed.emit()
+	return {"ok": true, "id": id, "amber": amber, "rewards": rewards}
 
 func valid_cell(i: int) -> bool:
 	return i >= 0 and i < G.board.size() and int(G.board[i].get("lock", 2)) == 0 and G.rules.board.cell_id(i) != ""

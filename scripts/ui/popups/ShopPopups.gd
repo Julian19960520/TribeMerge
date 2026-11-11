@@ -2,6 +2,7 @@ class_name ShopPopups
 extends RefCounted
 const Layout := preload("res://scripts/config/board_layout.gd")
 const PS := preload("res://scripts/sprites/popups.gd")
+const Payments := preload("res://scripts/net/Payments.gd")
 
 static func energy() -> PopupBase:
 	var p := PopupBase.new()
@@ -315,11 +316,18 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 184, r.size.x - 44, 64), a["price"], "orange", Callable(), 30)
 	b.title_font = false
 	b.pressed.connect(func():
-		# Only committed payment rewards may be presented.
-		var got: int = await G.rules.progression.buy_amber_pack(k)
-		if got <= 0:
+		if not b.enabled: return
+		b.enabled = false
+		b.queue_redraw()
+		# Only grants the server issued and this save applied are presented.
+		var paid: Dictionary = await Payments.buy("amber:%d" % k)
+		if not is_instance_valid(b): return
+		b.enabled = true
+		b.queue_redraw()
+		if not paid.get("ok", false):
+			G.main.toast(str(paid.get("message", "购买失败")))
 			return
-		RewardPresenter.present([[Art.AMBER_ICON, got]], func(_k): return b.get_global_rect().get_center() + Vector2(0, -100)))
+		RewardPresenter.present([[Art.AMBER_ICON, int(paid["amber"])]], func(_k): return b.get_global_rect().get_center() + Vector2(0, -100)))
 
 ## 集市卡片外框：阴影 + 墨边 + 按 col 染色的身子
 

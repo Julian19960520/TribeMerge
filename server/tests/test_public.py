@@ -10,13 +10,13 @@ from app.services import store_state
 
 def test_fresh_migration_matches_only_current_models(client):
     names=set(inspect(engine()).get_table_names())
-    assert names=={'alembic_version','accounts','sessions','identities','saves','save_backups','idempotency_keys','audit_log'}
+    assert names=={'alembic_version','accounts','sessions','identities','saves','save_backups','idempotency_keys','audit_log',
+                   'payment_orders','grants'}
 
 
 def test_removed_direct_gameplay_routes_are_absent(client):
     for method,path in [('get','/v1/save'),('put','/v1/save'),('post','/v1/events'),('post','/v1/pack/open'),
-                        ('post','/v1/build'),('post','/v1/energy/buy'),('get','/v1/race'),('get','/v1/gift-chain'),
-                        ('post','/v1/payments/orders')]:
+                        ('post','/v1/build'),('post','/v1/energy/buy'),('get','/v1/race'),('get','/v1/gift-chain')]:
         assert getattr(client,method)(path).status_code==404
 
 

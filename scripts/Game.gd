@@ -101,7 +101,9 @@ var _chest_busy := {}
 var _pack_busy := false
 var _storage_busy := false
 var _shell_refresh_busy := false
-const PASS_CNY := {"vip": 30, "super": 68}
+## 通行证价格（元），来自 data/pass.json 的 purchase；服务器按同一份开单。
+var PASS_CNY: Dictionary:
+	get: return {"vip": int(Data.PASS_PURCHASE.get("vip", {}).get("price_cny", 0)), "super": int(Data.PASS_PURCHASE.get("super_vip", {}).get("price_cny", 0))}
 ## 今天用琥珀买了几次火种。价格逐次上涨，零点清零。
 var energy_buys := 0
 var deals_bought := {}

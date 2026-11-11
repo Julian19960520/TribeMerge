@@ -5,6 +5,7 @@ const Rules := preload("res://scripts/replay/Reducer.gd")
 const JournalStore := preload("res://scripts/replay/Journal.gd")
 const RewardUpgrade := preload("res://scripts/storage/EarlyRewardUpgrade.gd")
 const FifthLineUpgrade := preload("res://scripts/storage/FifthLineUpgrade.gd")
+const Payments := preload("res://scripts/net/Payments.gd")
 const PROTOCOL := 1
 const ENGINE := "4.6.3"
 const CHECKPOINT_OPERATIONS := 32
@@ -439,6 +440,8 @@ func connect_session(why: String) -> void:
 		_force_upload = true
 	Cloud._after_boot()
 	if needs_upload(): upload()
+	# Purchases paid while offline, during a crash or with a lost reply arrive now.
+	Payments.deliver()
 
 ## Replace local progress with a cloud snapshot after verifying its integrity.
 func adopt(data: Dictionary) -> bool:

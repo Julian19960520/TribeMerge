@@ -2,6 +2,7 @@ class_name Offers
 extends RefCounted
 
 const DATA := "res://data/offers.json"
+const Payments := preload("res://scripts/net/Payments.gd")
 
 
 
@@ -86,5 +87,8 @@ static func wants_energy() -> bool:
 
 
 
-static func buy(_kind: String, _tier: int) -> Dictionary:
-	return {"ok": false, "message": "支付渠道尚未接通"}
+## Paid through the server (scripts/net/Payments.gd); the grant records the purchase in the window.
+static func buy(kind: String, k: int) -> Dictionary:
+	if not active(kind): return {"ok": false, "error": "closed", "message": "本期礼包已结束"}
+	if left(kind, k) <= 0: return {"ok": false, "error": "limit_reached", "message": "本期已买完"}
+	return await Payments.buy("offer:%s:%d" % [kind, k])

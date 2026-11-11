@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     backups_daily_days: int = Field(default=30, ge=0, le=365)
     # 是否启用开发用第三方登录渠道
     enable_mock_provider: bool = True
+    # 是否启用开发用模拟支付（POST /v1/payments/mock/pay）。prod 下强制关闭。
+    enable_mock_payments: bool = True
     # 日志级别、是否输出 JSON（正式环境 JSON，本地也可以开）
     log_level: str = "INFO"
     log_json: bool = True
@@ -67,4 +69,5 @@ def get_settings() -> Settings:
         if s.token_pepper == "dev-pepper-change-me":
             raise RuntimeError("正式环境必须设置 TRIBE_TOKEN_PEPPER")
         s.enable_mock_provider = False
+        s.enable_mock_payments = False
     return s

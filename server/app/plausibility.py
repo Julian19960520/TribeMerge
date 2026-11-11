@@ -15,8 +15,11 @@ def _number(state: dict, key: str, default: int = 0) -> int:
     return int(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else default
 
 
-def check(previous: dict, current: dict, elapsed_sec: float) -> list[str]:
-    """Return human-readable reasons; empty means the upload looks plausible."""
+def check(previous: dict, current: dict, elapsed_sec: float, paid_amber: int = 0) -> list[str]:
+    """Return human-readable reasons; empty means the upload looks plausible.
+
+    paid_amber is amber the server granted for purchases since the previous upload
+    (from its own ledger), so bought amber never flags an account."""
     s = get_settings()
     reasons: list[str] = []
     level = _number(current, "level", 1)
@@ -32,9 +35,9 @@ def check(previous: dict, current: dict, elapsed_sec: float) -> list[str]:
     level_gain = level - _number(previous, "level", 1)
     if level_gain > s.plaus_level_burst + s.plaus_level_per_hour * hours:
         reasons.append(f"level +{level_gain} in {hours:.2f}h")
-    for key, burst, rate in (("amber", s.plaus_amber_burst, s.plaus_amber_per_hour),
-                             ("shells", s.plaus_shells_burst, s.plaus_shells_per_hour)):
+    for key, burst, rate, paid in (("amber", s.plaus_amber_burst, s.plaus_amber_per_hour, max(0, paid_amber)),
+                                   ("shells", s.plaus_shells_burst, s.plaus_shells_per_hour, 0)):
         gain = _number(current, key) - _number(previous, key)
-        if gain > burst + rate * hours:
+        if gain > burst + rate * hours + paid:
             reasons.append(f"{key} +{gain} in {hours:.2f}h")
     return reasons

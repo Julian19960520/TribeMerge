@@ -1,5 +1,6 @@
 class_name PassPopup
 extends RefCounted
+const Payments := preload("res://scripts/net/Payments.gd")
 ## 丰收通行证。头图固定，奖励轨道单独滚动。
 ## 轨道从下往上走：最下面是起点篝火，第 1 级在底部，越往上级别越高，最顶上是循环宝箱。
 ## 一根图腾木柱，火光从底部沿柱子往上爬到当前进度；每级一个节点。
@@ -450,20 +451,27 @@ static func _stamp(p: PopupBase, r: Rect2) -> void:
 	lab.rotation = 0.18
 
 static func _do_vip(p: PopupBase) -> void:
-	if not await G.rules.progression.buy_pass_vip():
+	if not await _purchase(p, "pass:vip"):
 		return
-	p.close()
 	G.main.toast("已激活贵宾：火种 ×150，贵宾奖励已开放")
 
 static func _do_super(p: PopupBase) -> void:
 	var fresh := G.pass_tier == 0
-	if not await G.rules.progression.buy_pass_super():
+	if not await _purchase(p, "pass:super"):
 		return
-	p.close()
 	if fresh:
 		G.main.toast("已激活超级贵宾：火种 ×150，通行证 +10，超级奖励和循环宝箱已开放")
 	else:
 		G.main.toast("已升级超级贵宾：通行证 +10，超级奖励和循环宝箱已开放")
+
+static func _purchase(p: PopupBase, product: String) -> bool:
+	var r: Dictionary = await Payments.buy(product)
+	if not r.get("ok", false):
+		G.main.toast(str(r.get("message", "购买失败")))
+		return false
+	if is_instance_valid(p): p.close()
+	RewardPresenter.present(r.get("rewards", []), func(_k): return Vector2(360, 700))
+	return true
 
 # ---------------------------------------------------------------- 背景、头部
 

@@ -24,6 +24,7 @@ static var STORE_SHELL_REFRESH := 5
 static var PASS_LEVELS: Array = []
 ## 通行证赛季：{"days": 35, "start": "2026-11-02"}（北京时间零点起算）
 static var PASS_SEASON: Dictionary = {}
+static var PASS_PURCHASE: Dictionary = {}
 static var RULES: Dictionary = {}
 static var BOARD: Array = []
 static var LOCKS: Array = []
@@ -89,6 +90,7 @@ static func _load() -> void:
 	var pass_data: Dictionary = ConfigFiles.shared(ConfigFiles.PASS)
 	PASS_LEVELS = pass_data["levels"]
 	PASS_SEASON = pass_data["season"]
+	PASS_PURCHASE = pass_data.get("purchase", {})
 	RULES = ConfigFiles.shared(ConfigFiles.RULES)
 	var board: Dictionary = ConfigFiles.shared(ConfigFiles.BOARD)
 	BOARD = board["cells"]
