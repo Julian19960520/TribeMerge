@@ -13,7 +13,7 @@ func run() -> void:
 	g = root.get_node("G"); replay = root.get_node("Replay")
 	g.new_game(); g.set_process(false); replay.set_process(false); root.get_node("Cloud").set_process(false)
 	g.level = 10; g.seen_tutorial = true; g.tutorial_on = false
-	check(Data.max_lv("pack") == 5 and Data.max_lv("orderbox") == 10, "five pack grades and ten order chest grades are registered")
+	check(Data.max_lv("pack") == 5 and Data.max_lv("orderbox") == 5, "five pack grades and five order chest grades are registered")
 	for grade in range(1, 6):
 		var id := "pack_%d" % grade
 		var chances := CardPacks.probabilities(id)
@@ -31,19 +31,21 @@ func run() -> void:
 		check(valid, "%s consumes the right pack and draws two cards from allowed star pools" % id)
 	clear_board(); g.board[0]["id"] = "pack_1"; g.board[1]["id"] = "pack_1"
 	check(g.try_drop(0, 1) == "merge" and g.rules.board.cell_id(1) == "pack_2", "two unopened card packs merge to the next grade")
-	for grade in range(1, 11):
+	for grade in range(1, 6):
 		check(SpecialChests.contents("orderbox_%d" % grade).size() == int(SpecialChests.config()["orderbox"]["levels"][grade - 1]["count"]), "order chest %d has its configured number of uses" % grade)
 	var low := SpecialChests.order_weights("orderbox_1", {"fruit_2": 1, "fruit_8": 1})
-	var high := SpecialChests.order_weights("orderbox_10", {"fruit_2": 1, "fruit_8": 1})
+	var high := SpecialChests.order_weights("orderbox_5", {"fruit_2": 1, "fruit_8": 1})
 	check(float(high["fruit_8"]) / float(high["fruit_2"]) > float(low["fruit_8"]) / float(low["fruit_2"]), "higher chest grades favor higher-level order requirements")
 	clear_board(); g.inv = []; g.inv_chests = {}; g.stash = []
 	g.orders = [{"items": ["fruit_2", "tool_3"], "who": 0, "rw": {"shell": 1}}]
 	g.board[0]["id"] = "orderbox_1"
 	var first: Dictionary = await g.dispense_chest(0)
-	check(str(first.get("id", "")) in ["fruit_2", "tool_3"] and first.get("remaining") == 1, "order chest releases one currently missing item")
+	check(str(first.get("id", "")) in ["fruit_2", "tool_3"] and first.get("remaining") == 2, "order chest releases one currently missing item")
 	g.orders = [{"items": ["seed_3"], "who": 0, "rw": {"shell": 1}}]
 	var next: Dictionary = await g.dispense_chest(0)
-	check(next.get("id") == "seed_3" and g.rules.board.cell_id(0) == "seed_3", "next chest click adapts to changed orders and uses the last slot")
+	g.orders = [{"items": ["fruit_3"], "who": 0, "rw": {"shell": 1}}]
+	var last: Dictionary = await g.dispense_chest(0)
+	check(next.get("id") == "seed_3" and last.get("id") == "fruit_3" and g.rules.board.cell_id(0) == "fruit_3", "next chest click adapts to changed orders and uses the last slot")
 	clear_board(); g.orders = [{"items": ["fruit_6"], "who": 0, "rw": {"shell": 1}}]
 	g.board[0]["id"] = "orderbox_5"
 	await g.dispense_chest(0)

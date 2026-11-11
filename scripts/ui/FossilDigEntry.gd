@@ -9,9 +9,7 @@ func _ready() -> void:
 	G.changed.connect(func(): button.queue_redraw())
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	ci.draw_circle(Vector2(sz.x * 0.5, sz.y - 110), 44, Color("8a6540"))
-	FossilArt.piece(ci, Rect2(sz.x * 0.5 - 40, sz.y - 153, 80, 80), {"kind": "skull", "w": 2, "h": 2})
-	FossilArt.shovel(ci, Vector2(sz.x - 23, sz.y - 98), 50, 0.55)
+	Sprites.at(ci, "fos_entry", Vector2(sz.x * 0.5, sz.y - 108), 0.92)
 	var ready := not FossilDig.ready_rewards().is_empty()
 	var text := "×%d" % int(FossilDig.state().get("shovels", 0))
 	if ready: text = "领奖"

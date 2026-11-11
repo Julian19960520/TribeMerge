@@ -74,7 +74,7 @@ func _ready() -> void:
 	_stash_btn.extra = _paint_stash
 	_base_btn = UI.hit(_orders.content, BASE_RECT, func(): G.main.open("level"))
 	_base_btn.extra = _paint_hero
-	_lv_lbl = UI.lbl(_base_btn, "", Rect2(0, 140, BASE_RECT.size.x, 30), 18, Art.INK)
+	_lv_lbl = UI.lbl(_base_btn, "", Rect2(0, 139, BASE_RECT.size.x, 30), 18, Color("5a3a1e"))
 	_xp_lbl = UI.lbl(_base_btn, "", Rect2(26, 174, BASE_RECT.size.x - 34, 28), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	_hammer_btn = UI.hit(_orders.content, Rect2(ORDER_X, BASE_RECT.position.y, HAMMER_W, BASE_RECT.size.y), _on_hammer)
 	_hammer_btn.extra = _paint_hammer
@@ -182,7 +182,7 @@ func _paint_stash(ci: CanvasItem, sz: Vector2) -> void:
 ## 主角阿焰的等级卡
 func _paint_hero(ci: CanvasItem, sz: Vector2) -> void:
 	Sprites.draw(ci, "board_hero_card", Rect2(Vector2.ZERO, sz))
-	Meme.draw_chest(ci, Meme.HERO, Rect2(12, 44, sz.x - 24, 126))
+	Meme.draw_chest(ci, Meme.HERO, Rect2(14, 28, sz.x - 28, 112))
 	Paint.bar(ci, Rect2(12, 176, sz.x - 24, 24), float(G.xp) / float(G.rules.progression.xp_need()), Art.MOSS)
 	Art.item(ci, "xp_1", Vector2(16, 188), 36)
 

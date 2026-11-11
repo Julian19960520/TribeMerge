@@ -8,12 +8,12 @@
 
 数值、形状和奖励统一配置于 `data/fossil_dig.json`。存档字段 `fossil_dig` 保存独立布局种子、铲子、累计收集数、当前格子及领奖记录。布局只使用自身的哈希种子，不消耗卡牌、产物等其他系统的随机流。
 
-客户端与 v2 服务端重放共用 `scripts/events/FossilDig.gd`；`fossil` 操作追加到 TRP1 编号表，保留既有编号。旧版服务端保留 `/v1/fossil/action` 权威接口，交单、挖掘与领奖均有服务端校验。网页试玩沿用现有本地模式。
+客户端与规则测试共用 `scripts/events/FossilDig.gd`。旧版服务端保留 `/v1/fossil/action` 权威接口，交单、挖掘与领奖均有服务端校验。网页试玩沿用现有本地模式。
 
 验证：
 
 ```sh
 godot --headless --path . --script tools/check_fossil.gd -- --cloud-off --save=user://fossil-test.json --layouts=/tmp/fossil-layouts.json
 godot --headless --path . --script tools/check_fossil_ui.gd -- --cloud-off --save=user://fossil-ui-test.json
-TRIBE_REPLAY_GODOT=/usr/local/bin/godot python -m pytest server/tests/test_fossil_dig.py server/tests/test_replay_wire.py server/tests/test_replay.py -q
+TRIBE_GODOT=/usr/local/bin/godot python -m pytest server/tests/test_rules_replay.py -q
 ```

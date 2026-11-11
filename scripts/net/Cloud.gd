@@ -1,18 +1,16 @@
 extends Node
-## Account transport and confirmed-operation synchronization. Gameplay stays in Reducer.
+## Account transport and cloud snapshot synchronization. Gameplay stays in Reducer.
 signal restored
 signal notice(text: String)
 signal synced(what: String, ok: bool)
 signal account_changed
 
-const ReplayTransport := preload("res://scripts/net/ReplayWire.gd")
 const DEFAULT_URL := "http://127.0.0.1:8765"
 const TIMEOUT := 6.0
 const UPLOAD_GAP := 60.0
 const RETRY_SEC := 15.0
 const QUIT_WAIT := 2.0
 const DAY_OFFSET := 28800
-var replay_wire_stats: Dictionary = {}
 var state_path := "user://cloud_state.json"
 var url := DEFAULT_URL
 var enabled := true
@@ -77,7 +75,7 @@ func _process(delta: float) -> void:
 		_boot()
 	elif token != "" and renew_after > 0 and server_now() > renew_after:
 		_refresh_token()
-	elif not Replay.pending.is_empty() and _ticks() - _last_up >= UPLOAD_GAP:
+	elif Replay.needs_upload() and _ticks() - _last_up >= UPLOAD_GAP:
 		Replay.upload()
 
 func _notification(what: int) -> void:
@@ -280,19 +278,9 @@ func _uuid() -> String:
 
 func _call(method: String, path: String, body, idem := "", anon := false, use_token := "") -> Array:
 	var h := HTTPRequest.new()
-	h.timeout = 30.0 if path.begins_with("/v2/") else TIMEOUT
+	h.timeout = TIMEOUT
 	add_child(h)
-	var binary := PackedByteArray()
-	var compressed := path == "/v2/sync" and body is Dictionary
 	var headers := PackedStringArray(["Content-Type: application/json"])
-	if compressed:
-		var raw := ReplayTransport.encode(body)
-		if raw.is_empty():
-			h.queue_free()
-			return [0, {"error": "invalid_replay_log", "message": "操作日志无法编码，已保留本地记录"}]
-		binary = raw.compress(FileAccess.COMPRESSION_GZIP)
-		headers = PackedStringArray(["Content-Type: " + ReplayTransport.MIME, "Content-Encoding: gzip"])
-		replay_wire_stats = {"ops": body["ops"].size(), "compact": raw.size(), "gzip": binary.size()}
 	var tk := use_token if use_token != "" else token
 	if not anon and tk != "":
 		headers.append("Authorization: Bearer " + tk)
@@ -302,7 +290,7 @@ func _call(method: String, path: String, body, idem := "", anon := false, use_to
 	match method:
 		"POST": m = HTTPClient.METHOD_POST
 	var sent_at := Time.get_ticks_msec()
-	var err := h.request_raw(url + path, headers, m, binary) if compressed else h.request(url + path, headers, m, "" if body == null else JSON.stringify(body))
+	var err := h.request(url + path, headers, m, "" if body == null else JSON.stringify(body))
 	if err != OK:
 		h.queue_free()
 		await get_tree().process_frame
@@ -317,8 +305,7 @@ func _call(method: String, path: String, body, idem := "", anon := false, use_to
 	var code := int(res[1])
 	if d.has("now"):
 		var rtt := Time.get_ticks_msec() - sent_at
-		# v2 timestamps are taken after replay; its CPU time is not network latency.
-		var estimate := float(d["now"]) + (0.0 if path.begins_with("/v2/") else float(rtt) / 2000.0)
+		var estimate := float(d["now"]) + float(rtt) / 2000.0
 		if _srv_tick > 0: estimate = maxf(estimate, server_now())
 		_srv_unix = estimate
 		_srv_tick = Time.get_ticks_msec()

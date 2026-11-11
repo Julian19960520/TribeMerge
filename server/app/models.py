@@ -9,7 +9,7 @@ from .db import Base
 
 
 class Account(Base):
-    """Account identity and projections from the last confirmed rule snapshot."""
+    """Account identity and a summary of the last uploaded snapshot."""
 
     __tablename__ = "accounts"
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
@@ -25,6 +25,9 @@ class Account(Base):
     rank_reached_at: Mapped[float] = mapped_column(BigInteger, default=0)
     last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     disabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    # 上传存档的合理性检查没通过：不封号，只移出排行榜并留审计记录
+    flagged: Mapped[bool] = mapped_column(Boolean, default=False)
+    flag_reason: Mapped[str] = mapped_column(String(200), default="")
 
     __table_args__ = (Index("ix_accounts_rank", "rank_progress", "rank_reached_at", "id"),)
 
@@ -60,8 +63,10 @@ class Save(Base):
     version: Mapped[int] = mapped_column(Integer, default=0)
     hash: Mapped[str] = mapped_column(String(64), default="")
     data: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
-    # 当前确认点的服务器时间
+    # 上传时的服务器时间
     saved_at: Mapped[float] = mapped_column(BigInteger, default=0)
+    # 最后写入的设备（换设备判断存档冲突用）
+    writer: Mapped[str] = mapped_column(String(64), default="")
 
 
 class SaveBackup(Base):
@@ -92,7 +97,7 @@ class IdempotencyKey(Base):
 
 
 class AuditLog(Base):
-    """Command validation and state recovery audit trail."""
+    """Save plausibility flags and other account audit events."""
 
     __tablename__ = "audit_log"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

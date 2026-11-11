@@ -2,40 +2,20 @@
 	"orderbox": {
 		"levels": [
 			{
-				"count": 2,
-				"high_tier_bias": 0
-			},
-			{
 				"count": 3,
 				"high_tier_bias": 0.5
-			},
-			{
-				"count": 4,
-				"high_tier_bias": 1
 			},
 			{
 				"count": 5,
 				"high_tier_bias": 1.5
 			},
 			{
-				"count": 6,
-				"high_tier_bias": 2
-			},
-			{
 				"count": 7,
 				"high_tier_bias": 2.5
 			},
 			{
-				"count": 8,
-				"high_tier_bias": 3
-			},
-			{
 				"count": 9,
 				"high_tier_bias": 3.5
-			},
-			{
-				"count": 10,
-				"high_tier_bias": 4
 			},
 			{
 				"count": 12,

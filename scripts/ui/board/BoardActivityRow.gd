@@ -28,6 +28,8 @@ func _init(owner: Control, bindings: Dictionary) -> void:
 	hammer = bindings["hammer"]
 	cards = bindings["cards"]
 	entries = ActivityEntries.create(orders.content, Vector2(ENTRY_W, BASE_RECT.size.y))
+	# 活动入口和主角卡、订单卡同一高度：名字底边对齐卡片底边
+	for entry in entries: (entry["view"] as Control).position.y = BASE_RECT.position.y - 4.0
 
 func refresh(animate := true) -> void:
 	var open := not G.stash.is_empty()

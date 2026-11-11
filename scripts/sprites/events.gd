@@ -72,7 +72,7 @@ static var _xf := Transform2D.IDENTITY
 
 static func _entry_art(out: Array) -> void:
 	# 图片原点 = 地面中点，内容区 x -64..64、y -120..12；运行时中心 (0, -54)
-	for kind in ["duel", "race", "ruins", "seven"]:
+	for kind in ["duel", "race", "ruins", "seven", "tiger"]:
 		for grey in [false, true]:
 			out.append({"key": "ev_entry_%s%s" % [kind, "_grey" if grey else ""], "w": 128, "h": 132, "pad": 12,
 				"draw": func(ci, r): live_entry(ci, kind, grey, r.position + Vector2(64, 120))})
@@ -95,6 +95,7 @@ static func live_entry(ci: CanvasItem, kind: String, grey: bool, o: Vector2, sca
 		"race": _en_race(ci)
 		"ruins": _en_ruins(ci)
 		"seven": _en_seven(ci)
+		"tiger": _en_tiger(ci)
 	_grey = false
 	ci.draw_set_transform(Vector2.ZERO)
 
@@ -107,29 +108,90 @@ static func _parts(ci: CanvasItem, parts: Array) -> void:
 	for p in parts: p[1] = _c(p[1])
 	Art.sil(ci, parts, true, 3.0)
 
-## 双人竞速：两张头像对顶，中间红色 VS 星章，脚下一小堆香蕉
+## 双人竞速：两根交叉的木棒槌后面立一面兽皮圆盾，左绿右红两半，中间写 VS；脚下一小堆香蕉
 static func _en_duel(ci: CanvasItem) -> void:
-	for side in 2:
-		var c := Vector2(-24.0 if side == 0 else 24.0, -56.0 + (0.0 if side == 0 else -3.0))
-		ci.draw_circle(c + Vector2(0, 3), 27, Color(0, 0, 0, 0.2))
-		ci.draw_circle(c, 27, Art.INK)
-		ci.draw_circle(c, 24.5, _c(Art.MOSS if side == 0 else Art.CLAY))
-		ci.draw_circle(c, 20, _c(Art.BONE))
-		# Meme 内部会改画布变换：换回屏幕坐标画，画完再恢复
-		ci.draw_set_transform_matrix(Transform2D.IDENTITY)
-		Meme.live_portrait(ci, Meme.HERO if side == 0 else side, _xf * (c + Vector2(0, 2)), 42 * _xf.get_scale().x)
-		ci.draw_set_transform_matrix(_xf)
-		if _grey: ci.draw_circle(c, 25, Color(0.55, 0.53, 0.5, 0.55))
+	var parts := []
+	for sx in [-1.0, 1.0]:
+		var a := Vector2(-44 * sx, -4)
+		var b := Vector2(40 * sx, -100)
+		var rot := (b - a).angle() + PI * 0.5
+		parts.append(Art.P(Art.capsule(a, b, 4.5, 60 + int(sx)), Color("a8693a"), 1))
+		parts.append(Art.P(Art.ell(b, Vector2(11, 17), 62 + int(sx), 0.14, 14, rot), Color("8a5a2b"), 1))
+	var shield := Art.ell(Vector2(0, -52), Vector2(30, 30), 64, 0.03, 26)
+	parts.append(Art.P(shield, Color("e6c98a"), 0))
+	_parts(ci, parts)
+	# 棒槌头上的疙瘩
+	for sx in [-1.0, 1.0]:
+		var b := Vector2(40 * sx, -100)
+		var rot := (b - Vector2(-44 * sx, -4)).angle() + PI * 0.5
+		for k in 3:
+			ci.draw_circle(b + Vector2(-4 + k * 4, -8 + k * 7).rotated(rot), 1.8, Color(0.25, 0.12, 0.04, 0.6))
+	# 盾面：左半绿（自己）右半红（对手），中间一道皮绳
+	var c := Vector2(0, -52)
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for i in 17:
+		var a := -PI * 0.5 + PI * float(i) / 16.0
+		right.append(c + Vector2(cos(a), sin(a)) * 24.0)
+		left.append(c + Vector2(-cos(a), sin(a)) * 24.0)
+	ci.draw_colored_polygon(left, _c(Art.MOSS))
+	ci.draw_colored_polygon(right, _c(Color("e8673f")))
+	ci.draw_arc(c, 24.0, 0, TAU, 32, Art.INK, 2.2, true)
+	Art.ln(ci, c + Vector2(0, -24), c + Vector2(0, 24), 3.0, Art.INK, 65)
+	for k in 8:
+		var a := TAU * float(k) / 8.0 + 0.2
+		ci.draw_circle(c + Vector2(cos(a), sin(a)) * 27.0, 2.2, _c(Art.LEATHER_D))
+	EventEntryArt.text(ci, "VS", c + Vector2(0, 8), 22, Color.WHITE, 6)
 	for k in 4:
-		var c := Vector2(-21.0 + k * 14.0, -8.0 + absf(k - 1.5) * 3.0)
+		var bc := Vector2(-21.0 + k * 14.0, -6.0 + absf(k - 1.5) * 3.0)
 		var rot := -0.5 + k * 0.33
-		Art.dilate(ci, _banana(c, 30.0, rot), 4.0, Color(1, 0.98, 0.92, 0.96))
-		if _grey: Art.fill(ci, _banana(c, 30.0, rot), _c(Color("ffd84a")), 2.4)
-		else: Banana.draw(ci, c, 30.0, rot)
-	var v := Vector2(0, -30)
-	Art.fill(ci, Art.star_pts(v, 19, 13, 9, 61), _c(Art.CLAY), 2.6)
-	ci.draw_circle(v, 10.5, _c(Color("e8673f")))
-	EventEntryArt.text(ci, "VS", v + Vector2(0, 6), 16, Color.WHITE, 4)
+		Art.dilate(ci, _banana(bc, 28.0, rot), 4.0, Color(1, 0.98, 0.92, 0.96))
+		if _grey: Art.fill(ci, _banana(bc, 28.0, rot), _c(Color("ffd84a")), 2.4)
+		else: Banana.draw(ci, bc, 28.0, rot)
+
+## 剑齿虎逃生：贴纸风剑齿虎头，两根长獠牙，眉头皱着，脚下扬起的尘土
+static func _en_tiger(ci: CanvasItem) -> void:
+	var fur := Color("e8913a")
+	var cream := Color("fbe8c4")
+	var c := Vector2(0, -60)
+	if not _grey:
+		for k in 3:
+			Art.fill(ci, Art.ell(Vector2(-34 + k * 30, -4 - (k % 2) * 4), Vector2(12 - k * 2, 7), 120 + k, 0.12, 12), Color("e9d6ae"), 2.0)
+	var parts := []
+	for sx in [-1.0, 1.0]:
+		parts.append(Art.P(Art.ell(c + Vector2(30 * sx, -32), Vector2(13, 13), 110 + int(sx), 0.08, 12), fur, 1))
+	# 两腮的毛
+	for sx in [-1.0, 1.0]:
+		var t := [c + Vector2(30 * sx, -18), c + Vector2(50 * sx, -4), c + Vector2(42 * sx, 2), c + Vector2(52 * sx, 12), c + Vector2(36 * sx, 16), c + Vector2(40 * sx, 26), c + Vector2(20 * sx, 22)]
+		parts.append(Art.P(Art.poly(t, 112 + int(sx), 0.5), cream, 0))
+	parts.append(Art.P(Art.ell(c, Vector2(40, 36), 114, 0.04, 24), fur, 1))
+	for sx in [-1.0, 1.0]:
+		parts.append(Art.P(Art.poly([c + Vector2(6 * sx, 14), c + Vector2(14 * sx, 16), c + Vector2(12 * sx, 46), c + Vector2(8 * sx, 46)], 116 + int(sx), 0.3), Color("fffaf0"), 0))
+	parts.append(Art.P(Art.ell(c + Vector2(0, 12), Vector2(22, 14), 118, 0.05, 16), cream, 0))
+	_parts(ci, parts)
+	for sx in [-1.0, 1.0]:
+		ci.draw_colored_polygon(Art.ell(c + Vector2(30 * sx, -31), Vector2(6.5, 6.5), 130 + int(sx), 0.06, 10), _c(Color("f4b6a0")))
+	# 额头和两颊的条纹
+	var stripe := _c(Color("5a2e12"))
+	Art.fill(ci, Art.poly([c + Vector2(-5, -34), c + Vector2(5, -34), c + Vector2(0, -20)], 131, 0.3), stripe, 0)
+	for sx in [-1.0, 1.0]:
+		Art.fill(ci, Art.poly([c + Vector2(15 * sx, -33), c + Vector2(22 * sx, -30), c + Vector2(12 * sx, -20)], 132 + int(sx), 0.3), stripe, 0)
+		Art.fill(ci, Art.poly([c + Vector2(40 * sx, -6), c + Vector2(26 * sx, -2), c + Vector2(39 * sx, 2)], 134 + int(sx), 0.3), stripe, 0)
+		Art.fill(ci, Art.poly([c + Vector2(38 * sx, 8), c + Vector2(26 * sx, 8), c + Vector2(36 * sx, 13)], 136 + int(sx), 0.3), stripe, 0)
+	# 眼睛：皱眉的黄眼
+	for sx in [-1.0, 1.0]:
+		var e := c + Vector2(15 * sx, -9)
+		Art.fill(ci, Art.ell(e, Vector2(7.5, 6.5), 140 + int(sx), 0.05, 12), _c(Color("ffe27a")), 2.2)
+		ci.draw_circle(e + Vector2(-1.5 * sx, 1), 3.0, Art.INK)
+		ci.draw_circle(e + Vector2(-2.5 * sx, -0.5), 1.1, Color.WHITE)
+		Art.ln(ci, e + Vector2(-9 * sx, -12), e + Vector2(8 * sx, -6), 3.6, Art.INK, 142 + int(sx))
+	# 鼻子 + 嘴
+	Art.fill(ci, Art.poly([c + Vector2(-8, 2), c + Vector2(8, 2), c + Vector2(0, 10)], 144, 0.3), _c(Color("4a2a1a")), 2.0)
+	Art.pl(ci, [c + Vector2(0, 10), c + Vector2(0, 15), c + Vector2(-7, 19)], 2.2, Art.INK, 145)
+	Art.pl(ci, [c + Vector2(0, 15), c + Vector2(7, 19)], 2.2, Art.INK, 146)
+	for sx in [-1.0, 1.0]:
+		for k in 3:
+			ci.draw_circle(c + Vector2((12 + k * 4) * sx, 11 + (k % 2) * 4), 1.2, Color(0.3, 0.15, 0.05, 0.7))
 
 ## 香蕉竞速：一串香蕉靠着方格赛旗
 static func _en_race(ci: CanvasItem) -> void:
@@ -768,6 +830,8 @@ static func live_spree_bag(ci: CanvasItem, c: Vector2, rot: float, band: Color, 
 	Art.outline(ci, body, 3.0, Art.INK)
 
 ## 部落界面「赶大集」卡：卡底 + 袋子提手（物品在它和袋身之间）
+## 赶大集入口：小集市摊位——红白条纹遮阳篷、两根木柱、木柜台；货物（SpreeCard 运行时画）摆在柜台上，
+## 前景是柜台和右上角的红色促销签。
 static func live_spree_card_back(ci: CanvasItem) -> void:
 	var r := Rect2(10, 3, 80, 80)
 	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 4), r.size), 14, 492, 0.0), Color(0, 0, 0, 0.28))
@@ -775,16 +839,45 @@ static func live_spree_card_back(ci: CanvasItem) -> void:
 	Art.dilate(ci, b, 2.6, Art.INK)
 	ci.draw_colored_polygon(b, Color("e7b45a"))
 	ci.draw_colored_polygon(Art.rrect(r.grow(-5), 10, 493, 0.5), Color("f2c66e"))
-	var c := Vector2(50, 50)
-	Art.pl(ci, [c + Vector2(-16, -10), c + Vector2(-10, -30), c + Vector2(10, -30), c + Vector2(16, -10)], 4.0, Art.INK, 494)
-	Art.pl(ci, [c + Vector2(-16, -10), c + Vector2(-10, -30), c + Vector2(10, -30), c + Vector2(16, -10)], 2.2, Art.ROPE, 494)
+	# 摊位后面的暖色
+	ci.draw_colored_polygon(Art.rrect(Rect2(22, 30, 56, 30), 3, 498, 0.2), Color("d99a48"))
+	# 木柱
+	for x in [22.0, 78.0]:
+		Art.fill(ci, Art.capsule(Vector2(x, 24), Vector2(x, 72), 3.2, 499 + int(x)), Art.WOOD_D, 2.0)
+	# 条纹遮阳篷：上沿一条直边，下沿波浪
+	var top := 12.0
+	var bottom := 30.0
+	var n := 6
+	var w := 72.0 / n
+	var awning := PackedVector2Array([Vector2(14, top), Vector2(86, top)])
+	for i in range(n, 0, -1):
+		var x0 := 14.0 + i * w
+		for k in 6:
+			var t := float(k) / 6.0
+			awning.append(Vector2(x0 - t * w, bottom + sin(t * PI) * 5.0))
+	awning.append(Vector2(14, bottom))
+	Art.dilate(ci, awning, 2.4, Art.INK)
+	for i in n:
+		var x0 := 14.0 + i * w
+		var strip := PackedVector2Array([Vector2(x0, top), Vector2(x0 + w, top)])
+		for k in 7:
+			var t := 1.0 - float(k) / 6.0
+			strip.append(Vector2(x0 + t * w, bottom + sin(t * PI) * 5.0))
+		ci.draw_colored_polygon(strip, Art.CLAY if i % 2 == 0 else Color("fff3d2"))
+	ci.draw_line(Vector2(15, top + 3), Vector2(85, top + 3), Color(1, 1, 1, 0.35), 2.0, true)
 
 static func live_spree_card_front(ci: CanvasItem) -> void:
-	var c := Vector2(50, 50)
-	var bag := Art.poly([c + Vector2(-24, -8), c + Vector2(24, -8), c + Vector2(28, 20), c + Vector2(-28, 20)], 495)
-	Art.fill(ci, bag, Art.WOOD, 2.4)
-	ci.draw_colored_polygon(Art.poly([c + Vector2(-26, 0), c + Vector2(26, 0), c + Vector2(27, 7), c + Vector2(-27, 7)], 496), Art.CLAY)
-	Art.fill(ci, Art.star_pts(Vector2(84, 14), 15, 11, 10, 497), Color("e5483a"), 2.0)
+	# 柜台
+	var counter := Art.rrect(Rect2(16, 60, 68, 15), 3, 495, 0.4)
+	Art.fill(ci, counter, Art.WOOD, 2.4)
+	Art.ln(ci, Vector2(19, 67), Vector2(81, 67), 1.4, Color(0.3, 0.15, 0.05, 0.5), 496)
+	ci.draw_line(Vector2(19, 63), Vector2(81, 63), Color(1, 1, 1, 0.3), 1.6, true)
+	# 促销签：红色爆炸贴 + 白色百分号
+	var c := Vector2(82, 14)
+	Art.fill(ci, Art.star_pts(c, 15, 11, 10, 497), Color("e5483a"), 2.0)
+	ci.draw_circle(c + Vector2(-4, -4), 2.4, Color.WHITE)
+	ci.draw_circle(c + Vector2(4, 4), 2.4, Color.WHITE)
+	ci.draw_line(c + Vector2(5, -6), c + Vector2(-5, 6), Color.WHITE, 2.4, true)
 
 # ================================================================ 火种大礼包（EnergyOfferPopup）
 

@@ -91,40 +91,52 @@
 			"w": 128
 		},
 		"ev_entry_race": {
-			"frames": 4.0,
-			"h": 132.0,
-			"pad": 12.0,
-			"w": 128.0
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
 		},
 		"ev_entry_race_grey": {
-			"frames": 4.0,
-			"h": 132.0,
-			"pad": 12.0,
-			"w": 128.0
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
 		},
 		"ev_entry_ruins": {
-			"frames": 4.0,
-			"h": 132.0,
-			"pad": 12.0,
-			"w": 128.0
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
 		},
 		"ev_entry_ruins_grey": {
-			"frames": 4.0,
-			"h": 132.0,
-			"pad": 12.0,
-			"w": 128.0
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
 		},
 		"ev_entry_seven": {
-			"frames": 4.0,
-			"h": 132.0,
-			"pad": 12.0,
-			"w": 128.0
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
 		},
 		"ev_entry_seven_grey": {
-			"frames": 4.0,
-			"h": 132.0,
-			"pad": 12.0,
-			"w": 128.0
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
+		},
+		"ev_entry_tiger": {
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
+		},
+		"ev_entry_tiger_grey": {
+			"frames": 4,
+			"h": 132,
+			"pad": 12,
+			"w": 128
 		},
 		"ev_gift_badge_free": {
 			"frames": 4.0,
@@ -1027,16 +1039,16 @@
 			"w": 150.0
 		},
 		"ev_spree_card_back": {
-			"frames": 4.0,
-			"h": 100.0,
-			"pad": 6.0,
-			"w": 100.0
+			"frames": 4,
+			"h": 100,
+			"pad": 6,
+			"w": 100
 		},
 		"ev_spree_card_front": {
-			"frames": 4.0,
-			"h": 100.0,
-			"pad": 6.0,
-			"w": 100.0
+			"frames": 4,
+			"h": 100,
+			"pad": 6,
+			"w": 100
 		},
 		"ev_spree_grid": {
 			"frames": 4.0,

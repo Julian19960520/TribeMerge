@@ -1,196 +1,196 @@
 {
 	"sprites": {
 		"board_aim_arrow": {
-			"frames": 4,
-			"h": 16,
+			"frames": 4.0,
+			"h": 16.0,
 			"nine": [
-				4,
-				0,
-				14,
-				0
+				4.0,
+				0.0,
+				14.0,
+				0.0
 			],
-			"pad": 4,
-			"w": 48
+			"pad": 4.0,
+			"w": 48.0
 		},
 		"board_bolt": {
-			"frames": 4,
-			"h": 18,
-			"pad": 5,
-			"w": 16
+			"frames": 4.0,
+			"h": 18.0,
+			"pad": 5.0,
+			"w": 16.0
 		},
 		"board_bolt_boost": {
-			"frames": 4,
-			"h": 18,
-			"pad": 5,
-			"w": 16
+			"frames": 4.0,
+			"h": 18.0,
+			"pad": 5.0,
+			"w": 16.0
 		},
 		"board_boost_off": {
-			"frames": 4,
-			"h": 42,
-			"pad": 5,
-			"w": 36
+			"frames": 4.0,
+			"h": 42.0,
+			"pad": 5.0,
+			"w": 36.0
 		},
 		"board_boost_on": {
-			"frames": 4,
-			"h": 42,
-			"pad": 5,
-			"w": 36
+			"frames": 4.0,
+			"h": 42.0,
+			"pad": 5.0,
+			"w": 36.0
 		},
 		"board_bpill_fill": {
-			"frames": 4,
-			"h": 21,
+			"frames": 4.0,
+			"h": 21.0,
 			"nine": [
-				12,
-				10,
-				12,
-				10
+				12.0,
+				10.0,
+				12.0,
+				10.0
 			],
-			"pad": 4,
-			"w": 50
+			"pad": 4.0,
+			"w": 50.0
 		},
 		"board_bpill_ink": {
-			"frames": 4,
-			"h": 21,
+			"frames": 4.0,
+			"h": 21.0,
 			"nine": [
-				12,
-				10,
-				12,
-				10
+				12.0,
+				10.0,
+				12.0,
+				10.0
 			],
-			"pad": 4,
-			"w": 50
+			"pad": 4.0,
+			"w": 50.0
 		},
 		"board_burst_star": {
-			"frames": 4,
-			"h": 24,
-			"pad": 3,
-			"w": 24
+			"frames": 4.0,
+			"h": 24.0,
+			"pad": 3.0,
+			"w": 24.0
 		},
 		"board_card_base": {
-			"frames": 4,
-			"h": 192,
+			"frames": 4.0,
+			"h": 192.0,
 			"nine": [
-				30,
-				30,
-				30,
-				30
+				30.0,
+				30.0,
+				30.0,
+				30.0
 			],
-			"pad": 12,
-			"w": 200
+			"pad": 12.0,
+			"w": 200.0
 		},
 		"board_card_dash": {
-			"frames": 4,
-			"h": 192,
+			"frames": 4.0,
+			"h": 192.0,
 			"nine": [
-				30,
-				30,
-				30,
-				30
+				30.0,
+				30.0,
+				30.0,
+				30.0
 			],
-			"pad": 12,
-			"w": 200
+			"pad": 12.0,
+			"w": 200.0
 		},
 		"board_card_fill": {
-			"frames": 4,
-			"h": 192,
+			"frames": 4.0,
+			"h": 192.0,
 			"nine": [
-				30,
-				30,
-				30,
-				30
+				30.0,
+				30.0,
+				30.0,
+				30.0
 			],
-			"pad": 12,
-			"w": 200
+			"pad": 12.0,
+			"w": 200.0
 		},
 		"board_chip": {
-			"frames": 4,
-			"h": 28,
+			"frames": 4.0,
+			"h": 28.0,
 			"nine": [
-				16,
-				14,
-				16,
-				14
+				16.0,
+				14.0,
+				16.0,
+				14.0
 			],
-			"pad": 3,
-			"w": 80
+			"pad": 3.0,
+			"w": 80.0
 		},
 		"board_cook_flame": {
-			"frames": 4,
-			"h": 10,
-			"pad": 6,
-			"w": 16
+			"frames": 4.0,
+			"h": 10.0,
+			"pad": 6.0,
+			"w": 16.0
 		},
 		"board_cook_pot": {
-			"frames": 4,
-			"h": 48,
-			"pad": 6,
-			"w": 64
+			"frames": 4.0,
+			"h": 48.0,
+			"pad": 6.0,
+			"w": 64.0
 		},
 		"board_curtain_l": {
-			"frames": 4,
-			"h": 380,
-			"pad": 6,
-			"w": 90
+			"frames": 4.0,
+			"h": 380.0,
+			"pad": 6.0,
+			"w": 90.0
 		},
 		"board_curtain_r": {
-			"frames": 4,
-			"h": 380,
-			"pad": 6,
-			"w": 90
+			"frames": 4.0,
+			"h": 380.0,
+			"pad": 6.0,
+			"w": 90.0
 		},
 		"board_epill_fill": {
-			"frames": 4,
-			"h": 26,
+			"frames": 4.0,
+			"h": 26.0,
 			"nine": [
-				14,
-				13,
-				14,
-				13
+				14.0,
+				13.0,
+				14.0,
+				13.0
 			],
-			"pad": 4,
-			"w": 60
+			"pad": 4.0,
+			"w": 60.0
 		},
 		"board_epill_ink": {
-			"frames": 4,
-			"h": 26,
+			"frames": 4.0,
+			"h": 26.0,
 			"nine": [
-				14,
-				13,
-				14,
-				13
+				14.0,
+				13.0,
+				14.0,
+				13.0
 			],
-			"pad": 4,
-			"w": 60
+			"pad": 4.0,
+			"w": 60.0
 		},
 		"board_glow": {
-			"frames": 1,
-			"h": 90,
+			"frames": 1.0,
+			"h": 90.0,
 			"nine": [
-				22,
-				22,
-				22,
-				22
+				22.0,
+				22.0,
+				22.0,
+				22.0
 			],
-			"pad": 4,
-			"w": 90
+			"pad": 4.0,
+			"w": 90.0
 		},
 		"board_hammer_card": {
-			"frames": 4,
-			"h": 226,
-			"pad": 6,
-			"w": 130
+			"frames": 4.0,
+			"h": 226.0,
+			"pad": 6.0,
+			"w": 130.0
 		},
 		"board_head_npc": {
-			"frames": 4,
-			"h": 76,
-			"pad": 6,
-			"w": 76
+			"frames": 4.0,
+			"h": 76.0,
+			"pad": 6.0,
+			"w": 76.0
 		},
 		"board_head_story": {
-			"frames": 4,
-			"h": 76,
-			"pad": 6,
-			"w": 76
+			"frames": 4.0,
+			"h": 76.0,
+			"pad": 6.0,
+			"w": 76.0
 		},
 		"board_hero_card": {
 			"frames": 4,
@@ -199,190 +199,196 @@
 			"w": 142
 		},
 		"board_info_panel": {
-			"frames": 4,
-			"h": 170,
-			"pad": 6,
-			"w": 456
+			"frames": 4.0,
+			"h": 170.0,
+			"pad": 6.0,
+			"w": 456.0
 		},
 		"board_info_tag": {
-			"frames": 4,
-			"h": 40,
-			"pad": 6,
-			"w": 304
+			"frames": 4.0,
+			"h": 40.0,
+			"pad": 6.0,
+			"w": 304.0
 		},
 		"board_log": {
-			"frames": 4,
-			"h": 50,
-			"pad": 6,
-			"w": 740
+			"frames": 4.0,
+			"h": 50.0,
+			"pad": 6.0,
+			"w": 740.0
 		},
 		"board_offer_tail_fill": {
-			"frames": 1,
-			"h": 20,
-			"pad": 5,
-			"w": 30
+			"frames": 1.0,
+			"h": 20.0,
+			"pad": 5.0,
+			"w": 30.0
 		},
 		"board_offer_tail_ink": {
-			"frames": 1,
-			"h": 20,
-			"pad": 5,
-			"w": 30
+			"frames": 1.0,
+			"h": 20.0,
+			"pad": 5.0,
+			"w": 30.0
 		},
 		"board_offer_top": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 340
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 340.0
 		},
 		"board_offer_under": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 340
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 340.0
 		},
 		"board_plate": {
-			"frames": 4,
-			"h": 76,
-			"pad": 5,
-			"w": 76
+			"frames": 4.0,
+			"h": 76.0,
+			"pad": 5.0,
+			"w": 76.0
 		},
 		"board_plate_hot": {
-			"frames": 4,
-			"h": 76,
-			"pad": 5,
-			"w": 76
+			"frames": 4.0,
+			"h": 76.0,
+			"pad": 5.0,
+			"w": 76.0
 		},
 		"board_prod_glow": {
-			"frames": 4,
-			"h": 84,
-			"pad": 4,
-			"w": 84
+			"frames": 4.0,
+			"h": 84.0,
+			"pad": 4.0,
+			"w": 84.0
+		},
+		"board_puff": {
+			"frames": 4.0,
+			"h": 34.0,
+			"pad": 4.0,
+			"w": 40.0
 		},
 		"board_spot_shadow": {
-			"frames": 4,
-			"h": 68,
-			"pad": 4,
-			"w": 80
+			"frames": 4.0,
+			"h": 68.0,
+			"pad": 4.0,
+			"w": 80.0
 		},
 		"board_stash_arrow": {
-			"frames": 4,
-			"h": 22,
-			"pad": 5,
-			"w": 32
+			"frames": 4.0,
+			"h": 22.0,
+			"pad": 5.0,
+			"w": 32.0
 		},
 		"board_stash_card": {
-			"frames": 4,
-			"h": 124,
-			"pad": 8,
-			"w": 82
+			"frames": 4.0,
+			"h": 124.0,
+			"pad": 8.0,
+			"w": 82.0
 		},
 		"board_stash_card_top": {
-			"frames": 4,
-			"h": 124,
-			"pad": 8,
-			"w": 82
+			"frames": 4.0,
+			"h": 124.0,
+			"pad": 8.0,
+			"w": 82.0
 		},
 		"board_stash_tray": {
-			"frames": 4,
-			"h": 192,
-			"pad": 6,
-			"w": 106
+			"frames": 4.0,
+			"h": 192.0,
+			"pad": 6.0,
+			"w": 106.0
 		},
 		"board_vine_b0": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b1": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b2": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b3": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b4": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b5": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b6": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b7": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f0": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f1": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f2": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f3": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f4": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f5": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f6": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f7": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		}
 	}
 }

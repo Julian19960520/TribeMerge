@@ -141,10 +141,10 @@ static func _album_cards(holder: Control, a: int, r: Rect2) -> void:
 			if G.cards.has(key): G.main.open("card", {"album": a, "index": k})
 			else: G.main.toast("收集后可查看"))
 		tile.name = "card_%d_%d" % [a, k]
-		tile.extra = func(ci, sz): Paint.card(ci, Rect2(Vector2(4, 4), sz - Vector2(8, 8)), a, k, owned, true)
-		UI.lbl(tile, CardArtwork.card_name(a, k) if owned else "？？？", Rect2(0, 196, 180, 44), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+		tile.extra = func(ci, sz): Paint.card(ci, Rect2(Vector2(4, 8), sz - Vector2(8, 10)), a, k, owned)
+		UI.lbl(tile, CardArtwork.card_name(a, k) if owned else "？？？", Rect2(14, 190, 152, 46), 21, Color("5a3a1e") if owned else Color("a08868"), HORIZONTAL_ALIGNMENT_CENTER)
 		if owned and int(G.cards[key]) > 1:
-			UI.lbl(tile, "×%d" % int(G.cards[key]), Rect2(120, 4, 60, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.CLAY)
+			UI.lbl(tile, "×%d" % int(G.cards[key]), Rect2(118, 150, 56, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.CLAY)
 
 static func card(album: int, index: int) -> PopupBase:
 	if album < 0 or album >= Data.ALBUMS.size() or index < 0 or index >= Data.ALBUMS[album]["cards"].size(): return null
@@ -161,7 +161,19 @@ static func card(album: int, index: int) -> PopupBase:
 	UI.title(p.box, CardArtwork.card_name(album, index), Rect2(220, br.position.y + 4, 280, 68), 38, Color.WHITE)
 	var close := UI.hit(p.box, Rect2(r.end.x - 52, r.position.y - 24, 70, 70), p.close)
 	close.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
-	var text := UI.lbl(p.box, CardArtwork.caption(album, index), Rect2(48, r.end.y + 28, 624, 200), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Color.BLACK)
+	# 星级横幅压在画框下沿，下面一块兽皮说明牌
+	var stars := CardPacks.stars(album, index)
+	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
+		var plate := Rect2(44, r.end.y + 34, 632, 196)
+		var pp := Art.rrect(plate, 22, 77, 0.5)
+		Art.dilate(ci, pp, 3.0, Art.INK)
+		ci.draw_colored_polygon(pp, Art.HIDE)
+		Art.dashed(ci, Art.rrect(plate.grow(-8), 16, 78, 0.0), 7, 5, Art.HIDE2.darkened(0.15), 2.0)
+		var rw := 40.0 + float(stars) * 30.0
+		Sprites.draw(ci, "alb_ribbon", Rect2(360 - rw * 0.5, r.end.y - 6, rw, 40))
+		for k in stars:
+			Sprites.at(ci, "paint_card_star", Vector2(360 + (float(k) - float(stars - 1) * 0.5) * 30.0, r.end.y + 13), 0.95), false)
+	var text := UI.lbl(p.box, CardArtwork.caption(album, index), Rect2(68, r.end.y + 58, 584, 160), 34, Color("4a2f18"), HORIZONTAL_ALIGNMENT_CENTER)
 	var bold := FontVariation.new()
 	bold.base_font = G.font_body
 	bold.variation_embolden = 1.0
@@ -225,9 +237,8 @@ static func pack(request: Dictionary = {}) -> PopupBase:
 			var ix: int = got[k][1]
 			var cr := Rect2(110 + k * 270, 520, 230, 320)
 			var cb := UI.hit(p.box, cr, func(): G.main.open("card", {"album": ab, "index": ix}))
-			cb.extra = func(ci, sz): Paint.card(ci, Rect2(Vector2(6, 6), sz - Vector2(12, 12)), ab, ix, true)
-			var nl := UI.lbl(cb, CardArtwork.card_name(ab, ix), Rect2(0, 252, 230, 50), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
-			nl.position.y = 250
+			cb.extra = func(ci, sz): Paint.card(ci, Rect2(Vector2(6, 12), sz - Vector2(12, 18)), ab, ix, true)
+			UI.lbl(cb, CardArtwork.card_name(ab, ix), Rect2(20, 252, 190, 50), 24, Color("5a3a1e"), HORIZONTAL_ALIGNMENT_CENTER)
 			cb.pivot_offset = cr.size * 0.5
 			cb.scale = Vector2(0.0, 1.0)
 			var tw := cb.create_tween()

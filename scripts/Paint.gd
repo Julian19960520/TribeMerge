@@ -3,8 +3,6 @@ extends RefCounted
 const Meme := preload("res://scripts/Meme.gd")
 ## 生成图片用的尺寸、种子表都在目录文件里
 const PS := preload("res://scripts/sprites/paint.gd")
-const COLLECTION_CARD_TRIM := preload("res://assets/ui/collection_card_trim.svg")
-const COLLECTION_PICTURE_TRIM := preload("res://assets/ui/collection_picture_trim.svg")
 ## 界面部件、角色、卡牌与村庄的程序化绘制。
 
 const BTN := {
@@ -259,50 +257,35 @@ static func _hand(ci: CanvasItem, c: Vector2, s: float, col: Color, _seed: int) 
 static func _fish_glyph(ci: CanvasItem, c: Vector2, col: Color, _seed: int) -> void:
 	Sprites.at(ci, "paint_rock_fish", c, 1.0 / PS.K_ROCK, 0.0, col)
 
-static func card(ci: CanvasItem, r: Rect2, album: int, idx: int, owned: bool, flush: bool = false) -> void:
-	if flush:
-		_collection_card(ci, r, album, idx, owned)
-		return
-	Sprites.draw(ci, "paint_card_frame", r)
-	var side := minf(r.size.x - 16.0, r.size.y * 0.72)
-	var ar := Rect2(Vector2(r.get_center().x - side * 0.5, r.position.y + 8), Vector2.ONE * side)
-	if owned:
-		card_art(ci, album, idx, ar)
-	else:
-		ci.draw_rect(ar, Color("8a6a4a"))
-		Sprites.draw(ci, "paint_card_locked", ar)
-	var bandr := Rect2(r.position + Vector2(4, r.size.y * 0.74), Vector2(r.size.x - 8, r.size.y * 0.22))
-	ci.draw_rect(ar, Art.INK, false, 2.0)
-	Sprites.draw(ci, "paint_card_band", bandr)
+## 卡片：皮框颜色按星级（1★ 素皮 → 5★ 金），顶上星级横幅，下面名牌（名字由调用处写）。
+## 画面窗口 = 框内 (12, 12) 到 (宽-12, 高-70)，见 scripts/sprites/album.gd。
+static func card(ci: CanvasItem, r: Rect2, album: int, idx: int, owned: bool, _flush: bool = false) -> void:
 	var stars := CardPacks.stars(album, idx)
-	var spacing := minf(24.0, r.size.x / 7.0)
-	for star in stars:
-		Sprites.at(ci, "paint_card_star", Vector2(r.get_center().x + (float(star) - float(stars - 1) * 0.5) * spacing, bandr.position.y + 2), 0.72)
-
-static func _collection_card(ci: CanvasItem, r: Rect2, album: int, idx: int, owned: bool) -> void:
-	var edge := Art.rrect(r, 22, 0, 0.0)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 5), r.size), 22, 0, 0.0), Color(0, 0, 0, 0.3))
-	ci.draw_colored_polygon(edge, Art.OCHRE)
-	var ar := Rect2(r.position, Vector2.ONE * r.size.x)
-	var top := PackedVector2Array([ar.position, Vector2(ar.end.x, ar.position.y), ar.end, Vector2(ar.position.x, ar.end.y)])
-	var clip: PackedVector2Array = Geometry2D.intersect_polygons(edge, top)[0]
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 6), r.size), 18, 0, 0.0), Color(0, 0, 0, 0.25))
+	Sprites.draw(ci, "alb_card_%d" % stars, r)
+	var win := card_window(r)
 	if owned:
-		card_art(ci, album, idx, ar, clip)
+		var side := maxf(win.size.x, win.size.y)
+		var sq := Rect2(win.get_center() - Vector2(side, side) * 0.5, Vector2(side, side))
+		card_art(ci, album, idx, sq, Art.rrect(win, 10, 0, 0.0))
 	else:
-		ci.draw_colored_polygon(clip, Color("8a6a4a"))
-		var lines := Sprites.frame_texture("paint_card_locked", Art.boil)
-		if lines != null: _card_texture(ci, lines, ar, clip)
-	ci.draw_texture_rect(COLLECTION_CARD_TRIM, r, false)
-	var stars := CardPacks.stars(album, idx)
-	var spacing := minf(24.0, r.size.x / 7.0)
+		Sprites.draw(ci, "alb_locked", win)
+	Sprites.draw(ci, "alb_window", win)
+	var rw := 30.0 + float(stars) * 19.0
+	var cx := r.get_center().x
+	Sprites.draw(ci, "alb_ribbon", Rect2(cx - rw * 0.5, r.position.y - 10, rw, 28))
 	for star in stars:
-		Sprites.at(ci, "paint_card_star", Vector2(r.get_center().x + (float(star) - float(stars - 1) * 0.5) * spacing, ar.end.y + 10), 0.72)
+		Sprites.at(ci, "paint_card_star", Vector2(cx + (float(star) - float(stars - 1) * 0.5) * 19.0, r.position.y + 3), 0.62)
 
+static func card_window(r: Rect2) -> Rect2:
+	return Rect2(r.position + Vector2(12, 12), Vector2(r.size.x - 24, r.size.y - 82))
+
+## 卡片大图：同星级颜色的粗皮框
 static func collection_picture(ci: CanvasItem, r: Rect2, album: int, idx: int) -> void:
-	var edge := Art.rrect(r, 30, 0, 0.0)
-	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 10), r.size), 30, 0, 0.0), Color(0, 0, 0, 0.35))
-	card_art(ci, album, idx, r, edge)
-	ci.draw_texture_rect(COLLECTION_PICTURE_TRIM, r, false)
+	var stars := CardPacks.stars(album, idx)
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 10), r.size).grow(-8), 28, 0, 0.0), Color(0, 0, 0, 0.35))
+	card_art(ci, album, idx, r.grow(-14), Art.rrect(r.grow(-14), 22, 0, 0.0))
+	Sprites.draw(ci, "alb_pic_%d" % stars, r)
 
 static func collection_cover(ci: CanvasItem, album: int, r: Rect2) -> void:
 	var c := r.get_center()

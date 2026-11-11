@@ -13,11 +13,15 @@ REPO_DIR = SERVER_DIR.parent
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=str(SERVER_DIR / ".env"), env_prefix="TRIBE_", extra="ignore")
 
-    replay_godot: str = ""
-    replay_timeout_sec: float = Field(default=20, gt=0, le=120)
-    replay_workers: int = Field(default=2, ge=1, le=16)
-    replay_queue_limit: int = Field(default=8, ge=0, le=128)
-    replay_queue_timeout_sec: float = Field(default=2, gt=0, le=30)
+    # 云存档：解压后的存档 JSON 上限（字节）
+    save_max_raw_bytes: int = Field(default=1_048_576, ge=1024)
+    # 存档合理性检查（只标记、不拒绝）：两次上传之间允许的增长 = burst + 每小时速率 × 间隔小时数
+    plaus_level_burst: int = 3
+    plaus_level_per_hour: float = 8
+    plaus_amber_burst: int = 500
+    plaus_amber_per_hour: float = 400
+    plaus_shells_burst: int = 5000
+    plaus_shells_per_hour: float = 20000
 
     # 运行环境：dev / test / prod。prod 下关闭开发用 mock 登录渠道。
     env: str = "dev"

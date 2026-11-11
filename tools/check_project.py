@@ -29,14 +29,14 @@ def run(command: list[str], *, env: dict[str, str], cwd: Path = ROOT, timeout: i
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--godot", default=os.environ.get("TRIBE_REPLAY_GODOT") or shutil.which("godot") or shutil.which("godot4"))
+    parser.add_argument("--godot", default=os.environ.get("TRIBE_GODOT") or os.environ.get("TRIBE_REPLAY_GODOT") or shutil.which("godot") or shutil.which("godot4"))
     parser.add_argument("--python", default=sys.executable, help="Python environment with server requirements-dev installed")
     parser.add_argument("--section", choices=("all", "frontend", "backend"), default="all", help="Explicit partial checks; all is the release gate")
     args = parser.parse_args()
     if not args.godot:
-        raise SystemExit("Godot 4.6.3 is required; pass --godot or set TRIBE_REPLAY_GODOT")
+        raise SystemExit("Godot 4.6.3 is required; pass --godot or set TRIBE_GODOT")
     godot = str(Path(args.godot).resolve())
-    env = dict(os.environ, TRIBE_REPLAY_GODOT=godot, GODOT_SILENCE_ROOT_WARNING="1")
+    env = dict(os.environ, TRIBE_GODOT=godot, GODOT_SILENCE_ROOT_WARNING="1")
     version = run([godot, "--version"], env=env).strip()
     if not version.startswith("4.6.3."):
         raise SystemExit(f"Expected Godot 4.6.3, received {version}")
@@ -85,6 +85,9 @@ def main() -> None:
             output = run([args.python, "-m", "pytest", "-q", "-rs"], env=env, cwd=ROOT / "server", timeout=600)
             if re.search(r"\b[1-9]\d* skipped\b", output):
                 raise SystemExit("Server tests skipped; release validation is incomplete")
+            run([godot, "--headless", "--path", str(ROOT), "--script", str(ROOT / "tools" / "check_cloud_save.gd"), "--",
+                 "--replay-test", "--cloud-off", f"--save={temp / 'cloud-boot-save.json'}",
+                 f"--cloud-state={temp / 'cloud-boot-cloud.json'}", f"--python={args.python}"], env=env)
     print("PASS complete release gate" if args.section == "all" else f"PASS explicit {args.section} checks (other section was not run)")
 
 

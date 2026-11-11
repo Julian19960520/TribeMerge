@@ -155,8 +155,7 @@ def chest(ch, grade):
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    for ch in ('fire','shell','amber','sand'):
-        for grade in range(1,7): (OUT/f'{ch}_{grade}.svg').write_text(resource(ch, grade))
+    # 体力/不拿拿/琥珀/沙漏改由 scripts/Art.gd 的 _currency 绘制，烘焙成 PNG，这里不再生成 SVG
     for ch in ('energybox','premiumbox','chest','choice'):
         for grade in range(1,6): (OUT/f'{ch}_{grade}.svg').write_text(chest(ch, grade))
     # Existing UI art paths share the same new energy/choice appearance.

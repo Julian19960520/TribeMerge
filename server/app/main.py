@@ -7,13 +7,12 @@
 import logging
 import time
 import uuid
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from . import api_auth, api_public, errors, logs, replay_engine
+from . import api_auth, api_public, api_save, errors, logs
 from .config import get_settings
 from .db import init_engine
 from .errors import body
@@ -22,17 +21,11 @@ from .ratelimit import limiter
 logger = logging.getLogger("tribe.http")
 
 
-@asynccontextmanager
-async def lifespan(_app):
-    yield
-    replay_engine.close_pools()
-
-
 def create_app() -> FastAPI:
     s = get_settings()
     logs.setup(s.log_level, s.log_json)
     init_engine(s.database_url)
-    app = FastAPI(title="合合部落", version="2.0.0", lifespan=lifespan,
+    app = FastAPI(title="合合部落", version="2.0.0",
                   docs_url=None if s.is_prod else "/docs", redoc_url=None, openapi_url=None if s.is_prod else "/openapi.json")
     errors.install(app)
     if s.cors_origins:
@@ -69,8 +62,7 @@ def create_app() -> FastAPI:
                  ms=round((time.perf_counter() - t0) * 1000, 1), ip=ip)
         return resp
 
-    from . import api_replay
-    app.include_router(api_replay.router)
+    app.include_router(api_save.router)
     app.include_router(api_auth.router)
     app.include_router(api_public.router)
     return app

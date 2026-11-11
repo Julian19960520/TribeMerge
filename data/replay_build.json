@@ -1,7 +1,7 @@
 {
   "protocol": 1,
   "godot": "4.6.3",
-  "code_sha256": "224581e54c3aaba481455cf95a224781409154411861852747b3fe6e9765603a",
+  "code_sha256": "eb1af4fc6434474c7641d38e8014aba0ad88e667d2ecee1c0ba32338a254d994",
   "sources": [
     "scripts/Data.gd",
     "scripts/Game.gd",

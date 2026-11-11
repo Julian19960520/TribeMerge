@@ -15,7 +15,6 @@ func _process(delta: float) -> void:
 		button.queue_redraw()
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	TigerArt.draw(ci, Vector2(sz.x * 0.5, sz.y - 105), 90)
 	var m := TigerEscape.round_state()
 	var text := "出发"
 	var style := "go"
@@ -24,6 +23,5 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 			text = "%d / %d" % [int(m["stage"]), m["stages"].size()]
 			style = "time"
 		else: text = "结算"
-	EventEntryArt._pill(ci, Vector2(sz.x * 0.5, sz.y - 42), text, style)
-	EventEntryArt.text(ci, "剑齿虎逃生", Vector2(sz.x * 0.5, sz.y - 8), 20, Color("fff0c5"))
-	if not TigerEscape.pending_rewards(m).is_empty(): Paint.badge_num(ci, Vector2(sz.x - 18, 30), 8, 10)
+	# 和其他活动入口同一套：贴纸主题图 + 状态小牌 + 名字（scripts/sprites/events.gd 的 _en_tiger）
+	EventEntryArt.paint(ci, sz, "tiger", "剑齿虎逃生", {"text": text, "style": style}, false, not TigerEscape.pending_rewards(m).is_empty())

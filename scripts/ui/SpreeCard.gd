@@ -1,5 +1,5 @@
 extends Control
-## 部落界面左侧「赶大集」入口（通行证、部落礼包下面一格，同一套黄色卡片）。
+## 部落界面左侧「赶大集」入口（通行证、部落礼包下面一格，同一套黄色卡片，画的是一个小集市摊位）。
 ## 只在这一期进行中、还有得买时显示，下面一行是倒计时。第一次创建时顺便挂上 Offers 节点（负责开期和自动弹出）。
 const RECT := Rect2(14, 412, 100, 116)
 var _btn: TButton
@@ -33,7 +33,8 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	# 卡底 + 袋子提手、袋身 + 爆炸贴是两层预生成贴图，物品夹在中间
 	var box := Rect2(0, 0, sz.x, sz.x)
 	Sprites.draw(ci, "ev_spree_card_back", box)
-	var c := Vector2(sz.x * 0.5, 50)
-	Art.item(ci, Art.AMBER_ICON, c + Vector2(-8, -12), 26, true, -0.3)
-	Art.item(ci, "fire_3", c + Vector2(9, -14), 24, true, 0.2)
+	# 柜台上摆着货：不拿拿、琥珀、体力
+	Art.item(ci, "fire_2", Vector2(sz.x * 0.5, 44), 34, true, 0.0)
+	Art.item(ci, "shell_2", Vector2(sz.x * 0.5 - 17, 52), 38, true, -0.1)
+	Art.item(ci, Art.AMBER_ICON, Vector2(sz.x * 0.5 + 17, 52), 36, true, 0.15)
 	Sprites.draw(ci, "ev_spree_card_front", box)

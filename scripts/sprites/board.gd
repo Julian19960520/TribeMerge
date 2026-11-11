@@ -19,9 +19,12 @@ static func entries() -> Array:
 	out.append({"key": "board_cook_flame", "w": 16, "h": 10, "pad": 6,
 		"draw": func(ci, r): Art.fill(ci, Art.flame_pts(r.get_center(), 7.0, 10.0, 4), Art.FIRE2, 2.0)})
 	out.append({"key": "board_bolt", "w": 16, "h": 18, "pad": 5,
-		"draw": func(ci, r): Art.fill(ci, Art.bolt_pts(r.get_center(), 14, 18), Art.FIRE2, 2.0)})
+		"draw": func(ci, r): live_bolt(ci, r.get_center(), 0.3, Art.BOLT)})
 	out.append({"key": "board_bolt_boost", "w": 16, "h": 18, "pad": 5,
-		"draw": func(ci, r): Art.fill(ci, Art.bolt_pts(r.get_center(), 14, 18), Art.FIRE_BOOST, 2.0)})
+		"draw": func(ci, r): live_bolt(ci, r.get_center(), 0.3, Art.FIRE_BOOST)})
+	# 合成时扬起的一团尘土（白色，运行时染色）
+	out.append({"key": "board_puff", "w": 40, "h": 34, "pad": 4,
+		"draw": func(ci, r): live_puff(ci, r)})
 	out.append({"key": "board_prod_glow", "w": 84, "h": 84, "pad": 4,
 		"draw": func(ci, r): live_prod_glow(ci, r, 0)})
 	# 小牌：墨边一张，白芯一张（运行时染色）
@@ -290,11 +293,10 @@ static func live_hero_card(ci: CanvasItem, sz: Vector2) -> void:
 	Art.dilate(ci, b, 3.0, Art.INK)
 	ci.draw_colored_polygon(b, Color("fbf0d6"))
 	Art.dashed(ci, Art.rrect(r.grow(-6), 12, 46, 0.0), 8, 6, Color(0.65, 0.4, 0.2, 0.45), 2.0)
-	var head_c := Vector2(sz.x * 0.5, 78)
-	var head := Art.ell(head_c, Vector2(44, 44), 47, 0.02, 20)
-	Art.dilate(ci, head, 3.0, Art.INK)
-	ci.draw_colored_polygon(head, Art.OCHRE.lightened(0.28))
-	ci.draw_colored_polygon(Art.ell(Vector2(sz.x * 0.5, 118), Vector2(42, 12), 46, 0.04, 16), Color("c9a56a"))
+	# 名牌（头像下面，名字运行时写）
+	var plate := Art.rrect(Rect2(14, 140, sz.x - 28, 28), 10, 47, 0.4)
+	Art.dilate(ci, plate, 2.4, Art.INK)
+	ci.draw_colored_polygon(plate, Art.HIDE)
 
 static func live_hammer_card(ci: CanvasItem, sz: Vector2) -> void:
 	var r := Rect2(4, 16, sz.x - 8, sz.y - 24)
@@ -346,8 +348,40 @@ static func live_aim_arrow(ci: CanvasItem, a: Vector2, tip: Vector2) -> void:
 	Art.fill(ci, head, Art.INK, 2.0)
 
 ## 双倍火种开关上的火苗，c 是外焰中心
+## 体力闪电（和物品「体力」同一个外形），k 是缩放，带墨边和明暗
+static func live_bolt(ci: CanvasItem, c: Vector2, k: float, col: Color, rot: float = 0.0) -> void:
+	var pts := PackedVector2Array()
+	for p in Art._BOLT:
+		pts.append(c + (p * Vector2(1.3, 1.0)).rotated(rot) * k)
+	Art.dilate(ci, pts, 2.0, Art.INK)
+	Art.shade(ci, pts, col, 1)
+	Art.outline(ci, pts, 1.6, Art.INK)
+
+## 双倍体力开关：关着是一道黄闪电，开着是两道紫闪电 + 火星
 static func live_boost(ci: CanvasItem, c: Vector2, on: bool) -> void:
-	Art.fill(ci, Art.bolt_pts(c, 30, 40), Art.FIRE_BOOST if on else Art.FIRE2, 2.5)
+	if on:
+		ci.draw_circle(c, 21, Color(0.75, 0.45, 1, 0.3))
+		live_bolt(ci, c + Vector2(-7, 2), 0.52, Art.FIRE_BOOST, -0.12)
+		live_bolt(ci, c + Vector2(8, -2), 0.52, Art.FIRE_BOOST.lightened(0.15), 0.12)
+		for v in [Vector2(-16, -16), Vector2(17, 14)]:
+			ci.draw_colored_polygon(Art.star_pts(c + v, 5, 1.8, 4, int(v.x)), Color(1, 0.95, 1))
+	else:
+		live_bolt(ci, c, 0.6, Art.BOLT)
+
+## 一小团尘土云
+static func live_puff(ci: CanvasItem, r: Rect2) -> void:
+	var c := r.get_center()
+	var blobs := [[Vector2(-9, 3), 10.0], [Vector2(8, 4), 11.0], [Vector2(0, -5), 12.0], [Vector2(-1, 8), 9.0]]
+	var shape := PackedVector2Array()
+	for b in blobs:
+		var e := Art.ell(c + b[0], Vector2(b[1], b[1] * 0.9), 900 + int(b[1]), 0.06, 14)
+		if shape.is_empty(): shape = e
+		else:
+			var m := Geometry2D.merge_polygons(shape, e)
+			if m.size() > 0: shape = m[0]
+	Art.dilate(ci, shape, 2.2, Color("b8925e"))
+	ci.draw_colored_polygon(shape, Color("fff4dc"))
+	ci.draw_colored_polygon(Art.ell(c + Vector2(-4, -6), Vector2(6, 3.5), 910, 0.0, 10, -0.4), Color(1, 1, 1, 0.9))
 
 static func live_offer_under(ci: CanvasItem, card: Rect2) -> void:
 	ci.draw_colored_polygon(Art.rrect(Rect2(card.position + Vector2(0, 7), card.size), 22, 204, 0.0), Color(0, 0, 0, 0.25))

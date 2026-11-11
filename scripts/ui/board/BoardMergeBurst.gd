@@ -5,8 +5,13 @@ static func paint(ci: CanvasItem, center: Vector2, t: float, seed: float,
 		hover: bool = false, alpha: float = 1.0, unit: float = 1.0) -> void:
 	var fade := (1.0 - t) * alpha
 	var radius := (30.0 + 22.0 * t if hover else 20.0 + 70.0 * t) * unit
-	var width := ((4.0 if hover else 6.0) * (1.0 - t) + 1.0) * unit
-	ci.draw_arc(center, radius, 0, TAU, 32, Color(1, 0.9, 0.4, fade), width, true)
+	# 一圈扬起的尘土云（悬停预览时只是淡淡的一圈）
+	var puffs := 4 if hover else 7
+	for k in puffs:
+		var angle := TAU * float(k) / float(puffs) + seed * 0.7
+		var point := center + Vector2(cos(angle), sin(angle) * 0.8) * radius
+		var grow := (0.55 + 0.35 * t if hover else 0.6 + 0.9 * t) * unit
+		Sprites.at(ci, "board_puff", point, grow, angle, Color(1, 1, 1, fade * (0.5 if hover else 0.95)))
 	var stars := 5 if hover else 8
 	for k in stars:
 		var angle := TAU * float(k) / float(stars) + seed

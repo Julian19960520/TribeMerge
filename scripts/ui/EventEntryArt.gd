@@ -26,11 +26,7 @@ static func paint(ci: CanvasItem, sz: Vector2, kind: String, title: String, badg
 	# 地面影子
 	Sprites.draw(ci, "ev_ell_shadow", Rect2(c + Vector2(-44, -10), Vector2(88, 16)), Color(0.16, 0.1, 0.04, 0.28))
 	var s := 1.08 * (1.0 + 0.12 * sin(bump * PI))
-	if kind == "duel":
-		# The former baked icon embedded the black-and-white faces. Compose it
-		# from the shared painted avatars so no retired face remains underneath.
-		EntrySprites.live_entry(ci, kind, locked, c, s)
-	elif kind in ["race", "ruins", "seven"]:
+	if kind in ["race", "ruins", "seven", "duel", "tiger"]:
 		# 主题图预生成在 scripts/sprites/events.gd（原点 = 地面中点，图心在 (0, -54)）
 		Sprites.at(ci, "ev_entry_%s%s" % [kind, "_grey" if locked else ""], c + Vector2(0, -54) * s, s)
 	else:

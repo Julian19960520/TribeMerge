@@ -33,7 +33,7 @@ func run() -> void:
 		check(Data.max_lv(chain) == 5, "%s has five grades" % chain)
 		for grade in range(1, 6):
 			var id := "%s_%d" % [chain, grade]
-			check(not Data.describe(id).is_empty() and ResourceLoader.exists(art.vector_item(id)), "%s has a description and exported icon" % id)
+			check(not Data.describe(id).is_empty() and FileAccess.file_exists("res://assets/items/png/%s_r1_0.png" % id), "%s has a description and exported icon" % id)
 			clear_board(); g.board[0]["id"] = id
 			if chain == "choice":
 				var picks: Array = choice.definition(id)["choices"]

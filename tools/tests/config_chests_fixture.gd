@@ -13,7 +13,7 @@ func run() -> void:
 	check(Files.refresh(), "all current chest grades validate")
 	for error in Files.last_errors: print(error)
 	var current: Dictionary = Files.shared(SPECIAL)
-	var counts_ok: bool = current.orderbox.levels.size() == 10
+	var counts_ok: bool = current.orderbox.levels.size() == 5
 	for family in ["chest", "energybox", "premiumbox"]: counts_ok = counts_ok and current[family].levels.size() == 5
 	check(counts_ok and Files.shared(CHOICES).size() == 5, "current chest families have every required grade")
 	var changed: Dictionary = Files.read(SPECIAL)

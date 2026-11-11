@@ -23,31 +23,31 @@ func _ready() -> void:
 	body = Control.new()
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(body)
-	UI.box(body, Rect2(56, 168, 608, 1040), _decoration, false)
-	var info := UI.btn(body, Rect2(54, 180, 48, 48), "?", "teal", _instructions, 27)
+	UI.box(body, Rect2(0, 0, 720, 1480), _decoration, false)
+	var info := UI.btn(body, Rect2(58, 186, 46, 46), "?", "teal", _instructions, 26)
 	info.is_round = true
-	progress_label = UI.lbl(body, "挖出化石，领取考古奖励", Rect2(116, 184, 488, 40), 26, Color("674930"))
+	progress_label = UI.lbl(body, "挖出化石，领取考古奖励", Rect2(116, 188, 488, 40), 25, Color("674930"))
 	progress_art = UI.box(body, Rect2(0, 0, 720, 1480), _progress, false)
 	for i in FossilDig.config()["milestones"].size():
 		var row: Dictionary = FossilDig.config()["milestones"][i]
-		var hit := UI.hit(body, Rect2(_reward_x(i) - 44, 232, 88, 96), _preview.bind(int(row["bones"])))
+		var hit := UI.hit(body, Rect2(_reward_x(i) - 40, 236, 80, 100), _preview.bind(int(row["bones"])))
 		hit.name = "fossil_reward_%d" % int(row["bones"])
-	stage_label = UI.lbl(body, "准备挖掘区…", Rect2(76, 342, 568, 46), 29, Color("60432d"))
+	stage_label = UI.lbl(body, "准备挖掘区…", Rect2(76, 344, 568, 40), 26, Color.WHITE)
 	slots_art = UI.box(body, Rect2(0, 0, 720, 1480), _slots, false)
-	hint = UI.lbl(body, "点击土块开挖，集齐完整骨头", Rect2(64, 562, 592, 44), 23, Color("7b6347"))
+	hint = UI.lbl(body, "点击土块开挖，集齐完整骨头", Rect2(64, 552, 592, 40), 23, Color("7b6347"))
 	board_art = UI.box(body, GRID, _board, false)
 	cells = Control.new()
 	cells.position = GRID.position
 	cells.size = GRID.size
 	cells.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	body.add_child(cells)
-	UI.box(body, Rect2(106, 1226, 508, 54), func(ci, sz):
-		FossilArt.plate(ci, Rect2(Vector2.ZERO, sz), Color("ebd8ad"), Color("c6a574"), 22)
-		FossilArt.shovel(ci, Vector2(42, 24), 48)
-		var text := "每格消耗 %d 把" % int(FossilDig.config()["dig_cost"])
-		ci.draw_string(G.font_body, Vector2(288, 35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("826243")), false)
-	count_label = UI.lbl(body, "铲子  0", Rect2(168, 1226, 220, 54), 30, Color("5d422c"), HORIZONTAL_ALIGNMENT_LEFT)
-	primary = UI.btn(body, Rect2(164, 1296, 392, 76), "准备中…", "green", _primary, 34)
+	UI.box(body, Rect2(96, 1240, 528, 54), func(ci, sz):
+		Paint.pill(ci, Rect2(Vector2.ZERO, sz))
+		FossilArt.shovel(ci, Vector2(44, 24), 60, -0.35)
+		var text := "每挖一格用 %d 把" % int(FossilDig.config()["dig_cost"])
+		ci.draw_string(G.font_body, Vector2(300, 36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("826243")), false)
+	count_label = UI.lbl(body, "铲子  0", Rect2(168, 1240, 220, 54), 30, Color("5d422c"), HORIZONTAL_ALIGNMENT_LEFT)
+	primary = UI.btn(body, Rect2(164, 1304, 392, 72), "准备中…", "green", _primary, 34)
 	primary.name = "fossil_primary"
 	primary.enabled = false
 	effects = UI.box(body, Rect2(0, 0, 720, 1480), _effects, false)
@@ -62,11 +62,12 @@ func _ready() -> void:
 	G.changed.connect(_refresh)
 
 func _decoration(ci: CanvasItem, _sz: Vector2) -> void:
-	FossilArt.plate(ci, Rect2(4, 221, 600, 168), Color("d9bf8b"), Color("bd9b66"), 18)
-	FossilArt.plate(ci, Rect2(GRID.position - Vector2(56, 168) - Vector2(11, 11), GRID.size + Vector2(22, 22)), Color("725137"), Color("553c2a"), 22)
-	# Corner ropes and small field-notebook rivets keep the board in the tribe's material palette.
-	for p in [Vector2(14, 233), Vector2(590, 233), Vector2(14, 377), Vector2(590, 377)]:
-		ci.draw_circle(p, 5, Color("8c6a42"))
+	# 进度区：一块浅色兽皮底
+	ci.draw_colored_polygon(Art.rrect(Rect2(60, 180, 600, 156), 20, 984, 0.6), Color(0.55, 0.38, 0.2, 0.14))
+	# 陈列区标题条
+	Paint.banner(ci, Rect2(190, 340, 340, 48), Color("8a6a3e"))
+	# 挖掘场外框
+	Sprites.draw(ci, "fos_frame", GRID.grow(28))
 
 func _reward_x(i: int) -> float:
 	return 100.0 + i * 520.0 / maxi(1, FossilDig.config()["milestones"].size() - 1)
@@ -87,29 +88,42 @@ func _progress(ci: CanvasItem, _sz: Vector2) -> void:
 		previous = goal
 		previous_x = x
 	if score >= int(rows[-1]["bones"]): fill_x = 652
-	FossilArt.plate(ci, Rect2(68, 266, 584, 20), Color("9f7b4d"), Color("745536"), 10)
-	if fill_x > 68: FossilArt.plate(ci, Rect2(68, 266, maxf(5, fill_x - 68), 20), Color("97b35b"), Color("738b43"), 10)
+	Paint.bar(ci, Rect2(68, 258, 584, 22), (fill_x - 68.0) / 584.0, Art.MOSS)
 	for i in rows.size():
 		var need := int(rows[i]["bones"])
 		var got: bool = need in s.get("claimed", [])
 		var ready := score >= need and not got
 		var x := _reward_x(i)
-		ci.draw_circle(Vector2(x, 270), 34, Color("ffdf84") if ready else Color("c4a471"))
-		Art.item(ci, "chest_1" if i < rows.size() - 1 else "choice_1", Vector2(x, 265), 65 if ready else 58)
-		if got: Paint.check_mark(ci, Vector2(x + 15, 283), 0.7)
-		elif not ready: ci.draw_circle(Vector2(x, 265), 24, Color(0.35, 0.24, 0.12, 0.18))
-		var text := "已领取" if got else ("领取" if ready else str(need))
-		ci.draw_string(G.font_body, Vector2(x - 41, 324), text, HORIZONTAL_ALIGNMENT_CENTER, 82, 22, Color("567139") if ready else Color("785a3c"))
+		var rw: Array = rows[i]["rewards"]
+		var best: Array = rw[-1]
+		if ready:
+			Sprites.at(ci, "ev_disc", Vector2(x, 268), 0.82, 0.0, Color(1, 0.9, 0.45, 0.6))
+		Paint.reward_bubble(ci, Vector2(x, 268), 31, str(best[0]), int(best[1]), i)
+		if got:
+			ci.draw_circle(Vector2(x, 268), 31, Color(1, 1, 1, 0.45))
+			Paint.check_mark(ci, Vector2(x + 16, 284), 0.7)
+		# 「几块骨头」标签：小骨头 + 数字
+		var text := "领取！" if ready else str(need)
+		var fs := 22
+		var tw: float = G.font_title.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var tx := x - (tw + 22.0) * 0.5
+		Sprites.at(ci, "fos_bone_limb_1x2", Vector2(tx + 8, 320), 0.16, PI * 0.5)
+		ci.draw_string_outline(G.font_title, Vector2(tx + 22, 328), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
+		ci.draw_string(G.font_title, Vector2(tx + 22, 328), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("ffe27a") if ready else Color.WHITE)
 
+## 陈列卡的位置：最多一排 6 张，多了排两排
 func _slot_rect(i: int) -> Rect2:
 	var total: int = FossilDig.board().get("pieces", []).size()
+	var cols := mini(6, maxi(1, total))
 	var rows := 1 if total <= 6 else 2
-	var cols := mini(6, total)
 	var row := i / cols
 	var count := mini(cols, total - row * cols)
-	var x := 360.0 + (i % cols - (count - 1) * 0.5) * 94.0
-	var y := 464.0 if rows == 1 else 430.0 + row * 82
-	return Rect2(x - 42, y - 34, 84, 68)
+	var cw := 90.0 if rows == 1 else 84.0
+	var ch := 128.0 if rows == 1 else 66.0
+	var gap := 8.0
+	var x := 360.0 + (i % cols - (count - 1) * 0.5) * (cw + gap)
+	var y := 400.0 + row * (ch + 8.0)
+	return Rect2(x - cw * 0.5, y, cw, ch)
 
 func _flying(id: int) -> bool:
 	return flies.any(func(f): return int(f["piece"]["id"]) == id)
@@ -117,15 +131,24 @@ func _flying(id: int) -> bool:
 func _slots(ci: CanvasItem, _sz: Vector2) -> void:
 	var b := FossilDig.board()
 	var pieces: Array = b.get("pieces", [])
+	if pieces.is_empty(): return
+	Sprites.draw(ci, "fos_shelf", Rect2(64, _slot_rect(0).end.y - 14, 592, 40))
+	if pieces.size() > 6:
+		Sprites.draw(ci, "fos_shelf", Rect2(64, _slot_rect(pieces.size() - 1).end.y - 14, 592, 40))
 	for i in pieces.size():
 		var p: Dictionary = pieces[i]
 		var r := _slot_rect(i)
 		var found := bool(p["found"]) and not _flying(int(p["id"]))
-		if found: ci.draw_circle(r.get_center() + Vector2(0, -4), 30, Color(1, 0.91, 0.58, 0.48))
-		FossilArt.piece(ci, Rect2(r.position + Vector2(10, 0), r.size - Vector2(20, 16)), p, not found)
-		var dim := "%d×%d" % [int(p["w"]), int(p["h"])]
-		ci.draw_string(G.font_body, r.position + Vector2(0, 65), dim, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 19, Color("7a5a38"))
-		if found: Paint.check_mark(ci, r.position + Vector2(66, 43), 0.38)
+		if found:
+			Sprites.at(ci, "ev_disc", r.get_center(), r.size.x / 104.0, 0.0, Color(1, 0.92, 0.55, 0.45))
+		Sprites.draw(ci, "fos_card", r)
+		var big := r.size.y > 100.0
+		var art := Rect2(r.position + Vector2(10, 10), r.size - Vector2(20, 44 if big else 20))
+		FossilArt.piece(ci, art, p, not found)
+		if big:
+			var nm := str(p.get("name", ""))
+			ci.draw_string(G.font_body, Vector2(r.position.x, r.end.y - 12), nm, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 20, Color("6a4a2c") if found else Color("9a805e"))
+		if found: Paint.check_mark(ci, r.position + Vector2(r.size.x - 14, 16), 0.5)
 
 func _piece_rect(piece: Dictionary) -> Rect2:
 	var pitch := GRID.size.x / int(FossilDig.board()["n"])
@@ -136,20 +159,17 @@ func _board(ci: CanvasItem, sz: Vector2) -> void:
 	if b.is_empty(): return
 	var n := int(b["n"])
 	var pitch := sz.x / n
-	ci.draw_rect(Rect2(Vector2.ZERO, sz), Color("dbc194"))
+	# 先铺满坑底，再画还埋着的骨头，最后盖上没挖的土块
 	for cell in n * n:
-		var r := Rect2(Vector2(cell % n, cell / n) * pitch, Vector2.ONE * pitch)
-		ci.draw_rect(r.grow(-1), Color("d6bb8e") if cell % 2 else Color("ddc69d"))
-		ci.draw_circle(r.get_center() + Vector2(pitch * 0.23, pitch * 0.16), maxf(1, pitch * 0.015), Color("c5a777"))
+		FossilArt.pit(ci, Rect2(Vector2(cell % n, cell / n) * pitch, Vector2.ONE * pitch))
 	for p in b["pieces"]:
 		if p["found"]: continue
 		var r := _piece_rect(p)
 		r.position -= GRID.position
-		FossilArt.piece(ci, r, p)
-	# Full-cell opaque masks prevent covered bones leaking through tile gaps.
+		FossilArt.piece(ci, r.grow(-pitch * 0.04), p)
 	for cell in n * n:
 		if cell in b["dug"]: continue
-		FossilArt.dirt(ci, Rect2(Vector2(cell % n, cell / n) * pitch, Vector2.ONE * pitch), cell)
+		FossilArt.dirt(ci, Rect2(Vector2(cell % n, cell / n) * pitch, Vector2.ONE * pitch).grow(1), cell)
 
 func _refresh() -> void:
 	if _closing or not is_instance_valid(primary): return
@@ -160,7 +180,7 @@ func _refresh() -> void:
 	if sig == signature: return
 	signature = sig
 	var found: int = b["pieces"].filter(func(p): return bool(p["found"])).size()
-	stage_label.text = "第 %d 关 · %d×%d    骨头 %d/%d" % [int(s["stage"]), int(b["n"]), int(b["n"]), found, b["pieces"].size()]
+	stage_label.text = "第 %d 关 · 骨头 %d/%d" % [int(s["stage"]), found, b["pieces"].size()]
 	progress_label.text = "收集进度  %d / %d" % [int(s["recovered"]), int(FossilDig.config()["milestones"][-1]["bones"])]
 	count_label.text = "铲子  %d" % int(s["shovels"])
 	primary.enabled = not working and flies.is_empty()
@@ -263,7 +283,7 @@ func _effects(ci: CanvasItem, _sz: Vector2) -> void:
 		var end: Rect2 = f["to"]
 		var pos := start.get_center().lerp(end.get_center(), ease) + Vector2(sin(t * PI) * 46, -sin(t * PI) * 90)
 		var sz := start.size.lerp(end.size, ease)
-		ci.draw_circle(pos, minf(85, sz.length() * 0.3), Color(1, 0.91, 0.55, sin(t * PI) * 0.25))
+		Sprites.at(ci, "ev_disc", pos, minf(1.8, sz.length() / 160.0), 0.0, Color(1, 0.91, 0.55, sin(t * PI) * 0.45))
 		FossilArt.piece(ci, Rect2(pos - sz * 0.5, sz), f["piece"])
 
 func _preview(need: int) -> void:
