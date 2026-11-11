@@ -1,4 +1,4 @@
-"""Fresh current-schema SQLite database and an authenticated binary-protocol client."""
+"""Fresh current-schema SQLite database and an authenticated test client."""
 import base64
 import gzip
 import json
@@ -18,11 +18,9 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv('TRIBE_ENV', 'test')
     monkeypatch.setenv('TRIBE_LOG_JSON', 'false')
     monkeypatch.setenv('TRIBE_LOG_LEVEL', 'WARNING')
-    monkeypatch.setenv('TRIBE_REPLAY_WORKERS', '1')
-    from app import clock, config, services, replay_engine
+    from app import clock, config, services
     config.get_settings.cache_clear()
     services.build_limits.cache_clear()
-    replay_engine.close_pools()
     clock.offset = 0.0
     from alembic import command
     from alembic.config import Config
@@ -40,6 +38,19 @@ def unpack(data):
     return json.loads(gzip.decompress(base64.b64decode(data)))
 
 
+def snapshot(**fields):
+    state = {'schema': 1, 'level': 1, 'xp': 0, 'amber': 0, 'shells': 0, 'builds': {}, 'cards': {}, 'board': []}
+    state.update(fields)
+    return state
+
+
+def save_body(state, base):
+    import hashlib
+    raw = json.dumps(state, separators=(',', ':')).encode('utf-8')
+    return {'base': base, 'hash': hashlib.sha256(raw).hexdigest(),
+            'data': base64.b64encode(gzip.compress(raw)).decode('ascii')}
+
+
 class Player:
     def __init__(self, client, device='device-A'):
         self.c = client
@@ -54,11 +65,10 @@ class Player:
         return self.c.get(path, headers=self.h(), **kwargs)
 
     def post(self, path, json=None, **kwargs):
-        if path == '/v2/sync':
-            from wire_client import encode
-            headers = {**self.h(), 'Content-Type': 'application/x-tribe-replay', 'Content-Encoding': 'gzip'}
-            return self.c.post(path, content=encode(json), headers=headers, **kwargs)
         return self.c.post(path, json=json, headers=self.h(), **kwargs)
+
+    def upload(self, snapshot, base, **kwargs):
+        return self.post('/v2/save', save_body(snapshot, base), **kwargs)
 
 
 @pytest.fixture()

@@ -70,10 +70,28 @@ func draw(ci: CanvasItem, key: String, r: Rect2, mod: Color = Color.WHITE) -> vo
 	var h := float(tex.get_height())
 	var tl := Vector2(float(nine[0]) + pad, float(nine[1]) + pad)
 	var br := Vector2(float(nine[2]) + pad, float(nine[3]) + pad)
-	# 目标比九宫格边还小时，按比例缩边，避免角互相穿插
 	var k := minf(1.0, minf(dst.size.x / maxf(tl.x + br.x, 1.0), dst.size.y / maxf(tl.y + br.y, 1.0)))
-	RenderingServer.canvas_item_add_nine_patch(ci.get_canvas_item(), dst, Rect2(0, 0, w, h), tex.get_rid(),
-		tl * k, br * k, RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, mod)
+	if k >= 1.0:
+		RenderingServer.canvas_item_add_nine_patch(ci.get_canvas_item(), dst, Rect2(0, 0, w, h), tex.get_rid(),
+			tl, br, RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, mod)
+		return
+	# 目标比九宫格边还小：四个角整块等比缩小（源图仍按完整边距切）。
+	# 不能把缩过的边距直接交给 add_nine_patch——它用同一组边距切源图，角会被切掉一截，
+	# 圆弧中段落进被压扁的边条里，按钮两头就成了尖的。
+	var sx := [0.0, tl.x, w - br.x, w]
+	var sy := [0.0, tl.y, h - br.y, h]
+	var dx := [dst.position.x, dst.position.x + tl.x * k, dst.end.x - br.x * k, dst.end.x]
+	var dy := [dst.position.y, dst.position.y + tl.y * k, dst.end.y - br.y * k, dst.end.y]
+	var rid := ci.get_canvas_item()
+	for j in 3:
+		if dy[j + 1] - dy[j] <= 0.0 or sy[j + 1] - sy[j] <= 0.0:
+			continue
+		for i in 3:
+			if dx[i + 1] - dx[i] <= 0.0 or sx[i + 1] - sx[i] <= 0.0:
+				continue
+			RenderingServer.canvas_item_add_texture_rect_region(rid,
+				Rect2(dx[i], dy[j], dx[i + 1] - dx[i], dy[j + 1] - dy[j]), tex.get_rid(),
+				Rect2(sx[i], sy[j], sx[i + 1] - sx[i], sy[j + 1] - sy[j]), mod, false, true)
 
 ## 以 c 为中心按登记尺寸 × s 画，可旋转。
 func at(ci: CanvasItem, key: String, c: Vector2, s: float = 1.0, rot: float = 0.0, mod: Color = Color.WHITE) -> void:

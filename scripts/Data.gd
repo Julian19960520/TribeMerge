@@ -464,7 +464,7 @@ static func describe(id: String) -> String:
 	if Data.chain(id) == "energybox":
 		var total := 0
 		for item in SpecialChests.definition(id)["items"]: total += value_of(str(item))
-		return "%d级体力宝箱，逐次取出%d件闪电，共%d点体力。闪电可继续合并，未打开的宝箱可合并升级。" % [lv(id), SpecialChests.count(id), total]
+		return "%d级体力宝箱，逐次取出%d件体力，共%d点体力。体力可继续合并，未打开的宝箱可合并升级。" % [lv(id), SpecialChests.count(id), total]
 	if Data.chain(id) == "chest": return "%d级藤编宝箱，逐次取出%d件随机物品，可获得资源、产线物品和生产器部件。未打开时可合并升级。" % [lv(id), SpecialChests.count(id)]
 	if DISHES.has(id):
 		var d: Dictionary = DISHES[id]

@@ -1,14 +1,15 @@
-"""Every new chest grade uses shared Godot rules and the compressed /v2 API."""
+"""Every chest grade settles through the shared Godot rules."""
 import copy
 import json
-import os
 
 import pytest
 
 from app.config import REPO_DIR
 from test_reducer_domains import confirm, game, rejects
 
-pytestmark = pytest.mark.skipif(not os.environ.get('TRIBE_REPLAY_GODOT'), reason='Godot 4.6.3 required')
+from godot_rules import requires_godot
+
+pytestmark = requires_godot
 
 
 def configuration(name):
@@ -24,7 +25,7 @@ def known_item(item):
 
 @pytest.mark.parametrize('chain', ['chest', 'energybox', 'premiumbox', 'choice'])
 @pytest.mark.parametrize('grade', range(1, 6))
-def test_every_grade_settles_once_and_keeps_rewards_physical(player, game, chain, grade):
+def test_every_grade_settles_once_and_keeps_rewards_physical(game, chain, grade):
     item = f'{chain}_{grade}'
     fixture = copy.deepcopy(game)
     fixture['board'][0]['id'] = item
@@ -32,7 +33,7 @@ def test_every_grade_settles_once_and_keeps_rewards_physical(player, game, chain
     if chain == 'choice':
         choices = configuration('choice_chests')[item]['choices']
         for option, expected in enumerate(choices):
-            state = confirm(player, copy.deepcopy(fixture), [('choice', {'cell':0, 'option':option})])
+            state = confirm(copy.deepcopy(fixture), [('choice', {'cell':0, 'option':option})])
             outputs = [cell['id'] for cell in state['board'] if cell['id']]
             assert outputs == [expected] and known_item(expected)
             assert {field:state[field] for field in balances} == balances
@@ -41,14 +42,13 @@ def test_every_grade_settles_once_and_keeps_rewards_physical(player, game, chain
 
     definition = configuration('special_chests')[chain]['levels'][grade - 1]
     count = len(definition['items']) if chain == 'energybox' else definition['count']
-    state = confirm(player, fixture, [('tap', {'cell':0}) for _ in range(count)])
+    state = confirm(fixture, [('tap', {'cell':0}) for _ in range(count)])
     outputs = [cell['id'] for cell in state['board'] if cell['id']]
     assert len(outputs) == count and all(known_item(output) for output in outputs)
     assert item not in outputs and not any('chest' in cell for cell in state['board'])
     assert state['stash'] == []
     assert {field:state[field] for field in balances} == balances
-    # confirm() retries the same compressed batch and checks a newly downloaded
-    # snapshot against the shared reducer, so a retry cannot dispense twice.
+    # confirm() reloads the result and replays it again, so settlement is deterministic.
     if chain == 'energybox':
         assert sorted(outputs) == sorted(definition['items'])
     elif chain == 'premiumbox':

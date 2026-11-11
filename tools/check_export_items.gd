@@ -67,9 +67,6 @@ func check() -> void:
 	for grade in range(2, 6): extra_paths.append("res://assets/ui/items/pack_%d.svg" % grade)
 	for grade in range(1, 11): extra_paths.append("res://assets/ui/items/orderbox_%d.svg" % grade)
 	for id in ["premiumbox_1", "upgrade_1", "scissors_1"]: extra_paths.append("res://assets/ui/items/%s.svg" % id)
-	var art = load("res://scripts/Art.gd")
-	for chain in ["fire", "shell", "amber", "sand", "chest", "energybox", "premiumbox", "choice"]:
-		for grade in range(1, Data.max_lv(chain) + 1): extra_paths.append(art.vector_item("%s_%d" % [chain, grade]))
 	for file in extra_paths:
 		var tex = load(str(file))
 		if not tex is Texture2D or tex.get_image().get_used_rect().size == Vector2i.ZERO:

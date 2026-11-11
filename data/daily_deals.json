@@ -16,7 +16,7 @@
 	},
 	{
 		"key": "deal_energybox",
-		"_说明": "300 不拿拿购买1级体力宝箱，共3个强能闪电（各40体力）。宝箱内容统一配置在 special_chests.json。",
+		"_说明": "300 不拿拿购买1级体力宝箱，共3个体力堆（各40体力）。宝箱内容统一配置在 special_chests.json。",
 		"id": "energybox_1",
 		"title": "体力宝箱",
 		"price": 300,

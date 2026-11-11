@@ -1,5 +1,5 @@
 extends Node
-## Executes deterministic commands, durably records input, and synchronizes batches.
+## Executes deterministic commands, durably records input, and uploads snapshots to the cloud.
 const Values := preload("res://scripts/domain/StateValues.gd")
 const Rules := preload("res://scripts/replay/Reducer.gd")
 const JournalStore := preload("res://scripts/replay/Journal.gd")
@@ -9,6 +9,8 @@ const PROTOCOL := 1
 const ENGINE := "4.6.3"
 const CHECKPOINT_OPERATIONS := 32
 const CHECKPOINT_SECONDS := 5.0
+## Commands kept since the last cloud upload (only the snapshot is uploaded).
+const MAX_PENDING := 500
 ## One compatible upgrade: recover old automatic payouts before switching to manual claims.
 const AUTOMATIC_ALBUM_RULES := "85bcaca55a055ded5dcbff79bd78d98ea037c4de1dead8415f66b45cdf0c7550"
 const MANUAL_ALBUM_RULES := "148e80059573539ac7a6780c5d7b775ce0de00abadb91be0ac300ec8ca3f3964"
@@ -35,6 +37,7 @@ var _rules_edit_hash := ""
 var _generation := ""
 var _ops_since_checkpoint := 0
 var _recovering := false
+var _force_upload := false
 var _reducer: RefCounted
 
 func _ready() -> void:
@@ -54,41 +57,49 @@ func _ready() -> void:
 	authorized = bool(saved.get("authorized", false))
 	_generation = str(saved.get("generation", ""))
 	if _generation == "": _generation = _new_generation()
-	if not Cloud.enabled:
-		meta["allow_gm"] = true
-		authorized = true
-		if G.random_seed == "": G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
+	# The client is authoritative for single-player progress: play starts at once,
+	# online or not, and the cloud only stores snapshots.
+	authorized = true
+	if not Cloud.enabled: meta["allow_gm"] = true
+	if G.random_seed == "": G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
+	var skip_journal := false
 	var upgrade_fifth_line := G.loaded_save and not Cloud.enabled and FifthLineUpgrade.applies(str(saved.get("rules", "")), rules_hash(), [RewardUpgrade.FROM_RULES, AUTOMATIC_ALBUM_RULES])
 	var upgrade_rewards := G.loaded_save and not Cloud.enabled and RewardUpgrade.applies(str(saved.get("rules", "")), rules_hash(), AUTOMATIC_ALBUM_RULES)
 	var upgrade_albums := G.loaded_save and not Cloud.enabled and str(saved.get("rules", "")) == AUTOMATIC_ALBUM_RULES and (rules_hash() == MANUAL_ALBUM_RULES or upgrade_rewards)
 	_reducer.legacy_album_rewards = upgrade_albums
 	if G.loaded_save and str(saved.get("rules", "")) != rules_hash() and not upgrade_albums and not upgrade_rewards and not upgrade_fifth_line:
-		recovery_error = "本地测试存档规则版本已更新"
-		pending = []
-		inflight = {}
-		base = 0
-		seq = 0
-		meta = {}
-		_generation = _new_generation()
-		G.loaded_save = false
-		authorized = not Cloud.enabled
-		Cloud._say.call_deferred(recovery_error + ("，已开始新的测试进度" if not Cloud.enabled else "，正在等待服务器确认"))
-		if Cloud.enabled: return
-		G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
-		G.random_streams = {}
+		if Cloud.enabled:
+			# A new client version: keep the last checkpoint and drop only the few
+			# seconds of journal written under the old rules.
+			skip_journal = true
+			pending = []
+			inflight = {}
+		else:
+			recovery_error = "本地测试存档规则版本已更新"
+			pending = []
+			inflight = {}
+			base = 0
+			seq = 0
+			meta = {}
+			_generation = _new_generation()
+			G.loaded_save = false
+			Cloud._say.call_deferred(recovery_error + "，已开始新的测试进度")
+			G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
+			G.random_streams = {}
 	_session_rules = rules_hash()
 	if authorized:
 		if G.loaded_save:
 			var current_config := FifthLineUpgrade.begin() if upgrade_fifth_line else {}
 			var current_rewards := RewardUpgrade.begin() if upgrade_rewards else {}
-			_recover()
+			if not skip_journal: _recover()
 			if upgrade_rewards: RewardUpgrade.finish(current_rewards)
 			if upgrade_fifth_line: FifthLineUpgrade.finish(current_config)
 		else:
 			clock = int(Cloud.server_now())
 			executing = true
 			G.new_game()
-			meta = {"allow_gm": not Cloud.enabled}
+			# GM tools exist in local tests and debug builds, never in release exports.
+			meta = {"allow_gm": not Cloud.enabled or OS.is_debug_build()}
 			advance()
 			_canonicalize_live()
 			snapshot()
@@ -363,6 +374,7 @@ func perform(name: String, args: Dictionary = {}, at := -1):
 			G.set_block_signals(was_blocked)
 			return {"error": "无法保存操作，请检查可用存储空间"}
 		pending.append(operation)
+		if pending.size() > MAX_PENDING: pending = pending.slice(pending.size() - MAX_PENDING)
 		_ops_since_checkpoint += 1
 	executing = false
 	G.set_block_signals(was_blocked)
@@ -397,6 +409,11 @@ func advance() -> void:
 func gift_view() -> Dictionary:
 	return _reducer.gift_view()
 
+## Whether local progress exists that the cloud has not stored yet.
+func needs_upload() -> bool:
+	return active and not worker and authorized and (_force_upload or not pending.is_empty())
+
+## Boot / login: decide between this device's progress and the cloud snapshot.
 func connect_session(why: String) -> void:
 	Cloud._busy = true
 	var response: Array = await Cloud._call("POST", "/v2/session", {})
@@ -405,72 +422,75 @@ func connect_session(why: String) -> void:
 		Cloud._offline("boot")
 		return
 	var data: Dictionary = response[1]
-	if str(data.get("rules", "")) != rules_hash():
-		Cloud._say("游戏规则版本不一致，请更新客户端")
-		Cloud._offline("boot")
-		return
-	if authorized and not inflight.is_empty() and why != "login":
-		Cloud._after_boot()
-		await upload()
-		return
-	if not authorized or pending.is_empty() or why == "login" or int(data["version"]) != base:
-		if not accept(data, true): return
+	var version := int(data.get("version", 0))
+	if str(data.get("data", "")) == "":
+		# Nothing in the cloud yet: this device's progress becomes the first save.
+		base = 0
+		_force_upload = true
+	elif why == "login" or (version != base and not bool(data.get("mine", false))):
+		# The account was played on another device since this one last synced.
+		if not adopt(data):
+			Cloud._say("云端存档无法读取，暂不同步本机进度")
+			Cloud._offline("boot")
+			return
+		if why != "login": Cloud._say("已载入其他设备上的最新进度")
+	elif version != base:
+		# Our own earlier upload whose reply was lost; this device is newer.
+		_force_upload = true
 	Cloud._after_boot()
-	if not pending.is_empty(): upload()
+	if needs_upload(): upload()
 
-func accept(data: Dictionary, replace: bool) -> bool:
-	if str(data.get("rules", "")) != rules_hash(): return false
-	if replace:
-		var raw := Marshalls.base64_to_raw(str(data.get("data", ""))).decompress_dynamic(4 * 1024 * 1024, FileAccess.COMPRESSION_GZIP)
-		var state = JSON.parse_string(raw.get_string_from_utf8())
-		if not state is Dictionary: return false
-		var previous := snapshot()
-		if not restore(state): return false
-		if digest() != str(data.get("hash", "")):
-			restore(previous)
-			return false
-		pending = []
-		inflight = {}
-		G.loaded_save = true
+## Replace local progress with a cloud snapshot after verifying its integrity.
+func adopt(data: Dictionary) -> bool:
+	var raw := Marshalls.base64_to_raw(str(data.get("data", ""))).decompress_dynamic(4 * 1024 * 1024, FileAccess.COMPRESSION_GZIP)
+	var text := raw.get_string_from_utf8()
+	if text == "" or text.sha256_text() != str(data.get("hash", "")): return false
+	var state = JSON.parse_string(text)
+	if not state is Dictionary: return false
+	var previous := snapshot()
+	if not restore(state):
+		restore(previous)
+		return false
+	pending = []
+	inflight = {}
+	_force_upload = false
 	base = int(data["version"])
-	_session_rules = str(data["rules"])
-	authorized = true
+	G.loaded_save = true
 	if not checkpoint(): return false
 	Cloud.last_sync = Cloud.server_now()
 	Cloud._save_state()
-	if replace:
-		notify_restored()
-		Cloud.restored.emit()
+	notify_restored()
+	Cloud.restored.emit()
 	return true
 
+## Upload the whole current snapshot. Commands performed meanwhile stay pending.
 func upload() -> void:
-	if Cloud._busy or not Cloud.can_talk() or not authorized or pending.is_empty(): return
-	if inflight.is_empty():
-		var operations := []
-		for entry in pending.slice(0, 256):
-			operations.append({"seq": int(entry["seq"]), "at": int(entry["at"]), "name": str(entry["name"]), "args": entry["args"]})
-		inflight = {"base": base, "rules": rules_hash(), "hash": str(pending[operations.size() - 1]["hash"]),
-			"batch": Crypto.new().generate_random_bytes(16).hex_encode(), "ops": operations}
-		if not checkpoint():
-			inflight = {}
-			return
+	if Cloud._busy or not Cloud.can_talk() or executing or not needs_upload(): return
+	var text := JSON.stringify(snapshot())
+	var uploaded_seq := seq
+	var body := {"base": base, "hash": text.sha256_text(),
+		"data": Marshalls.raw_to_base64(text.to_utf8_buffer().compress(FileAccess.COMPRESSION_GZIP))}
+	inflight = {"seq": uploaded_seq, "base": base}
 	Cloud._busy = true
 	Cloud._last_up = Cloud._ticks()
-	var response: Array = await Cloud._call("POST", "/v2/sync", inflight)
+	var response: Array = await Cloud._call("POST", "/v2/save", body)
 	Cloud._busy = false
+	inflight = {}
 	if response[0] != 200:
+		if response[0] != 0 and response[0] != 401: push_warning("Cloud save rejected: %s" % str(response[1]))
 		Cloud._offline("upload")
 		return
 	var data: Dictionary = response[1]
-	if data.get("reset", false):
-		if not accept(data, true): return
-		Cloud._say(str(data.get("reason", "进度校验不一致")) + "，已恢复服务器存档")
-	else:
-		var acknowledged := int(data["seq"])
-		pending = pending.filter(func(operation): return int(operation["seq"]) > acknowledged)
-		inflight = {}
-		if not accept(data, false): return
+	if data.get("conflict", false):
+		if adopt(data): Cloud._say("账号在其他设备上有更新的进度，已载入云端存档")
+		else: Cloud._offline("upload")
+		return
+	pending = pending.filter(func(operation): return int(operation["seq"]) > uploaded_seq)
+	base = int(data["version"])
+	_force_upload = false
+	Cloud.last_sync = Cloud.server_now()
+	Cloud._save_state()
+	checkpoint()
 	Cloud.online = true
 	Cloud.uploads += 1
 	Cloud.synced.emit("replay", true)
-	if not pending.is_empty(): upload.call_deferred()

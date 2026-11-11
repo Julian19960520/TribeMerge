@@ -237,8 +237,7 @@ static func dashed(ci: CanvasItem, pts: PackedVector2Array, dash: float, gap: fl
 
 ## 游戏运行时画物品：只贴预生成的 PNG（见「物品绘制.md」），没有图就空着，绝不现场绘制。
 static func vector_item(id: String) -> String:
-	if Data.chain(id) in ["orderbox", "premiumbox", "energybox", "chest", "choice", "fire", "shell", "amber", "sand", "upgrade", "scissors"] or (Data.chain(id) == "pack" and Data.lv(id) > 1):
-		return "res://assets/ui/items/%s.svg" % id
+	# 宝箱、卡包、道具和四种资源都已改回 draw_item 现场绘制再烘焙成 PNG，不再走 SVG
 	return ""
 
 static func _vector_item(ci: CanvasItem, id: String, c: Vector2, size: float, rot: float) -> bool:
@@ -263,12 +262,6 @@ static func draw_item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: 
 	if Data.is_dish(id):
 		_paint_dish(ci, id, c, size, rim, rot)
 		return
-	if Data.chain(id) == "sand":
-		ci.draw_set_transform(c, rot, Vector2.ONE * (size / 100.0))
-		var sand_s: int = absi(id.hash()) % 97
-		_sand(ci, Data.lv(id), sand_s, rim)
-		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		return
 	if Data.chain(id) == "emberpot":
 		ci.draw_set_transform(c, rot, Vector2.ONE * (size / 100.0))
 		_emberpot(ci, 41, rim)
@@ -283,14 +276,17 @@ static func draw_item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: 
 			ProdArt.draw(ci, def["line"], role, lv, c, size, rim)
 			return
 	ci.draw_set_transform(c, rot, Vector2.ONE * (size / 100.0))
-	ci.draw_colored_polygon(ell(Vector2(0, 40), Vector2(30, 6), 1, 0.0, 14, 0.0, 0.0), Color(0.2, 0.1, 0.0, 0.18))
+	_outer = Transform2D(rot, Vector2.ONE * (size / 100.0), 0.0, c)
+	if not _nested:
+		ci.draw_colored_polygon(ell(Vector2(0, 40), Vector2(30, 6), 1, 0.0, 14, 0.0, 0.0), Color(0.2, 0.1, 0.0, 0.18))
 	var s: int = abs(ch.hash()) % 97 + lv * 7
 	match ch:
-		"fire": _fire(ci, lv, s, rim)
-		"shell": _shell(ci, lv, s, rim)
-		"amber": _amber(ci, lv, s, rim)
-		"chest": _chest(ci, s, rim)
-		"pack": _pack(ci, s, rim)
+		"fire", "shell", "amber", "sand": _currency(ci, ch, lv, s, rim)
+		"chest", "energybox", "premiumbox", "orderbox": _box(ci, ch, lv, s, rim)
+		"choice": _choice_box(ci, id, lv, s, rim)
+		"pack": _pack(ci, lv, s, rim)
+		"upgrade": _upgrade(ci, s, rim)
+		"scissors": _scissors(ci, s, rim)
 		"token": _token(ci, s, rim)
 		"xp": _xp(ci, s, rim)
 		_:
@@ -371,209 +367,346 @@ static func _scallop_det(ci: CanvasItem, c: Vector2, sz: float, rot: float, s: i
 		var a := lerpf(-PI * 0.78, -PI * 0.22, float(k) / 4.0) + rot
 		ln(ci, hinge, hinge + Vector2(cos(a), sin(a)) * sz * 1.1, 1.6, SHELL_D.darkened(0.25), s + k)
 
-## 火种 6 级：火星 → 火苗 → 小火堆 → 篝火 → 熊熊大火 → 圣火
-static func _fire(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+# ---------------------------------------------------------------- 四种可领取资源
+## 体力（闪电）、不拿拿（香蕉）、琥珀、沙漏共用一套等级排布：
+## 1 级零件（不能领取）→ 2 级一整个 → 3 级两个 → 4 级四个 → 5 级一堆 → 6 级一筐。
+## 每种资源只写「一个单位」的画法（_cur_parts 外形 + _cur_detail 细节），排布由 _cur_layout 决定。
+const BANANA := Color("ffd447")
+const BANANA_D := Color("c9962a")
+const BOLT := Color("ffd23f")
+const SAND_GLASS := Color("e3f3f1")
+const SAND_FILL := Color("f2c35a")
+const RIM_COL := Color(1, 0.98, 0.92, 0.96)
+
+## 当前单位的局部→物品坐标变换。单位形状按「k = 1 时约 60 大小」画在原点附近，再经它摆到位置上。
+static var _ut := Transform2D.IDENTITY
+
+static func _X(pts: PackedVector2Array) -> PackedVector2Array:
+	return _ut * pts
+
+static func _Xv(v: Vector2) -> Vector2:
+	return _ut * v
+
+static func _currency(ci: CanvasItem, ch: String, lv: int, s: int, rim: bool) -> void:
+	lv = clampi(lv, 1, 6)
+	if lv == 6:
+		for k in 2:
+			ci.draw_circle(Vector2(0, -6), 50.0 - 8.0 * k, Color(1, 0.88, 0.45, 0.14))
+	var units := _cur_layout(ch, lv)
+	var per: Array = []
+	var ks: Array = []
+	for i in units.size():
+		var u: Array = units[i]
+		_ut = Transform2D(u[2], Vector2(u[1], u[1]), 0.0, u[0])
+		per.append(_cur_parts(ch, lv == 1, s + i * 7))
+		ks.append(u[1])
+	var basket := _cur_basket(s + 60) if lv == 6 else []
+	if rim:
+		for parts in per:
+			for p in parts:
+				dilate(ci, p[0], 9.0, RIM_COL)
+		for p in basket:
+			dilate(ci, p[0], 9.0, RIM_COL)
+	if lv == 6:
+		# 筐口里面的暗色
+		var mouth := ell(Vector2(0, 2), Vector2(42, 10), s + 70, 0.03, 20)
+		dilate(ci, mouth, 3.0, INK)
+		ci.draw_colored_polygon(mouth, WOOD_D.darkened(0.35))
+	for i in units.size():
+		var u: Array = units[i]
+		sil(ci, per[i], false)
+		_ut = Transform2D(u[2], Vector2(u[1], u[1]), 0.0, u[0])
+		_cur_detail(ci, ch, lv == 1, s + i * 7, ks[i])
+	_ut = Transform2D.IDENTITY
+	if lv == 6:
+		sil(ci, basket, false)
+		_weave(ci, Rect2(-34, 10, 68, 27), s + 61)
+		pl(ci, [Vector2(-38, 4), Vector2(0, 7), Vector2(38, 4)], 2.0, ROPE.lightened(0.2), s + 62)
+	if lv >= 5:
+		var glints := [Vector2(-44, -30), Vector2(42, -42), Vector2(48, -10)] if lv == 6 else [Vector2(-38, -22), Vector2(36, -30)]
+		for v in glints:
+			ci.draw_colored_polygon(star_pts(v, 6, 2, 4, s + int(v.x)), Color(1, 1, 0.9))
+
+## 每个单位：[中心, 缩放, 旋转]，按先后画（后画的压在上面）
+static func _cur_layout(ch: String, lv: int) -> Array:
 	match lv:
 		1:
-			sil(ci, [P(star_pts(Vector2(0, 2), 30, 11, 4, s), FIRE2, 1)], rim)
-			ci.draw_colored_polygon(star_pts(Vector2(0, 2), 14, 6, 4, s + 2), Color(1, 1, 0.85))
-			for i in 3:
-				ci.draw_circle(Vector2(-24 + 22 * i, -26 + 10 * (i % 2)), 3.0, FIRE)
+			return [[Vector2(0, 2), 1.25, 0.0]]
 		2:
-			sil(ci, [P(flame_pts(Vector2(0, 0), 30, 84, s), FIRE, 1)], rim)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, 14), 16, 48, s + 3), FIRE2)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, 22), 7, 22, s + 5), Color(1, 1, 0.85))
+			return [[Vector2(0, 0), 1.22 if ch != "shell" else 1.12, 0.0 if ch != "fire" else 0.08]]
 		3:
-			sil(ci, [P(flame_pts(Vector2(0, -6), 26, 70, s), FIRE, 1),
-				P(capsule(Vector2(-28, 34), Vector2(22, 20), 5.0, s + 1), WOOD, 1),
-				P(capsule(Vector2(28, 34), Vector2(-22, 20), 5.0, s + 2), WOOD_D, 1)], rim)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, 6), 14, 40, s + 3), FIRE2)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, 14), 6, 18, s + 5), Color(1, 1, 0.85))
+			if ch == "shell":
+				return [[Vector2(4, -10), 0.86, -0.22], [Vector2(-2, 10), 0.9, 0.08]]
+			return [[Vector2(14, -6), 0.82, 0.16], [Vector2(-13, 6), 0.84, -0.14]]
 		4:
-			var parts := [P(flame_pts(Vector2(0, -10), 30, 80, s), FIRE, 1),
-				P(capsule(Vector2(-36, 32), Vector2(30, 14), 7.0, s + 1), WOOD, 1),
-				P(capsule(Vector2(36, 32), Vector2(-30, 14), 7.0, s + 2), WOOD.darkened(0.08), 1)]
-			for i in 5:
-				parts.append(P(ell(Vector2(-36 + 18 * i, 38), Vector2(9, 6), s + 3 + i, 0.1), STONE))
-			sil(ci, parts, rim)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, 2), 16, 46, s + 3), FIRE2)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, 12), 7, 20, s + 5), Color(1, 1, 0.85))
+			if ch == "shell":
+				return [[Vector2(6, -24), 0.72, -0.42], [Vector2(8, -6), 0.74, -0.14],
+					[Vector2(4, 10), 0.75, 0.12], [Vector2(-4, 26), 0.76, 0.36]]
+			return [[Vector2(-15, -15), 0.64, -0.2], [Vector2(16, -13), 0.64, 0.22],
+				[Vector2(-16, 14), 0.66, 0.1], [Vector2(15, 16), 0.66, -0.12]]
 		5:
-			var parts := [P(flame_pts(Vector2(-22, -2), 18, 56, s + 9), FIRE, 1), P(flame_pts(Vector2(22, -2), 18, 56, s + 10), FIRE, 1),
-				P(flame_pts(Vector2(0, -16), 30, 92, s), FIRE, 1),
-				P(capsule(Vector2(-40, 34), Vector2(8, -6), 6.5, s + 1), WOOD, 1),
-				P(capsule(Vector2(40, 34), Vector2(-8, -6), 6.5, s + 2), WOOD_D, 1),
-				P(capsule(Vector2(-42, 32), Vector2(42, 32), 7.0, s + 11), WOOD.darkened(0.05), 1)]
-			for i in 6:
-				parts.append(P(ell(Vector2(-42 + 16.8 * i, 42), Vector2(9, 6), s + 3 + i, 0.1), STONE))
-			sil(ci, parts, rim)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, -2), 17, 54, s + 3), FIRE2)
-			ci.draw_colored_polygon(flame_pts(Vector2(-22, 8), 8, 26, s + 12), FIRE2)
-			ci.draw_colored_polygon(flame_pts(Vector2(22, 8), 8, 26, s + 13), FIRE2)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, 10), 7, 22, s + 5), Color(1, 1, 0.85))
-			for i in 4:
-				ci.draw_circle(Vector2(-30 + 20 * i, -54 + 9 * (i % 2)), 2.6, FIRE2)
+			var k := 0.56 if ch != "shell" else 0.56
+			return [[Vector2(-30, 20), k, -0.12], [Vector2(0, 22), k, 0.06], [Vector2(30, 20), k, 0.18],
+				[Vector2(-16, 0), k, -0.28], [Vector2(16, 0), k, 0.3],
+				[Vector2(1, -20), k, -0.05]]
 		_:
-			for k in 2:
-				ci.draw_circle(Vector2(0, -8), 46.0 - 8.0 * k, Color(1, 0.85, 0.35, 0.16))
-			var bowl := poly([Vector2(-34, 6), Vector2(34, 6), Vector2(24, 24), Vector2(-24, 24)], s + 1, 0.4)
-			var stem := rrect(Rect2(-10, 22, 20, 14), 3, s + 2, 0.3)
-			var foot := rrect(Rect2(-28, 34, 56, 10), 4, s + 3, 0.3)
-			sil(ci, [P(flame_pts(Vector2(0, -30), 30, 86, s), FIRE, 1), P(foot, STONE_D, 1), P(stem, STONE, 1), P(bowl, STONE, 0)], rim)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, -20), 17, 54, s + 3), FIRE2)
-			ci.draw_colored_polygon(flame_pts(Vector2(0, -10), 7, 24, s + 5), Color(1, 1, 0.9))
-			ci.draw_colored_polygon(rrect(Rect2(-26, 10, 52, 5), 2, s + 6, 0.2), OCHRE)
-			for i in 3:
-				ci.draw_colored_polygon(star_pts(Vector2(-14 + 14 * i, 17), 3.6, 1.4, 4, s + 7 + i), FIRE2)
-			for v in [Vector2(-36, -40), Vector2(34, -50), Vector2(-26, -66), Vector2(28, -16)]:
-				ci.draw_colored_polygon(star_pts(v, 6, 2, 4, s + int(v.x)), Color(1, 0.96, 0.7))
+			var k := 0.6 if ch != "shell" else 0.6
+			return [[Vector2(-24, -16), k, -0.35], [Vector2(24, -16), k, 0.35],
+				[Vector2(-10, -32), k, -0.15], [Vector2(13, -36), k, 0.18],
+				[Vector2(0, -14), k, 0.0]]
 
-## 不拿拿 6 级：碎贝壳 → 贝壳 → 贝壳串 → 贝壳堆 → 贝壳篓 → 珍珠贝
-static func _shell(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
-	match lv:
-		1:
-			sil(ci, [P(_scallop(Vector2(-4, 4), 22, -0.35, s), SHELL), P(poly([Vector2(16, 18), Vector2(28, 10), Vector2(26, 26)], s + 1, 0.4), SHELL_D)], rim)
-			_scallop_det(ci, Vector2(-4, 4), 22, -0.35, s)
-		2:
-			sil(ci, [P(_scallop(Vector2(0, -2), 30, 0.0, s), SHELL)], rim)
-			_scallop_det(ci, Vector2(0, -2), 30, 0.0, s)
-		3:
-			var cs := [Vector2(-24, 4), Vector2(0, 14), Vector2(24, 4)]
-			var rs := [-0.3, 0.0, 0.3]
-			var parts := []
-			for i in 3:
-				parts.append(P(_scallop(cs[i], 15, rs[i], s + i), SHELL if i != 1 else SHELL.lightened(0.05)))
-			sil(ci, parts, rim)
-			pl(ci, [Vector2(-42, -26), Vector2(-24, -8), Vector2(0, -2), Vector2(24, -8), Vector2(42, -26)], 2.5, WOOD_D, s)
-			for i in 3:
-				_scallop_det(ci, cs[i], 15, rs[i], s + i)
-		4:
-			var cs := [Vector2(-22, 18), Vector2(22, 18), Vector2(0, 20), Vector2(-12, -4), Vector2(14, -2), Vector2(0, -22)]
-			var rs := [-0.4, 0.4, 0.0, -0.2, 0.25, 0.0]
-			var parts := []
-			for i in cs.size():
-				parts.append(P(_scallop(cs[i], 17, rs[i], s + i), SHELL.darkened(0.04 * float(i % 3))))
-			sil(ci, parts, rim)
-			for i in cs.size():
-				_scallop_det(ci, cs[i], 17, rs[i], s + i)
-		5:
-			var cs := [Vector2(-20, -12), Vector2(18, -14), Vector2(0, -24), Vector2(-4, -6)]
-			var rs := [-0.35, 0.3, 0.0, 0.1]
-			var parts := []
-			for i in cs.size():
-				parts.append(P(_scallop(cs[i], 15, rs[i], s + i), SHELL.darkened(0.04 * float(i % 2))))
-			var body := poly([Vector2(-40, -6), Vector2(40, -6), Vector2(30, 40), Vector2(-30, 40)], s + 8, 0.5)
-			sil(ci, parts + [P(body, WOOD, 1)], rim)
-			for i in cs.size():
-				_scallop_det(ci, cs[i], 15, rs[i], s + i)
-			for k in 3:
-				var y := 6.0 + k * 11.0
-				var hw := 38.0 - k * 3.0
-				pl(ci, [Vector2(-hw, y), Vector2(0, y + 2), Vector2(hw, y)], 1.6, WOOD_D, s + 10 + k)
-			for k in 5:
-				ln(ci, Vector2(-26 + k * 13, -4), Vector2(-20 + k * 10, 38), 1.4, Color(0.4, 0.22, 0.08, 0.5), s + 15 + k)
-			ln(ci, Vector2(-42, -6), Vector2(42, -6), 4.0, ROPE, s + 20)
-		_:
-			ci.draw_circle(Vector2(0, 6), 44, Color(1, 0.95, 0.8, 0.18))
-			var dish := ell(Vector2(0, 18), Vector2(40, 18), s + 1, 0.04, 22)
-			sil(ci, [P(_scallop(Vector2(0, -12), 30, 0.0, s + 2), SHELL), P(dish, SHELL_D.lightened(0.1), 1)], rim)
-			_scallop_det(ci, Vector2(0, -12), 30, 0.0, s + 2)
-			ci.draw_colored_polygon(ell(Vector2(0, 16), Vector2(30, 11), s + 3, 0.03, 18), Color("f9c9c0"))
-			var pearl := ell(Vector2(0, 10), Vector2(15, 15), s + 4, 0.01, 18)
-			dilate(ci, pearl, 2.4, INK)
-			ci.draw_colored_polygon(pearl, Color("f4f1ff"))
-			ci.draw_colored_polygon(ell(Vector2(3, 14), Vector2(11, 9), s + 5, 0.0, 14), Color("dcd6f0"))
-			ci.draw_colored_polygon(ell(Vector2(-5, 4), Vector2(5, 4), s + 6, 0.0, 10), Color(1, 1, 1, 0.95))
-			for v in [Vector2(-30, -30), Vector2(32, -8), Vector2(22, -40)]:
-				ci.draw_colored_polygon(star_pts(v, 6, 2, 4, s + int(v.y)), Color(1, 1, 0.9))
+## 6 级的藤筐（前半截，盖住筐里东西的下半部）
+static func _cur_basket(s: int) -> Array:
+	var body := poly([Vector2(-42, 4), Vector2(42, 4), Vector2(32, 40), Vector2(-32, 40)], s, 0.6)
+	var lip := capsule(Vector2(-44, 4), Vector2(44, 4), 6.0, s + 1)
+	return [P(body, WOOD, 1), P(lip, WOOD.lightened(0.15), 1)]
 
-## 琥珀 6 级：前三级是圆润的树脂滴，第 4、5 级是不规则六边刻面，最后是金边心形；里面封着的小虫一级比一级大、一级比一级清楚。
-## 琥珀屑 → 琥珀粒 → 琥珀块 → 虫珀 → 大琥珀 → 琥珀之心
-static func _amber(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
-	match lv:
-		1:
-			sil(ci, [P(ell(Vector2(-12, 6), Vector2(13, 15), s, 0.1, 14, 0.3), AMBER),
-				P(ell(Vector2(14, 14), Vector2(9, 10), s + 1, 0.1, 12), AMBER.darkened(0.08)),
-				P(ell(Vector2(8, -14), Vector2(7, 8), s + 2, 0.1, 12), AMBER.lightened(0.05))], rim)
-		2:
-			sil(ci, [P(ell(Vector2(-2, 2), Vector2(24, 28), s, 0.07, 20, 0.25), AMBER)], rim)
-			_amber_bug(ci, Vector2(0, 6), 8.0, 0.45, s)
-			_amber_shine(ci, Vector2(-10, -10), 0.8, s)
-		3:
-			sil(ci, [P(ell(Vector2(0, 2), Vector2(34, 32), s, 0.08, 22, 0.15), AMBER)], rim)
-			_amber_bug(ci, Vector2(2, 6), 13.0, 0.6, s)
-			_amber_shine(ci, Vector2(-14, -12), 1.0, s)
-		4:
-			_amber_facet(ci, 1.08, s, rim)
-			_amber_bug(ci, Vector2(0, 4), 19.0, 0.78, s)
-		5:
-			_amber_facet(ci, 1.3, s, rim)
-			_amber_bug(ci, Vector2(0, 4), 27.0, 0.9, s)
-			ci.draw_colored_polygon(star_pts(Vector2(-26, -30), 7, 2.2, 4, s + 7), Color(1, 1, 0.9, 0.9))
-		_:
-			for k in 2:
-				ci.draw_circle(Vector2(0, 0), 48.0 - 8.0 * k, Color(1, 0.8, 0.3, 0.15))
-			var heart := []
-			for k in 28:
-				var t := TAU * float(k) / 28.0
-				var x := 16.0 * pow(sin(t), 3)
-				var y := -(13.0 * cos(t) - 5.0 * cos(2.0 * t) - 2.0 * cos(3.0 * t) - cos(4.0 * t))
-				heart.append(Vector2(x, y) * 2.5 + Vector2(0, -2))
-			var hp := poly(heart, s, 0.4)
-			if rim:
-				dilate(ci, hp, 9.0, Color(1, 0.98, 0.92, 0.96))
-			dilate(ci, hp, 7.0, INK)
-			dilate(ci, hp, 4.6, OCHRE)
-			dilate(ci, hp, 2.2, INK)
-			shade(ci, hp, AMBER, 1)
-			_amber_bug(ci, Vector2(0, 4), 31.0, 1.0, s)
-			ci.draw_colored_polygon(ell(Vector2(-14, -16), Vector2(9, 5), s + 4, 0.0, 12, -0.6), Color(1, 1, 0.9, 0.55))
-			for v in [Vector2(-38, -30), Vector2(36, -26), Vector2(30, 30)]:
-				ci.draw_colored_polygon(star_pts(v, 6, 2, 4, s + int(v.x)), Color(1, 1, 0.9))
+static func _cur_parts(ch: String, frag: bool, s: int) -> Array:
+	match ch:
+		"fire":
+			_ut = _ut * Transform2D(0.0, Vector2(1.3, 1.0), 0.0, Vector2.ZERO)
+			return _bolt_parts(frag, s)
+		"shell": return _banana_parts(frag, s)
+		"amber": return _amber_parts(frag, s)
+		_: return _hg_parts(frag, s)
 
-## 原来「琥珀块」那种不规则六边刻面：顶点连到偏上的一点，左上两块亮面
-static func _amber_facet(ci: CanvasItem, k: float, s: int, rim: bool) -> void:
-	var vs := [Vector2(-34, 4), Vector2(-20, -28), Vector2(14, -34), Vector2(34, -6), Vector2(24, 28), Vector2(-14, 32)]
-	var sc: Array = []
-	for v in vs:
-		sc.append(v * k)
-	var core := Vector2(0, -6) * k
-	sil(ci, [P(poly(sc, s), AMBER, 1)], rim)
-	ci.draw_colored_polygon(poly([sc[1], sc[2], core], s + 3), Color(1, 0.9, 0.5, 0.6))
-	ci.draw_colored_polygon(poly([sc[0], sc[1], core], s + 4), Color(1, 0.8, 0.3, 0.5))
-	for i in [1, 2, 3, 0, 5]:
-		ln(ci, core, sc[i], 1.6, Color(0.5, 0.25, 0.0, 0.7), s)
+static func _cur_detail(ci: CanvasItem, ch: String, frag: bool, s: int, k: float) -> void:
+	match ch:
+		"fire":
+			_ut = _ut * Transform2D(0.0, Vector2(1.3, 1.0), 0.0, Vector2.ZERO)
+			_bolt_detail(ci, frag, s, k)
+		"shell": _banana_detail(ci, frag, s, k)
+		"amber": _amber_detail(ci, frag, s, k)
+		_: _hg_detail(ci, frag, s, k)
 
-static func _amber_shine(ci: CanvasItem, c: Vector2, k: float, s: int) -> void:
-	ci.draw_colored_polygon(ell(c, Vector2(9, 5) * k, s + 4, 0.0, 12, -0.6), Color(1, 1, 0.92, 0.6))
-	ci.draw_circle(c + Vector2(10, -4) * k, 2.2 * k, Color(1, 1, 0.92, 0.7))
+static func _lw(w: float, k: float) -> float:
+	return w * clampf(k, 0.65, 1.2)
 
-## 封在琥珀里的小虫：sz 是身长，a 是清晰度（越高级越清楚）
+# ---------- 体力：闪电
+
+const _BOLT := [Vector2(-5, -31), Vector2(14, -31), Vector2(5, -9), Vector2(18, -9), Vector2(-8, 32), Vector2(-2, 5), Vector2(-16, 5)]
+
+static func _bolt_parts(frag: bool, s: int) -> Array:
+	if frag:
+		# 断下来的上半截闪电 + 两粒碎渣
+		var top := poly([Vector2(-5, -27), Vector2(14, -27), Vector2(5, -5), Vector2(11, -5), Vector2(7, 1), Vector2(2, -2),
+			Vector2(-2, 4), Vector2(-6, 0), Vector2(-12, 4)], s, 0.5)
+		var c1 := poly([Vector2(10, 12), Vector2(18, 9), Vector2(15, 18)], s + 1, 0.3)
+		var c2 := poly([Vector2(-8, 16), Vector2(-2, 14), Vector2(-4, 21)], s + 2, 0.3)
+		return [P(_X(top), BOLT, 1), P(_X(c1), BOLT.darkened(0.06), 2), P(_X(c2), BOLT, 2)]
+	return [P(_X(poly(_BOLT, s, 0.5)), BOLT, 1)]
+
+static func _bolt_detail(ci: CanvasItem, frag: bool, s: int, k: float) -> void:
+	var hl := Color(1, 1, 0.88, 0.9)
+	if frag:
+		ci.draw_polyline(_X(poly([Vector2(5, -23), Vector2(-4, -2)], s + 3, 0.3)), hl, _lw(3.0, k), true)
+		ci.draw_polyline(_X(poly([Vector2(0, -2), Vector2(4, -4)], s + 4, 0.2)), INK, _lw(1.6, k), true)
+		return
+	ci.draw_polyline(_X(poly([Vector2(6, -26), Vector2(-6, 1), Vector2(-10, 1)], s + 3, 0.3)), hl, _lw(3.0, k), true)
+	ci.draw_polyline(_X(poly([Vector2(12, -5), Vector2(0, 18)], s + 4, 0.3)), Color(1, 0.6, 0.1, 0.55), _lw(2.6, k), true)
+
+# ---------- 不拿拿：香蕉
+
+## 香蕉弧：t 从 0（梗那头，左）到 1（尖，右），弯成一个笑脸弧
+static func _banana_pt(t: float, side: float) -> Vector2:
+	var a := lerpf(PI * 0.86, PI * 0.14, t)
+	var th := 3.0 + 10.0 * pow(sin(PI * clampf(t * 0.92 + 0.04, 0.0, 1.0)), 0.7)
+	return Vector2(0, -34) + Vector2(cos(a), sin(a)) * (40.0 + th * side) + Vector2(0, 6)
+
+static func _banana_body(t0: float, t1: float, s: int) -> PackedVector2Array:
+	var arr := []
+	var n := 14
+	for i in n + 1:
+		arr.append(_banana_pt(lerpf(t0, t1, float(i) / n), 1.0))
+	for i in range(n, -1, -1):
+		arr.append(_banana_pt(lerpf(t0, t1, float(i) / n), -1.0))
+	return poly(arr, s, 0.4)
+
+static func _banana_stem_dir() -> Vector2:
+	return (_banana_pt(0.0, 0.0) - _banana_pt(0.06, 0.0)).normalized()
+
+static func _banana_parts(frag: bool, s: int) -> Array:
+	var stem_a := _banana_pt(0.0, 0.0)
+	var stem := capsule(stem_a - _banana_stem_dir() * 2.0, stem_a + _banana_stem_dir() * 9.0 + Vector2(0, -2), 3.4, s + 1)
+	if frag:
+		# 半截不拿拿：梗那一半，断口露出果肉
+		return [P(_X(_banana_body(0.0, 0.52, s)), BANANA, 1), P(_X(stem), LEAF_D.lerp(WOOD, 0.5), 1)]
+	return [P(_X(_banana_body(0.0, 1.0, s)), BANANA, 1), P(_X(stem), LEAF_D.lerp(WOOD, 0.5), 1)]
+
+static func _banana_detail(ci: CanvasItem, frag: bool, s: int, k: float) -> void:
+	var t1 := 0.52 if frag else 1.0
+	# 中间的棱
+	var ridge := []
+	for i in 9:
+		ridge.append(_banana_pt(lerpf(0.12, t1 - 0.1, float(i) / 8.0), 0.15))
+	ci.draw_polyline(_X(poly(ridge, s + 2, 0.3)), BANANA_D, _lw(1.8, k), true)
+	# 背上的高光
+	var hl := []
+	for i in 7:
+		hl.append(_banana_pt(lerpf(0.2, t1 - 0.18, float(i) / 6.0), -0.55))
+	ci.draw_polyline(_X(poly(hl, s + 3, 0.2)), Color(1, 1, 0.9, 0.8), _lw(2.6, k), true)
+	if frag:
+		# 断口：奶白果肉 + 中间一点籽
+		var a := _banana_pt(t1, 1.0)
+		var b := _banana_pt(t1, -1.0)
+		var c := (a + b) * 0.5
+		var cut := ell(c, Vector2(a.distance_to(b) * 0.5, 4.5), s + 4, 0.06, 12, (b - a).angle(), 0.3)
+		var cx := _X(cut)
+		ci.draw_colored_polygon(cx, BONE)
+		outline(ci, cx, 2.0, INK)
+		ci.draw_circle(_Xv(c), 1.6 * k, SEED.darkened(0.2))
+	else:
+		# 尖上的小黑头
+		var tip := _banana_pt(1.0, 0.0)
+		ci.draw_colored_polygon(_X(ell(tip + Vector2(1.5, -1), Vector2(3.2, 2.6), s + 5, 0.0, 8)), Color("4a2a12"))
+		# 梗上的切口
+		var st := _banana_pt(0.0, 0.0) + _banana_stem_dir() * 9.0 + Vector2(0, -2)
+		ci.draw_colored_polygon(_X(ell(st, Vector2(2.6, 2.6), s + 6, 0.0, 8)), Color("6a8a2a"))
+
+# ---------- 琥珀：刻面宝石
+
+const _AMB := [Vector2(-25, 2), Vector2(-14, -21), Vector2(10, -25), Vector2(25, -6), Vector2(18, 20), Vector2(-8, 25)]
+
+static func _amber_parts(frag: bool, s: int) -> Array:
+	if frag:
+		# 碎琥珀：一大一小两块断片
+		var a := poly([Vector2(-20, 4), Vector2(-10, -18), Vector2(8, -14), Vector2(4, -2), Vector2(10, 8), Vector2(-6, 16)], s, 0.4)
+		var b := poly([Vector2(12, 6), Vector2(22, 0), Vector2(26, 14), Vector2(16, 20)], s + 1, 0.4)
+		return [P(_X(a), AMBER, 1), P(_X(b), AMBER.darkened(0.06), 1)]
+	return [P(_X(poly(_AMB, s, 0.5)), AMBER, 1)]
+
+static func _amber_detail(ci: CanvasItem, frag: bool, s: int, k: float) -> void:
+	if frag:
+		ci.draw_colored_polygon(_X(poly([Vector2(-10, -18), Vector2(8, -14), Vector2(-4, -4)], s + 3)), Color(1, 0.9, 0.5, 0.6))
+		ci.draw_polyline(_X(poly([Vector2(4, -2), Vector2(-4, -4), Vector2(-12, 2)], s + 4, 0.3)), Color(0.5, 0.25, 0.0, 0.7), _lw(1.6, k), true)
+		ci.draw_colored_polygon(_X(ell(Vector2(-10, -6), Vector2(4, 2.4), s + 5, 0.0, 8, -0.7)), Color(1, 1, 0.92, 0.75))
+		return
+	var core := Vector2(-1, -5)
+	ci.draw_colored_polygon(_X(poly([_AMB[1], _AMB[2], core], s + 3)), Color(1, 0.9, 0.5, 0.65))
+	ci.draw_colored_polygon(_X(poly([_AMB[0], _AMB[1], core], s + 4)), Color(1, 0.8, 0.3, 0.5))
+	ci.draw_colored_polygon(_X(poly([_AMB[4], _AMB[5], core], s + 6)), Color(0.75, 0.38, 0.0, 0.35))
+	for i in [0, 1, 2, 3, 4, 5]:
+		ci.draw_line(_Xv(core), _Xv(_AMB[i]), Color(0.5, 0.25, 0.0, 0.6), _lw(1.5, k), true)
+	if k >= 0.8:
+		# 只有大一点的单块才看得清封在里面的小虫
+		_amber_bug(ci, _Xv(Vector2(3, 8)), 9.0 * k, 0.55, s)
+	ci.draw_colored_polygon(_X(ell(Vector2(-12, -10), Vector2(6, 3.2), s + 5, 0.0, 10, -0.8)), Color(1, 1, 0.92, 0.8))
+	ci.draw_circle(_Xv(Vector2(-4, -16)), 1.8 * k, Color(1, 1, 0.92, 0.85))
+
+## 封在琥珀里的小虫：sz 是身长，a 是清晰度
 static func _amber_bug(ci: CanvasItem, c: Vector2, sz: float, a: float, s: int) -> void:
 	var body := Color(0.24, 0.11, 0.0, 0.85 * a)
 	var wing := Color(1, 0.97, 0.85, 0.42 * a)
 	var k := sz / 30.0
 	var w := maxf(1.0, 1.6 * k)
-	if sz >= 12.0:
-		for sx in [-1.0, 1.0]:
-			ci.draw_colored_polygon(ell(c + Vector2(9 * sx, -6) * k, Vector2(10, 5) * k, s + 20 + int(sx), 0.0, 12, -0.5 * sx, 0.15), wing)
 	for sx in [-1.0, 1.0]:
+		ci.draw_colored_polygon(ell(c + Vector2(9 * sx, -6) * k, Vector2(10, 5) * k, s + 20 + int(sx), 0.0, 12, -0.5 * sx, 0.15), wing)
 		for i in 3:
 			var o := c + Vector2(0, -2 + i * 5) * k
 			ln(ci, o, o + Vector2(sx * 11, -4 + i * 5) * k, w, body, s + i)
-		if sz >= 12.0:
-			ln(ci, c + Vector2(0, -12) * k, c + Vector2(sx * 6, -19) * k, w * 0.8, body, s + 9)
 	ci.draw_colored_polygon(ell(c + Vector2(0, 8) * k, Vector2(5.5, 8) * k, s + 30, 0.0, 12, 0.0, 0.15), body)
 	ci.draw_colored_polygon(ell(c + Vector2(0, -2) * k, Vector2(4.5, 4) * k, s + 31, 0.0, 10, 0.0, 0.15), body)
 	ci.draw_circle(c + Vector2(0, -9) * k, 3.4 * k, body)
-	if sz >= 20.0:
-		for i in 3:
-			ln(ci, c + Vector2(-4.5, 5 + i * 3.4) * k, c + Vector2(4.5, 5 + i * 3.4) * k, w * 0.7, Color(1, 0.8, 0.4, 0.45 * a), s + 40 + i)
 
-## 沙漏 6 级：从零件一步步装成完整沙漏。
-## 玻璃沙泡（半个泡）→ 沙漏芯（两泡相连）→ 盖板沙漏（加上下木盖）→ 木框沙漏（加立柱）→ 骨饰沙漏（绑绳 + 骨头角）→ 黄金沙漏
-const SAND_GLASS := Color("e3f3f1")
-const SAND_FILL := Color("f2c35a")
+# ---------- 沙漏：木框沙漏
+
+const _HG_H := 30.0
+const _HG_W := 16.0
+const _HG_CAP := 8.0
+const _HG_NECK := 2.8
+
+static func _hg_parts(frag: bool, s: int) -> Array:
+	var inner := _HG_H - _HG_CAP
+	var cw := _HG_W + 8.0
+	if frag:
+		# 破损沙漏：只剩底座、半截玻璃泡和一根断柱
+		var bulb := _hourglass_pts(inner, _HG_W, _HG_NECK, 0.0, inner * 0.08, inner)
+		var arr := Array(bulb)
+		# 顶边改成碎玻璃的锯齿
+		var top_y := inner * 0.08
+		var hw := _hg_half(top_y / inner, _HG_W, _HG_NECK)
+		var jag := [Vector2(-hw, top_y), Vector2(-hw * 0.4, top_y - 7), Vector2(0, top_y + 1), Vector2(hw * 0.5, top_y - 9), Vector2(hw, top_y)]
+		var glass := []
+		for p in arr:
+			if (p as Vector2).y > top_y + 0.01:
+				glass.append(p)
+		# bulb 是右边从上到下、左边从下到上；锯齿从左上接回右上
+		glass.append_array(jag)
+		var cap := rrect(Rect2(-cw, _HG_H - _HG_CAP, cw * 2.0, _HG_CAP), 3.5, s + 2, 0.3)
+		var post := capsule(Vector2(-(_HG_W + 3.0), inner), Vector2(-(_HG_W + 3.0), inner * 0.1), 3.0, s + 3)
+		var shard := poly([Vector2(16, -14), Vector2(26, -20), Vector2(22, -6)], s + 4, 0.3)
+		return [P(_X(poly(glass, s, 0.3)), SAND_GLASS, 1),
+			P(_X(post), WOOD_D, 1), P(_X(cap), WOOD, 1), P(_X(shard), SAND_GLASS, 2)]
+	var parts := [P(_X(_hourglass_pts(inner, _HG_W, _HG_NECK, 0.0)), SAND_GLASS, 1)]
+	for sx in [-1.0, 1.0]:
+		parts.append(P(_X(capsule(Vector2((_HG_W + 3.0) * sx, -inner), Vector2((_HG_W + 3.0) * sx, inner), 3.0, s + int(sx) + 3)), WOOD_D, 1))
+	parts.append(P(_X(rrect(Rect2(-cw, -_HG_H, cw * 2.0, _HG_CAP), 3.5, s + 1, 0.3)), WOOD, 1))
+	parts.append(P(_X(rrect(Rect2(-cw, _HG_H - _HG_CAP, cw * 2.0, _HG_CAP), 3.5, s + 2, 0.3)), WOOD, 1))
+	return parts
+
+static func _hg_sand_mound(inner: float, w: float, neck: float, top_y: float, s: int) -> PackedVector2Array:
+	var mound := PackedVector2Array()
+	var base := inner - 2.0
+	for k in 13:
+		var x := lerpf(-1.0, 1.0, float(k) / 12.0)
+		var y := lerpf(top_y + inner * 0.22, top_y, 1.0 - absf(x))
+		mound.append(Vector2(x * _hg_half(y / inner, w, neck), y))
+	for k in range(1, 7):
+		var y := lerpf(top_y + inner * 0.22, base, float(k) / 6.0)
+		mound.append(Vector2(_hg_half(y / inner, w, neck), y))
+	for k in range(6, 0, -1):
+		var y := lerpf(top_y + inner * 0.22, base, float(k) / 6.0)
+		mound.append(Vector2(-_hg_half(y / inner, w, neck), y))
+	return poly(Array(mound), s, 0.2)
+
+static func _hg_detail(ci: CanvasItem, frag: bool, s: int, k: float) -> void:
+	var inner := _HG_H - _HG_CAP
+	var w := _HG_W
+	if frag:
+		ci.draw_colored_polygon(_X(_hg_sand_mound(inner, w - 3.0, _HG_NECK - 1.0, inner * 0.45, s + 5)), SAND_FILL)
+		# 洒出来的沙
+		var spill := ell(Vector2(24, inner + 4), Vector2(12, 4.5), s + 6, 0.12, 14)
+		ci.draw_colored_polygon(_X(spill), SAND_FILL.darkened(0.06))
+		outline(ci, _X(spill), 1.6, INK)
+		for i in 3:
+			ci.draw_circle(_Xv(Vector2(14 + i * 6, inner - 6 - (i % 2) * 4)), 1.8 * k, SAND_FILL.darkened(0.1))
+		ci.draw_polyline(_X(poly([Vector2(-w * 0.6, inner * 0.3), Vector2(-w * 0.75, inner * 0.6)], s + 7, 0.2)), Color(1, 1, 1, 0.85), _lw(2.4, k), true)
+		ci.draw_polyline(_X(poly([Vector2(3, inner * 0.2), Vector2(6, inner * 0.45), Vector2(2, inner * 0.6)], s + 8, 0.2)), Color(0.3, 0.3, 0.3, 0.6), _lw(1.4, k), true)
+		return
+	ci.draw_colored_polygon(_X(_hourglass_pts(inner, w - 3.0, _HG_NECK - 1.0, 0.0, -inner * 0.5, -inner * 0.06)), SAND_FILL)
+	var top_y := inner * 0.38
+	ci.draw_colored_polygon(_X(_hg_sand_mound(inner, w - 3.0, _HG_NECK - 1.0, top_y, s + 5)), SAND_FILL)
+	ci.draw_line(_Xv(Vector2(0, -inner * 0.08)), _Xv(Vector2(0, top_y + 2.0)), SAND_FILL.darkened(0.08), _lw(2.2, k), true)
+	outline(ci, _X(_hourglass_pts(inner, w, _HG_NECK, 0.0)), _lw(2.2, k), INK)
+	ci.draw_polyline(_X(poly([Vector2(-w * 0.62, -inner * 0.82), Vector2(-w * 0.78, -inner * 0.55), Vector2(-w * 0.55, -inner * 0.25)], s + 6, 0.2)), Color(1, 1, 1, 0.85), _lw(2.4, k), true)
+	ci.draw_polyline(_X(poly([Vector2(-w * 0.62, inner * 0.3), Vector2(-w * 0.78, inner * 0.55)], s + 7, 0.2)), Color(1, 1, 1, 0.7), _lw(2.4, k), true)
+
+## 沙漏玻璃的半宽：u 是 -1（顶）到 1（底），中间最细
+static func _hg_half(u: float, w: float, neck: float) -> float:
+	var a := absf(u)
+	var bulge := sin(PI * 0.5 * minf(1.0, a * 1.35))
+	var taper := 1.0 - 0.18 * maxf(0.0, a - 0.8) / 0.2
+	return neck + (w - neck) * bulge * taper
+
+## 玻璃轮廓（或其中 y0..y1 这一段）
+static func _hourglass_pts(inner: float, w: float, neck: float, _pad: float, y0: float = INF, y1: float = INF) -> PackedVector2Array:
+	if y0 == INF:
+		y0 = -inner
+		y1 = inner
+	var n := 16
+	var left: Array = []
+	var right: Array = []
+	for k in n + 1:
+		var y := lerpf(y0, y1, float(k) / float(n))
+		var hw := _hg_half(y / inner, w, neck)
+		right.append(Vector2(hw, y))
+		left.append(Vector2(-hw, y))
+	var pts := PackedVector2Array()
+	for p in right:
+		pts.append(p)
+	for i in range(left.size() - 1, -1, -1):
+		pts.append(left[i])
+	return pts
 
 ## 火种罐（体力生产器）：鼓肚陶罐，腰上一圈草绳，罐口冒火苗、飞火星。生成 PNG 时按 boil 相位画出各帧。
 static func _emberpot(ci: CanvasItem, s: int, rim: bool) -> void:
@@ -604,149 +737,319 @@ static func _emberpot(ci: CanvasItem, s: int, rim: bool) -> void:
 		var p := Vector2(-30 + 20 * k, -58 + 10 * (k % 2)) + jv(s + 40 + k, 1.5)
 		ci.draw_colored_polygon(star_pts(p, 5.5, 2.2, 4, s + 50 + k), FIRE2)
 
-static func _sand(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
-	lv = clampi(lv, 1, 6)
-	var h: float = [0, 30.0, 34.0, 38.0, 40.0, 42.0, 44.0][lv]
-	var w: float = [0, 22.0, 21.0, 23.0, 24.0, 26.0, 27.0][lv]
-	var cap_col: Color = [WOOD, WOOD, WOOD, WOOD, WOOD, WOOD_D, OCHRE][lv]
-	var post_col: Color = [WOOD, WOOD, WOOD, WOOD, WOOD_D, BONE2, FIRE2.darkened(0.05)][lv]
-	var neck := 3.2
-	if lv == 1:
-		# 零件：只有下半个玻璃泡，口上一圈细绳，里面装了些沙
-		var inner := 34.0
-		var bulb := _hourglass_pts(inner, w, 6.0, 0.0, inner * 0.02, inner)
-		var moved := PackedVector2Array()
-		for p in bulb:
-			moved.append(p + Vector2(0, -inner * 0.5))
-		sil(ci, [P(moved, SAND_GLASS, 1)], rim)
-		var sand := _hourglass_pts(inner, w - 3.0, 4.0, 0.0, inner * 0.5, inner - 2.0)
-		var sm := PackedVector2Array()
-		for p in sand:
-			sm.append(p + Vector2(0, -inner * 0.5))
-		ci.draw_colored_polygon(sm, SAND_FILL)
-		outline(ci, moved, 2.2, INK)
-		var lip := capsule(Vector2(-9, -inner * 0.48), Vector2(9, -inner * 0.48), 3.2, s + 1)
-		sil(ci, [P(lip, ROPE, 1)], false, 2.0)
-		pl(ci, [Vector2(-w * 0.6, -2), Vector2(-w * 0.78, 6), Vector2(-w * 0.62, 16)], 2.4, Color(1, 1, 1, 0.85), s + 6)
-		for k in 3:
-			ci.draw_circle(Vector2(18 + k * 6, inner * 0.5 + 2 - (k % 2) * 3), 2.2, SAND_FILL.darkened(0.1))
-		return
-	var caps := lv >= 3
-	var posts := lv >= 4
-	var gold := lv == 6
-	if gold:
+# ---------------------------------------------------------------- 宝箱、卡包、道具
+## 宝箱一律画成「开着盖、里面露出它真正会给的东西」：里面的小物品直接调用 draw_item 画真物品。
+## 等级靠箱子材质一眼区分：1 素木 → 2 草绳箍 → 3 铜箍 + 铆钉 → 4 深木金箍 + 宝石锁 → 5 金箍 + 光晕 + 星光。
+const BOX_PURPLE := Color("8a5cc9")
+
+## draw_item 外层的「局部→画布」变换，嵌套画小物品时用
+static var _outer := Transform2D.IDENTITY
+static var _nested := false
+
+static func _sub_item(ci: CanvasItem, id: String, p: Vector2, sz: float, rot: float = 0.0) -> void:
+	var t := _outer
+	var was := _nested
+	_nested = true
+	draw_item(ci, id, t * p, sz * t.get_scale().x, true, t.get_rotation() + rot)
+	_nested = was
+	_outer = t
+	ci.draw_set_transform_matrix(t)
+
+## 各宝箱的箱身颜色与里面装的东西
+static func _box_style(ch: String) -> Color:
+	match ch:
+		"energybox": return Color("e8742a")
+		"premiumbox": return BOX_PURPLE
+		"choice": return TEAL
+		"orderbox": return WOOD
+		_: return Color("c08a4a")
+
+static func _box_contents(ch: String, lv: int) -> Array:
+	match ch:
+		"energybox":
+			var n := lv + 1
+			var out := []
+			for i in n: out.append("fire_2" if i % 3 != 2 or lv < 3 else "fire_3")
+			return out
+		"premiumbox":
+			var out := []
+			for i in lv + 1: out.append("fire_2" if i % 2 == 0 else "amber_2")
+			return out
+		"orderbox":
+			var pool := ["fruit_4", "tool_4", "cloth_4", "roast_3", "pot_4", "furn_3"]
+			return pool.slice(0, clampi(2 + (lv - 1) / 2, 2, 6))
+		_:
+			var pool := ["fruit_3", "shell_2", "tool_3", "fire_2", "gem_3", "amber_2"]
+			return pool.slice(0, lv + 1)
+
+static func _box(ci: CanvasItem, ch: String, lv: int, s: int, rim: bool) -> void:
+	var tier := clampi((lv + 1) / 2, 1, 5) if ch == "orderbox" else clampi(lv, 1, 5)
+	var col := _box_style(ch)
+	if tier >= 5:
 		for k in 2:
-			ci.draw_circle(Vector2(0, 0), 48.0 - 8.0 * k, Color(1, 0.85, 0.35, 0.16))
-	var cap_h := 8.0 + float(lv) * 0.5 if caps else 0.0
-	var inner := h - cap_h if caps else h - 4.0
-	var cap_w := w + 9.0 + float(lv)
-	var glass := _hourglass_pts(inner, w, neck, 0.0)
-	var parts := [P(glass, SAND_GLASS, 1)]
-	if posts:
-		var px := w + 3.5
+			ci.draw_circle(Vector2(0, -6), 52.0 - 9.0 * k, Color(1, 0.86, 0.4, 0.16))
+	var body_col := col.darkened(0.25) if tier == 4 else col
+	var band: Color = [ROPE, ROPE, ROPE, OCHRE, FIRE2, FIRE2][tier]
+	var body := rrect(Rect2(-38, 0, 76, 38), 7, s, 0.5)
+	var lip := rrect(Rect2(-41, -6, 82, 12), 5, s + 1, 0.4)
+	var lid := poly([Vector2(-36, -4), Vector2(36, -4), Vector2(31, -24), Vector2(-31, -24)], s + 2, 0.5)
+	if rim:
+		for p in [body, lip, lid]:
+			dilate(ci, p, 9.0, RIM_COL)
+	# 竖起来的盖子（内侧，暗一点）
+	sil(ci, [P(lid, body_col.darkened(0.3), 2)], false)
+	ci.draw_colored_polygon(poly([Vector2(-29, -7), Vector2(29, -7), Vector2(26, -20), Vector2(-26, -20)], s + 3, 0.3), body_col.darkened(0.45))
+	# 里面的东西：后排高、前排低
+	var items := _box_contents(ch, lv)
+	var n := items.size()
+	var slots := _box_slots(n)
+	for i in n:
+		var sl: Array = slots[i]
+		_sub_item(ci, items[i], sl[0], sl[1], sl[2])
+	# 箱身 + 箱沿
+	sil(ci, [P(body, body_col, 1), P(lip, body_col.lightened(0.12), 1)], false)
+	if ch == "chest":
+		_weave(ci, Rect2(-32, 6, 64, 28), s + 4)
+	else:
+		for x in [-20.0, 0.0, 20.0]:
+			ln(ci, Vector2(x, 8), Vector2(x, 34), 1.6, Color(0.3, 0.15, 0.05, 0.45), s + int(x))
+	# 箍
+	if tier >= 2:
 		for sx in [-1.0, 1.0]:
-			parts.append(P(capsule(Vector2(px * sx, -inner), Vector2(px * sx, inner), 2.6 + float(lv) * 0.25, s + int(sx) + 3), post_col, 1))
-	if caps:
-		parts.append(P(rrect(Rect2(-cap_w, -h, cap_w * 2.0, cap_h), 3.5, s + 1, 0.3), cap_col, 1))
-		parts.append(P(rrect(Rect2(-cap_w, h - cap_h, cap_w * 2.0, cap_h), 3.5, s + 2, 0.3), cap_col, 1))
+			var b := rrect(Rect2(26 * sx - 4.5, -6, 9, 44), 2.5, s + 5 + int(sx), 0.3)
+			dilate(ci, b, 2.0, INK)
+			ci.draw_colored_polygon(b, band)
+			if tier >= 4:
+				ci.draw_colored_polygon(rrect(Rect2(26 * sx - 2.5, -4, 3, 40), 1.5, s + 7, 0.2), Color(1, 1, 0.85, 0.6))
+	if tier >= 3:
+		for v in [Vector2(-34, 4), Vector2(34, 4), Vector2(-34, 32), Vector2(34, 32)]:
+			ci.draw_circle(v, 3.4, INK)
+			ci.draw_circle(v, 2.2, band.lightened(0.3))
+	# 前面的标牌：说明这箱是什么
+	_box_plate(ci, ch, tier, s + 9)
+	if tier >= 5:
+		for v in [Vector2(-46, -30), Vector2(44, -40), Vector2(48, 6)]:
+			ci.draw_colored_polygon(star_pts(v, 7, 2.2, 4, s + int(v.x)), Color(1, 1, 0.9))
+
+## n 件东西在箱口的位置：[中心, 尺寸, 旋转]
+static func _box_slots(n: int) -> Array:
+	match n:
+		1: return [[Vector2(0, -22), 54.0, 0.0]]
+		2: return [[Vector2(-16, -20), 48.0, -0.2], [Vector2(16, -18), 48.0, 0.2]]
+		3: return [[Vector2(-20, -16), 42.0, -0.25], [Vector2(20, -16), 42.0, 0.25], [Vector2(0, -30), 44.0, 0.0]]
+		4: return [[Vector2(-14, -34), 38.0, -0.15], [Vector2(15, -36), 38.0, 0.15],
+			[Vector2(-24, -14), 38.0, -0.3], [Vector2(24, -14), 38.0, 0.3]]
+		5: return [[Vector2(-22, -32), 34.0, -0.2], [Vector2(22, -32), 34.0, 0.2], [Vector2(0, -40), 36.0, 0.0],
+			[Vector2(-26, -12), 34.0, -0.3], [Vector2(26, -12), 34.0, 0.3]]
+		_: return [[Vector2(-22, -32), 32.0, -0.2], [Vector2(22, -32), 32.0, 0.2], [Vector2(0, -42), 34.0, 0.0],
+			[Vector2(-28, -12), 32.0, -0.3], [Vector2(28, -12), 32.0, 0.3], [Vector2(0, -16), 34.0, 0.0]]
+
+static func _box_plate(ci: CanvasItem, ch: String, tier: int, s: int) -> void:
+	var c := Vector2(0, 20)
+	if ch == "orderbox":
+		var paper := poly([Vector2(-11, 8), Vector2(11, 7), Vector2(12, 33), Vector2(-12, 34)], s, 0.4)
+		dilate(ci, paper, 2.0, INK)
+		ci.draw_colored_polygon(paper, BONE)
+		for i in 3:
+			var y := 14.0 + i * 6.5
+			pl(ci, [Vector2(-8, y), Vector2(-6, y + 2), Vector2(-3, y - 2)], 1.8, LEAF_D, s + i)
+			ln(ci, Vector2(0, y), Vector2(8, y), 1.5, Color(0.3, 0.2, 0.1, 0.6), s + 5 + i)
+		return
+	var plate := ell(c, Vector2(11, 10), s, 0.04, 14)
+	dilate(ci, plate, 2.2, INK)
+	ci.draw_colored_polygon(plate, BONE if tier < 4 else Color("fff3c4"))
+	match ch:
+		"energybox":
+			var b := PackedVector2Array()
+			for p in _BOLT: b.append(c + p * Vector2(0.36, 0.28))
+			dilate(ci, b, 1.2, INK)
+			ci.draw_colored_polygon(b, BOLT)
+		"premiumbox":
+			var a := PackedVector2Array()
+			for p in _AMB: a.append(c + p * 0.3)
+			dilate(ci, a, 1.2, INK)
+			ci.draw_colored_polygon(a, AMBER)
+		"choice":
+			for i in 3:
+				ci.draw_circle(c + Vector2(-6 + i * 6, 0), 2.4, [BERRY, OCHRE, TEAL][i])
+		_:
+			# 藤编宝箱：锁扣
+			var lock := rrect(Rect2(c.x - 5, c.y - 6, 10, 12), 3, s + 1, 0.2)
+			dilate(ci, lock, 1.6, INK)
+			ci.draw_colored_polygon(lock, OCHRE if tier < 4 else FIRE2)
+			ci.draw_circle(c + Vector2(0, -1), 1.8, INK)
+	if tier >= 4:
+		var gem := poly([c + Vector2(0, -16), c + Vector2(5, -11), c + Vector2(0, -6), c + Vector2(-5, -11)], s + 3, 0.2)
+		dilate(ci, gem, 1.6, INK)
+		ci.draw_colored_polygon(gem, BERRY if tier >= 5 else TEAL)
+
+## 自选宝箱：合着盖的箱子，上面三个泡泡里就是三个可选的东西
+static func _choice_box(ci: CanvasItem, id: String, lv: int, s: int, rim: bool) -> void:
+	var tier := clampi(lv, 1, 5)
+	var col := TEAL.darkened(0.2) if tier == 4 else TEAL
+	var band: Color = [ROPE, ROPE, ROPE, OCHRE, FIRE2, FIRE2][tier]
+	if tier >= 5:
+		for k in 2:
+			ci.draw_circle(Vector2(0, -6), 52.0 - 9.0 * k, Color(1, 0.86, 0.4, 0.16))
+	var body := rrect(Rect2(-32, 12, 64, 28), 6, s, 0.5)
+	var lid := rrect(Rect2(-35, 0, 70, 16), 8, s + 1, 0.5)
+	var bubbles := [Vector2(-31, -20), Vector2(0, -38), Vector2(31, -20)]
+	if rim:
+		for p in [body, lid]:
+			dilate(ci, p, 9.0, RIM_COL)
+		for b in bubbles:
+			ci.draw_circle(b, 25.0, RIM_COL)
+	sil(ci, [P(body, col, 1), P(lid, col.lightened(0.12), 1)], false)
+	if tier >= 2:
+		for sx in [-1.0, 1.0]:
+			var b := rrect(Rect2(22 * sx - 4, 0, 8, 40), 2.5, s + 5 + int(sx), 0.3)
+			dilate(ci, b, 2.0, INK)
+			ci.draw_colored_polygon(b, band)
+	if tier >= 3:
+		for v in [Vector2(-28, 16), Vector2(28, 16), Vector2(-28, 34), Vector2(28, 34)]:
+			ci.draw_circle(v, 3.0, INK)
+			ci.draw_circle(v, 1.9, band.lightened(0.3))
+	var lock := rrect(Rect2(-6, 8, 12, 14), 3, s + 2, 0.2)
+	dilate(ci, lock, 1.8, INK)
+	ci.draw_colored_polygon(lock, band if tier >= 2 else OCHRE)
+	ci.draw_circle(Vector2(0, 14), 2.0, INK)
+	# 泡泡里的三个选项（读 choice_chests.json）
+	var picks: Array = ChoiceChest.definition(id).get("choices", [])
+	for i in 3:
+		var b: Vector2 = bubbles[i]
+		ci.draw_circle(b, 21.5, INK)
+		ci.draw_circle(b, 19.5, Color(1, 0.99, 0.94))
+		ci.draw_arc(b, 15.5, PI * 1.1, PI * 1.45, 8, Color(0.75, 0.9, 0.95), 3.0, true)
+		if i < picks.size():
+			_sub_item(ci, str(picks[i]), b + Vector2(0, 0), 32.0)
+	# 泡泡的小尾巴连到箱子
+	for i in 3:
+		var b: Vector2 = bubbles[i]
+		ci.draw_circle(b.lerp(Vector2(0, 4), 0.62), 2.6, INK)
+		ci.draw_circle(b.lerp(Vector2(0, 4), 0.62), 1.5, Color(1, 0.99, 0.94))
+	if tier >= 5:
+		for v in [Vector2(-50, 4), Vector2(48, 10)]:
+			ci.draw_colored_polygon(star_pts(v, 7, 2.2, 4, s + int(v.x)), Color(1, 1, 0.9))
+
+## 典藏卡包：兽皮袋里插着一扇卡片。等级 = 前面的星星数 = 露出的卡片数，袋子颜色逐级变：
+## 素皮 → 绿染 → 蓝染 + 骨珠 → 紫染 + 羽毛 → 金皮 + 光晕
+static func _pack(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+	lv = clampi(lv, 1, 5)
+	var col: Color = [LEATHER, Color("c98f55"), Color("6fae4a"), Color("4f8fd0"), BOX_PURPLE, Color("f0b42a")][lv]
+	if lv >= 5:
+		for k in 2:
+			ci.draw_circle(Vector2(0, -4), 52.0 - 9.0 * k, Color(1, 0.86, 0.4, 0.18))
+	var cards := []
+	for i in lv:
+		var a := (float(i) - float(lv - 1) * 0.5) * 0.28
+		var r := Rect2(-12, -46, 24, 34)
+		var pts := rrect(r, 4, s + 10 + i, 0.3)
+		var moved := PackedVector2Array()
+		for p in pts:
+			moved.append((p - Vector2(0, -6)).rotated(a) + Vector2(0, -6))
+		cards.append([moved, a])
+	var bag := poly([Vector2(-30, -10), Vector2(30, -10), Vector2(36, 26), Vector2(24, 40), Vector2(-24, 40), Vector2(-36, 26)], s, 0.6)
+	var flap := poly([Vector2(-33, -14), Vector2(33, -14), Vector2(30, -2), Vector2(-30, -2)], s + 1, 0.5)
+	if rim:
+		for c in cards:
+			dilate(ci, c[0], 9.0, RIM_COL)
+		for p in [bag, flap]:
+			dilate(ci, p, 9.0, RIM_COL)
+	# 卡片：背面米白，中间一块彩色画面
+	for c in cards:
+		var pts: PackedVector2Array = c[0]
+		dilate(ci, pts, 2.4, INK)
+		ci.draw_colored_polygon(pts, BONE)
+		var a: float = c[1]
+		var art := rrect(Rect2(-8, -42, 16, 18), 3, s + 20, 0.2)
+		var am := PackedVector2Array()
+		for p in art:
+			am.append((p - Vector2(0, -6)).rotated(a) + Vector2(0, -6))
+		ci.draw_colored_polygon(am, col.lightened(0.35))
+		ci.draw_colored_polygon(_rot_star(Vector2(0, -33), a, s), FIRE2)
+	sil(ci, [P(bag, col, 1), P(flap, col.darkened(0.12), 1)], false)
+	dashed(ci, poly([Vector2(-26, 2), Vector2(26, 2), Vector2(30, 24), Vector2(21, 34), Vector2(-21, 34), Vector2(-30, 24)], s + 2, 0.0), 5, 4, BONE, 1.8)
+	pl(ci, [Vector2(-30, -8), Vector2(0, -5), Vector2(30, -8)], 2.6, ROPE, s + 3)
+	# 等级星星
+	var y := 18.0
+	for i in lv:
+		var x := (float(i) - float(lv - 1) * 0.5) * 12.0
+		var st := star_pts(Vector2(x, y), 7.0, 3.0, 5, s + 30 + i)
+		dilate(ci, st, 1.6, INK)
+		ci.draw_colored_polygon(st, FIRE2)
+	if lv >= 3:
+		for sx in [-1.0, 1.0]:
+			for k in 2:
+				var c := Vector2(32 * sx, 4 + k * 8)
+				ci.draw_circle(c, 3.6, INK)
+				ci.draw_circle(c, 2.5, BONE)
+	if lv >= 4:
+		for sx in [-1.0, 1.0]:
+			var f := poly([Vector2(34 * sx, -4), Vector2(46 * sx, -22), Vector2(40 * sx, -2)], s + 40 + int(sx), 0.3)
+			dilate(ci, f, 1.6, INK)
+			ci.draw_colored_polygon(f, [BERRY, TEAL][int(sx > 0)])
+	if lv >= 5:
+		for v in [Vector2(-46, -30), Vector2(44, -38), Vector2(46, 16)]:
+			ci.draw_colored_polygon(star_pts(v, 7, 2.2, 4, s + int(v.x)), Color(1, 1, 0.9))
+
+static func _rot_star(c: Vector2, a: float, s: int) -> PackedVector2Array:
+	var st := star_pts(Vector2(0, -33), 5.0, 2.2, 5, s + 25)
+	var out := PackedVector2Array()
+	for p in st:
+		out.append((p - Vector2(0, -6)).rotated(a) + Vector2(0, -6))
+	return out
+
+## 升阶符石：竖立的青色刻石，正面刻着发光的向上箭头
+static func _upgrade(ci: CanvasItem, s: int, rim: bool) -> void:
+	for k in 2:
+		ci.draw_circle(Vector2(0, -4), 46.0 - 8.0 * k, Color(0.6, 1, 0.9, 0.14))
+	var stone := poly([Vector2(-24, -30), Vector2(-6, -42), Vector2(20, -36), Vector2(28, -6), Vector2(24, 34), Vector2(-22, 36), Vector2(-30, 4)], s, 0.6)
+	sil(ci, [P(stone, TEAL, 1)], rim)
+	ci.draw_colored_polygon(poly([Vector2(-24, -30), Vector2(-6, -42), Vector2(-4, -20), Vector2(-26, 0)], s + 1, 0.3), Color(1, 1, 1, 0.22))
+	var arrow := poly([Vector2(0, -28), Vector2(17, -6), Vector2(7, -6), Vector2(7, 22), Vector2(-7, 22), Vector2(-7, -6), Vector2(-17, -6)], s + 2, 0.4)
+	dilate(ci, arrow, 3.0, Color(1, 0.95, 0.6, 0.45))
+	dilate(ci, arrow, 1.6, INK)
+	ci.draw_colored_polygon(arrow, FIRE2)
+	ci.draw_colored_polygon(poly([Vector2(0, -24), Vector2(10, -10), Vector2(3, -10), Vector2(3, 18), Vector2(0, 18)], s + 3, 0.2), Color(1, 1, 0.85, 0.7))
+	pl(ci, [Vector2(-18, 28), Vector2(-12, 24), Vector2(-6, 29)], 1.6, Color(0.1, 0.3, 0.3, 0.6), s + 4)
+	pl(ci, [Vector2(14, 26), Vector2(19, 18)], 1.6, Color(0.1, 0.3, 0.3, 0.6), s + 5)
+	for v in [Vector2(-34, -30), Vector2(34, -40), Vector2(36, 18)]:
+		ci.draw_colored_polygon(star_pts(v, 6, 2, 4, s + int(v.x)), Color(1, 1, 0.9))
+
+## 拆分剪刀：两片燧石刃，木柄绑草绳，中间骨钉
+static func _scissors(ci: CanvasItem, s: int, rim: bool) -> void:
+	var parts := []
+	var blades := []
+	for sx in [-1.0, 1.0]:
+		var a: float = 0.42 * sx
+		var blade := rot_pts([Vector2(-4, 4), Vector2(-5, -18), Vector2(0, -44), Vector2(5, -18), Vector2(4, 4)], a, Vector2(0, -2))
+		var handle_c := Vector2(0, 26).rotated(-a) + Vector2(0, -2)
+		var shaft := capsule(Vector2(0, -2), handle_c, 4.5, s + 2 + int(sx))
+		var ring := ell(handle_c + Vector2(0, 6).rotated(-a), Vector2(11, 9), s + 4 + int(sx), 0.05, 16, -a)
+		blades.append(poly(blade, s + int(sx), 0.4))
+		parts.append(P(ring, WOOD, 1))
+		parts.append(P(shaft, WOOD, 1))
+	parts.append(P(blades[0], STONE, 1))
+	parts.append(P(blades[1], STONE.lightened(0.08), 1))
 	sil(ci, parts, rim)
-	# 沙：上泡剩一半，下泡堆成小丘，中间一道细流
-	ci.draw_colored_polygon(_hourglass_pts(inner, w - 3.0, neck - 1.0, 0.0, -inner * 0.5, -inner * 0.06), SAND_FILL)
-	var mound := PackedVector2Array()
-	var base := inner - 2.0
-	var top_y := inner * 0.38
-	for k in 13:
-		var x := lerpf(-1.0, 1.0, float(k) / 12.0)
-		var y := lerpf(top_y + inner * 0.22, top_y, 1.0 - absf(x))
-		mound.append(Vector2(x * _hg_half(y / inner, w - 3.0, neck - 1.0), y))
-	for k in range(1, 7):
-		var y := lerpf(top_y + inner * 0.22, base, float(k) / 6.0)
-		mound.append(Vector2(_hg_half(y / inner, w - 3.0, neck - 1.0), y))
-	for k in range(6, 0, -1):
-		var y := lerpf(top_y + inner * 0.22, base, float(k) / 6.0)
-		mound.append(Vector2(-_hg_half(y / inner, w - 3.0, neck - 1.0), y))
-	ci.draw_colored_polygon(poly(Array(mound), s + 5, 0.2), SAND_FILL)
-	ci.draw_line(Vector2(0, -inner * 0.08), Vector2(0, top_y + 2.0), SAND_FILL.darkened(0.08), 2.2, true)
-	outline(ci, glass, 2.2, INK)
-	pl(ci, [Vector2(-w * 0.62, -inner * 0.82), Vector2(-w * 0.78, -inner * 0.55), Vector2(-w * 0.55, -inner * 0.25)], 2.4, Color(1, 1, 1, 0.85), s + 6)
-	pl(ci, [Vector2(-w * 0.62, inner * 0.3), Vector2(-w * 0.78, inner * 0.55)], 2.4, Color(1, 1, 1, 0.7), s + 7)
-	match lv:
-		2:
-			# 还没装盖：两头敞口，用细绳缠着腰
-			for y in [-inner, inner]:
-				var mouth := ell(Vector2(0, y), Vector2(_hg_half(1.0, w, neck), 3.0), s + int(y), 0.0, 12)
-				outline(ci, mouth, 2.0, INK)
-			ln(ci, Vector2(-7, -2), Vector2(7, 2), 3.0, ROPE, s + 8)
-			ln(ci, Vector2(-7, 2), Vector2(7, -2), 3.0, ROPE, s + 9)
-		5:
-			for sx in [-1.0, 1.0]:
-				for k in 2:
-					var y := -inner * 0.45 + k * inner * 0.9
-					ln(ci, Vector2((w + 3.5) * sx - 4, y - 3), Vector2((w + 3.5) * sx + 4, y + 3), 3.0, ROPE, s + k)
-				for sy in [-1.0, 1.0]:
-					var c := Vector2((w + 3.5) * sx, (h - cap_h * 0.5) * sy)
-					var knob := ell(c + Vector2(4 * sx, 0), Vector2(5, 4.5), s + int(sx * 3 + sy), 0.05, 10)
-					dilate(ci, knob, 2.0, INK)
-					ci.draw_colored_polygon(knob, BONE)
-		6:
-			var gem := poly([Vector2(0, -h - 9), Vector2(8, -h - 2), Vector2(0, -h + 4), Vector2(-8, -h - 2)], s + 9, 0.3)
-			dilate(ci, gem, 2.2, INK)
-			ci.draw_colored_polygon(gem, TEAL)
-			ci.draw_colored_polygon(poly([Vector2(0, -h - 9), Vector2(8, -h - 2), Vector2(0, -h - 3)], s + 10, 0.2), Color(1, 1, 1, 0.45))
-			for y in [-h + cap_h * 0.5, h - cap_h * 0.5]:
-				ln(ci, Vector2(-cap_w + 4, y), Vector2(cap_w - 4, y), 1.8, Color(1, 1, 0.85, 0.8), s + int(y))
-			for v in [Vector2(-40, -30), Vector2(40, -14), Vector2(-34, 34)]:
-				ci.draw_colored_polygon(star_pts(v, 6, 2, 4, s + int(v.x)), Color(1, 1, 0.9))
-
-## 沙漏玻璃的半宽：u 是 -1（顶）到 1（底），中间最细
-static func _hg_half(u: float, w: float, neck: float) -> float:
-	var a := absf(u)
-	var bulge := sin(PI * 0.5 * minf(1.0, a * 1.35))
-	var taper := 1.0 - 0.18 * maxf(0.0, a - 0.8) / 0.2
-	return neck + (w - neck) * bulge * taper
-
-## 玻璃轮廓（或其中 y0..y1 这一段）
-static func _hourglass_pts(inner: float, w: float, neck: float, _pad: float, y0: float = INF, y1: float = INF) -> PackedVector2Array:
-	if y0 == INF:
-		y0 = -inner
-		y1 = inner
-	var n := 16
-	var left: Array = []
-	var right: Array = []
-	for k in n + 1:
-		var y := lerpf(y0, y1, float(k) / float(n))
-		var hw := _hg_half(y / inner, w, neck)
-		right.append(Vector2(hw, y))
-		left.append(Vector2(-hw, y))
-	var pts := PackedVector2Array()
-	for p in right:
-		pts.append(p)
-	for i in range(left.size() - 1, -1, -1):
-		pts.append(left[i])
-	return pts
-
-static func _chest(ci: CanvasItem, s: int, rim: bool) -> void:
-	sil(ci, [P(rrect(Rect2(-38, -8, 76, 46), 8, s, 0.6), WOOD, 1),
-		P(rrect(Rect2(-42, -30, 84, 24), 10, s + 1, 0.6), CLAY, 1),
-		P(rrect(Rect2(-8, -16, 16, 22), 5, s + 2, 0.5), Color("f3e6c8"), 1)], rim)
-	_weave(ci, Rect2(-32, -2, 64, 36), s)
-	pl(ci, [Vector2(-38, -20), Vector2(38, -20)], 2.5, ROPE, s)
-	ci.draw_circle(Vector2(0, -2), 3.0, INK)
-	for i in 4:
-		var x := -30.0 + float(i) * 20.0
-		ci.draw_colored_polygon(star_pts(Vector2(x, -24), 4, 2, 4, s + i), FIRE2)
-
-static func _pack(ci: CanvasItem, s: int, rim: bool) -> void:
-	var col := Color("c98f55")
-	sil(ci, [P(rrect(Rect2(-32, -28, 64, 68), 14, s, 0.7), col, 1),
-		P(poly([Vector2(-22, -28), Vector2(-14, -42), Vector2(14, -42), Vector2(22, -28)], s + 1), col.darkened(0.1), 1),
-		P(ell(Vector2(0, 8), Vector2(18, 18), s + 2, 0.02), OCHRE)], rim)
-	dashed(ci, rrect(Rect2(-26, -22, 52, 56), 10, s, 0.0), 5, 4, BONE, 2.0)
-	pl(ci, [Vector2(-24, -30), Vector2(0, -26), Vector2(24, -30)], 3.0, ROPE, s)
-	ci.draw_circle(Vector2(0, 13), 6.0, INK)
-	for i in 4:
-		var a := -PI * 0.5 + (float(i) - 1.5) * 0.55
-		ci.draw_circle(Vector2(0, 13) + Vector2(cos(a), sin(a)) * 11.0, 3.2, INK)
+	# 指环中间的洞
+	for sx in [-1.0, 1.0]:
+		var a: float = 0.42 * sx
+		var handle_c := Vector2(0, 26).rotated(-a) + Vector2(0, -2)
+		var hole := ell(handle_c + Vector2(0, 6).rotated(-a), Vector2(5.5, 4), s + 8 + int(sx), 0.05, 12, -a)
+		ci.draw_colored_polygon(hole, INK)
+		# 柄上缠的草绳
+		for k in 3:
+			var p := Vector2(0, 8 + k * 4).rotated(-a) + Vector2(0, -2)
+			ln(ci, p + Vector2(-5, 0).rotated(-a), p + Vector2(5, 2).rotated(-a), 2.2, ROPE, s + 10 + k)
+	# 刃口高光与崩口
+	for sx in [-1.0, 1.0]:
+		var a: float = 0.42 * sx
+		var h := rot_pts([Vector2(-1.5, -6), Vector2(-1.5, -34)], a, Vector2(0, -2))
+		ln(ci, h[0], h[1], 2.0, Color(1, 1, 1, 0.6), s + 12)
+	var pin := ell(Vector2(0, -2), Vector2(5, 5), s + 14, 0.05, 10)
+	dilate(ci, pin, 1.8, INK)
+	ci.draw_colored_polygon(pin, BONE)
 
 # ---------------------------------------------------------------- 制作菜
 

@@ -108,9 +108,6 @@ func run() -> void:
 	var stdout: Array = []
 	var exit_code := OS.execute(OS.get_executable_path(), ["--headless", "--path", ProjectSettings.globalize_path("res://"), "--script", "res://scripts/replay/worker.gd", "--", "--cloud-off", "--replay-worker", "--save=user://fossil-worker-test.json", "--input=" + input, "--output=" + output], stdout, true)
 	var verified = JSON.parse_string(FileAccess.get_file_as_string(output))
-	check(exit_code == 0 and verified is Dictionary and verified.get("ok", false) and verified.get("hash", "") == replay.digest(), "independent headless server worker reproduces order shovels, digging and their exact save hash")
-	# The appended wire code must remain encodable without shifting existing codes.
-	var wire = preload("res://scripts/net/ReplayWire.gd").encode({"base": 0, "rules": "0".repeat(64), "hash": replay.digest(), "batch": "1".repeat(32), "ops": replay.pending})
-	check(not wire.is_empty(), "new fossil commands use the compact replay wire format")
+	check(exit_code == 0 and verified is Dictionary and verified.get("ok", false) and verified.get("hash", "") == replay.digest(), "independent headless rules worker reproduces order shovels, digging and their exact save hash")
 	print("RESULT ", failures, " failures")
 	quit(0 if failures == 0 else 1)
