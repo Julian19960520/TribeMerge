@@ -1,5 +1,6 @@
 class_name UfoOffer
 extends RefCounted
+const Payments := preload("res://scripts/net/Payments.gd")
 static func config() -> Dictionary:
 	return Data.ConfigFiles.shared("res://data/ufo_offer.json")
 
@@ -88,5 +89,10 @@ static func tick() -> void:
 
 
 
-static func buy(_offer_id: String) -> Dictionary:
-	return {"error": "支付渠道尚未接通"}
+## Paid through the server; the grant delivers the shown items plus the bonus and marks the offer paid.
+static func buy(offer_id: String) -> Dictionary:
+	var offer: Dictionary = state()["offer"]
+	if not active() or str(offer.get("id", "")) != offer_id: return {"ok": false, "error": "飞碟已经飞走了", "message": "飞碟已经飞走了"}
+	var result: Dictionary = await Payments.buy("ufo", {"offer_id": offer_id, "items": offer.get("items", []).duplicate()})
+	if not result.get("ok", false): result["error"] = str(result.get("message", "购买失败"))
+	return result

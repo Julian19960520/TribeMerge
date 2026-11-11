@@ -28,6 +28,8 @@ class Account(Base):
     # 上传存档的合理性检查没通过：不封号，只移出排行榜并留审计记录
     flagged: Mapped[bool] = mapped_column(Boolean, default=False)
     flag_reason: Mapped[str] = mapped_column(String(200), default="")
+    # 付费账本：服务器发放过的付费琥珀总数（合理性检查据此放宽琥珀增长）
+    paid_amber: Mapped[int] = mapped_column(Integer, default=0)
 
     __table_args__ = (Index("ix_accounts_rank", "rank_progress", "rank_reached_at", "id"),)
 
@@ -105,3 +107,41 @@ class AuditLog(Base):
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     kind: Mapped[str] = mapped_column(String(32))
     detail: Mapped[str] = mapped_column(Text)
+
+
+class PaymentOrder(Base):
+    """付费订单。价格和发放内容在下单时由服务器按配置算好，客户端只给商品编号。"""
+
+    __tablename__ = "payment_orders"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    account_id: Mapped[str] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), index=True)
+    product: Mapped[str] = mapped_column(String(64))
+    price_fen: Mapped[int] = mapped_column(Integer)
+    # 只能买一次的商品（某期礼包链的某一步、某次飞碟补给）在这里写唯一键
+    once_key: Mapped[str] = mapped_column(String(96), default="")
+    content: Mapped[dict] = mapped_column(JSON, default=dict)
+    # created → paid；同一 once_key 已付过的重复付款记为 refund（不发货，人工退款）
+    status: Mapped[str] = mapped_column(String(12), default="created")
+    provider: Mapped[str] = mapped_column(String(16), default="")
+    provider_ref: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    grant_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    __table_args__ = (Index("ux_payment_orders_ref", "provider", "provider_ref", unique=True),
+                      Index("ix_payment_orders_product", "account_id", "product", "status"))
+
+
+class Grant(Base):
+    """服务器发出的权益（琥珀、通行证档位、礼包物品）。客户端用 grant 命令入账一次，
+    上传含此编号的存档后算送达；最新存档里没有的已送达权益会重新下发。"""
+
+    __tablename__ = "grants"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    account_id: Mapped[str] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), index=True)
+    order_id: Mapped[str] = mapped_column(String(32), unique=True)
+    content: Mapped[dict] = mapped_column(JSON, default=dict)
+    amber: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    delivered_version: Mapped[int | None] = mapped_column(Integer, nullable=True)

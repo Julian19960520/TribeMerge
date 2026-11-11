@@ -1,5 +1,5 @@
 {
-	"_说明": "付费限时礼包。客户端 scripts/events/Offers.gd 与服务器 server/app/offers.py 读同一份。估值按琥珀当量 AE（见 gift_chain.json）：琥珀 1、体力 0.4、不拿拿 0.1、藤编宝箱 15、兽皮卡包 20、采集篮 4 级 80；商店基准 ¥1 ≈ 15 AE。value_pct = 内容 AE ÷（价格 × 15），面板上的「多送 / 超值」就写这个数，tools/check_offers.gd 和 server/tests/test_offers.py 会核对。窗口：start → start + duration_sec 内可买，每档 limit 次；窗口结束后再过 cooldown_sec 才能开下一期。",
+	"_说明": "付费限时礼包。客户端 scripts/events/Offers.gd 与服务器 server/app/catalog.py（开单定价、发货）读同一份。估值按琥珀当量 AE（见 gift_chain.json）：琥珀 1、体力 0.4、不拿拿 0.1、藤编宝箱 15、兽皮卡包 20、采集篮 4 级 80；商店基准 ¥1 ≈ 15 AE。value_pct = 内容 AE ÷（价格 × 15），面板上的「多送 / 超值」就写这个数，tools/check_offers.gd 会核对。窗口：start → start + duration_sec 内可买，每档 limit 次；窗口结束后再过 cooldown_sec 才能开下一期。",
 	"spree": {
 		"title": "赶大集",
 		"min_level": 13,

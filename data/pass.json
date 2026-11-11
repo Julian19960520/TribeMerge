@@ -1,6 +1,11 @@
 {
 	"_说明": "丰收通行证：每交一张订单 +1 点（超级贵宾 +2）。30 档共 318 点，按演算约一个月走完（第 1 天约 6 档）。每赛季 season.days 天，从 season.start（北京时间零点）起算；换季时积分、已领档位、贵宾/超级贵宾全部清零，没领的奖励作废。免费档轮流给体力、不拿拿、沙漏、物品、宝箱/卡包，每 5 档一个大奖。",
 	"season": {"days": 35, "start": "2026-11-02"},
+	"_purchase_说明": "通行证付费档：价格（元）和购买时一次性赠送的奖励。服务器 server/app/catalog.py 按这里开单发货；已是贵宾再买超级贵宾只付差价、只送超级比贵宾多出的部分。商品编号 pass:vip / pass:super。",
+	"purchase": {
+		"vip": {"price_cny": 30, "rewards": [["fire_2", 150]]},
+		"super_vip": {"price_cny": 68, "rewards": [["fire_2", 150], ["token_1", 10]]}
+	},
 	"levels": [
 		{"need": 6, "free": [["fire_1", 20]], "prem": [["fire_1", 50]], "super": [["shell_3", 1]]},
 		{"need": 8, "free": [["shell_2", 15]], "prem": [["shell_3", 1]], "super": [["fire_1", 60]]},

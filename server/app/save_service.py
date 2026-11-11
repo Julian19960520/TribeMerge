@@ -113,7 +113,9 @@ def upload(request, auth, db) -> dict:
     previous = dict(account.state or {})
     now = clock.now()
     since = previous.get("saved_at") or account.created_at.replace(tzinfo=timezone.utc).timestamp()
-    reasons = plausibility.check(previous, snapshot, now - float(since))
+    # Paid amber is server-issued; growth up to what the ledger granted since the last upload is expected.
+    paid_since = int(account.paid_amber or 0) - int(previous.get("paid_amber", 0))
+    reasons = plausibility.check(previous, snapshot, now - float(since), paid_amber=paid_since)
     backup(db, account.id, save, previous)
     save.data = blob
     save.hash = request.hash
@@ -123,7 +125,10 @@ def upload(request, auth, db) -> dict:
     account.last_sync_at = clock.utcnow()
     state = {key: snapshot[key] for key in SUMMARY_FIELDS}
     state["saved_at"] = save.saved_at
+    state["paid_amber"] = int(account.paid_amber or 0)
     store_state(account, state)
+    from . import payments  # payments imports this module
+    payments.sync_delivery(db, account.id, snapshot, save.version)
     if reasons:
         account.flagged = True
         account.flag_reason = "; ".join(reasons)[:200]

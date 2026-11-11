@@ -145,10 +145,6 @@ func refresh_hot() -> Dictionary:
 		state.changed.emit()
 	return result
 
-func buy_amber_pack(_pack: int) -> int:
-	state.present("notice", {"text": "支付功能尚未开放"})
-	return 0
-
 func xp_need() -> int:
 	return Data.xp_need(state.level)
 
@@ -295,14 +291,6 @@ func pass_cny(tier: String) -> int:
 	if state.pass_tier == 1:
 		return maxi(0, int(state.PASS_CNY["super"]) - int(state.PASS_CNY["vip"]))
 	return int(state.PASS_CNY["super"])
-
-func buy_pass_vip() -> bool:
-	state.present("notice", {"text": "支付功能尚未开放"})
-	return false
-
-func buy_pass_super() -> bool:
-	state.present("notice", {"text": "支付功能尚未开放"})
-	return false
 
 func _pass_has(arr: Array, lv: int) -> bool:
 	for x in arr:

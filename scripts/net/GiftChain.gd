@@ -3,6 +3,7 @@ extends Node
 signal updated
 
 const DATA := "res://data/gift_chain.json"
+const Payments := preload("res://scripts/net/Payments.gd")
 
 var info := {}
 var ok := false
@@ -75,5 +76,11 @@ func claim(i: int) -> Dictionary:
 	fetch()
 	return result
 
-func buy(_index: int) -> Dictionary:
-	return {"ok": false, "message": "支付渠道尚未接通"}
+## Paid steps go through the server; the grant advances the chain when it is still the head step.
+func buy(index: int) -> Dictionary:
+	if busy: return {"ok": false, "message": "正在处理"}
+	busy = true
+	var result: Dictionary = await Payments.buy("gift:%d" % index)
+	busy = false
+	fetch()
+	return result
