@@ -15,7 +15,6 @@ var matching_art: Control
 
 func _ready() -> void:
 	on_tap=_hide_reward_bubble
-	DuelRace.tick()
 	_refresh()
 
 func _phase() -> String:
@@ -33,12 +32,7 @@ func _process(delta: float) -> void:
 	clock+=delta
 	if clock<1 or working: return
 	clock=0
-	if G.server_mode():
-		working=true
-		await DuelRace.act("refresh")
-		working=false
-		if not is_inside_tree() or _closing: return
-	else: DuelRace.tick()
+
 	_refresh()
 
 func _action(action: String, at:=0) -> void:
@@ -54,7 +48,7 @@ func _action(action: String, at:=0) -> void:
 	elif action=="join": matching_until=Time.get_ticks_msec()+MATCH_MS
 	signature=""
 	_refresh()
-	if not result.get("rewards",[]).is_empty(): G.main.present_rewards(result["rewards"],false)
+	if not result.get("rewards",[]).is_empty(): G.main.present_rewards(result["rewards"])
 
 func _new_panel(next: String) -> void:
 	phase=next
@@ -102,7 +96,7 @@ func _start_panel(s: Dictionary) -> void:
 		for side in 2:
 			var c:=Vector2(110 if side==0 else sz.x-110,92)
 			_ring(ci,c,66,Art.MOSS if side==0 else Art.STONE)
-			Meme.portrait(ci,side,c,112)
+			Meme.portrait(ci,Meme.HERO if side==0 else side,c,112)
 			if side==1: ci.draw_circle(c,59,Color(0.36,0.3,0.24,0.75))
 		_vs(ci,Vector2(sz.x*0.5,82),38))
 	UI.title(body,"?",Rect2(470,430,100,100),60,Art.BONE)
@@ -166,7 +160,7 @@ func _matching_panel() -> void:
 					var ph:=fmod(t*0.9+k/3.0,1.0)
 					ci.draw_arc(c,70+ph*40,0,TAU,48,Color(Art.CLAY,0.55*(1-ph)),4,true)
 			_ring(ci,c,74,Art.MOSS if side==0 else (Art.CLAY if found else Art.STONE))
-			var avatar:=0 if side==0 else (1 if found else int(Time.get_ticks_msec()/110)%8)
+			var avatar:=Meme.HERO if side==0 else (1 if found else int(Time.get_ticks_msec()/110)%8)
 			Meme.portrait(ci,avatar,c,124)
 			if side==1 and not found: ci.draw_circle(c,64,Color(0.25,0.18,0.08,0.2))
 		_vs(ci,Vector2(sz.x*0.5,124),40)
@@ -194,7 +188,7 @@ func _progress_panel(m: Dictionary) -> void:
 		var tint_d:=Art.MOSS_D if side==0 else Color("9b3518")
 		var portrait:=UI.box(body,Rect2(x-58,374,116,116),func(ci,sz):
 			_ring(ci,sz*0.5,56,tint)
-			Meme.portrait(ci,side,sz*0.5,96)
+			Meme.portrait(ci,Meme.HERO if side==0 else side,sz*0.5,96)
 			if lead==side: _crown(ci,Vector2(sz.x*0.5,-4),34),false)
 		portrait.name="duel_character_%d"%side
 		UI.box(body,Rect2(x-70,490,140,42),func(ci,sz): _card(ci,Rect2(Vector2.ZERO,sz),tint,980+side),false)
@@ -259,7 +253,7 @@ func _result_panel(m: Dictionary) -> void:
 			_rays(ci,c,170,Color(1,0.82,0.3,0.45),16,0.1)
 			ci.draw_circle(c,92,Color(1,0.9,0.5,0.6))
 		_ring(ci,c,80,Art.FIRE2 if won else Art.STONE)
-		Meme.portrait(ci,0,c,140)
+		Meme.portrait(ci,Meme.HERO,c,140)
 		if won: _crown(ci,c+Vector2(0,-112),44),false)
 	UI.title(body,"你赢了！" if won else "这次慢了一步",Rect2(90,648,540,62),46,Art.FIRE2 if won else Color("e8d5ac"))
 	UI.box(body,Rect2(190,718,340,62),func(ci,sz): _card(ci,Rect2(Vector2.ZERO,sz),Color("6b4a2e"),990),false)

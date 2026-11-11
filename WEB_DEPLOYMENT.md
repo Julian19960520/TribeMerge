@@ -1,36 +1,24 @@
 # 浏览器试玩版
 
-Godot 4.6.3 的 Web 导出，使用原有 `--cloud-off` 本地规则和浏览器存档。
-账号、换设备登录和在线排行榜未部署。桌面版保留原有服务器配置。
+使用 Godot 4.6.3 Web 导出。试玩启动参数为 `--cloud-off`：运行统一的操作 reducer、分系统随机流、追加日志和检查点，存档保存在浏览器。账号同步、在线排行榜与校验进程池在独立后端运行，不包含在静态站点中。
 
-## 构建
+## 验证和构建
 
-安装 Godot 4.6.3 及对应 Web 导出模板后，在工程根目录运行：
+安装 Godot 4.6.3 与对应 Web 导出模板，准备 `server/requirements-dev.txt` 的 Python 环境：
 
 ```sh
-godot --headless --editor --import
+python tools/check_project.py --godot /path/to/godot --python /path/to/server/python
 python tools/export_web.py /path/to/godot
 ```
 
-输出为 `dist/`。需要 HTTPS、WebGL 2 和支持 DecompressionStream 的现代浏览器。
-脚本压缩 WASM，并将游戏资源包分成不超过 16 MiB 的文件，加载时自动还原，
-以适配托管平台的单文件大小上限。
-物品帧由 `addons/item_export` 显式加入资源包；保留 `.gdignore`，避免重复导入。
-每次构建会在独立空目录验证实际导出包中的全部物品帧及动画缓存，缺图时构建失败。
-Web 版打包 Noto Sans CJK SC 字体，授权见 `assets/fonts/OFL.txt`。
+输出目录为 `dist/`。运行需要 HTTPS、WebGL 2 和支持 DecompressionStream 的现代浏览器。导出会压缩 WASM、将资源包切分为不超过 16 MiB 的内容寻址文件，并在独立空目录验证实际导出包中的全部物品帧和缓存预算。缺图或脚本错误会阻止构建。
 
-部署身份保存在 `.openai/hosting.json`。GitHub 的 origin 保持不变。
+物品帧由 `addons/item_export` 显式加入资源包。运行时按需解码当前帧，不在启动时把所有 PNG 展开。Web 版包含 Noto Sans CJK SC 字体，授权见 `assets/fonts/OFL.txt`。
 
-## 自动演算与活动
+工程使用当前存档结构，保存目录为 `TribeMerge`。卡册手动领奖更新兼容指定的上一版离线规则指纹，保留既有进度及已发放奖励，其他未知测试规则版本不迁移。站点身份保持在 `.openai/hosting.json`，部署不改变现有访问范围。
 
-`/simulation.html` 提供自动玩家的时间轴。报告由 `tools/sim/run.py --publish-report`
-生成，随游戏导出一起发布；它不读取浏览器里的玩家存档。配置与无限循环说明见
-`tools/sim/README.md`。
+## 自动演算
 
-双人竞速在浏览器试玩版使用模拟对手，按实际交单获得积分，先达目标者获胜。
-目标积分、解锁等级、胜负奖励及 2/5/8/12 胜的累计奖励在 `data/duel_race.json` 配置。
-桌面服务器也实现了权威积分和防重复领奖，但当前网页发布不包含真人匹配服务。
+`/simulation.html` 展示自动玩家时间轴。报告由 `tools/sim/run.py --publish-report` 生成后随游戏发布，不读取浏览器玩家存档。模拟器使用相同规则和独立模拟钟，不产生玩家日志。运行与报告格式见 `tools/sim/README.md`。
 
-v2 客户端包含独立随机流、统一操作 reducer 与本地日志。当前托管地址继续使用 `--cloud-off`：
-可以演示离线玩法和本地随机状态持久化，但该静态试玩没有运行 Python/Godot 后端，不能用于验证
-线上反作弊。联网版本的 v2 登录与重放校验已在本地真实服务联调，部署见 `server/README.md`。
+当前架构见 `docs/ARCHITECTURE.md`；后端运行、协议、事务与进程池配置见 `server/README.md`。

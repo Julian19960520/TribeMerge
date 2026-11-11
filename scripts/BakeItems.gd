@@ -131,6 +131,8 @@ static func _ids() -> Array[String]:
 			out.append("%s_%d" % [ch, i + 1])
 	for id in Data.DISHES:
 		out.append(str(id))
+	for id in Data.REWARD_RESOURCES:
+		out.append(str(id))
 	return out
 
 static func _empty_dir(dir: String) -> void:

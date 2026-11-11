@@ -4,8 +4,8 @@ extends RefCounted
 ## 物品图标统一在 100×100 的局部坐标里绘制（中心为原点）。
 
 const INK := Color("3b2314")
-## 琥珀当货币显示时（顶栏、价格按钮、集市、飞入动画）统一用这一件：六边形的虫珀
-const AMBER_ICON := "amber_4"
+## 货币入口用二级完整单件图标；棋盘实物按自己的等级显示数量。
+const AMBER_ICON := "amber_2"
 const HIDE := Color("f6e7c8")
 const HIDE2 := Color("ead3a6")
 const LEATHER := Color("a7622c")
@@ -143,6 +143,12 @@ static func star_pts(c: Vector2, r1: float, r2: float, n: int, seed: int = 0, ro
 		pts.append(c + Vector2(cos(a), sin(a)) * r + jv(seed * 13 + k, 0.6))
 	return pts
 
+static func bolt_pts(c: Vector2, w: float, h: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for p in [Vector2(0.22, -0.5), Vector2(-0.5, 0.06), Vector2(-0.05, 0.03), Vector2(-0.24, 0.5), Vector2(0.5, -0.12), Vector2(0.06, -0.08), Vector2(0.37, -0.5)]:
+		pts.append(c + p * Vector2(w, h))
+	return pts
+
 static func bbox(pts: PackedVector2Array) -> Rect2:
 	var r := Rect2(pts[0], Vector2.ZERO)
 	for p in pts:
@@ -230,25 +236,30 @@ static func dashed(ci: CanvasItem, pts: PackedVector2Array, dash: float, gap: fl
 # ---------------------------------------------------------------- 物品图标
 
 ## 游戏运行时画物品：只贴预生成的 PNG（见「物品绘制.md」），没有图就空着，绝不现场绘制。
+static func vector_item(id: String) -> String:
+	if Data.chain(id) in ["orderbox", "premiumbox", "energybox", "chest", "choice", "fire", "shell", "amber", "sand", "upgrade", "scissors"] or (Data.chain(id) == "pack" and Data.lv(id) > 1):
+		return "res://assets/ui/items/%s.svg" % id
+	return ""
+
+static func _vector_item(ci: CanvasItem, id: String, c: Vector2, size: float, rot: float) -> bool:
+	var path := vector_item(id)
+	if path == "": return false
+	ci.draw_set_transform(c, rot, Vector2.ONE)
+	ci.draw_texture_rect(MergeEventArt.texture(path), Rect2(-size / 2, -size / 2, size, size), false)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	return true
+
 static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool = true, rot: float = 0.0) -> void:
 	if id == "":
 		return
-	if id == "energybox_1":
-		ci.draw_set_transform(c, rot, Vector2.ONE)
-		ci.draw_texture_rect(MergeEvent.texture("res://assets/ui/energy_chest.svg"), Rect2(-size/2,-size/2,size,size), false)
-		ci.draw_set_transform(Vector2.ZERO,0,Vector2.ONE)
-		return
-	if Data.type_of(id) == "choice":
-		ci.draw_set_transform(c, rot, Vector2.ONE)
-		ci.draw_texture_rect(MergeEvent.texture(str(ChoiceChest.definition(id).get("icon", "res://assets/ui/choice_chest.svg"))), Rect2(-size / 2, -size / 2, size, size), false)
-		ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
-		return
+	if _vector_item(ci, id, c, size, rot): return
 	Items.blit(ci, id, c, size, rim, rot)
 
 ## 用原始绘制代码现场画物品。只给生成 PNG 的工具和开发预览用，游戏里不要调用。
 static func draw_item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool = true, rot: float = 0.0) -> void:
 	if id == "":
 		return
+	if _vector_item(ci, id, c, size, rot): return
 	if Data.is_dish(id):
 		_paint_dish(ci, id, c, size, rim, rot)
 		return
@@ -417,7 +428,7 @@ static func _fire(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 			for v in [Vector2(-36, -40), Vector2(34, -50), Vector2(-26, -66), Vector2(28, -16)]:
 				ci.draw_colored_polygon(star_pts(v, 6, 2, 4, s + int(v.x)), Color(1, 0.96, 0.7))
 
-## 贝币 6 级：碎贝壳 → 贝壳 → 贝壳串 → 贝壳堆 → 贝壳篓 → 珍珠贝
+## 不拿拿 6 级：碎贝壳 → 贝壳 → 贝壳串 → 贝壳堆 → 贝壳篓 → 珍珠贝
 static func _shell(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 	match lv:
 		1:

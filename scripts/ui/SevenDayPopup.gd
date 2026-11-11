@@ -237,7 +237,7 @@ func _task(task: Dictionary, y: float, k: int) -> void:
 			EventEntryArt.text(ci, "进行中", Vector2(sz.x * 0.5, sz.y * 0.5 + 8), 22, Color("9a8a70"), 0), false)
 		return
 	var b := UI.btn(tasks_root, Rect2(526, y + 28, 136, 70), "领取", "green", func(): _claim(str(task["id"]), false), 28)
-	b.enabled = not SevenDay.busy
+	b.enabled = true
 
 func _claim(id: String, stage: bool) -> void:
 	var result := await SevenDay.claim(id, stage)

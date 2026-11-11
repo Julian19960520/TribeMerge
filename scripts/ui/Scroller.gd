@@ -24,6 +24,7 @@ func _init() -> void:
 	add_child(content)
 
 func set_length(l: float) -> void:
+	if is_equal_approx(length, l): return
 	length = l
 	content.size = Vector2(l, size.y) if horizontal else Vector2(size.x, l)
 	offset = clampf(offset, 0.0, _max())

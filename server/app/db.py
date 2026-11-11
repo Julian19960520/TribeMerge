@@ -35,6 +35,8 @@ def make_engine(url: str) -> Engine:
 
 def init_engine(url: str | None = None) -> Engine:
     global _engine, _SessionLocal
+    if _engine is not None:
+        _engine.dispose()
     _engine = make_engine(url or get_settings().database_url)
     _SessionLocal = sessionmaker(bind=_engine, expire_on_commit=False)
     return _engine

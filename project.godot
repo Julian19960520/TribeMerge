@@ -10,7 +10,9 @@ config_version=5
 
 [application]
 
-config/name="石器部落 · 合成"
+config/name="合合部落"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="TribeMerge"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.6")
 boot_splash/bg_color=Color(0.231, 0.137, 0.078, 1)

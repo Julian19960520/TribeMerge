@@ -31,6 +31,9 @@ def hash_secret(secret: str, salt: str) -> str:
 
 def new_session(db: Session, account_id: str, device_id: str, *, exclusive: bool = True) -> dict:
     """发一个新 token。exclusive=True 时顶掉这个账号的其他会话（换设备登录）。"""
+    # Session changes and replay commits share the account lock: a new device
+    # cannot revoke a token between its final validation and snapshot commit.
+    lock_account(db, account_id)
     s = get_settings()
     now = clock.utcnow()
     if exclusive:
@@ -82,17 +85,13 @@ def current(request: Request, db: Session = Depends(get_db)) -> Auth:
     acc = db.get(Account, sess.account_id)
     if acc is None or acc.disabled:
         raise ApiError(403, "account_disabled", "账号不可用")
-    if (acc.state or {}).get("replay") and request.method in ("POST", "PUT", "PATCH", "DELETE"):
-        path = request.url.path
-        if path.startswith("/v1/") and not path.startswith(("/v1/auth/", "/v1/account/", "/v1/rank/name")):
-            raise ApiError(409, "replay_only", "该账号通过操作重放同步，不能直接修改存档或经济数据")
     account_var.set(acc.id)
     return Auth(acc, sess, token)
 
 
 def lock_account(db: Session, account_id: str) -> Account:
     """读账号并加行锁（PostgreSQL 上是 SELECT ... FOR UPDATE；SQLite 整库串行写，不需要）。"""
-    acc = db.execute(select(Account).where(Account.id == account_id).with_for_update()).scalar_one_or_none()
+    acc = db.execute(select(Account).where(Account.id == account_id).with_for_update().execution_options(populate_existing=True)).scalar_one_or_none()
     if acc is None:
         raise ApiError(404, "unknown_account", "账号不存在")
     return acc

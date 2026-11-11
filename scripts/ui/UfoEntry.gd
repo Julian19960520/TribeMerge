@@ -17,7 +17,7 @@ func _ready() -> void:
 	position = Vector2(560, 96)
 	size = Vector2(W, H)
 	mouse_filter = MOUSE_FILTER_IGNORE
-	hit = UI.hit(self, Rect2(Vector2.ZERO, size), UfoOffer.open_panel)
+	hit = UI.hit(self, Rect2(Vector2.ZERO, size), _open_panel)
 	hit.name = "ufo_entry"
 	hit.extra = _paint
 	timer = UI.lbl(hit, "", Rect2(31, 86, 88, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 4, Color("1b2a33"))
@@ -75,3 +75,8 @@ func _process(delta: float) -> void:
 		_motion.tween_property(hit, "position", Vector2.ZERO, 0.7).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		_motion.tween_property(hit, "scale", Vector2.ONE, 0.7).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		_motion.chain().tween_callback(func(): _t = 0.0)
+
+func _open_panel() -> void:
+	if not UfoOffer.active(): return
+	var result: Dictionary = Replay.perform("ufo_refresh")
+	if not result.has("error") and UfoOffer.active(): G.main.open("ufo")

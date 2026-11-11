@@ -15,7 +15,7 @@ func check(ok: bool, label: String) -> void:
 func idle() -> void:
 	var start := Time.get_ticks_msec()
 	await process_frame
-	while (cloud._busy or cloud._hot_busy or not replay.inflight.is_empty()) and Time.get_ticks_msec()-start < 30000:
+	while (cloud._busy or not replay.inflight.is_empty()) and Time.get_ticks_msec()-start < 30000:
 		await process_frame
 func run() -> void:
 	g = root.get_node("G"); replay = root.get_node("Replay"); cloud = root.get_node("Cloud")
@@ -48,7 +48,7 @@ func run() -> void:
 		calls+=1
 		if what == "replay":
 			print("WIRE_STATS ", JSON.stringify(cloud.replay_wire_stats))
-			check(int(cloud.replay_wire_stats.get("gzip", 0)) > 0 and int(cloud.replay_wire_stats["gzip"]) < int(cloud.replay_wire_stats["json"]), "upload sends smaller raw gzip bytes"))
+			check(int(cloud.replay_wire_stats.get("gzip", 0)) > 0 and (int(cloud.replay_wire_stats.get("ops", 0)) < 10 or int(cloud.replay_wire_stats["gzip"]) < int(cloud.replay_wire_stats["compact"])), "upload sends raw gzip and compresses large batches"))
 	cloud.url = "http://127.0.0.1:1"; cloud.online = false
 	check(g.try_drop(28,29)=="merge", "main board command executes without network")
 	var at_cell := 29

@@ -47,7 +47,7 @@ func run() -> void:
 		if a.begins_with("--out="):
 			out = a.trim_prefix("--out=")
 	g = root.get_node("G")
-	check(not g.server_mode(), "isolated local save (cloud off)")
+	check(not root.get_node("Cloud").enabled, "isolated test transport")
 	g.new_game()
 	g.tutorial_on = false
 	g.seen_tutorial = true
@@ -75,7 +75,7 @@ func run() -> void:
 	var seen := {}
 	var draws := 20000
 	for k in draws:
-		var id: String = g.roll_produce(GEN)
+		var id: String = g.rules.board.roll_produce(GEN)
 		seen[id] = int(seen.get(id, 0)) + 1
 	var dist_ok := true
 	for id in seen:
@@ -96,14 +96,14 @@ func run() -> void:
 	main.show_screen("board", true)
 	await create_timer(0.6).timeout
 	var bs = main.board_screen
-	check(g.gen_left(CELL) == charges and g.gen_wait(CELL) == 0, "starts full (%d left)" % g.gen_left(CELL))
+	check(g.rules.board.gen_left(CELL) == charges and g.rules.board.gen_wait(CELL) == 0, "starts full (%d left)" % g.rules.board.gen_left(CELL))
 	await _shot("full")
 
 	# 点 5 下后截一张，再点满
 	var e0: int = g.energy
 	for k in 5:
 		bs._on_activate(CELL)
-	check(g.gen_left(CELL) == charges - 5, "5 taps used 5 charges")
+	check(g.rules.board.gen_left(CELL) == charges - 5, "5 taps used 5 charges")
 	bs.board.select(CELL)
 	await _shot("partial")
 	for k in charges - 5:
@@ -115,7 +115,7 @@ func run() -> void:
 	for id in made:
 		all_drops = all_drops and drop_ids.has(id)
 	check(all_drops, "every produced item is in the drop table: %s" % [made])
-	check(g.gen_left(CELL) == 0 and g.gen_wait(CELL) > refill_sec - 5, "empty → resting %d s" % g.gen_wait(CELL))
+	check(g.rules.board.gen_left(CELL) == 0 and g.rules.board.gen_wait(CELL) > refill_sec - 5, "empty → resting %d s" % g.rules.board.gen_wait(CELL))
 
 	# 休息中再点：不产出
 	bs._on_activate(CELL)
@@ -124,22 +124,22 @@ func run() -> void:
 	# 体力为 0 时也能点（冷却结束后）
 	g.energy = 0
 	g.simulation_time += float(refill_sec) - 3600.0
-	check(g.gen_left(CELL) == 0 and g.gen_wait(CELL) > 3500, "still resting 1 h before the end (%s left)" % g.fmt_time(g.gen_wait(CELL)))
+	check(g.rules.board.gen_left(CELL) == 0 and g.rules.board.gen_wait(CELL) > 3500, "still resting 1 h before the end (%s left)" % g.fmt_time(g.rules.board.gen_wait(CELL)))
 	bs.board.select(CELL)
 	await create_timer(3.0).timeout # 等「休息中」提示消失
 	await _shot("cooldown")
 	g.simulation_time += 3601.0
-	check(g.gen_left(CELL) == charges and g.gen_wait(CELL) == 0, "cooldown over → full batch again")
+	check(g.rules.board.gen_left(CELL) == charges and g.rules.board.gen_wait(CELL) == 0, "cooldown over → full batch again")
 	_clear_board()
 	g.board[CELL]["id"] = GEN
 	g.board_changed.emit()
 	bs._on_activate(CELL)
-	check(_total(_count_items()) == 1 and g.energy == 0 and g.gen_left(CELL) == charges - 1, "works with 0 energy after refill")
+	check(_total(_count_items()) == 1 and g.energy == 0 and g.rules.board.gen_left(CELL) == charges - 1, "works with 0 energy after refill")
 
 	# 拖动换位时冷却跟着生产器走
-	var used_left: int = g.gen_left(CELL)
+	var used_left: int = g.rules.board.gen_left(CELL)
 	g.try_drop(CELL, 0)
-	check(str(g.board[0]["id"]) == GEN and g.gen_left(0) == used_left, "cooldown moves with the generator")
+	check(str(g.board[0]["id"]) == GEN and g.rules.board.gen_left(0) == used_left, "cooldown moves with the generator")
 	check(Data.describe(GEN).find("免费") >= 0, "description mentions free taps")
 
 	print("FAILURES %d" % failures)

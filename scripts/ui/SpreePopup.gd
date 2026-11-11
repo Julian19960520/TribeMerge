@@ -29,7 +29,7 @@ func _ready() -> void:
 	buy_btn.name = "spree_buy"
 	buy_btn.title_font = false
 	_burst(int(t.get("value_pct", 100)) - 100)
-	UI.lbl(box, "试玩购买，不扣款", Rect2(R.position.x, 1188, R.size.x, 30), 19, Color("9a8468"))
+	UI.lbl(box, "支付暂未开放", Rect2(R.position.x, 1188, R.size.x, 30), 19, Color("9a8468"))
 	_refresh()
 
 ## 集市：暖色天空、兽皮棚子、一串彩旗、两边货架，阿焰站中间拎着两只鼓鼓的草编袋
@@ -127,12 +127,11 @@ func _buy() -> void:
 	_busy = true
 	_refresh()
 	var from := buy_btn.get_global_rect().get_center() + Vector2(0, -160)
-	var r: Dictionary = await Offers.buy(KIND, TIER, func(_k): return from)
+	var r: Dictionary = await Offers.buy(KIND, TIER)
 	if not is_instance_valid(self): return
 	_busy = false
 	if not r.get("ok", false):
 		var msg := str(r.get("message", ""))
 		if msg != "": G.main.toast(msg)
-	elif not G.server_mode():
-		G.main.toast("演示版本：礼包已到账")
+	else: RewardPresenter.present(r.get("rewards", []), func(_k): return from)
 	_refresh()

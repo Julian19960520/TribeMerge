@@ -86,10 +86,10 @@ static func live_entry_pill(ci: CanvasItem, r: Rect2, style: String) -> void:
 		ci.draw_line(r.position + Vector2(10, 6), r.position + Vector2(r.size.x - 10, 6), Color(1, 1, 1, 0.45), 3, true)
 
 ## o：地面中点在画布上的位置
-static func live_entry(ci: CanvasItem, kind: String, grey: bool, o: Vector2) -> void:
+static func live_entry(ci: CanvasItem, kind: String, grey: bool, o: Vector2, scale: float = 1.0) -> void:
 	_grey = grey
-	_xf = Transform2D(0.0, o)
-	ci.draw_set_transform(o)
+	_xf = Transform2D(0.0, o).scaled_local(Vector2.ONE * scale)
+	ci.draw_set_transform_matrix(_xf)
 	match kind:
 		"duel": _en_duel(ci)
 		"race": _en_race(ci)
@@ -117,7 +117,7 @@ static func _en_duel(ci: CanvasItem) -> void:
 		ci.draw_circle(c, 20, _c(Art.BONE))
 		# Meme 内部会改画布变换：换回屏幕坐标画，画完再恢复
 		ci.draw_set_transform_matrix(Transform2D.IDENTITY)
-		Meme.live_portrait(ci, side, _xf * (c + Vector2(0, 2)), 42 * _xf.get_scale().x)
+		Meme.live_portrait(ci, Meme.HERO if side == 0 else side, _xf * (c + Vector2(0, 2)), 42 * _xf.get_scale().x)
 		ci.draw_set_transform_matrix(_xf)
 		if _grey: ci.draw_circle(c, 25, Color(0.55, 0.53, 0.5, 0.55))
 	for k in 4:
@@ -632,6 +632,7 @@ static func live_rank_avatar(ci: CanvasItem, c: Vector2, rad: float, rk: int, mi
 	var disc := Art.ell(c, Vector2(rad, rad), 83 + rk, 0.02, 22)
 	Art.dilate(ci, disc, 1.8, Art.INK)
 	ci.draw_colored_polygon(disc, [Art.TEAL, Art.LEATHER, Art.MOSS_D][rk - 1])
+	Meme.portrait(ci, Meme.HERO if mine else posmod(rk, 5), c, rad * 2.0)
 
 # ================================================================ 七日任务（SevenDayPopup）
 

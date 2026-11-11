@@ -91,8 +91,8 @@ func run() -> void:
 	var store=main.open("store")
 	var order: Dictionary={}
 	for label in store.find_children("*","Label",true,false):
-		if label.text in ["每日特惠","贝币小摊","热卖","琥珀"]: order[label.text]=label.global_position.y
-	check(order.size()==4 and order["每日特惠"]<order["贝币小摊"] and order["贝币小摊"]<order["热卖"] and order["热卖"]<order["琥珀"],"store order: daily, shell, hot, amber")
+		if label.text in ["每日特惠","不拿拿小摊","热卖","琥珀"]: order[label.text]=label.global_position.y
+	check(order.size()==4 and order["每日特惠"]<order["不拿拿小摊"] and order["不拿拿小摊"]<order["热卖"] and order["热卖"]<order["琥珀"],"store order: daily, shell, hot, amber")
 	main.close_all()
 	await create_timer(0.3).timeout
 	main.queue_free()

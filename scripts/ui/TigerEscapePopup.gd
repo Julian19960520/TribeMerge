@@ -16,17 +16,14 @@ var signature := ""
 var count := 10
 var visual_stage := 0.0
 var elapsed := 0.0
-var refreshing := false
 var working := false
 var focused_round := -1
 var focused_stage := -1
 var focus_tween: Tween
-var refresh_elapsed := 0.0
 var attack_active := false
 var attack_node := -1
 var attack_time := 0.0
 var attack_duration := 1.15
-var next_refresh_ms := 0
 
 func _ready() -> void:
 	set_meta("fullscreen", true)
@@ -57,10 +54,8 @@ func _ready() -> void:
 	action_button.name = "tiger_primary"
 	UI.box(box, Rect2(22, 1260, 110, 115), func(ci, sz): TigerArt.draw(ci, sz * 0.5, 82), false)
 	UI.lbl(box, "每完成一张订单 +%d 积分" % int(TigerEscape.config()["points_per_order"]), Rect2(130, 1418, 460, 35), 23, Color("bbceb1"))
-	TigerEscape.tick()
 	visual_stage = float(TigerEscape.round_state().get("stage", 0))
 	_refresh(true)
-	if G.server_mode(): _server_refresh()
 
 func _process(delta: float) -> void:
 	if _closing: return
@@ -72,9 +67,8 @@ func _process(delta: float) -> void:
 			attack_active = false
 			TigerEscape.acknowledge_attack(TigerEscape.round_state(), attack_node)
 			_focus(int(TigerEscape.round_state().get("stage", 0)), true)
-			_refresh()
+		_refresh()
 	elapsed += delta
-	refresh_elapsed += delta
 	var m := TigerEscape.round_state()
 	var target := float(m.get("stage", 0))
 	if absf(target - visual_stage) > 0.01:
@@ -82,21 +76,8 @@ func _process(delta: float) -> void:
 		runners.queue_redraw()
 	if elapsed >= 0.25:
 		elapsed = 0
-		TigerEscape.tick()
 		_refresh()
 		runners.queue_redraw()
-	var deadline_due: bool = not m.is_empty() and m["status"] == "running" and G.now() >= float(m["start"]) + (int(m["destroyed"]) + 2) * float(m["interval"])
-	if G.server_mode() and (refresh_elapsed >= 30 or deadline_due) and Time.get_ticks_msec() >= next_refresh_ms and not refreshing and not working:
-		refresh_elapsed = 0
-		_server_refresh()
-
-func _server_refresh() -> void:
-	if refreshing: return
-	refreshing = true
-	next_refresh_ms = Time.get_ticks_msec() + 10000
-	await TigerEscape.act("refresh")
-	refreshing = false
-	if is_inside_tree() and not _closing: _refresh()
 
 func _node_pos(n: int) -> Vector2:
 	return Vector2(210 if n % 2 == 0 else 478, (count - n) * GAP + 190)
@@ -136,7 +117,7 @@ func _refresh(first := false) -> void:
 		score_label.text = "已通过%d处落脚点，本局补给已保留" % stage
 		action_button.text = "领取并再逃一次" if not TigerEscape.pending_rewards(m).is_empty() else "再逃一次"
 	action_button.style = "orange" if status == "lost" else "green"
-	action_button.enabled = not working and not TigerEscape.busy and not attack_active
+	action_button.enabled = not working and not attack_active
 	action_button.queue_redraw()
 	var sig := str([m.get("id", 0), stage, status, m.get("destroyed", -1), m.get("claimed", [])])
 	if sig != signature:
@@ -148,7 +129,7 @@ func _refresh(first := false) -> void:
 			focused_round = int(m.get("id", 0))
 
 func _primary() -> void:
-	if working or refreshing or TigerEscape.busy or attack_active: return
+	if working or attack_active: return
 	var m := TigerEscape.round_state()
 	if m.get("status", "") == "running":
 		close()
@@ -162,7 +143,7 @@ func _primary() -> void:
 	else:
 		visual_stage = 0
 		_focus(0, false)
-		if not result.get("rewards", []).is_empty(): G.main.present_rewards(result["rewards"], false)
+		if not result.get("rewards", []).is_empty(): G.main.present_rewards(result["rewards"])
 	_refresh(true)
 
 func _preview(n: int) -> void:
@@ -182,7 +163,7 @@ func _preview(n: int) -> void:
 	var b := UI.btn(p.box, Rect2(195, 794, 330, 76), label, "green" if reached and not claimed else "grey", Callable(), 32)
 	b.enabled = reached and not claimed
 	b.pressed.connect(func():
-		if working or TigerEscape.busy: return
+		if working: return
 		working = true
 		b.enabled = false
 		var result: Dictionary = await TigerEscape.act("claim", n)
@@ -193,7 +174,7 @@ func _preview(n: int) -> void:
 			if is_instance_valid(b): b.enabled = true
 		else:
 			if is_instance_valid(p): p.close()
-			G.main.present_rewards(result.get("rewards", []), false)
+			G.main.present_rewards(result.get("rewards", []))
 		_refresh())
 	G.main._attach_popup(p)
 

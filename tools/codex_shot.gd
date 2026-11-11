@@ -29,7 +29,7 @@ func _run() -> void:
 	# 选中一个格子看底部提示
 	var bs = main.board_screen
 	for i in 40:
-		if str(g.cell_id(i)) != "":
+		if str(g.rules.board.cell_id(i)) != "":
 			bs.board.select(i)
 			break
 	await create_timer(0.5).timeout

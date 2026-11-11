@@ -20,7 +20,7 @@ func run() -> void:
 	await bs._on_activate(0) # free energy producer
 	await bs._on_activate(1) # ordinary producer
 	await bs._on_activate(10) # collect resource
-	await bs._on_activate(11) # open and consume a chest
+	await bs._on_activate(11) # release one item while retaining the chest
 	var before: String = replay.digest()
 	await bs._on_activate(12) # opening the pack modal must not burn a pack
 	if replay.digest()!=before: push_error("pack modal consumed a card pack before opening")
@@ -29,7 +29,7 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	for cell in g.board.size():
-		if g.is_free(cell) and Data.type_of(g.cell_id(cell)) == "item":
+		if g.rules.board.is_free(cell) and Data.type_of(g.rules.board.cell_id(cell)) == "item":
 			bs.board.select(cell)
 			bs._on_delete()
 			bs.board.select(0) # finalizes refund without recursive change signals

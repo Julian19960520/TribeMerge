@@ -1,0 +1,36 @@
+{
+	"cards": [
+		"石头过敏",
+		"长柄武器",
+		"脚印",
+		"包围成功",
+		"陷阱试用",
+		"诱饵",
+		"谁是猎物",
+		"战利品",
+		"新伙伴"
+	],
+	"name": "狩猎",
+	"texts": [
+		"兄弟，我发现野兽对石头过敏。",
+		"兄弟，我发现把石头和木棍绑在一起，可以增加伤害。",
+		"兄弟，我发现脚印越大，猎物越大。",
+		"兄弟，我们把它围住了。现在谁也不敢先走。",
+		"兄弟，我发现这坑挖得挺好。先拉我上去。",
+		"兄弟，计划很顺利。现在换你拿一会儿。",
+		"兄弟，我发现它追我们的时候，也是在打猎。",
+		"兄弟，今天带回来一颗牙。我的。",
+		"兄弟，我发现分它一点肉，它明天还来。"
+	],
+	"art": [
+		"res://assets/cards/hunting/stone_allergy.png",
+		"res://assets/cards/hunting/long_weapon.png",
+		"res://assets/cards/hunting/footprints.png",
+		"res://assets/cards/hunting/surrounded.png",
+		"res://assets/cards/hunting/trap_trial.png",
+		"res://assets/cards/hunting/bait.png",
+		"res://assets/cards/hunting/who_is_prey.png",
+		"res://assets/cards/hunting/trophy.png",
+		"res://assets/cards/hunting/new_companion.png"
+	]
+}

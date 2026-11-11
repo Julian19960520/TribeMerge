@@ -1,5 +1,5 @@
 extends SceneTree
-## 双倍火种自检：18 级前不可开；开启后生产器每次耗 2 火种、产物升 1 级、右下角紫火；火种不足 2 时不产出。顺带截图。
+## 双倍体力检查：当前Replay命令执行普通门槛、双倍消耗、产物升级和授权GM解锁。
 ## Godot --path . --script tools/check_boost.gd -- --cloud-off --save=user://boost_test/s.json --cloud-state=user://boost_test/c.json --rank-state=user://boost_test/r.json --hot-file=user://boost_test/h.json [--out=DIR]
 const CELL := 24
 var failures := 0
@@ -16,6 +16,9 @@ func check(ok: bool, label: String) -> void:
 		failures += 1
 
 func _shot(n: String) -> void:
+	if DisplayServer.get_name() == "headless":
+		print("SKIP screenshot in headless renderer: ", n)
+		return
 	await create_timer(0.4).timeout
 	await RenderingServer.frame_post_draw
 	var dir := ProjectSettings.globalize_path(out)
@@ -51,10 +54,15 @@ func run() -> void:
 		if a.begins_with("--out="):
 			out = a.trim_prefix("--out=")
 	g = root.get_node("G")
-	check(not g.server_mode(), "isolated local save (cloud off)")
-	g.new_game()
-	g.tutorial_on = false
-	g.seen_tutorial = true
+	check(not root.get_node("Cloud").enabled, "isolated test transport")
+	g.set_process(false)
+	var replay = root.get_node("Replay")
+	replay.set_process(false); root.get_node("Cloud").set_process(false)
+	replay.active = true; replay.worker = false; replay.authorized = true; replay.executing = true
+	g.simulation_time = 1793577600.0; replay.clock = int(g.simulation_time)
+	replay.meta = {"allow_gm": true}; g.replay_meta = replay.meta
+	g.new_game(); g.tutorial_on = false; g.seen_tutorial = true
+	replay.advance(); replay.executing = false
 	var gen := _pick_gen()
 	check(gen != "", "found a generator: %s" % gen)
 	var drops: Array = []
@@ -64,8 +72,8 @@ func run() -> void:
 	# 17 级：开不了
 	g.level = Data.BOOST_LEVEL - 1
 	g.set_boost(true)
-	check(not g.boost_on() and g.gen_cost() == 1, "locked below Lv%d" % Data.BOOST_LEVEL)
-	check(g.boost_drop(str(drops[0])) == str(drops[0]), "no level-up while locked")
+	check(not g.rules.board.boost_on() and g.rules.board.gen_cost() == 1, "locked below Lv%d" % Data.BOOST_LEVEL)
+	check(g.rules.board.boost_drop(str(drops[0])) == str(drops[0]), "no level-up while locked")
 
 	g.level = Data.BOOST_LEVEL
 	_clear_board()
@@ -88,7 +96,7 @@ func run() -> void:
 
 	# 打开
 	bs._on_boost()
-	check(g.boost_on() and g.gen_cost() == 2, "boost on → cost 2")
+	check(g.rules.board.boost_on() and g.rules.board.gen_cost() == 2, "boost on → cost 2")
 	_clear_board()
 	g.board[CELL]["id"] = gen
 	g.board_changed.emit()
@@ -124,22 +132,23 @@ func run() -> void:
 		check(bool(d.get("boost", false)), "boost saved")
 
 	bs._on_boost()
-	check(not g.boost_on() and g.gen_cost() == 1, "toggle back off")
+	check(not g.rules.board.boost_on() and g.rules.board.gen_cost() == 1, "toggle back off")
 	# GM 按钮：低等级也能解锁
 	g.level = 3
 	g.boost_gm = false
 	g.changed.emit()
-	check(not bs._boost_btn.visible and not g.boost_open(), "Lv3: toggle hidden")
+	check(not bs._boost_btn.visible and not g.rules.board.boost_open(), "Lv3: toggle hidden")
 	var gm_btn = bs.get_node("gm_activities")
 	gm_btn.pressed.emit()
 	await create_timer(0.3).timeout
-	check(g.boost_gm and g.boost_open() and bs._boost_btn.visible, "GM button unlocks boost at Lv3")
+	check(g.boost_gm and g.rules.board.boost_open() and bs._boost_btn.visible, "GM button unlocks boost at Lv3")
 	bs._on_boost()
-	check(g.boost_on() and g.gen_cost() == 2, "Lv3 after GM: boost can be turned on")
+	check(g.rules.board.boost_on() and g.rules.board.gen_cost() == 2, "Lv3 after GM: boost can be turned on")
 	var d2: Dictionary = g.save_dict()
 	if not d2.is_empty():
 		check(bool(d2.get("boost_gm", false)), "GM unlock saved")
 	main.close_all()
 	await _shot("gm_lv3")
-	print("DONE failures=%d" % failures)
+	main.free(); g.main = null
+	print("RESULT: %d failures" % failures)
 	quit(1 if failures > 0 else 0)

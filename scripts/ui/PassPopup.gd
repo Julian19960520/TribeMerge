@@ -69,14 +69,14 @@ static func screen() -> PopupBase:
 	UI.lbl(p.box, "贵宾", Rect2(VIP_X + 16, HEAD_Y + 306, CARD_W - 16, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 	UI.lbl(p.box, "超级贵宾", Rect2(SUPER_X + 16, HEAD_Y + 306, CARD_W - 16, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 	var refresh := func():
-		var reached := G.pass_reached()
-		time_lbl.text = G.fmt_time(G.pass_secs_left())
+		var reached := G.rules.progression.pass_reached()
+		time_lbl.text = G.fmt_time(G.rules.clock.pass_secs_left())
 		lv_lbl.text = str(reached)
 		if reached >= n:
 			goal_lbl.text = "已满级" + ("，循环宝箱开启中" if G.pass_tier == 2 else "")
 		else:
 			goal_lbl.text = "再积累 %d 分升到 %d 级" % [maxi(0, _need_left()), reached + 1]
-		prog_lbl.text = G.pass_prog_text()
+		prog_lbl.text = G.rules.progression.pass_prog_text()
 		act.visible = G.pass_tier < 2
 		act.text = "升级超级" if G.pass_tier == 1 else "激活贵宾"
 		act.queue_redraw()
@@ -93,7 +93,7 @@ static func screen() -> PopupBase:
 	p.add_child(clock)
 	clock.timeout.connect(func():
 		if is_instance_valid(time_lbl):
-			time_lbl.text = G.fmt_time(G.pass_secs_left()))
+			time_lbl.text = G.fmt_time(G.rules.clock.pass_secs_left()))
 	return p
 
 # ---------------------------------------------------------------- 轨道几何（轨道内坐标，0 在轨道顶）
@@ -112,13 +112,13 @@ static func _node_y(lv: int) -> float:
 ## 火光爬到的高度
 static func _fill_y() -> float:
 	var n := Data.PASS_LEVELS.size()
-	var reached := G.pass_reached()
+	var reached := G.rules.progression.pass_reached()
 	if reached >= n:
 		return _node_y(n + 1) if G.pass_tier == 2 else _node_y(n)
-	return lerpf(_node_y(reached), _node_y(reached + 1), G.pass_frac())
+	return lerpf(_node_y(reached), _node_y(reached + 1), G.rules.progression.pass_frac())
 
 static func _need_left() -> int:
-	var parts := G.pass_prog_text().split("/")
+	var parts := G.rules.progression.pass_prog_text().split("/")
 	if parts.size() < 2:
 		return 0
 	return int(parts[1]) - int(parts[0])
@@ -130,9 +130,9 @@ static func _focus_lv() -> int:
 		for track in ["free", "prem", "super"]:
 			if _state(track, lv) == "ready":
 				return lv
-	if G.pass_reached() >= n:
+	if G.rules.progression.pass_reached() >= n:
 		return n + 1
-	return G.pass_reached() + 1
+	return G.rules.progression.pass_reached() + 1
 
 ## 一张奖励卡的状态：ready 能领 / done 已领 / future 等级没到 / lock 档位不够（贵宾列要贵宾，超级列要超级贵宾）
 ## track：free / prem（贵宾）/ super（超级贵宾）/ endless（循环宝箱，lv = 0）
@@ -140,10 +140,10 @@ static func _state(track: String, lv: int) -> String:
 	if track == "endless":
 		if G.pass_tier != 2:
 			return "lock"
-		return "ready" if G.pass_endless_ready() > 0 else "future"
-	if G.pass_got_in(track, lv):
+		return "ready" if G.rules.progression.pass_endless_ready() > 0 else "future"
+	if G.rules.progression.pass_got_in(track, lv):
 		return "done"
-	if lv > G.pass_reached():
+	if lv > G.rules.progression.pass_reached():
 		return "future"
 	if G.pass_tier < _tier_need(track):
 		return "lock"
@@ -237,7 +237,7 @@ static func _give(rw: Array, rect: Rect2) -> void:
 		G.main.present_rewards(rw)
 		return
 	var spots := _reward_spots(Rect2(rect.position, rect.size), rw)
-	Rewards.grant(rw, func(k): return spots[k] if k < spots.size() else rect.get_center())
+	RewardPresenter.present(rw, func(k): return spots[k] if k < spots.size() else rect.get_center())
 
 ## 每件奖励图标的中心（卡片坐标系）
 static func _reward_spots(r: Rect2, rewards: Array) -> Array:
@@ -271,8 +271,8 @@ static func _paint_card(ci: CanvasItem, size: Vector2, track: String, lv: int) -
 			var pr := Rect2(bc.x - 66, band.position.y - 6, 132, 44)
 			Paint.button(ci, pr, "green", seed)
 			_center_text(ci, pr.get_center() + Vector2(0, -3), "领取", 24)
-			if lv == 0 and G.pass_endless_ready() > 1:
-				_count_badge(ci, Vector2(r.end.x - 18, r.position.y + 18), G.pass_endless_ready())
+			if lv == 0 and G.rules.progression.pass_endless_ready() > 1:
+				_count_badge(ci, Vector2(r.end.x - 18, r.position.y + 18), G.rules.progression.pass_endless_ready())
 		"done":
 			Sprites.draw(ci, "ev_pass_card_shade", r, Color(0.32, 0.2, 0.1, 0.38))
 			_band_text(ci, bc, "已领取", Color("5a3d24"))
@@ -378,7 +378,7 @@ static func _pulse(root: Control) -> DrawBox:
 
 static func _place_pulse(d: DrawBox) -> void:
 	var n := Data.PASS_LEVELS.size()
-	var reached := G.pass_reached()
+	var reached := G.rules.progression.pass_reached()
 	d.visible = reached < n
 	if reached < n:
 		d.position = Vector2(MID_X, TRACK_TOP + _node_y(reached + 1)) - d.size * 0.5
@@ -420,7 +420,7 @@ static func _ticket(p: PopupBase, r: Rect2, super_vip: bool) -> void:
 		UI.icon(p.box, "fire_2", r.position + Vector2(r.size.x * 0.5, 268), 110)
 		UI.lbl(p.box, "×150", Rect2(r.position.x, r.position.y + 322, r.size.x, 44), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
 	var owned := G.pass_tier >= (2 if super_vip else 1)
-	var b := UI.btn(p.box, Rect2(r.position.x + 24, r.end.y - 108, r.size.x - 48, 80), "¥%d" % G.pass_cny("super" if super_vip else "vip"), "green", Callable(), 40)
+	var b := UI.btn(p.box, Rect2(r.position.x + 24, r.end.y - 108, r.size.x - 48, 80), "¥%d" % G.rules.progression.pass_cny("super" if super_vip else "vip"), "green", Callable(), 40)
 	b.title_font = false  # 标题字体里没有「¥」
 	if owned:
 		b.text = "已拥有"
@@ -450,14 +450,14 @@ static func _stamp(p: PopupBase, r: Rect2) -> void:
 	lab.rotation = 0.18
 
 static func _do_vip(p: PopupBase) -> void:
-	if not await G.buy_pass_vip():
+	if not await G.rules.progression.buy_pass_vip():
 		return
 	p.close()
 	G.main.toast("已激活贵宾：火种 ×150，贵宾奖励已开放")
 
 static func _do_super(p: PopupBase) -> void:
 	var fresh := G.pass_tier == 0
-	if not await G.buy_pass_super():
+	if not await G.rules.progression.buy_pass_super():
 		return
 	p.close()
 	if fresh:
@@ -493,7 +493,7 @@ static func _paint_head(ci: CanvasItem, sz: Vector2) -> void:
 	var mc := Vector2(74, band.position.y + 70)
 	Sprites.draw(ci, "ev_pass_medal", Rect2(mc - Vector2(48, 48), Vector2(96, 96)))
 	# 进度条
-	Paint.bar(ci, Rect2(134, band.position.y + 54, 264, 36), G.pass_frac(), Art.FIRE, 14)
+	Paint.bar(ci, Rect2(134, band.position.y + 54, 264, 36), G.rules.progression.pass_frac(), Art.FIRE, 14)
 	# 列标题：左边布、右边赭石
 	var strip := Rect2(0, 300, sz.x, sz.y - 300)
 	ci.draw_rect(strip, BG_TOP)
@@ -513,7 +513,7 @@ static func _paint_head(ci: CanvasItem, sz: Vector2) -> void:
 
 ## 购买按钮右上角的价签：人民币价格（贵宾 ¥30，超级贵宾 ¥68）
 static func _price_tag(ci: CanvasItem, sz: Vector2) -> void:
-	var price := "¥%d" % G.pass_cny("super" if G.pass_tier == 1 else "vip")
+	var price := "¥%d" % G.rules.progression.pass_cny("super" if G.pass_tier == 1 else "vip")
 	var r := Rect2(sz.x - 84, -20, 92, 38)
 	Sprites.draw(ci, "ev_pass_price", r)
 	# 标题字体里没有「¥」，价签用正文字体
@@ -526,7 +526,7 @@ static func _price_tag(ci: CanvasItem, sz: Vector2) -> void:
 
 static func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 	var n := Data.PASS_LEVELS.size()
-	var reached := G.pass_reached()
+	var reached := G.rules.progression.pass_reached()
 	# 帐篷里的布纹：几道很淡的竖条
 	for k in 9:
 		if k % 2 == 0:

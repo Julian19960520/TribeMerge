@@ -1,9 +1,6 @@
 extends Control
 
-const BakeItemsScript := preload("res://scripts/BakeItems.gd")
-const BakeSpritesScript := preload("res://scripts/BakeSprites.gd")
-const PassPopupScript := preload("res://scripts/ui/PassPopup.gd")
-const CfgEditScript := preload("res://scripts/ui/CfgEdit.gd")
+
 const GuideScript := preload("res://scripts/ui/Guide.gd")
 const ScreenWipeScript := preload("res://scripts/ui/ScreenWipe.gd")
 
@@ -11,7 +8,7 @@ var home: HomeScreen
 var board_screen: BoardScreen
 var cfg_screen: Control
 var topbar: TopBar
-var popup_layer: Control
+var popup_layer: PopupStack
 var pin: Control
 var fx_layer: Control
 var screen := "home"
@@ -26,6 +23,8 @@ var _fps_shown := -1
 
 func _ready() -> void:
 	G.main = self
+	G.presentation_event.connect(_on_presentation)
+	Cloud.notice.connect(toast)
 	size = Vector2(720, 1480)
 	clip_contents = true
 	var bake_args := OS.get_cmdline_user_args()
@@ -37,12 +36,12 @@ func _ready() -> void:
 	board_screen = BoardScreen.new()
 	board_screen.visible = false
 	add_child(board_screen)
-	cfg_screen = CfgEditScript.new()
-	cfg_screen.visible = false
-	add_child(cfg_screen)
-	popup_layer = _layer()
+	board_screen.set_active(false)
+	popup_layer = PopupStack.new()
+	add_child(popup_layer)
 	topbar = TopBar.new()
 	add_child(topbar)
+	popup_layer.topbar = topbar
 	pin = _layer()
 	fx_layer = _layer()
 	_curtain = ColorRect.new()
@@ -71,7 +70,7 @@ func begin_guide() -> void:
 		c.visible = false
 		c.queue_free()
 	show_screen("board", true)
-	_guide.present()
+	if not _guide.visible: _guide.present()
 
 func _add_fps() -> void:
 	var host := Control.new()
@@ -118,80 +117,60 @@ func show_screen(name: String, instant: bool = false) -> void:
 	Sfx.play("drum")
 
 func _apply_screen() -> void:
-	home.visible = screen == "home"
-	board_screen.visible = screen == "board"
-	cfg_screen.visible = screen == "cfg"
+	home.set_active(screen == "home")
+	board_screen.set_active(screen == "board")
+	if screen == "cfg" and cfg_screen == null:
+		cfg_screen = load("res://scripts/ui/CfgEdit.gd").new()
+		add_child(cfg_screen)
+	if cfg_screen != null:
+		cfg_screen.visible = screen == "cfg"
+		cfg_screen.process_mode = Node.PROCESS_MODE_INHERIT if screen == "cfg" else Node.PROCESS_MODE_DISABLED
 	topbar.visible = screen != "cfg"
 	if screen == "board":
 		board_screen.board.select(-1)
+		if _guide != null and not G.seen_tutorial and G.tutorial_on and not _guide.visible: _guide.present()
 	topbar.set_sand_context(false)
 
+## Configuration changes replace the entire test session, including pending UI callbacks.
+func prepare_session_restart() -> void:
+	if _guide != null:
+		_guide.free()
+		_guide = null
+	_rw_q.clear()
+	_rw_showing = false
+	for popup in popup_layer.get_children(): popup.free()
+	for effect in fx_layer.get_children(): effect.free()
+	board_screen.board.select(-1)
+
+func reset_session_views() -> void:
+	var home_index := home.get_index()
+	var board_index := board_screen.get_index()
+	home.free()
+	board_screen.free()
+	home = HomeScreen.new()
+	add_child(home)
+	move_child(home, home_index)
+	board_screen = BoardScreen.new()
+	add_child(board_screen)
+	move_child(board_screen, board_index)
+	_guide = GuideScript.new()
+	board_screen.add_child(_guide)
+	_apply_screen()
+
 func open(name: String, arg = null) -> PopupBase:
-	if name in ["album", "pack"] and G.level < Data.CARD_LEVEL:
-		toast("典藏卡在 %d 级解锁" % Data.CARD_LEVEL)
-		return null
-	var p: PopupBase
-	match name:
-		"choice_chest":
-			p = preload("res://scripts/ui/ChoiceChestPopup.gd").new()
-			p.cell = int(arg)
-			p.box_id = G.cell_id(int(arg))
-		"ufo":
-			p = preload("res://scripts/ui/UfoPopup.gd").new()
-		"daily_ad":
-			p = preload("res://scripts/ui/DailyAdPopup.gd").new()
-		"tiger": p = preload("res://scripts/ui/TigerEscapePopup.gd").new()
-		"duel": p = preload("res://scripts/ui/DuelPopup.gd").new()
-		"seven_day":
-			p = preload("res://scripts/ui/SevenDayPopup.gd").new()
-		"merge_event":
-			p = preload("res://scripts/ui/MergeEventPopup.gd").new()
-			if arg is String: p.period_key = arg
-		"energy":
-			p = Popups.energy()
-			# 仅生产器体力不足触发后续礼包；购买成功补足体力则不打扰。
-			if arg == "exhausted":
-				p.closed.connect(func():
-					if is_instance_valid(G.main) and G.level >= 16 and G.energy < G.gen_cost() and Offers.wants_energy():
-						Offers.open_energy(), CONNECT_ONE_SHOT)
-		"energy_amber": p = Popups.energy()
-		"energy_offer": p = preload("res://scripts/ui/EnergyOfferPopup.gd").new()
-		"spree": p = preload("res://scripts/ui/SpreePopup.gd").new()
-		"howto": p = Popups.howto()
-		"store": p = Popups.store()
-		"settings": p = Popups.settings()
-		"build": p = Popups.build(arg)
-		"book": p = Popups.book(0 if arg == null else arg)
-		"inventory": p = Popups.inventory()
-		"item_info": p = Popups.item_info(arg)
-		"levelup": p = Popups.levelup()
-		"board_reward": p = Popups.board_reward(arg if arg is Array else [])
-		"event":
-			if G.level < Data.CARD_LEVEL:
-				toast("典藏卡册 %d 级开放" % Data.CARD_LEVEL)
-				return null
-			p = Popups.event()
-		"pass": p = PassPopupScript.screen()
-		"pass_buy": p = PassPopupScript.buy()
-		"album": p = Popups.album(arg)
-		"pack": p = Popups.pack()
-		"level": p = Popups.level_info()
-		_: return null
-	if p == null:
-		return null
-	_attach_popup(p)
+	var p := PopupRegistry.create(name, arg)
+	if p != null: _attach_popup(p)
 	return p
 
-## 全屏领奖。rewards 是 [[物品 id, 数量], ...]。apply 为假时物品已经入账，面板只负责飞行动画。
-func present_rewards(rewards: Array, apply := true) -> void:
+## 展示已提交的奖励；到账只由玩法命令负责。
+func present_rewards(rewards: Array) -> void:
 	var snap: Array = []
 	for rw in rewards:
 		if rw is Array and rw.size() >= 2 and str(rw[0]) != "" and int(rw[1]) > 0:
 			snap.append([str(rw[0]), int(rw[1])])
 	if snap.is_empty():
 		return
-	var do_apply := apply
-	_rw_q.append(func(): return Popups.reward_screen(snap, do_apply))
+	_rw_q.append(func(): return RewardPopups.reward_screen(snap))
 	_pump_rewards()
 
 ## 棋盘石头上的奖励。entries 是 [{i, id, n}, ...]，领取前还挂在格子上。
@@ -199,7 +178,7 @@ func present_board_reward(entries: Array) -> void:
 	if entries.is_empty():
 		return
 	var snap := entries.duplicate(true)
-	_rw_q.append(func(): return Popups.board_reward(snap))
+	_rw_q.append(func(): return RewardPopups.board_reward(snap))
 	_pump_rewards()
 
 func _pump_rewards() -> void:
@@ -228,19 +207,28 @@ func _pump_rewards() -> void:
 		_pump_rewards())
 
 func _attach_popup(p: PopupBase) -> void:
-	popup_layer.add_child(p)
-	popup_layer.move_child(p, popup_layer.get_child_count() - 1)
-	topbar.on_popup_opened()
-	p.tree_exited.connect(topbar.on_popup_exited, CONNECT_ONE_SHOT)
-	if p.has_meta("fullscreen"):
-		var cb := p.close
-		topbar.push_close(cb)
-		p.tree_exiting.connect(func(): topbar.pop_close(cb))
-	p.open()
+	popup_layer.present(p)
 
 func close_all() -> void:
-	for c in popup_layer.get_children():
-		c.queue_free()
+	popup_layer.clear()
+
+func _on_presentation(kind: String, payload: Dictionary) -> void:
+	match kind:
+		"notice": toast(str(payload.get("text", "")))
+		"board_spawn":
+			if screen == "board" and is_instance_valid(board_screen): board_screen.board.fly_in(int(payload["origin"]), int(payload["to"]), str(payload["id"]))
+		"craft_complete":
+			if screen == "board": Sfx.play("merge", 1.08)
+		"level_up":
+			var timer := get_tree().create_timer(0.7)
+			timer.timeout.connect(func():
+				if is_inside_tree(): open("levelup"), CONNECT_ONE_SHOT)
+		"packs_earned":
+			var count := int(payload.get("count", 0))
+			if count > 0: present_rewards([["pack_1", count]])
+		"overflow":
+			var count := int(payload.get("count", 0))
+			if count > 0: toast("放不下的 %d 个物品进了暂存区" % count)
 
 func fly(id: String, from: Vector2, to: Vector2, cb: Callable = Callable(), s: float = 70.0) -> void:
 	var d := DrawBox.new()
@@ -358,7 +346,7 @@ func _run_shots(names: PackedStringArray) -> void:
 				bd.drag_from = src
 				bd.dragging = true
 				bd.drag_vis = bd.cell_center(src) + Vector2(150, 120)
-				bd._drop(bd.cell_center(G.find_empty_near(src)) + Vector2(30, 30))
+				bd._drop(bd.cell_center(G.rules.board.find_empty_near(src)) + Vector2(30, 30))
 				bd.dragging = false
 				bd.drag_from = -1
 				await get_tree().create_timer(0.08).timeout
@@ -367,7 +355,7 @@ func _run_shots(names: PackedStringArray) -> void:
 				for r in 3:
 					var o: Dictionary = G.orders[0]
 					for id in o["items"]:
-						G.board[G.find_empty_near(0)]["id"] = id
+						G.board[G.rules.board.find_empty_near(0)]["id"] = id
 					G.board_changed.emit()
 					board_screen._on_deliver(0)
 					await get_tree().create_timer(1.6).timeout
@@ -405,6 +393,8 @@ func _run_shots(names: PackedStringArray) -> void:
 
 ## 「生成物品图.bat」：物品图和界面图都从原始绘制代码画成 PNG，画完退出。
 func _bake(args: PackedStringArray) -> void:
+	var BakeItemsScript = load("res://scripts/BakeItems.gd")
+	var BakeSpritesScript = load("res://scripts/BakeSprites.gd")
 	var only := false
 	for a in args:
 		only = only or a.begins_with("--only=")

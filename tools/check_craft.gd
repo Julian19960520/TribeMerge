@@ -34,7 +34,7 @@ func run() -> void:
 		if a.begins_with("--out="):
 			out = a.trim_prefix("--out=")
 	g = root.get_node("G")
-	check(not g.server_mode(), "isolated local save (cloud off)")
+	check(not root.get_node("Cloud").enabled, "isolated test transport")
 
 	# ---- 菜谱
 	var ids: Array = Data.DISHES.keys()
@@ -70,7 +70,7 @@ func run() -> void:
 	g.pending_orders = []
 	for si in 99:
 		g.story_done["3:%d" % si] = true
-	g.refill_orders()
+	g.rules.orders.refill_orders()
 	check(_crafts().size() == 1, "Lv.3 has one craft order")
 	var c0: Dictionary = _crafts()[0] if not _crafts().is_empty() else {}
 	check(str(c0.get("dish", "")) == "salad" and (c0.get("rw", {}).get("rewards", []) as Array) == ["sand_2"], "first craft is the undiscovered salad, rewards sand_2: %s" % [c0.get("rw", {})])
@@ -79,7 +79,7 @@ func run() -> void:
 	g.pending_orders = []
 	for si in 99:
 		g.story_done["22:%d" % si] = true
-	g.refill_orders()
+	g.rules.orders.refill_orders()
 	var cs := _crafts()
 	check(cs.size() == 2 and str(cs[0]["dish"]) != str(cs[1]["dish"]), "Lv.22 has two different craft orders (%d)" % cs.size())
 
@@ -89,11 +89,11 @@ func run() -> void:
 	g.board[10] = {"id": "", "lock": 0, "ck": {"dish": "grill", "t0": g.now(), "secs": 3000, "uid": "x", "mats": []}}
 	g.rush = 20
 	var used: int = g.rush_cook(10)
-	check(used == 20 and g.rush == 0 and absi(g.cook_left(10) - (3000 - 20 * rs)) <= 1, "partial rush uses all 20 (left %d s)" % g.cook_left(10))
+	check(used == 20 and g.rush == 0 and absi(g.rules.orders.cook_left(10) - (3000 - 20 * rs)) <= 1, "partial rush uses all 20 (left %d s)" % g.rules.orders.cook_left(10))
 	g.rush = 100
-	var need: int = g.rush_need(10)
+	var need: int = g.rules.orders.rush_need(10)
 	used = g.rush_cook(10)
-	check(used == need and g.rush == 100 - need and not g.cooking(10) and str(g.board[10]["id"]) == "grill", "rush finishes with %d hourglasses, %d kept" % [need, g.rush])
+	check(used == need and g.rush == 100 - need and not g.rules.orders.cooking(10) and str(g.board[10]["id"]) == "grill", "rush finishes with %d hourglasses, %d kept" % [need, g.rush])
 
 	# ---- 合成掉沙漏
 	check(Data.merge_sand_item("fruit_3", 2) == "" and Data.merge_sand_item("fruit_3", 3) == "sand_1" and Data.merge_sand_item("fruit_8", 9) == "sand_2" and Data.merge_sand_item("basket_3", 9) == "", "merge sand tiers / level gate / items only")
@@ -130,7 +130,7 @@ func run() -> void:
 	for i in g.board.size():
 		if int(g.board[i]["lock"]) == 0:
 			g.board[i] = {"id": "", "lock": 0}
-	g.refill_orders()
+	g.rules.orders.refill_orders()
 	cs = _crafts()
 	var mats: Array = cs[0]["mats"]
 	for k in mats.size():

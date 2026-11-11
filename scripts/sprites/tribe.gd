@@ -220,13 +220,7 @@ static func live_hammer(ci: CanvasItem, p: Vector2) -> void:
 
 ## 村里的小人（不含影子）：feet 是落地点
 static func live_walker(ci: CanvasItem, role: int, feet: Vector2) -> void:
-	var w := WALKER_H / Meme.BUST_RECT.size.y * 100.0
-	var rot: float = Meme.TILT[role % Meme.TILT.size()]
-	var c := feet + Vector2(0, -Meme.BUST_RECT.end.y * w / 100.0)
-	Meme.props_back(ci, role, c, w, rot)
-	Meme.bust(ci, c, w, rot)
-	Meme.clothes(ci, role, c, w, rot)
-	Meme.props_front(ci, role, c, w, rot)
+	Meme.walker_portrait(ci, role, feet)
 
 static func live_bubble_body(ci: CanvasItem, r: Rect2) -> void:
 	var b := Art.rrect(r, 14, 9, 0.4)

@@ -46,7 +46,7 @@ func fly_from(origin: Vector2) -> void:
 	var fx := DrawBox.new()
 	fx.size = Vector2(54, 54)
 	fx.position = origin - fx.size / 2
-	fx.painter = func(ci, sz): ci.draw_texture_rect(MergeEvent.texture(str(cfg["theme"]["point_icon"])), Rect2(Vector2.ZERO, sz), false)
+	fx.painter = func(ci, sz): ci.draw_texture_rect(MergeEventArt.texture(str(cfg["theme"]["point_icon"])), Rect2(Vector2.ZERO, sz), false)
 	G.main.fx_layer.add_child(fx)
 	var to := get_global_rect().get_center() - fx.size / 2
 	var tw := fx.create_tween()

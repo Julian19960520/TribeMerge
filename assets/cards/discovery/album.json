@@ -1,0 +1,36 @@
+{
+	"cards": [
+		"两个装备槽",
+		"赚差价",
+		"哄睡酋长",
+		"果子还会长",
+		"沉迷科技",
+		"颗粒与波浪",
+		"研究口粮",
+		"排队哄睡",
+		"被发现了"
+	],
+	"name": "发明与发现",
+	"texts": [
+		"兄弟，我发现站起来走路，能解锁两个装备槽。",
+		"兄弟，我发现可以雇别人替我摘果子，然后赚差价。",
+		"兄弟，我发现用石头把酋长哄睡着，我就能当酋长了。",
+		"兄弟，我发现就算我死了，果子好像也会接着长。",
+		"兄弟，你看这些孩子，整天沉迷科技。",
+		"兄弟，我发现光既是颗粒，又是波浪。",
+		"兄弟，你说得有道理，但咱们没多余的果子供你研究这个。",
+		"兄弟，开了这个头，以后有的是兄弟排着队哄你睡。",
+		"兄弟，我被酋长发现了。"
+	],
+	"art": [
+		"res://assets/cards/discovery/two_equipment_slots.png",
+		"res://assets/cards/discovery/fruit_middleman.png",
+		"res://assets/cards/discovery/new_chief.png",
+		"res://assets/cards/discovery/fruit_after_death.png",
+		"res://assets/cards/discovery/children_technology.png",
+		"res://assets/cards/discovery/light_duality.png",
+		"res://assets/cards/discovery/research_budget.png",
+		"res://assets/cards/discovery/lullaby_queue.png",
+		"res://assets/cards/discovery/caught_by_chief.png"
+	]
+}

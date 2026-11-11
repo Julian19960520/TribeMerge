@@ -61,7 +61,7 @@
      "id": "d1_5",
      "metric": "shell",
      "target": 600,
-     "title": "累计收集600贝币",
+     "title": "累计收集600不拿拿",
      "points": 10,
      "rewards": [
       [
@@ -187,7 +187,7 @@
      "id": "d3_3",
      "metric": "shell",
      "target": 4500,
-     "title": "累计收集4500贝币",
+     "title": "累计收集4500不拿拿",
      "points": 20,
      "rewards": [
       [
@@ -351,7 +351,7 @@
      "id": "d5_3",
      "metric": "shell",
      "target": 8000,
-     "title": "累计收集8000贝币",
+     "title": "累计收集8000不拿拿",
      "points": 25,
      "rewards": [
       [
@@ -553,7 +553,7 @@
      "id": "d7_5",
      "metric": "shell",
      "target": 12000,
-     "title": "累计收集12000贝币",
+     "title": "累计收集12000不拿拿",
      "points": 30,
      "rewards": [
       [

@@ -8,6 +8,7 @@ var progress: Label
 var timer: Label
 var points: Label
 var spawn_btn: TButton
+var orders_btn: TButton
 var claim_btn: TButton
 var collection: DrawBox
 var track: DrawBox
@@ -163,6 +164,22 @@ func _build_bottom() -> void:
 	spawn_btn.extra = _paint_spawn
 	spawn_btn.name = "moon_place_button"
 	points = UI.lbl(spawn_btn, "", Rect2(30, 122, 120, 38), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, INK, true)
+	orders_btn = UI.btn(box, Rect2(190, BUBBLE.y - 44, 340, 88), "去完成订单", "green", _go_orders, 34)
+	orders_btn.name = "moon_go_orders"
+
+func _go_orders() -> void:
+	if _closing: return
+	G.main.show_screen("board", true)
+	close()
+
+func _refresh_action() -> void:
+	var s := MergeEvent.state(cfg)
+	var cost := maxi(1, int(cfg["points"]["spawn_cost"]))
+	var can_place := int(s["points"]) >= cost and MergeEvent.active(cfg) and not bool(s["claimed"])
+	points.text = "放置 ×%d" % (int(s["points"]) / cost)
+	spawn_btn.visible = can_place
+	spawn_btn.enabled = can_place
+	orders_btn.visible = not can_place
 
 func _paint_spawn(ci: CanvasItem, sz: Vector2) -> void:
 	var s := MergeEvent.state(cfg)
@@ -172,7 +189,7 @@ func _paint_spawn(ci: CanvasItem, sz: Vector2) -> void:
 		ci.draw_circle(c, 70 + 4 * sin(_t * 3.0), Color(_c("glow", "bff3f0"), 0.18))
 	MoonArt.panel(ci, "spawn_on" if can else "spawn_off", sz)
 	var bob := sin(_t * 2.5) * 3.0 if can else 0.0
-	MergeEvent.draw_item(ci, cfg, str(cfg["chain"][int(cfg["points"]["spawn_tier"]) - 1]["id"]), c + Vector2(0, bob - 2), 78, Color.WHITE if can else Color(0.7, 0.75, 0.78, 0.8))
+	MergeEventArt.draw_item(ci, cfg, str(cfg["chain"][int(cfg["points"]["spawn_tier"]) - 1]["id"]), c + Vector2(0, bob - 2), 78, Color.WHITE if can else Color(0.7, 0.75, 0.78, 0.8))
 
 func _show_relic(k: int) -> void:
 	var row: Dictionary = cfg["chain"][k]
@@ -193,9 +210,9 @@ func _paint_collection(ci: CanvasItem, sz: Vector2) -> void:
 		Sprites.draw(ci, "ev_me_socket", Rect2(c - Vector2(gap * 0.43, 25), Vector2(gap * 0.86, 50)))
 		if s["discovered"].has(id):
 			if k == top: ci.draw_circle(c, 30 + 2 * sin(_t * 3.0), Color(_c("glow", "bff3f0"), 0.22))
-			MergeEvent.draw_item(ci, cfg, id, c + Vector2(0, -6), gap * 0.86)
+			MergeEventArt.draw_item(ci, cfg, id, c + Vector2(0, -6), gap * 0.86)
 		else:
-			MergeEvent.draw_item(ci, cfg, id, c + Vector2(0, -4), gap * 0.78, Color(0.05, 0.13, 0.17, 0.85))
+			MergeEventArt.draw_item(ci, cfg, id, c + Vector2(0, -4), gap * 0.78, Color(0.05, 0.13, 0.17, 0.85))
 		var n := str(k + 1)
 		ci.draw_string(G.font_title, c + Vector2(gap * 0.28, 24), n, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("dcefe9") if s["discovered"].has(id) else Color("6f8f92"))
 
@@ -208,8 +225,7 @@ func _refresh() -> void:
 	if not is_instance_valid(board): return
 	var s := MergeEvent.state(cfg)
 	progress.text = "%d / %d" % [MergeEvent.progress(cfg, s), MergeEvent.goal_total(cfg)]
-	points.text = "放置 ×%d" % int(s["points"])
-	spawn_btn.enabled = MergeEvent.active(cfg) and not bool(s["claimed"])
+	_refresh_action()
 	claim_btn.enabled = true
 	for id in s["discovered"]:
 		if not _known.has(id):
@@ -239,7 +255,7 @@ func _tick() -> void:
 	if not is_instance_valid(timer): return
 	var left := maxi(0, int(float(cfg["ends_at"]) - G.now()))
 	timer.text = "第 %d 期 · 剩余 %s" % [int(str(cfg["key"]).get_slice(":", 1)) + 1, G.fmt_time(left)] if left > 0 else "本期已结束 · 已达成的宝箱仍可领取"
-	if left <= 0: spawn_btn.enabled = false
+	_refresh_action()
 
 func _claim() -> void:
 	var result: Dictionary = await MergeEvent.act(cfg, "claim")
@@ -353,7 +369,7 @@ class Fx extends Control:
 					var e2 := t * t * (3.0 - 2.0 * t)
 					var pos := from.lerp(p, e2) + Vector2(0, -sin(t * PI) * 120)
 					draw_circle(pos, 30, Color(0.75, 1, 0.97, 0.25))
-					MergeEvent.draw_item(self, cfg, str(q["id"]), pos, 70 + sin(t * PI) * 16)
+					MergeEventArt.draw_item(self, cfg, str(q["id"]), pos, 70 + sin(t * PI) * 16)
 				"banner":
 					var a := clampf(minf(t * 6.0, (1 - t) * 4.0), 0, 1)
 					var sc := 0.8 + 0.2 * minf(1.0, t * 6.0)
@@ -361,7 +377,7 @@ class Fx extends Control:
 					var r := Rect2(-210, -58, 420, 116)
 					Sprites.draw(self, "ev_me_banner", r, Color(1, 1, 1, a))
 					draw_circle(Vector2(-140, 0), 50, Color(0.75, 1, 0.97, 0.25 * a))
-					MergeEvent.draw_item(self, cfg, str(q["id"]), Vector2(-140, -2), 96, Color(1, 1, 1, a))
+					MergeEventArt.draw_item(self, cfg, str(q["id"]), Vector2(-140, -2), 96, Color(1, 1, 1, a))
 					draw_string(G.font_body, Vector2(-80, -14), "解锁图鉴", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.75, 0.95, 0.92, a))
 					draw_string_outline(G.font_title, Vector2(-80, 26), str(q["s"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, 6, Color(Art.INK, a))
 					draw_string(G.font_title, Vector2(-80, 26), str(q["s"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(1, 0.95, 0.7, a))

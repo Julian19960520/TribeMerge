@@ -40,7 +40,7 @@ func run() -> void:
 		if a.begins_with("--out="):
 			out = a.trim_prefix("--out=")
 	g = root.get_node("G")
-	check(not g.server_mode(), "isolated local save (cloud off)")
+	check(not root.get_node("Cloud").enabled, "isolated test transport")
 	g.new_game()
 	g.tutorial_on = false
 	g.seen_tutorial = true
@@ -75,23 +75,23 @@ func run() -> void:
 	main.show_screen("board", true)
 	await create_timer(0.6).timeout
 	var bs = main.board_screen
-	check(g.gen_left(CELL) == 12 and g.gen_wait(CELL) == 0, "starts full (%d left)" % g.gen_left(CELL))
+	check(g.rules.board.gen_left(CELL) == 12 and g.rules.board.gen_wait(CELL) == 0, "starts full (%d left)" % g.rules.board.gen_left(CELL))
 	for k in 5:
 		bs._on_activate(CELL)
-	check(g.gen_left(CELL) == 7, "5 taps → 7 left")
+	check(g.rules.board.gen_left(CELL) == 7, "5 taps → 7 left")
 	await _shot("partial")
 	for k in 7:
 		bs._on_activate(CELL)
 	check(_count() == 12 and g.energy == 88, "12 items made, 12 energy spent")
-	check(g.gen_left(CELL) == 0 and g.gen_wait(CELL) > 3595, "empty → resting %d s" % g.gen_wait(CELL))
+	check(g.rules.board.gen_left(CELL) == 0 and g.rules.board.gen_wait(CELL) > 3595, "empty → resting %d s" % g.rules.board.gen_wait(CELL))
 	bs._on_activate(CELL)
 	check(_count() == 12 and g.energy == 88, "tap while resting produces nothing, costs nothing")
 	await create_timer(3.0).timeout
 	await _shot("resting")
 	g.simulation_time += 3590.0
-	check(g.gen_left(CELL) == 0, "still resting at 59m50s")
+	check(g.rules.board.gen_left(CELL) == 0, "still resting at 59m50s")
 	g.simulation_time += 11.0
-	check(g.gen_left(CELL) == 12, "full again after 1 h")
+	check(g.rules.board.gen_left(CELL) == 12, "full again after 1 h")
 
 	print("FAILURES %d" % failures)
 	quit(1 if failures > 0 else 0)

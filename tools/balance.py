@@ -1,4 +1,4 @@
-"""石器部落 · 合成 —— 数值模型。
+"""合合部落 —— 数值模型。
 
 用法：python tools/balance.py          只算，输出 tools/balance_out.json 和 难度曲线.html
       python tools/balance.py --write  同时把结果写回 data/*.json
@@ -31,7 +31,7 @@ KNOBS = {
     "taps": [(1, 75), (4, 200), (8, 260), (12, 380), (15, 820), (20, 1050), (25, 1400), (30, 2050), (35, 2450), (40, 2950)],
     # 第 3 天起每天折合多少点击（体力约 750/天 ÷ 演算校准 0.55），只用来估算天数
     "day_taps": 1350,
-    # 每级点击里有多少花在经验订单上，其余给随机单 / 制作单（换贝币）
+    # 每级点击里有多少花在经验订单上，其余给随机单 / 制作单（换不拿拿）
     "story_share": 0.8,
     # 经验订单基本 1 点声望；6 级起每 5 点需求里有 1 张 2 点的大单
     "xp2_from": 6, "xp2_every": 5,
@@ -54,17 +54,17 @@ KNOBS = {
     "rush_sec": 60, "sand_a": 3, "sand_div": 3,
     # 制作单附送的沙漏实物：按菜的制作秒数取档 [最少秒数, 物品]
     "craft_sand": [[0, "sand_2"], [300, "sand_3"], [1800, "sand_4"], [7200, "sand_5"]],
-    # 合成普通物品时掉沙漏：和合成掉贝币共用掷点，排在贝币后面
+    # 合成普通物品时掉沙漏：和合成掉不拿拿共用掷点，排在不拿拿后面
     "merge_sand": {"chance": 0.03, "min_level": 3, "tiers": [[2, "sand_1"], [7, "sand_2"], [10, "sand_3"]]},
-    # 贝币：建造总价占全程订单贝币收入的比例
+    # 不拿拿：建造总价占全程订单不拿拿收入的比例
     "build_share": 0.85,
     # 每个区域从开放到建完大约用几级
     "build_span": 7,
     "seed": 20261104,
 }
 
-MAIN_PAY = 3   # 随机单每火苗贝币
-STORY_PAY = 4  # 剧情单每火苗贝币
+MAIN_PAY = 3   # 随机单每火苗不拿拿
+STORY_PAY = 4  # 剧情单每火苗不拿拿
 
 
 def load(name):
@@ -236,7 +236,7 @@ def simulate(costs, level_gens):
         story_f = story_taps * e / K["waste"]
         rand_f = rand_taps * e / K["waste"]
         income = story_f * STORY_PAY + rand_f * MAIN_PAY
-        # 建造：这一级的贝币分几步到账，每到账一次就把能盖的都盖掉（推荐最便宜的）
+        # 建造：这一级的不拿拿分几步到账，每到账一次就把能盖的都盖掉（推荐最便宜的）
         built_now = []
         steps = 4
         for _s in range(steps):
@@ -328,7 +328,7 @@ def plan_level_gens():
 
 
 def make_costs(rows):
-    """按每级贝币收入给部件定价：部件均匀排在区域的建造窗口里，价格 ∝ 那一级的收入。"""
+    """按每级不拿拿收入给部件定价：部件均匀排在区域的建造窗口里，价格 ∝ 那一级的收入。"""
     income = {r["level"]: r["income"] for r in rows}
     total = sum(income.values())
     slots = []

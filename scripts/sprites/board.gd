@@ -19,9 +19,9 @@ static func entries() -> Array:
 	out.append({"key": "board_cook_flame", "w": 16, "h": 10, "pad": 6,
 		"draw": func(ci, r): Art.fill(ci, Art.flame_pts(r.get_center(), 7.0, 10.0, 4), Art.FIRE2, 2.0)})
 	out.append({"key": "board_bolt", "w": 16, "h": 18, "pad": 5,
-		"draw": func(ci, r): Art.fill(ci, Art.flame_pts(r.get_center(), 7, 18, 0), Art.FIRE2, 2.0)})
+		"draw": func(ci, r): Art.fill(ci, Art.bolt_pts(r.get_center(), 14, 18), Art.FIRE2, 2.0)})
 	out.append({"key": "board_bolt_boost", "w": 16, "h": 18, "pad": 5,
-		"draw": func(ci, r): Art.fill(ci, Art.flame_pts(r.get_center(), 7, 18, 0), Art.FIRE_BOOST, 2.0)})
+		"draw": func(ci, r): Art.fill(ci, Art.bolt_pts(r.get_center(), 14, 18), Art.FIRE_BOOST, 2.0)})
 	out.append({"key": "board_prod_glow", "w": 84, "h": 84, "pad": 4,
 		"draw": func(ci, r): live_prod_glow(ci, r, 0)})
 	# 小牌：墨边一张，白芯一张（运行时染色）
@@ -347,8 +347,7 @@ static func live_aim_arrow(ci: CanvasItem, a: Vector2, tip: Vector2) -> void:
 
 ## 双倍火种开关上的火苗，c 是外焰中心
 static func live_boost(ci: CanvasItem, c: Vector2, on: bool) -> void:
-	Art.fill(ci, Art.flame_pts(c, 15, 40, 7), Art.FIRE_BOOST if on else Art.FIRE2, 2.5)
-	Art.fill(ci, Art.flame_pts(c + Vector2(0, 7), 7, 18, 9), Color.WHITE if on else Art.FIRE, 0.0, Color(0, 0, 0, 0))
+	Art.fill(ci, Art.bolt_pts(c, 30, 40), Art.FIRE_BOOST if on else Art.FIRE2, 2.5)
 
 static func live_offer_under(ci: CanvasItem, card: Rect2) -> void:
 	ci.draw_colored_polygon(Art.rrect(Rect2(card.position + Vector2(0, 7), card.size), 22, 204, 0.0), Color(0, 0, 0, 0.25))

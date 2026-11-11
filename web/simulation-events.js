@@ -7,7 +7,7 @@
     seven_day_stage: ['七日阶段奖励', '#e3a6d5'], pass: ['通行证奖励', '#9aabe9'],
     land: ['开地奖励', '#cbb67b'], chest: ['普通宝箱', '#d4a875'],
     choice_chest: ['自选宝箱', '#e7c57c'], cards: ['典藏卡包', '#db9dcd'],
-    resource_energy: ['收取体力', '#e7aa71'], resource_shell: ['收取贝币', '#c6bf87'],
+    resource_energy: ['收取体力', '#e7aa71'], resource_shell: ['收取不拿拿', '#c6bf87'],
     resource_amber: ['收取琥珀', '#e7c258'], resource_sand: ['收取沙漏', '#bcb19e'],
     stash: ['暂存区领奖', '#c0a6cf'], duel_match: ['双人赛结算', '#7bccb1'],
     duel_milestone: ['双人赛胜场奖', '#a1d485'], banana: ['香蕉赛奖励', '#d4d878'],
@@ -46,12 +46,6 @@
     if (event.category !== 'reward') return base[event.category] ? event.category : 'other';
     if (/^领取 \d+ 级奖励$/.test(title)) return 'reward_level';
     if (title.startsWith('图鉴 · ')) return 'reward_book';
-    const oldTitles = {
-      '七日任务奖励': 'seven_day_task', '七日里程碑': 'seven_day_stage', '通行证免费奖励': 'pass',
-      '领取每日免费补给': 'daily', '领取开地奖励': 'land', '打开宝箱': 'chest', '打开自选宝箱': 'choice_chest',
-      '打开典藏卡包': 'cards', '领取暂存卡包': 'cards', '收取暂存资源': 'stash'
-    };
-    if (oldTitles[title]) return 'reward_' + oldTitles[title];
     if (title.startsWith('收取 ')) {
       const chain = (event.detail?.item || '').split('_')[0];
       const kind = { fire: 'energy', shell: 'shell', amber: 'amber', sand: 'sand' }[chain];

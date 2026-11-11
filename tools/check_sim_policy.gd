@@ -23,8 +23,8 @@ func run() -> void:
 	bot.stream=FileAccess.open("user://sim-policy-check.jsonl",FileAccess.WRITE)
 	bot.before=bot.snap()
 	var stage: int=g.builds["fire"]
-	var cost: int=g.build_cost("fire")
-	check(g.order_ready(g.orders[0]),"fixture has a ready order")
+	var cost: int=g.rules.progression.build_cost("fire")
+	check(g.rules.orders.order_ready(g.orders[0]),"fixture has a ready order")
 	check(await bot.upgrade_tribe(),"tribe upgrades independently while order is ready")
 	check(g.builds["fire"]==stage+1 and g.board[0]["id"]=="fruit_1","upgrade preserves order materials")
 	check(bot.events[-1]["category"]=="build" and bot.events[-1]["detail"]["cost"]==cost,"tribe action logs its own cost and category")

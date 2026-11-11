@@ -112,8 +112,8 @@ static func _status_text(c, info: Dictionary) -> String:
 	if info.get("last_sync_at") != null:
 		t = float(info["last_sync_at"])
 	lines.append("最近同步：%s" % (Time.get_datetime_string_from_unix_time(int(t) + 8 * 3600, true) if t > 0.0 else "还没有"))
-	if not c.events.is_empty():
-		lines.append("待结算：%d 件（交单 / 收取等）" % c.events.size())
+	if not Replay.pending.is_empty():
+		lines.append("待同步：%d 条操作" % Replay.pending.size())
 	return "\n".join(lines)
 
 static func _load_info(c, lbl: Label) -> void:

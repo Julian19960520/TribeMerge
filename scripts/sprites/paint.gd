@@ -521,6 +521,10 @@ static func live_face_mouth_only(ci: CanvasItem, c: Vector2, r: float) -> void:
 	Art.pl(ci, m, r * 0.05, Art.INK, 9)
 
 static func live_portrait(ci: CanvasItem, kind: int, c: Vector2, s: float) -> void:
+	Meme.portrait(ci, kind, c, s)
+
+## 保留旧的程序化肖像供历史素材审阅，不用于生成或运行。
+static func _legacy_portrait(ci: CanvasItem, kind: int, c: Vector2, s: float) -> void:
 	ci.draw_set_transform(c, 0.0, Vector2.ONE * (s / 100.0))
 	var skin: Color = [Color("b97a4a"), Color("d39a6a"), Color("a8693d"), Color("dca779")][kind % 4]
 	var body_col: Color = [Color("9c5a2a"), Color("6e8a3a"), Color("8a4b2a"), Color("c98a4a")][kind % 4]
@@ -571,35 +575,16 @@ static func live_portrait(ci: CanvasItem, kind: int, c: Vector2, s: float) -> vo
 # ---------------------------------------------------------------- 角色
 
 static func live_mascot(ci: CanvasItem, c: Vector2, s: float, prop: String = "") -> void:
-	var k := s / 100.0
-	var w := 128.0 / Meme.BUST_RECT.size.y * 100.0 * k
-	var hc := c + Vector2(0, 62.0 * k - Meme.BUST_RECT.end.y * w / 100.0)
-	var rot: float = Meme.TILT[Meme.XIAOYA]
-	Meme.props_back(ci, Meme.XIAOYA, hc, w, rot)
-	Meme.bust(ci, hc, w, rot)
-	Meme.clothes(ci, Meme.XIAOYA, hc, w, rot)
-	Meme.props_front(ci, Meme.XIAOYA, hc, w, rot)
-	if prop == "hammer":
-		live_hammer(ci, c + Vector2(52, 20) * k, 0.9 * k)
+	Paint.mascot(ci, c, s, prop)
 
 static func live_hero_at(ci: CanvasItem, hc: Vector2, w: float) -> void:
-	var rot: float = Meme.TILT[Meme.HERO]
-	Meme.props_back(ci, Meme.HERO, hc, w, rot)
-	Meme.bust(ci, hc, w, rot)
-	Meme.clothes(ci, Meme.HERO, hc, w, rot)
-	Meme.props_front(ci, Meme.HERO, hc, w, rot)
+	Meme.draw_portrait(ci, Meme.HERO, Rect2(hc + Vector2(-0.6, -0.8) * w, Vector2(1.2, 1.6) * w))
 
 static func live_heroine(ci: CanvasItem, c: Vector2, s: float) -> void:
-	var k := s / 100.0
-	var w := 250.0 / Meme.BUST_RECT.size.y * 100.0 * k
-	var hc := c + Vector2(-14, 130.0 * k - Meme.BUST_RECT.end.y * w / 100.0)
-	live_hero_at(ci, hc, w)
-	live_mascot(ci, c + Vector2(96, 84) * k, 92.0 * k)
+	Paint.heroine(ci, c, s)
 
 static func live_bust(ci: CanvasItem, c: Vector2, s: float) -> void:
-	var k := s / 100.0
-	var w := 164.0 / Meme.BUST_RECT.size.y * 100.0 * k
-	live_hero_at(ci, c + Vector2(0, 58.0 * k - Meme.BUST_RECT.end.y * w / 100.0), w)
+	Paint.bust(ci, c, s)
 
 # ---------------------------------------------------------------- 岩画
 

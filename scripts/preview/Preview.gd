@@ -121,7 +121,7 @@ func _draw() -> void:
 	_notes(l, Rect2(676, 640, 944, 344))
 
 func _draw_tabs() -> void:
-	_txt("石器部落 · 产线设计预览", Vector2(22, 40), 28, Color("fff1c4"), true)
+	_txt("合合部落 · 产线设计预览", Vector2(22, 40), 28, Color("fff1c4"), true)
 	var x := 430.0
 	for i in ProdData.LINES.size():
 		var l: Dictionary = ProdData.LINES[i]

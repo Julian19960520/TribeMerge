@@ -1,15 +1,9 @@
 class_name MergeEvent
 extends RefCounted
 ## Seasonal board controller. Its item IDs never enter the main board/inventory.
-static var _config: Dictionary = {}
-static var _textures: Dictionary = {}
-static var busy := false
 
 static func config() -> Dictionary:
-	if _config.is_empty():
-		var raw = JSON.parse_string(FileAccess.get_file_as_string("res://data/merge_events.json"))
-		if raw is Dictionary: _config = raw
-	return _config
+	return Data.ConfigFiles.shared("res://data/merge_events.json")
 
 static func current(at := -1.0) -> Dictionary:
 	if at < 0: at = G.now()
@@ -58,12 +52,9 @@ static func fresh(c: Dictionary) -> Dictionary:
 	return {"rules_version": 3, "cells": cells, "points": 0, "earned": 0, "spent": 0, "discovered": {}, "min_view": rows - int(b["visible_rows"]), "view": rows - int(b["visible_rows"]), "claimed": false, "got": [], "orders": 0}
 
 ## Locked item tier at a depth (0 = row right above the open bottom row). Deeper layers hold higher relics.
-## Same integer hash as server/app/merge_event.py so both sides build identical boards.
+## Shared integer hash keeps client and worker boards identical.
 static func locked_tier(b: Dictionary, depth: int, col: int) -> int:
 	var seed := int(b.get("seed", 0))
-	if not b.has("layers"):
-		var old: Array = b["locked_tiers"]
-		return 1 if depth < 2 else int(old[(depth / 2 + col + seed) % old.size()])
 	var layers: Array = b["layers"]
 	var tiers: Array = layers[-1]["tiers"]
 	var acc := 0
@@ -77,27 +68,7 @@ static func locked_tier(b: Dictionary, depth: int, col: int) -> int:
 static func state(c: Dictionary) -> Dictionary:
 	var key := str(c.get("key", ""))
 	if key == "": return {}
-	if not G.merge_events.has(key):
-		G.merge_events[key] = fresh(c)
-		G.dirty()
-	if migrate(c, G.merge_events[key]): G.dirty()
-	return G.merge_events[key]
-
-static func migrate(c: Dictionary, s: Dictionary) -> bool:
-	if int(s.get("rules_version", 1)) >= 3: return false
-	if int(s.get("rules_version", 1)) < 2:
-		var cells: Array = s["cells"]
-		var cols := int(c["board"]["cols"])
-		for k in cells.size():
-			if int(cells[k]["lock"]) != 1: continue
-			var frontier := false
-			for neighbor in MergeGrid.neighbors(k, cols, cells.size()):
-				if int(cells[neighbor]["lock"]) == 0: frontier = true
-			if not frontier: cells[k]["lock"] = 2
-	s["rules_version"] = 3
-	# Existing exploration never moves backwards. Newly earned steps may wait for room.
-	_advance(c, s)
-	return true
+	return G.merge_events.get(key, {})
 
 static func next_id(c: Dictionary, id: String) -> String:
 	var chain: Array = c["chain"]
@@ -109,15 +80,6 @@ static func item(c: Dictionary, id: String) -> Dictionary:
 	for row in c["chain"]:
 		if str(row["id"]) == id: return row
 	return {}
-
-static func texture(path: String) -> Texture2D:
-	if not _textures.has(path): _textures[path] = load(path)
-	return _textures[path]
-
-static func draw_item(ci: CanvasItem, c: Dictionary, id: String, center: Vector2, size: float, tint := Color.WHITE) -> void:
-	var row := item(c, id)
-	if row.is_empty(): return
-	ci.draw_texture_rect(texture(str(row["icon"])), Rect2(center - Vector2.ONE * size / 2, Vector2.ONE * size), false, tint)
 
 static func order_points(c: Dictionary, order: Dictionary) -> int:
 	var score := 1
@@ -169,15 +131,10 @@ static func progress(c: Dictionary, s: Dictionary) -> int:
 
 ## Progress milestones; the last one is the completion reward. Old configs with a bare `rewards` list get one milestone.
 static func milestones(c: Dictionary) -> Array:
-	if c.has("milestones"): return c["milestones"]
-	return [{"at": goal_total(c), "rewards": c.get("rewards", [])}]
+	return c["milestones"]
 
-static func got(c: Dictionary, s: Dictionary) -> Array:
-	if s.has("got"): return s["got"]
-	var out: Array = []
-	if bool(s.get("claimed", false)):
-		for k in milestones(c).size(): out.append(k)
-	return out
+static func got(_c: Dictionary, s: Dictionary) -> Array:
+	return s["got"]
 
 ## Indexes of reached but unclaimed milestones.
 static func claimable(c: Dictionary, s: Dictionary) -> Array:
@@ -301,41 +258,7 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 	return result
 
 static func act(c: Dictionary, action: String, args: Dictionary = {}) -> Dictionary:
-	if G.replay_input():
-		var input := args.duplicate()
-		input["season"] = str(c["key"]); input["action"] = action
-		return await Replay.perform("activity", input)
-	if busy: return {"error": ""}
-	if action != "claim" and not active(c): return {"error": "本期活动已结束"}
-	busy = true
-	var result: Dictionary
-	var minus: Array = claim_rewards(c, claimable(c, state(c))) if action == "claim" else []
-	if G.server_mode() and action == "claim":
-		var body: Dictionary = args.duplicate()
-		body["season"] = str(c["key"])
-		body["action"] = action
-		var response: Dictionary = await G._cloud().act("/v1/merge-event/action", body, minus)
-		result = response.get("give", {}) if response.get("ok", false) else {"error": str(response.get("message", "连不上服务器"))}
-	else:
-		# The board never waits for HTTP. Keep actions in the same durable queue
-		# as orders so their points are credited before the corresponding spends.
-		var uid := Crypto.new().generate_random_bytes(16).hex_encode()
-		var roll := float(uid.sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
-		var body: Dictionary = args.duplicate()
-		body["season"] = str(c["key"])
-		body["action"] = action
-		body["view"] = int(state(c)["view"])
-		result = local_action(c, state(c), action, args, roll)
-		if not result.has("error") and G.server_mode():
-			G.cloud_event({"id": uid, "type": "merge_board", "board_action": body})
-	busy = false
-	if not result.has("error"):
-		_changed()
-		for id in result.get("drops", []):
-			Rewards.grant([[str(id), 1, "physical"]], Callable(), false)
-		if action == "claim":
-			var rewards: Array = result.get("rewards", minus)
-			Rewards.grant(rewards, Callable(), false)
-			if G.main: G.main.present_rewards(rewards, false)
-		G.save_game()
-	return result
+	var input := args.duplicate()
+	input["season"] = str(c["key"])
+	input["action"] = action
+	return Replay.perform("activity", input)

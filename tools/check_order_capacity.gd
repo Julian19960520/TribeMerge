@@ -14,7 +14,7 @@ func run() -> void:
 	g.seen_tutorial=true
 	g.level=10
 	g.orders=[]
-	g.refill_orders()
+	g.rules.orders.refill_orders()
 	check(g.orders.size()==data.order_total(g.level),"refill reaches shared total cap")
 	check(g.orders.filter(func(o):return int(o["rw"].get("xp",0))>0).size()==mini(data.story_orders(g.level).size(),data.order_total(g.level)),"configured experience orders take every available slot")
 	var first: Dictionary=g.orders[0].duplicate(true)
@@ -27,14 +27,14 @@ func run() -> void:
 	# Mark current experience catalog complete: remaining slots are regular/crafting orders.
 	for si in data.story_orders(g.level).size():g.story_done["%d:%d"%[g.level,si]]=true
 	g.orders=[]
-	g.refill_orders()
+	g.rules.orders.refill_orders()
 	check(g.orders.size()==data.order_total(g.level) and not g.orders.any(func(o):return o.get("story",false)),"random/crafting fill gaps only after experience catalog is exhausted")
 	# A level transition can displace unstarted random orders but must preserve cooking.
 	var craft: Dictionary=g.orders.filter(func(o):return o.get("kind","")=="craft")[0]
 	craft["phase"]="cook"
 	craft["t0"]=g.now()
 	g.level=11
-	g.refill_orders()
+	g.rules.orders.refill_orders()
 	check(g.orders.has(craft) and g.orders.size()==data.order_total(g.level),"cooking order survives level transition within cap")
 	check(g.orders.filter(func(o):return o.get("story",false)).size()==data.order_total(g.level)-1,"experience replaces random orders at level transition")
 	# Legacy overfull experience orders are deferred, not lost.
@@ -42,7 +42,7 @@ func run() -> void:
 	g.orders=[]
 	g.pending_orders=[]
 	for i in 7:g.orders.append({"who":0,"story":true,"si":i,"story_level":4,"items":["fruit_2"],"rw":{"xp":1,"shell":1}})
-	g._trim_orders()
+	g.rules.orders._trim_orders()
 	check(g.orders.size()==data.order_total(4) and g.pending_orders.size()==4,"legacy overflow is queued without dropping experience orders")
 	g.save_game()
 	g.orders=[]
@@ -52,7 +52,7 @@ func run() -> void:
 	g.level=41
 	g.orders=[]
 	g.pending_orders=[]
-	g.refill_orders()
+	g.rules.orders.refill_orders()
 	check(g.orders.size()==data.order_total(41) and not g.orders.any(func(o):return o.get("story",false)),"after configured main story, only side orders remain")
 	print("RESULT: ",failures," failures")
 	quit(1 if failures else 0)

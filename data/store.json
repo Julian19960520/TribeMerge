@@ -4,5 +4,9 @@
 	{"id": "seed_2", "price": 8, "stock": 5},
 	{"id": "cloth_3", "price": 3, "stock": 5},
 	{"id": "fire_5", "price": 12, "stock": 3},
-	{"id": "basket_2", "price": 25, "stock": 1}
+	{"id": "basket_2", "price": 25, "stock": 1},
+	{"id": "orderbox_1", "price": 30, "stock": 1},
+	{"id": "premiumbox_1", "price": 120, "stock": 1},
+	{"id": "upgrade_1", "price": 60, "stock": 1},
+	{"id": "scissors_1", "price": 30, "stock": 1}
 ]

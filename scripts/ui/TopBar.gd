@@ -1,12 +1,15 @@
 class_name TopBar
 extends Control
-## 顶栏：等级石碑 / 体力 / 贝币 / 琥珀或沙漏（同一格）/ 集市
+## 顶栏：等级石碑 / 体力 / 不拿拿 / 琥珀或沙漏（同一格）/ 集市
 ## 第三格平时是琥珀；棋盘上选中沙漏或正在制作、能用沙漏加速的物品时换成沙漏。
 
 var _lv: Label
 var _en: Label
 var _timer: Label
 var _sh: Label
+var _festival: Control
+var _festival_lbl: Label
+var _festival_until := 0
 
 const PILLS := {
 	"energy": Rect2(126, 52, 150, 50),
@@ -34,6 +37,7 @@ func _ready() -> void:
 	_add_shell()
 	_add_gem()
 	_add_shop()
+	_add_festival_progress()
 	_close = UI.hit(self, Rect2(644, 40, 70, 70), func():
 		if not _closers.is_empty():
 			_closers.back().call())
@@ -105,7 +109,7 @@ func _add_gem() -> void:
 	_gem_box = UI.box(c, Rect2(Vector2.ZERO, r.size), func(ci, _sz):
 		Paint.pill(ci, a)
 		if _gem_mode == "sand":
-			Art.item(ci, "sand_3", a.position + Vector2(4, 22), 60)
+			Art.item(ci, "sand_2", a.position + Vector2(4, 22), 60)
 		else:
 			Art.item(ci, Art.AMBER_ICON, a.position + Vector2(2, 24), 56)
 			Paint.plus_badge(ci, a.position + Vector2(12, 46)))
@@ -139,9 +143,22 @@ func _sync_gem() -> void:
 	_gem_tw.tween_property(c, "scale:y", 1.0, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _process(_d: float) -> void:
+	if _festival.visible and Time.get_ticks_msec() >= _festival_until:
+		_festival.hide()
 	if _flash_kind != "" and Time.get_ticks_msec() >= _flash_until:
 		_flash_kind = ""
 		_sync_gem()
+
+func _add_festival_progress() -> void:
+	_festival = _make_chip("token", Rect2(190, 118, 340, 58))
+	UI.box(_festival, Rect2(Vector2.ZERO, _festival.size), func(ci, sz):
+		Paint.pill(ci, Rect2(Vector2.ZERO, sz))
+		Art.item(ci, "token_1", Vector2(28, 28), 48))
+	_festival_lbl = UI.lbl(_festival, "", Rect2(56, 0, 276, 58), 23, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
+	UI.hit(_festival, Rect2(Vector2.ZERO, _festival.size), func():
+		if G.rules.progression.feature_unlocked(Data.CARD_LEVEL): G.main.open("event")
+		else: G.main.toast("祭典积分已累计，卡册在%d级开启" % Data.CARD_LEVEL))
+	_festival.hide()
 
 func _add_shop() -> void:
 	var r := Rect2(644, 34, 70, 84)
@@ -149,7 +166,7 @@ func _add_shop() -> void:
 	_shop = UI.hit(c, Rect2(Vector2.ZERO, r.size), func(): _open_from("shop", "store"))
 	_shop.extra = func(ci, sz):
 		Paint.hut_icon(ci, sz * 0.5 + Vector2(0, 4), 0.85)
-		if G.has_free_daily(): Paint.badge_num(ci, Vector2(sz.x - 18, 18), 7, 8.0)
+		if G.rules.progression.has_free_daily(): Paint.badge_num(ci, Vector2(sz.x - 18, 18), 7, 8.0)
 
 func _open_from(id: String, popup_name: String) -> void:
 	var p: PopupBase = G.main.open(popup_name)
@@ -246,6 +263,11 @@ func _back_close() -> void:
 	_close.mouse_filter = MOUSE_FILTER_STOP
 
 func target(kind: String) -> Vector2:
+	if kind == "token":
+		_festival_until = Time.get_ticks_msec() + 1800
+		_festival.show()
+		_refresh()
+		return _festival.get_global_transform() * Vector2(28, 28)
 	if kind == "sand" or kind == "amber":
 		_flash_kind = kind
 		_flash_until = Time.get_ticks_msec() + 1600
@@ -254,9 +276,10 @@ func target(kind: String) -> Vector2:
 	return get_global_transform() * (r.position + Vector2(8, 24))
 
 func _refresh() -> void:
+	_festival_lbl.text = "祭典积分 %d/%d" % [G.tokens - G.token_claimed, G.TOKEN_STEP]
 	_lv.text = str(G.level)
 	_en.text = str(G.energy)
 	_sh.text = str(G.shells)
 	_gem_lbl.text = str(G.rush if _gem_mode == "sand" else G.amber)
-	var left := G.energy_left()
+	var left := G.rules.clock.energy_left()
 	_timer.text = G.fmt_time(left) if left > 0 else ""

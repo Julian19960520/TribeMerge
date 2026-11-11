@@ -1,0 +1,36 @@
+{
+	"cards": [
+		"下风口",
+		"分火",
+		"吃草长肉",
+		"热水浇菜",
+		"还得放盐",
+		"再试几口",
+		"盐放多了",
+		"捣成果泥",
+		"咱们烤什么"
+	],
+	"name": "食物与烹饪",
+	"texts": [
+		"兄弟，我发现坐到哪边，哪边就是下风口。",
+		"兄弟，火分给你一半，我这儿怎么还是这么多？",
+		"兄弟，它吃了一辈子草，怎么身上全是肉？",
+		"兄弟，用热水浇菜，能不能直接长出熟的？",
+		"兄弟，鱼在海里泡了一辈子，咱们还得给它放盐？",
+		"兄弟，先别分，咱俩再试几口，万一后面有毒呢。",
+		"兄弟，盐放多了，你再去打头鹿来兑一下。",
+		"兄弟，咱们把果子捣成泥，谁还数得出少了几个？",
+		"兄弟，火生好了，棍子削好了，咱们烤什么？"
+	],
+	"art": [
+		"res://assets/cards/cooking/downwind.png",
+		"res://assets/cards/cooking/sharing_fire.png",
+		"res://assets/cards/cooking/grass_to_meat.png",
+		"res://assets/cards/cooking/hot_water_greens.png",
+		"res://assets/cards/cooking/sea_fish_salt.png",
+		"res://assets/cards/cooking/keep_tasting.png",
+		"res://assets/cards/cooking/too_much_salt.png",
+		"res://assets/cards/cooking/fruit_pulp.png",
+		"res://assets/cards/cooking/empty_roast.png"
+	]
+}

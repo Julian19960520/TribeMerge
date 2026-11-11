@@ -1,54 +1,78 @@
 [
-  {
-    "key": "deal_ad",
-    "_说明": "每日特惠，固定顺序（需求 #36）：广告 → 贝币买体力宝箱 → 两个会员琥珀 → 所有人免费。客户端 Popups.store / DailyShop.gd 与服务器 daily_shop.py 读同一份。",
-    "id": "fire_2",
-    "title": "30体力",
-    "price": 0,
-    "stock": 1,
-    "mode": "ad",
-    "rewards": [["fire_2", 30]]
-  },
-  {
-    "key": "deal_energybox",
-    "_说明": "300 贝币 → 体力宝箱，打开得 opens 里的 3 个熊熊大火（各 40 体力，共 120）。交单每理论火苗给 3 贝币，300 贝币≈100 体力的劳动，这里换 120 体力，每天一次小赚。",
-    "id": "energybox_1",
-    "title": "体力宝箱",
-    "price": 300,
-    "currency": "shell",
-    "stock": 1,
-    "opens": ["fire_5", "fire_5", "fire_5"],
-    "rewards": [["energybox_1", 1]]
-  },
-  {
-    "key": "deal_member_1",
-    "_说明": "贵宾（pass_tier ≥ 1）每日 100 琥珀",
-    "id": "amber_4",
-    "title": "100琥珀",
-    "badge": "贵宾",
-    "price": 0,
-    "stock": 1,
-    "min_tier": 1,
-    "rewards": [["amber_4", 100]]
-  },
-  {
-    "key": "deal_member_2",
-    "_说明": "超级贵宾（pass_tier ≥ 2）再领 100 琥珀；两份分开展示（需求 #36），档位不同就不再是两张一模一样的卡",
-    "id": "amber_5",
-    "title": "100琥珀",
-    "badge": "超级贵宾",
-    "price": 0,
-    "stock": 1,
-    "min_tier": 2,
-    "rewards": [["amber_5", 100]]
-  },
-  {
-    "key": "deal_2",
-    "_说明": "所有玩家每日免费 15 体力（直接到账）；沿用旧 key deal_2，旧存档当天已领不能再领",
-    "id": "fire_4",
-    "title": "15体力",
-    "price": 0,
-    "stock": 1,
-    "rewards": [["fire_4", 15]]
-  }
+	{
+		"key": "deal_ad",
+		"_说明": "每日特惠，固定顺序（需求 #36）：广告 → 不拿拿买体力宝箱 → 两个会员琥珀 → 所有人免费。客户端 Popups.store / DailyShop.gd 与服务器 daily_shop.py 读同一份。",
+		"id": "fire_2",
+		"title": "30体力",
+		"price": 0,
+		"stock": 1,
+		"mode": "ad",
+		"rewards": [
+			[
+				"fire_2",
+				30
+			]
+		]
+	},
+	{
+		"key": "deal_energybox",
+		"_说明": "300 不拿拿购买1级体力宝箱，共3个强能闪电（各40体力）。宝箱内容统一配置在 special_chests.json。",
+		"id": "energybox_1",
+		"title": "体力宝箱",
+		"price": 300,
+		"currency": "shell",
+		"stock": 1,
+		"rewards": [
+			[
+				"energybox_1",
+				1
+			]
+		]
+	},
+	{
+		"key": "deal_member_1",
+		"_说明": "贵宾（pass_tier ≥ 1）每日 100 琥珀",
+		"id": "amber_4",
+		"title": "100琥珀",
+		"badge": "贵宾",
+		"price": 0,
+		"stock": 1,
+		"min_tier": 1,
+		"rewards": [
+			[
+				"amber_4",
+				100
+			]
+		]
+	},
+	{
+		"key": "deal_member_2",
+		"_说明": "超级贵宾（pass_tier ≥ 2）再领 100 琥珀；两份分开展示（需求 #36），档位不同就不再是两张一模一样的卡",
+		"id": "amber_5",
+		"title": "100琥珀",
+		"badge": "超级贵宾",
+		"price": 0,
+		"stock": 1,
+		"min_tier": 2,
+		"rewards": [
+			[
+				"amber_5",
+				100
+			]
+		]
+	},
+	{
+		"key": "deal_2",
+		"_说明": "所有玩家每日免费 15 体力（直接到账）；沿用旧 key deal_2，旧存档当天已领不能再领",
+		"id": "fire_4",
+		"title": "15体力",
+		"price": 0,
+		"stock": 1,
+		"rewards": [
+			[
+				"fire_4",
+				15
+			]
+		]
+	}
 ]

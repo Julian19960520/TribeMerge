@@ -8,6 +8,12 @@ func run() -> void:
 	var g = root.get_node("G")
 	var ev = load("res://scripts/events/MergeEvent.gd")
 	var choice = load("res://scripts/events/ChoiceChest.gd")
+	var replay = root.get_node("Replay")
+	replay.set_process(false)
+	root.get_node("Cloud").set_process(false)
+	replay.active = true
+	replay.authorized = true
+	replay.clock = int(root.get_node("Cloud").server_now())
 	g.new_game()
 	g.tutorial_on = false
 	g.seen_tutorial = true
@@ -16,6 +22,7 @@ func run() -> void:
 	g.level = 9
 	check(not ev.available(c) and ev.on_order({"items":["fruit_8"]}) == 0, "event locked below 10 and earns no points")
 	g.level = 10
+	load("res://scripts/events/ActivityRules.gd").initialize()
 	var s: Dictionary = ev.state(c)
 	check(ev.available(c) and s["points"] == 0, "event opens at level 10 with zero points")
 	var cells: Array = s["cells"]
@@ -67,12 +74,6 @@ func run() -> void:
 	delayed["cells"][89]["id"]="moon_8"
 	ev.local_action(c,delayed,"recycle",{"cell":89,"view":8})
 	check(delayed["view"]==6,"later action spends pending advancement without a new tier")
-	var legacy: Dictionary=ev.fresh(c)
-	legacy.erase("rules_version")
-	for k in 90:legacy["cells"][k]["lock"]=1
-	legacy["points"]=13
-	ev.migrate(c,legacy)
-	check(legacy["points"]==13 and legacy["cells"][84]["lock"]==1 and legacy["cells"][78]["lock"]==2, "old save migration preserves points and visible frontier")
 	var saved: Dictionary = g.save_dict().duplicate(true)
 	g.save_game()
 	g.merge_events = {}
@@ -81,8 +82,9 @@ func run() -> void:
 	c = ev.current()
 	s = ev.state(c)
 	var next: Dictionary = ev.current(float(c["ends_at"]) + 1)
-	check(next["key"] != c["key"] and ev.state(next)["points"] == 0 and s["points"] == 3, "new period isolates all points and progress")
+	check(next["key"] != c["key"] and ev.state(next).is_empty() and ev.fresh(next)["points"] == 0 and s["points"] == 3, "new period starts fresh without mutating the current state during a query")
 	check((await ev.act(c,"claim")).has("error"), "cannot claim unfinished board")
+	s = ev.state(c)
 	var ms: Array = ev.milestones(c)
 	check(ms.size() >= 3 and int(ms[-1]["at"]) == ev.goal_total(c), "milestones end at the full 90-cell goal")
 	var opened := 0
@@ -97,6 +99,7 @@ func run() -> void:
 	var first: Dictionary = await ev.act(c,"claim")
 	check(not first.has("error") and first["milestones"] == [0] and not s["claimed"] and g.stash.size() > stash_before, "first milestone chest pays mid-way and the board stays open")
 	check((await ev.act(c,"claim")).has("error"), "a milestone pays once")
+	s = ev.state(c)
 	for tile in s["cells"]: tile["lock"] = 0
 	var amber: int = g.amber
 	var energy: int = g.energy

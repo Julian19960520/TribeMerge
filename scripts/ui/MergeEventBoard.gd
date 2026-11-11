@@ -26,6 +26,7 @@ var fx: Callable
 var spawn_origin := Vector2.ZERO
 var _t := 0.0
 var _camera_tween: Tween
+var _spawn_busy := false
 
 const INK := Color("3b2314")
 
@@ -134,10 +135,10 @@ func _draw() -> void:
 				if hint != "" and id == hint and i != pressed and i != selected:
 					_glow(r, Color("fff3a6"), 0.25 + 0.35 * pulse)
 				if id != "" and not moving:
-					MergeEvent.draw_item(self, cfg, id, ctr + Vector2(0, -2), cell * 0.84 * _pop(i))
+					MergeEventArt.draw_item(self, cfg, id, ctr + Vector2(0, -2), cell * 0.84 * _pop(i))
 			elif lock == 1:
 				if hint != "" and id == hint: _glow(r, Color("b8ff7a"), 0.45 + 0.5 * pulse)
-				if not moving: MergeEvent.draw_item(self, cfg, id, ctr + Vector2(0, -1), cell * 0.72, Color(0.66, 0.86, 0.95, 0.82))
+				if not moving: MergeEventArt.draw_item(self, cfg, id, ctr + Vector2(0, -1), cell * 0.72, Color(0.66, 0.86, 0.95, 0.82))
 				MoonArt.tile(self, r, i, MoonArt.LOCK)
 			else:
 				MoonArt.tile(self, r, i, MoonArt.FRONTIER if _frontier(cells, i, cols) else MoonArt.SLAB)
@@ -150,10 +151,10 @@ func _draw() -> void:
 	for m in moves:
 		var t := float(m["t"])
 		var p: Vector2 = (m["from"] as Vector2).lerp(center(int(m["to"])), MergeGrid.ease_back(t))
-		MergeEvent.draw_item(self, cfg, str(m["id"]), p, cell * 0.9)
+		MergeEventArt.draw_item(self, cfg, str(m["id"]), p, cell * 0.9)
 	if dragging and pressed >= 0:
 		draw_circle(cursor + Vector2(0, 18), cell * 0.32, Color(0, 0, 0, 0.18))
-		MergeEvent.draw_item(self, cfg, str(cells[pressed]["id"]), cursor + Vector2(0, -18), cell * 1.0)
+		MergeEventArt.draw_item(self, cfg, str(cells[pressed]["id"]), cursor + Vector2(0, -18), cell * 1.0)
 
 func _pop(i: int) -> float:
 	if not pops.has(i): return 1.0
@@ -170,7 +171,7 @@ func _glow(r: Rect2, col: Color, a: float) -> void:
 	Sprites.draw(self, "board_glow", r.grow(-3), Color(col, a))
 
 func _gui_input(e: InputEvent) -> void:
-	if animating or MergeEvent.busy: return
+	if animating: return
 	if e is InputEventMouseButton:
 		if e.button_index == MOUSE_BUTTON_LEFT and e.device != -1:
 			if e.pressed: _press(e.position)
@@ -227,9 +228,13 @@ func _release(p: Vector2) -> void:
 	queue_redraw()
 
 func spawn() -> void:
-	if animating or MergeEvent.busy: return
+	# 飞入动画不阻塞下一次投放；逻辑先占格，每次点击都落在独立空格。
+	if _spawn_busy or dragging or not moves.is_empty(): return
+	if _camera_tween and _camera_tween.is_running(): return
+	_spawn_busy = true
 	var result: Dictionary = await MergeEvent.act(cfg, "spawn", {"view": int(round(camera))})
 	if not is_instance_valid(self): return
+	_spawn_busy = false
 	if result.has("error"):
 		if str(result["error"]) != "": G.main.toast(str(result["error"]))
 		Sfx.play("deny")
@@ -243,7 +248,8 @@ func spawn() -> void:
 			if not is_instance_valid(self): return
 			incoming.erase(to)
 			pops[to] = 0.0
-			animating = not moves.is_empty()
+			animating = not moves.is_empty() or not incoming.is_empty()
+			if not animating: _sync_camera()
 			_fx("spark", center(to), {"small": true})
 			queue_redraw()})
 	else:

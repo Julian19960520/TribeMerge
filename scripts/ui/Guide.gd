@@ -169,7 +169,15 @@ func spawn_cell() -> int:
 	return -1
 
 func _on_world() -> void:
-	if Replay.active and Replay.executing: _on_world.call_deferred(); return
+	if Replay.executing: _on_world.call_deferred(); return
+	if not G.tutorial_on:
+		_done = true
+		_step = ""
+		visible = false
+		mouse_filter = MOUSE_FILTER_IGNORE
+		_ghost.visible = false
+		if G.main != null and G.main.board_screen != null: G.main.board_screen.board.hide_drag = false
+		return
 	if _done:
 		return
 	if _step == "plain":
@@ -218,7 +226,7 @@ func _process(dt: float) -> void:
 		_bust.position = _bust_home + Vector2(0, sin(_t * 2.3) * 5.0)
 	var board: Board = G.main.board_screen.board
 	if _strong() and board.dragging and board.drag_from >= 0:
-		var id := G.cell_id(board.drag_from)
+		var id := G.rules.board.cell_id(board.drag_from)
 		_ghost.visible = true
 		if id != _ghost_id:
 			_ghost_id = id
@@ -264,13 +272,6 @@ func _enter(step: String) -> void:
 	_attach()
 	if step == "stones":
 		_stones_until = Time.get_ticks_msec() + 1600
-	if step == "take3":
-		_raise_stash("basket_3")
-	if step == "byprod" or step == "submit_seed":
-		_ensure_seed_order()
-		if step == "byprod" and G.energy < 1 and not Replay.active:
-			G.energy = 5
-			G.changed.emit()
 	if step in ["submit1", "submit2", "submit_seed", "upgrade", "wait_pay", "take3", "byprod"]:
 		G.main.board_screen.guide_focus_row()
 	_layout()
@@ -412,11 +413,11 @@ func _fill_step() -> void:
 			_add_global(G.main.board_screen.guide_deliver_rect())
 			_anchor = _holes.back() if not _holes.is_empty() else Rect2()
 		"wait_pay":
-			_text = "贝币正在回来\n刚好够升级部落"
+			_text = "不拿拿正在回来\n刚好够升级部落"
 			_add_global(_shell_rect())
 			_anchor = _union()
 		"upgrade":
-			_text = "贝币刚好够了\n点这里升级部落"
+			_text = "不拿拿刚好够了\n点这里升级部落"
 			_add_ctrl(G.main.board_screen._hammer_btn)
 			_anchor = _union()
 		"to_build":
@@ -476,17 +477,11 @@ func _finish() -> void:
 		return
 	_done = true
 	_step = ""
-	if Replay.active:
-		Replay.perform("tutorial_finish")
-	else:
-		G.seen_tutorial = true
-		G.tutorial_on = false
+	Replay.perform("tutorial_finish")
 	if G.main != null and G.main.board_screen != null:
 		G.main.board_screen.board.hide_drag = false
 	_ghost.visible = false
 	mouse_filter = MOUSE_FILTER_IGNORE
-	_grant_normal_orders()
-	G.dirty()
 	_tw = create_tween()
 	_tw.tween_property(self, "modulate:a", 0.0, 0.32)
 	_tw.tween_callback(func():
@@ -509,9 +504,6 @@ func _check_plain() -> void:
 	if _order_alive(1) or _order_alive(2):
 		return
 	_finish()
-
-func _grant_normal_orders() -> void:
-	if not Replay.active: G.refill_orders()
 
 func _place() -> void:
 	var bust_sz := Vector2(200, 292)
@@ -662,6 +654,10 @@ func _aim_fruit2() -> void:
 func _has_point(point: Vector2) -> bool:
 	if _done or not visible or not _strong():
 		return false
+	if G.main != null and G.main.board_screen != null:
+		var gm: Control = G.main.board_screen.get_node_or_null("gm_activities")
+		if gm != null and gm.is_visible_in_tree() and gm.get_global_rect().has_point(get_global_transform() * point):
+			return false
 	for r in _pass:
 		if r.has_point(point):
 			return false
@@ -807,7 +803,7 @@ func _vine_beside(i: int) -> int:
 		var nr: int = r + d.y
 		if nc < 0 or nr < 0 or nc >= G.COLS or nr >= G.ROWS:
 			continue
-		var k := G.idx(nc, nr)
+		var k := G.rules.board.idx(nc, nr)
 		if _lock(k) == 1 and _id(k) == id:
 			if k in LADDER:
 				return k
@@ -871,21 +867,6 @@ func _stash_has(id: String) -> bool:
 			return true
 	return false
 
-func _raise_stash(id: String) -> void:
-	if Replay.active: return
-	var at := -1
-	for i in range(G.stash.size() - 1, -1, -1):
-		if str(G.stash[i]) == id:
-			at = i
-			break
-	if at < 0 or at == G.stash.size() - 1:
-		return
-	var item = G.stash[at]
-	G.stash.remove_at(at)
-	G.stash.append(item)
-	G.dirty()
-	G.changed.emit()
-
 func _seed_order_alive() -> bool:
 	for o in G.orders:
 		var items: Array = o.get("items", [])
@@ -894,15 +875,6 @@ func _seed_order_alive() -> bool:
 	return false
 
 ## 引导最后一步的副产物订单。它是教学的一部分，不看速查表开没开草籽；声望算进 1 级要的 3 点里。
-func _ensure_seed_order() -> void:
-	if Replay.active: return
-	_gave_seed_order = true
-	if _seed_order_alive():
-		return
-	G.orders.insert(0, {"who": 1, "items": ["seed_1"], "rw": {"xp": 1, "shell": 50}, "story": true, "say": "草籽能种出新的果树，你学得真快！"})
-	G.orders_changed.emit()
-	G.dirty()
-
 func _basket4_pair() -> Vector2i:
 	var cells := _free_cells("basket_4")
 	if cells.size() < 2:
@@ -922,8 +894,8 @@ func _order_alive(n: int) -> bool:
 	return false
 
 func _shells_ready() -> bool:
-	var id := G.next_build_id()
-	return id != "" and G.shells >= G.build_cost(id)
+	var id := G.rules.progression.next_build_id()
+	return id != "" and G.shells >= G.rules.progression.build_cost(id)
 
 func _popup_open() -> bool:
 	return G.main != null and G.main.popup_layer.get_child_count() > 0

@@ -79,7 +79,7 @@ func _paint_slot(ci: CanvasItem, sz: Vector2, index: int) -> void:
 		Sprites.draw(ci, "pop_inv_next", r)
 		Art.item(ci, Art.AMBER_ICON, Vector2(30, 82), 30, false)
 		var f: Font = G.font_body
-		var t := str(G.storage_price())
+		var t := str(G.rules.progression.storage_price())
 		ci.draw_string_outline(f, Vector2(46, 91), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 5, Art.INK)
 		ci.draw_string(f, Vector2(46, 91), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
 	else:
@@ -117,7 +117,7 @@ func _refresh() -> void:
 	if scroll == null: return
 	capacity.text = "已存 %d / %d 格" % [G.inv.size(), G.inv_cap]
 	next_lbl.text = "每扩一格，下一格 +%d" % int(Data.RULES.get("storage_expand_step", 10))
-	unlock.text = "%d 扩建" % G.storage_price()
+	unlock.text = "%d 扩建" % G.rules.progression.storage_price()
 	unlock.enabled = not _busy
 	unlock.queue_redraw()
 	scroll.set_length(_rows() * ROW_H + 24)
@@ -129,19 +129,13 @@ func _take(index: int) -> void:
 		_expand()
 		return
 	if index < 0 or index >= G.inv.size(): return
-	var to := G.find_empty_near(G.idx(3, 4))
+	var to := G.rules.board.find_empty_near(G.rules.board.idx(3, 4))
 	if to < 0:
 		G.main.toast("棋盘满了！")
 		return
-	if Replay.active:
-		Replay.perform("inventory", {"index": index})
-		return
-	var id := str(G.inv[index])
-	G.inv.remove_at(index)
-	G.board[to]["id"] = id
-	G.dirty()
-	G.board_changed.emit()
-	Sfx.play("pop")
+	var result: Dictionary = Replay.perform("inventory", {"index": index})
+	if result.has("error"): G.main.toast(str(result["error"]))
+	else: Sfx.play("pop")
 
 func _expand() -> void:
 	if _busy: return

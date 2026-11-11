@@ -1,17 +1,13 @@
 extends PopupBase
 const PS := preload("res://scripts/sprites/popups.gd")
-## 每日特惠「看广告领 30 体力」：石框小屏幕播一段（试玩）广告，下面进度条走满 5 秒才能领。
-## 中途关掉不发奖（DailyShop.cancel_ad）。网页版没有真实广告 SDK，屏幕角落写明「试玩」。
+## Daily supply view. Unavailable providers never simulate a rewarded completion.
 const R := Rect2(60, 420, 600, 660)
 const SCREEN := Rect2(100, 492, 520, 300)
-const AD_SEC := 5
 var label: Label
 var claim_btn: TButton
 var screen: DrawBox
 var progress: DrawBox
 var count: Label
-var _started := false
-var _last_second := -1
 var _t := 0.0
 var _frac := 0.0
 
@@ -19,7 +15,7 @@ func _ready() -> void:
 	Popups.frame(self, R, "看广告领体力", Art.TEAL)
 	screen = UI.box(box, SCREEN.grow(14), _paint_screen, false)
 	count = UI.lbl(box, "", Rect2(SCREEN.end.x - 76, SCREEN.position.y + 12, 60, 52), 32, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
-	UI.lbl(box, "试玩广告", Rect2(SCREEN.position.x + 14, SCREEN.position.y + 12, 120, 30), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 5, Color(0, 0, 0, 0.6))
+	UI.lbl(box, "部落补给", Rect2(SCREEN.position.x + 14, SCREEN.position.y + 12, 120, 30), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 5, Color(0, 0, 0, 0.6))
 	progress = UI.box(box, Rect2(SCREEN.position.x, SCREEN.end.y + 26, SCREEN.size.x, 26), func(ci, sz):
 		Sprites.draw(ci, "pop_ad_track", Rect2(Vector2.ZERO, sz))
 		if _frac > 0.02:
@@ -34,10 +30,8 @@ func _ready() -> void:
 	claim_btn = UI.btn(box, Rect2(190, 972, 340, 84), "观看中", "green", _claim, 34)
 	claim_btn.name = "ad_claim"
 	claim_btn.enabled = false
-	on_close = DailyShop.cancel_ad
-	_started = await DailyShop.start_ad()
-	if not is_instance_valid(self): return
-	if not _started: label.text = "广告暂不可用"
+	label.text = "广告暂不可用，请稍后再试"
+	claim_btn.text = "暂不可用"
 
 ## 小屏幕：石头外框 + 白天的部落小景（小牙举着篝火吆喝），左右轻摇当「广告」
 func _paint_screen(ci: CanvasItem, sz: Vector2) -> void:
@@ -65,28 +59,7 @@ func _paint_screen(ci: CanvasItem, sz: Vector2) -> void:
 
 func _process(delta: float) -> void:
 	_t += delta
-	screen.queue_redraw()
-	if not _started or _closing: return
-	var ms := Time.get_ticks_msec() - DailyShop.ad_started
-	_frac = clampf(float(ms) / (AD_SEC * 1000.0), 0.0, 1.0)
-	progress.queue_redraw()
-	var left := maxi(0, AD_SEC - int(ms / 1000))
-	if left == _last_second: return
-	_last_second = left
-	count.text = str(left) if left > 0 else ""
-	label.text = "看完 %d 秒就能领 · 中途关闭不发奖" % left if left > 0 else "看完啦！点下面领取"
-	claim_btn.enabled = left == 0
-	claim_btn.text = "领取 30 体力" if left == 0 else "观看中 %d 秒" % left
-	claim_btn.queue_redraw()
-	if left == 0: Sfx.play("pop")
+	if screen != null: screen.queue_redraw()
 
 func _claim() -> void:
-	if DailyShop.busy or _closing: return
-	claim_btn.enabled = false
-	var result := await DailyShop.claim("deal_ad", claim_btn.get_global_rect().get_center() - Vector2(0, 90))
-	if not is_instance_valid(self): return
-	if result.get("ok", false): close()
-	else:
-		G.main.toast(str(result.get("message", "领取失败")))
-		claim_btn.enabled = true
-		claim_btn.queue_redraw()
+	G.main.toast("广告暂不可用，请稍后再试")

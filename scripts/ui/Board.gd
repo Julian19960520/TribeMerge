@@ -3,6 +3,8 @@ extends Control
 ## 7×9 合成棋盘
 
 const Layout := preload("res://scripts/config/board_layout.gd")
+const DropRing := preload("res://scripts/ui/board/BoardDropRing.gd")
+const MergeBurst := preload("res://scripts/ui/board/BoardMergeBurst.gd")
 
 signal selected_changed(i: int)
 signal activated(i: int)
@@ -20,6 +22,14 @@ const ROCK_BITS := preload("res://assets/board/fragments.png")
 const MAX_CROWN := preload("res://assets/ui/max_crown.svg")
 
 var _base_layers: Array[DrawBox] = []
+var _cell_layers: Array[DrawBox] = []
+var _drop_ring := DropRing.new()
+var _continuous_cells: Dictionary = {}
+var _previous_live: Dictionary = {}
+var _second := 0.0
+var frame_updates := 0
+var cell_paints := 0
+var effect_paints := 0
 
 var selected := -1
 var press_cell := -1
@@ -48,6 +58,7 @@ var _idle := 0.0
 var _hint_a := -1
 var _hint_b := -1
 var _hint_t := 0.0
+var _hint_dirty := true
 
 const DRAG_LIFT := Vector2(0, -14)
 const MOVE_DUR := 0.26
@@ -64,8 +75,7 @@ const HINT_WAIT := 5.0
 func _ready() -> void:
 	size = Vector2(G.COLS * CELL, G.ROWS * CELL)
 	mouse_filter = MOUSE_FILTER_STOP
-	G.boil_tick.connect(_sync_base)
-	G.boil_tick.connect(queue_redraw)
+	G.boil_tick.connect(_on_boil)
 	G.board_changed.connect(_invalidate_base)
 	G.orders_changed.connect(_invalidate_base)
 	for phase in 4:
@@ -76,21 +86,31 @@ func _ready() -> void:
 			Art.boil = previous, false)
 		layer.show_behind_parent = true
 		_base_layers.append(layer)
+	for i in G.board.size():
+		var layer := UI.box(self, Rect2(Vector2.ZERO, size), func(ci, _sz): _paint_cell(ci, i), false)
+		layer.show_behind_parent = true
+		_cell_layers.append(layer)
+	_refresh_continuous_cells()
 	_sync_base()
+	G.board_changed.connect(_redraw_cells)
+	G.changed.connect(_redraw_cells)
 	G.board_changed.connect(queue_redraw)
 	G.orders_changed.connect(queue_redraw)
 	call_deferred("_grant_loose_rewards")
 
 func _process(delta: float) -> void:
+	if not is_visible_in_tree(): return
+	frame_updates += 1
 	_t += delta
 	_tick_hint(delta)
-	if dragging and not G.can_move(drag_from):
+	if dragging and not G.rules.board.can_move(drag_from):
 		dragging = false
 		drag_from = -1
 		press_cell = -1
 		queue_redraw()
 	if dragging:
 		drag_vis = drag_pos
+	_tick_drop_ring(delta)
 	for m in moves:
 		m["t"] += delta / float(m["dur"])
 	for m in moves.duplicate():
@@ -110,18 +130,7 @@ func _process(delta: float) -> void:
 			burst(int(i))
 			pop(int(i))
 		G.cooked_pop.clear()
-	var cooking := false
-	var bubbled := false
-	for cell in G.board:
-		if typeof(cell.get("ck")) == TYPE_DICTIONARY:
-			cooking = true
-		if not bubbled:
-			var rw = cell.get("rw", null)
-			if (rw is Array and not rw.is_empty()) or int(cell.get("lock", 0)) == 3:
-				bubbled = true
-		if cooking and bubbled:
-			break
-	var busy := dragging or cooking or bubbled or _hint_a >= 0 or not pops.is_empty() or not bounces.is_empty() or not flights.is_empty() or not bursts.is_empty() or not shakes.is_empty() or not moves.is_empty() or not crumbles.is_empty() or not gathers.is_empty()
+	var busy := dragging or selected >= 0 or not flights.is_empty() or not bursts.is_empty() or not moves.is_empty() or not crumbles.is_empty() or not gathers.is_empty()
 	for k in pops.keys():
 		pops[k] += delta
 		if pops[k] > 0.35:
@@ -168,8 +177,71 @@ func _process(delta: float) -> void:
 	crumbles = left
 	if cracked:
 		Sfx.play("crumble", 0.94 + randf() * 0.08)
-	if busy:
+	_redraw_live_cells()
+	_second += delta
+	if _second >= 1.0:
+		_second = fmod(_second, 1.0)
+		_redraw_cells() # Generator countdown labels change at most once per second.
+	if busy: queue_redraw()
+
+func set_active(active: bool) -> void:
+	if not active:
+		dragging = false
+		drag_from = -1
+		press_cell = -1
+		selected = -1
+		hid.clear()
+		moves.clear()
+		flights.clear()
+		gathers.clear()
+		crumbles.clear() # Unclaimed stone rewards remain in business state.
+		pops.clear()
+		bounces.clear()
+		shakes.clear()
+		bursts.clear()
+		_clear_drop_ring()
+		_clear_hint()
+	else:
+		_refresh_continuous_cells()
+		_invalidate_base()
+		_redraw_cells()
+		_sync_base()
+		_grant_loose_rewards.call_deferred()
 		queue_redraw()
+
+func _on_boil() -> void:
+	if not is_visible_in_tree(): return
+	_sync_base()
+	_redraw_cells()
+
+func _refresh_continuous_cells() -> void:
+	_continuous_cells.clear()
+	for i in G.board.size():
+		var cell: Dictionary = G.board[i]
+		if cell.get("ck") is Dictionary or cell.has("rw") or int(cell.get("lock", 0)) == 3:
+			_continuous_cells[i] = true
+
+func _redraw_cells() -> void:
+	if not is_visible_in_tree(): return
+	for layer in _cell_layers: layer.queue_redraw()
+
+func _redraw_live_cells() -> void:
+	var live := _continuous_cells.duplicate()
+	for transient in [pops, bounces, shakes, hid]:
+		for i in transient: live[i] = true
+	for crumble in crumbles: live[int(crumble["i"])] = true
+	for i in [_hint_a, _hint_b, drag_from]:
+		if i >= 0: live[i] = true
+	for i in _previous_live:
+		if not live.has(i) and int(i) < _cell_layers.size(): _cell_layers[i].queue_redraw()
+	for i in live:
+		if int(i) < _cell_layers.size(): _cell_layers[i].queue_redraw()
+	_previous_live = live
+
+func _paint_cell(ci: CanvasItem, i: int) -> void:
+	if i >= G.board.size() or (i == drag_from and dragging) or hid.has(i): return
+	cell_paints += 1
+	_draw_cell(i, ci)
 
 func cell_rect(i: int) -> Rect2:
 	return Rect2(Vector2(i % G.COLS, i / G.COLS) * CELL, Vector2(CELL, CELL))
@@ -252,35 +324,19 @@ func _flush_rewards() -> void:
 	G.main.present_board_reward(batch)
 
 func _grant_board_now(batch: Array) -> void:
-	var any := false
-	for e in batch:
-		var i := int(e["i"])
-		if i < 0 or i >= G.board.size():
-			continue
-		var cell: Dictionary = G.board[i]
-		if Layout.parse_reward(cell.get("rw", null)).is_empty():
-			continue
-		if Replay.active:
-			Replay.perform("bubble_reward", {"cell": i})
-			continue
-		cell.erase("rw")
-		G.cloud_event({"type": "bubble", "cell": i})
-		var id := str(e["id"])
-		var n := int(e["n"])
-		Rewards.grant([[id, n]], Callable(), false)
-		any = true
-	if any:
-		G.dirty()
-		G.changed.emit()
+	for entry in batch:
+		var index := int(entry["i"])
+		if index >= 0 and index < G.board.size(): Replay.perform("bubble_reward", {"cell": index})
 
-func _draw_reward_bubble(i: int, r: Rect2) -> void:
+func _draw_reward_bubble(i: int, r: Rect2, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
 	var rw := Layout.parse_reward(G.board[i].get("rw", null))
 	if rw.is_empty():
 		return
 	var rad := 30.0
 	var c := r.position + Vector2(r.size.x * 0.62, r.size.y * 0.34)
 	var lift := sin(_t * 3.2 + float(i) * 0.7) * 3.0
-	Paint.reward_bubble(self, c, rad, rw[0], int(rw[1]), i, lift)
+	Paint.reward_bubble(ci, c, rad, rw[0], int(rw[1]), i, lift)
 
 ## 巨石崩开。delay 用来等到合成滑到位再裂
 func crumble(i: int, delay: float = 0.0) -> void:
@@ -366,7 +422,7 @@ func _move_done(m: Dictionary) -> void:
 	_unhide(i)
 	match m["done"]:
 		"merge":
-			Sfx.play("merge", 0.9 + 0.08 * float(Data.lv(G.cell_id(i))))
+			Sfx.play("merge", 0.9 + 0.08 * float(Data.lv(G.rules.board.cell_id(i))))
 			burst(i)
 			pop(i)
 		"pop":
@@ -377,6 +433,43 @@ static func ease_back(t: float) -> float:
 	return MergeGrid.ease_back(t)
 
 # ---------------------------------------------------------------- 输入
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		dragging = false
+		drag_from = -1
+		press_cell = -1
+		_clear_drop_ring()
+		queue_redraw()
+
+func _clear_drop_ring() -> void:
+	_drop_ring.clear()
+	queue_redraw()
+
+## Mirror the actual drop branches without executing a command or changing rules.
+func _drop_hover_kind(to: int) -> String:
+	if not dragging or to < 0 or to >= G.board.size() or to == drag_from: return ""
+	if not G.rules.board.can_move(drag_from) or G._chest_busy.has(to): return ""
+	if not _guide_allows_drop(drag_from, to): return ""
+	if G.rules.orders.cooking(drag_from) or G.rules.orders.cooking(to): return ""
+	if G.rules.board.is_merge_bubble(drag_from) or G.rules.board.is_merge_bubble(to): return ""
+	if Data.type_of(G.rules.board.cell_id(drag_from)) in ["upgrade", "scissors"]:
+		return G.rules.board.tool_drop_kind(drag_from, to)
+	return "merge" if MergeGrid.drop_kind(G.board, drag_from, to, Data.next_id) == "merge" else ""
+
+func _tick_drop_ring(delta: float) -> void:
+	if dragging and G.main != null and G.main.popup_layer != null and G.main.popup_layer.get_child_count() > 0:
+		dragging = false
+		drag_from = -1
+		press_cell = -1
+		queue_redraw()
+	if not dragging:
+		if _drop_ring.target >= 0: _clear_drop_ring()
+		return
+	var to := cell_at(drag_pos)
+	var kind := _drop_hover_kind(to)
+	if _drop_ring.tick(delta, to if kind != "" else -1, kind):
+		queue_redraw()
 
 func _input(e: InputEvent) -> void:
 	var down := false
@@ -393,6 +486,7 @@ func _gui_input(e: InputEvent) -> void:
 			press_cell = cell_at(e.position)
 			press_pos = e.position
 			dragging = false
+			_clear_drop_ring()
 		else:
 			if dragging:
 				_drop(e.position)
@@ -401,12 +495,13 @@ func _gui_input(e: InputEvent) -> void:
 			press_cell = -1
 			dragging = false
 			drag_from = -1
+			_clear_drop_ring()
 			queue_redraw()
 	elif e is InputEventMouseMotion and press_cell >= 0:
 		if not dragging and e.position.distance_to(press_pos) > 10.0:
 			var c: Dictionary = G.board[press_cell]
-			var held: bool = str(c["id"]) != "" or G.cooking(press_cell)
-			if held and G.can_move(press_cell) and _settle(press_cell):
+			var held: bool = str(c["id"]) != "" or G.rules.orders.cooking(press_cell)
+			if held and G.rules.board.can_move(press_cell) and _settle(press_cell):
 				dragging = true
 				drag_from = press_cell
 				drag_vis = e.position
@@ -421,10 +516,10 @@ func _gui_input(e: InputEvent) -> void:
 func _tap(i: int) -> void:
 	_settle(i)
 	var c: Dictionary = G.board[i]
-	if G.cooking(i):
+	if G.rules.orders.cooking(i):
 		if selected == i:
 			if G.main:
-				G.main.toast("还在制作，还要 %s" % _sec_text(G.cook_left(i)))
+				G.main.toast("还在制作，还要 %s" % _sec_text(G.rules.orders.cook_left(i)))
 			shake(i)
 			Sfx.play("deny")
 			return
@@ -440,7 +535,7 @@ func _tap(i: int) -> void:
 		shake(i)
 		select(i)
 		return
-	if (selected == i or Data.type_of(str(c["id"])) == "choice") and c["lock"] == 0:
+	if (selected == i or Data.type_of(str(c["id"])) in ["choice", "chest"]) and c["lock"] == 0:
 		pop(i)
 		activated.emit(i)
 	else:
@@ -450,11 +545,11 @@ func _tap(i: int) -> void:
 
 func _drop(p: Vector2) -> void:
 	var from := drag_from
-	if not G.can_move(from):
+	if not G.rules.board.can_move(from):
 		select(-1)
 		return
 	var vis := drag_vis + DRAG_LIFT
-	var id_from := G.cell_id(from)
+	var id_from := G.rules.board.cell_id(from)
 	var cook_from := _cook_copy(from)
 	var to := cell_at(p)
 	if to < 0:
@@ -469,10 +564,19 @@ func _drop(p: Vector2) -> void:
 			Sfx.play("deny")
 			shake(to)
 		return
-	var id_to := G.cell_id(to)
+	var id_to := G.rules.board.cell_id(to)
 	var cook_to := _cook_copy(to)
 	var res := G.try_drop(from, to)
 	match res:
+		"upgrade":
+			slide(id_from, vis, to, id_to, "merge", 0.16)
+			select(to)
+		"split":
+			Sfx.play("pop", 0.85)
+			slide(G.rules.board.cell_id(from), cell_center(to), from, "", "pop", MOVE_DUR)
+			slide(G.rules.board.cell_id(to), cell_center(to), to, "", "pop", MOVE_DUR)
+			burst(to)
+			select(to)
 		"merge":
 			var merge_t := 0.16
 			slide(id_from, vis, to, id_to, "merge", merge_t)
@@ -495,7 +599,7 @@ func _drop(p: Vector2) -> void:
 				shake(to)
 
 func _cook_copy(i: int) -> Dictionary:
-	if not G.cooking(i):
+	if not G.rules.orders.cooking(i):
 		return {}
 	return (G.board[i]["ck"] as Dictionary).duplicate(true)
 
@@ -511,7 +615,7 @@ func _retarget_gathers(from: int, to: int, cook_from: Dictionary, cook_to: Dicti
 
 func _draw_base(ci: CanvasItem) -> void:
 	ci.draw_texture_rect(BOARD_FRAMES[Art.boil % 4], Rect2(Vector2(-20, -20), size + Vector2(40, 40)), false)
-	var tone := G.order_cell_tone()
+	var tone := G.rules.orders.order_cell_tone()
 	for i in G.board.size():
 		var r := cell_rect(i)
 		var c: Dictionary = G.board[i]
@@ -533,17 +637,13 @@ func _sync_base() -> void:
 		RenderingServer.canvas_item_set_visible(_base_layers[phase].get_canvas_item(), phase == Art.boil)
 
 func _invalidate_base() -> void:
+	_hint_dirty = true
+	_refresh_continuous_cells()
 	for layer in _base_layers:
 		layer.queue_redraw()
 
 func _draw() -> void:
-	_egen_pills.clear()
-	for i in G.board.size():
-		if i == drag_from and dragging:
-			continue
-		if hid.has(i):
-			continue
-		_draw_cell(i)
+	effect_paints += 1
 	var sel_c := cell_center(selected) if selected >= 0 else Vector2.ZERO
 	for m in moves:
 		var to := cell_center(m["to"])
@@ -553,7 +653,7 @@ func _draw() -> void:
 		var cook: Dictionary = m.get("cook", {})
 		if not cook.is_empty():
 			_draw_cook(int(m["to"]), Rect2(p - Vector2(CELL, CELL) * 0.5, Vector2(CELL, CELL)), cook)
-		elif G.is_merge_bubble(int(m["to"])):
+		elif G.rules.board.is_merge_bubble(int(m["to"])):
 			_draw_merge_bubble(int(m["to"]), p, 1.0)
 		else:
 			Art.item(self, m["id"], p, ITEM * lerpf(1.15, 1.0, clampf(m["t"] * 1.5, 0.0, 1.0)))
@@ -563,9 +663,6 @@ func _draw() -> void:
 		var pulse := 1.0 + 0.04 * sin(_t * 6.0)
 		var sz := Vector2(CELL, CELL) * pulse
 		Paint.cell_bracket(self, Rect2(sel_c - sz * 0.5, sz).grow(-4))
-	for p in _egen_pills:
-		var pd: Array = p
-		_draw_egen_pill(pd[0], pd[1], pd[2], pd[3])
 	for f in flights:
 		if float(f.get("delay", 0.0)) > 0.0:
 			continue
@@ -589,25 +686,23 @@ func _draw() -> void:
 	for c in crumbles:
 		if float(c["delay"]) <= 0.0 and float(c["t"]) >= CRUMBLE_HOLD:
 			_draw_crumble(c)
+	if _drop_ring.target >= 0:
+		_drop_ring.paint(self, cell_center(_drop_ring.target), CELL)
 	if dragging and drag_from >= 0:
 		var r0 := cell_rect(drag_from)
 		draw_rect(r0.grow(-6), Color(0.3, 0.2, 0.1, 0.12))
-		var hov := cell_at(drag_pos)
-		if hov >= 0 and hov != drag_from and not G.cooking(drag_from):
-			var ok := MergeGrid.drop_kind(G.board, drag_from, hov, Data.next_id) == "merge"
-			if ok:
-				draw_colored_polygon(Art.rrect(cell_rect(hov).grow(-3), 16, hov, 0.0), Color(1, 0.85, 0.2, 0.45))
 		if not hide_drag:
 			var at := drag_vis + DRAG_LIFT
-			if G.cooking(drag_from):
+			if G.rules.orders.cooking(drag_from):
 				_draw_cook(drag_from, Rect2(at - Vector2(CELL, CELL) * 0.5, Vector2(CELL, CELL)), G.board[drag_from]["ck"])
-			elif G.is_merge_bubble(drag_from):
+			elif G.rules.board.is_merge_bubble(drag_from):
 				_draw_merge_bubble(drag_from, at, 1.15)
 			else:
 				var tilt := clampf((drag_pos.x - drag_vis.x) * 0.004, -0.25, 0.25)
 				Art.item(self, G.board[drag_from]["id"], at, ITEM * 1.15, true, tilt)
 
-func _draw_cell(i: int) -> void:
+func _draw_cell(i: int, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
 	var c: Dictionary = G.board[i]
 	var r := cell_rect(i)
 	var ctr := r.get_center()
@@ -629,26 +724,26 @@ func _draw_cell(i: int) -> void:
 			var u := float(cu["t"]) / CRUMBLE_HOLD
 			rr.position.x += sin(float(cu["t"]) * 90.0) * 3.0 * (1.0 - u)
 		if int(c["lock"]) != 2 or cracking:
-			_draw_rock(rr, i)
+			_draw_rock(rr, i, ci)
 		if cracking:
-			_draw_rock_cracks(rr, i, float(cu["t"]) / CRUMBLE_HOLD)
-		_draw_reward_bubble(i, rr)
+			_draw_rock_cracks(rr, i, float(cu["t"]) / CRUMBLE_HOLD, ci)
+		_draw_reward_bubble(i, rr, ci)
 		return
 	var reveal := 1.0
 	if not cu.is_empty() and float(cu["delay"]) <= 0.0:
 		reveal = clampf((float(cu["t"]) - CRUMBLE_HOLD) / 0.22, 0.0, 1.0)
 		sc *= lerpf(0.62, 1.0, reveal)
 	if typeof(c.get("ck")) == TYPE_DICTIONARY:
-		_draw_cook(i, r, c["ck"])
+		_draw_cook(i, r, c["ck"], ci)
 		return
 	if c["id"] == "":
 		return
-	if G.is_merge_bubble(i):
-		_draw_merge_bubble(i, ctr, sc)
+	if G.rules.board.is_merge_bubble(i):
+		_draw_merge_bubble(i, ctr, sc, ci)
 		return
 	var prod := not Data.gen_stats(c["id"]).is_empty()
 	if c["lock"] == 0 and prod and reveal > 0.65:
-		Sprites.draw(self, "board_prod_glow", r.grow(-6))
+		Sprites.draw(ci, "board_prod_glow", r.grow(-6))
 	var breath := 1.0
 	var nudge := Vector2.ZERO
 	if i == _hint_a or i == _hint_b:
@@ -657,37 +752,37 @@ func _draw_cell(i: int) -> void:
 		sc *= breath
 	if c["lock"] == 1:
 		if breath != 1.0 or nudge != Vector2.ZERO:
-			draw_set_transform(ctr * (1.0 - breath) + nudge, 0.0, Vector2(breath, breath))
-		_draw_vine(r, i, true) # 后面那根：先画，被物品挡住中段
+			ci.draw_set_transform(ctr * (1.0 - breath) + nudge, 0.0, Vector2(breath, breath))
+		_draw_vine(r, i, true, ci) # 后面那根：先画，被物品挡住中段
 		if breath != 1.0 or nudge != Vector2.ZERO:
-			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	Art.item(self, c["id"], ctr + nudge, ITEM * sc)
+			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Art.item(ci, c["id"], ctr + nudge, ITEM * sc)
 	if c["lock"] == 1:
 		if breath != 1.0 or nudge != Vector2.ZERO:
-			draw_set_transform(ctr * (1.0 - breath) + nudge, 0.0, Vector2(breath, breath))
-		_draw_vine(r, i, false)
+			ci.draw_set_transform(ctr * (1.0 - breath) + nudge, 0.0, Vector2(breath, breath))
+		_draw_vine(r, i, false, ci)
 		if breath != 1.0 or nudge != Vector2.ZERO:
-			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	elif reveal > 0.65 and _is_max_currency(str(c["id"])):
-		_draw_max_badge(r)
+		_draw_max_badge(r, ci)
 	elif prod and reveal > 0.65:
-		var wait := G.gen_wait(i)
+		var wait := G.rules.board.gen_wait(i)
 		var free := Data.type_of(str(c["id"])) == "egen"
 		if wait > 0 and free:
-			_egen_pills.append([r, i, G.fmt_time(wait), Color("4b3a2e")])
+			_draw_egen_pill(r, i, G.fmt_time(wait), Color("4b3a2e"), ci)
 		elif wait > 0:
-			_draw_rest(r.position + Vector2(78, 78), 1.0 - float(wait) / (float(Data.gen_stats(c["id"])["refill"]) * 60.0))
+			_draw_rest(r.position + Vector2(78, 78), 1.0 - float(wait) / (float(Data.gen_stats(c["id"])["refill"]) * 60.0), ci)
 		elif free:
-			_egen_pills.append([r, i, "×%d" % G.gen_left(i), Art.CLAY])
+			_draw_egen_pill(r, i, "×%d" % G.rules.board.gen_left(i), Art.CLAY, ci)
 		else:
 			# 开了冷却的产线：底部显示剩余可点次数
-			if G.gen_left(i) >= 0:
-				_egen_pills.append([r, i, "×%d" % G.gen_left(i), Art.CLAY])
-			if G.energy >= G.gen_cost():
+			if G.rules.board.gen_left(i) >= 0:
+				_draw_egen_pill(r, i, "×%d" % G.rules.board.gen_left(i), Art.CLAY, ci)
+			if G.energy >= G.rules.board.gen_cost():
 				# 双倍火种模式：右下角换成紫火
-				Sprites.at(self, "board_bolt_boost" if G.boost_on() else "board_bolt", r.position + Vector2(80, 78))
+				Sprites.at(ci, "board_bolt_boost" if G.rules.board.boost_on() else "board_bolt", r.position + Vector2(80, 78))
 
-## 贝币、琥珀、沙漏、火种合到最高级后不能再合，右下角显示皇冠标志
+## 不拿拿、琥珀、沙漏、火种合到最高级后不能再合，右下角显示皇冠标志
 const MAX_BADGE_CHAINS := ["shell", "amber", "sand", "fire"]
 
 static func _is_max_currency(id: String) -> bool:
@@ -697,10 +792,11 @@ static func _is_max_currency(id: String) -> bool:
 	return ch in MAX_BADGE_CHAINS and Data.CHAINS.has(ch) and Data.lv(id) >= Data.max_lv(ch)
 
 ## 皇冠贴在右下角，略微歪一点，像贴纸
-func _draw_max_badge(r: Rect2) -> void:
-	draw_set_transform(r.end - Vector2(24, 21), 0.2, Vector2.ONE)
-	draw_texture_rect(MAX_CROWN, Rect2(-23, -18, 46, 36), false)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+func _draw_max_badge(r: Rect2, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
+	ci.draw_set_transform(r.end - Vector2(24, 21), 0.2, Vector2.ONE)
+	ci.draw_texture_rect(MAX_CROWN, Rect2(-23, -18, 46, 36), false)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 static func _sec_text(sec: int) -> String:
 	sec = maxi(sec, 0)
@@ -711,19 +807,20 @@ static func _sec_text(sec: int) -> String:
 	return "%d秒" % sec
 
 ## 材料聚在这一格：陶锅搅拌，底下是制作进度
-func _draw_cook(i: int, r: Rect2, ck: Dictionary) -> void:
+func _draw_cook(i: int, r: Rect2, ck: Dictionary, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
 	var seed: int = i
 	if str(ck.get("uid", "")) != "":
 		seed = absi(str(ck["uid"]).hash()) % 4096
 	var ctr := r.get_center() + Vector2(0, -10) + Vector2(0, sin(_t * 7.0) * 1.2)
 	var into := G.now() - float(ck["t0"])
 	var secs := maxf(float(ck["secs"]), 0.1)
-	Sprites.at(self, "board_cook_pot", ctr)
+	Sprites.at(ci, "board_cook_pot", ctr)
 	if into > 0.0:
 		for k in 3:
 			var ph := fmod(_t * 0.5 + float(k) * 0.33, 1.0)
 			var puff := ctr + Vector2(sin(_t * 2.4 + float(k) * 2.1) * 10.0, -16.0 - ph * 24.0)
-			draw_circle(puff, 3.0 + ph * 5.0, Color(1, 1, 1, 0.32 * (1.0 - ph)))
+			ci.draw_circle(puff, 3.0 + ph * 5.0, Color(1, 1, 1, 0.32 * (1.0 - ph)))
 		var mats: Array = ck.get("mats", [])
 		var u := clampf(into / secs, 0.0, 1.0)
 		if u < 0.9 and not mats.is_empty():
@@ -732,43 +829,45 @@ func _draw_cook(i: int, r: Rect2, ck: Dictionary) -> void:
 			for k in mats.size():
 				var a := spin + TAU * float(k) / float(mats.size())
 				var p := ctr + Vector2(cos(a), sin(a) * 0.62) * rad
-				Art.item(self, str(mats[k]), p, 34.0 * lerpf(1.0, 0.4, u), false)
+				Art.item(ci, str(mats[k]), p, 34.0 * lerpf(1.0, 0.4, u), false)
 		var ang := _t * 4.6
 		var dir := Vector2(cos(ang), sin(ang) * 0.7)
-		draw_line(ctr + dir * 6.0, ctr + dir * 22.0 + Vector2(0, -16), Art.WOOD_D, 4.0, true)
-		draw_circle(ctr + dir * 22.0 + Vector2(0, -16), 4.5, Art.WOOD)
+		ci.draw_line(ctr + dir * 6.0, ctr + dir * 22.0 + Vector2(0, -16), Art.WOOD_D, 4.0, true)
+		ci.draw_circle(ctr + dir * 22.0 + Vector2(0, -16), 4.5, Art.WOOD)
 		var fh := 10.0 + sin(_t * 16.0) * 3.0
 		# 火苗图按 10 高生成，跳动时上下拉伸
-		Sprites.draw(self, "board_cook_flame", Rect2(ctr + Vector2(-8, 20.0 - fh * 0.5), Vector2(16, fh)))
+		Sprites.draw(ci, "board_cook_flame", Rect2(ctr + Vector2(-8, 20.0 - fh * 0.5), Vector2(16, fh)))
 	var frac := 0.0 if into <= 0.0 else clampf(into / secs, 0.0, 1.0)
-	Paint.bar(self, Rect2(r.position.x + 10, r.end.y - 16, r.size.x - 20, 11), frac, Art.MOSS, seed + 9)
+	Paint.bar(ci, Rect2(r.position.x + 10, r.end.y - 16, r.size.x - 20, 11), frac, Art.MOSS, seed + 9)
 
 ## 生产器休息中：右下角的小表盘，亮弧是恢复进度
 ## 体力生产器底部的小牌：休息时是倒计时，能点时是剩余次数（样式同合成泡泡的倒计时牌）。
-## _draw_cell 只登记，等选中框画完再统一画，免得被框挡住。
-var _egen_pills: Array = []
+## 小牌随本格更新；其他格子的连续动画不会重画这段文字。
 
-func _draw_egen_pill(r: Rect2, i: int, label: String, col: Color) -> void:
+func _draw_egen_pill(r: Rect2, i: int, label: String, col: Color, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
 	var fs := 20
 	var f: Font = G.font_title
 	var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pill := Rect2(r.get_center().x - tw * 0.5 - 8, r.end.y - 18, tw + 16, 26)
-	Sprites.draw(self, "board_epill_ink", pill)
-	Sprites.draw(self, "board_epill_fill", pill, col)
+	Sprites.draw(ci, "board_epill_ink", pill)
+	Sprites.draw(ci, "board_epill_fill", pill, col)
 	var base := pill.position.y + 13.0 + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	ci.draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
-func _draw_rest(c: Vector2, t: float) -> void:
-	draw_circle(c, 13.0, Art.INK)
-	draw_circle(c, 10.5, Color("4b3a2e"))
+func _draw_rest(c: Vector2, t: float, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
+	ci.draw_circle(c, 13.0, Art.INK)
+	ci.draw_circle(c, 10.5, Color("4b3a2e"))
 	if t > 0.0:
-		draw_arc(c, 7.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(t, 0.0, 1.0), 20, Art.FIRE2, 4.0, true)
-	draw_line(c, c + Vector2(0, -5), Art.BONE, 2.0, true)
-	draw_line(c, c + Vector2(4, 0), Art.BONE, 2.0, true)
+		ci.draw_arc(c, 7.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(t, 0.0, 1.0), 20, Art.FIRE2, 4.0, true)
+	ci.draw_line(c, c + Vector2(0, -5), Art.BONE, 2.0, true)
+	ci.draw_line(c, c + Vector2(4, 0), Art.BONE, 2.0, true)
 
 ## 巨石：不规则多边形大石 + 小石块 + 裂纹 + 青苔
-func _draw_rock(r: Rect2, i: int) -> void:
-	_paint_rock(self, r, i)
+func _draw_rock(r: Rect2, i: int, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
+	_paint_rock(ci, r, i)
 
 func _paint_rock(ci: CanvasItem, r: Rect2, i: int) -> void:
 	ci.draw_texture_rect_region(ROCK_FRAMES[Art.boil % 4], Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i))
@@ -788,8 +887,9 @@ func _crumble_for(i: int) -> Dictionary:
 	return {}
 
 ## 裂开那一下：裂纹变亮、变深
-func _draw_rock_cracks(r: Rect2, i: int, u: float) -> void:
-	draw_texture_rect_region(ROCK_CRACKS, Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i), Color(1, 1, 1, lerpf(0.6, 1.0, u)))
+func _draw_rock_cracks(r: Rect2, i: int, u: float, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
+	ci.draw_texture_rect_region(ROCK_CRACKS, Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i), Color(1, 1, 1, lerpf(0.6, 1.0, u)))
 
 ## 碎石和尘土也是图片，只更新位置、旋转、缩放和透明度。
 func _draw_crumble(c: Dictionary) -> void:
@@ -822,26 +922,17 @@ func _draw_fragment(k: int, pos: Vector2, rotation_value: float, scale_value: fl
 
 ## 藤蔓：两根绕过物品的藤（画法见 scripts/sprites/board.gd）。back 是物品后面那段。
 ## 按格子序号取一种样子，单双数决定镜像。
-func _draw_vine(r: Rect2, i: int, back: bool) -> void:
-	Sprites.draw(self, "board_vine_%s%d" % ["b" if back else "f", posmod(i, 8)], r)
+func _draw_vine(r: Rect2, i: int, back: bool, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
+	Sprites.draw(ci, "board_vine_%s%d" % ["b" if back else "f", posmod(i, 8)], r)
 
 func _draw_burst(b: Dictionary) -> void:
-	var t: float = b["t"] / 0.6
-	var p: Vector2 = b["p"]
-	var rr := 20.0 + 70.0 * t
-	draw_arc(p, rr, 0, TAU, 32, Color(1, 0.9, 0.4, 1.0 - t), 6.0 * (1.0 - t) + 1.0, true)
-	for k in 8:
-		var a := TAU * float(k) / 8.0 + float(b["seed"])
-		var q := p + Vector2(cos(a), sin(a)) * (30.0 + 80.0 * t)
-		Sprites.at(self, "board_burst_star", q, (10.0 * (1.0 - t) + 2.0) / 12.0, 0.0, Color(Art.FIRE2, 1.0 - t))
-	for k in 5:
-		var a := TAU * float(k) / 5.0 + 0.4 + float(b["seed"])
-		var q := p + Vector2(cos(a), sin(a)) * (20.0 + 50.0 * t) + Vector2(0, 30.0 * t * t)
-		draw_circle(q, 8.0 * (1.0 - t) + 2.0, Color(1, 1, 1, 0.8 * (1.0 - t)))
+	MergeBurst.paint(self, b["p"], float(b["t"]) / 0.6, float(b["seed"]))
 
 # ---------------------------------------------------------------- 停手提示
 
 func _clear_hint() -> void:
+	_hint_dirty = true
 	_idle = 0.0
 	if _hint_a < 0 and _hint_b < 0:
 		return
@@ -886,6 +977,8 @@ func _tick_hint(delta: float) -> void:
 		_idle += delta
 		if _idle < HINT_WAIT:
 			return
+	if not _hint_dirty and not _guide_playing() and _pair_ok(_hint_a, _hint_b): return
+	_hint_dirty = false
 	var pair := _pick_pair()
 	if not _pair_ok(pair.x, pair.y):
 		_set_hint(-1, -1)
@@ -902,7 +995,7 @@ func _pick_pair() -> Vector2i:
 	return _find_hint_pair()
 
 func _hint_cell_ok(i: int) -> bool:
-	if i < 0 or i >= G.board.size() or hid.has(i) or G.cooking(i):
+	if i < 0 or i >= G.board.size() or hid.has(i) or G.rules.orders.cooking(i):
 		return false
 	if not _crumble_for(i).is_empty():
 		return false
@@ -923,7 +1016,7 @@ func _pair_ok(a: int, b: int) -> bool:
 	return int(G.board[a]["lock"]) == 0 or int(G.board[b]["lock"]) == 0
 
 func _find_hint_pair() -> Vector2i:
-	var wanted := G.wanted_ids()
+	var wanted := G.rules.orders.wanted_ids()
 	var by := {}
 	for i in G.board.size():
 		if not _hint_cell_ok(i):
@@ -985,7 +1078,7 @@ func _free_copies(id: String) -> int:
 	var n := 0
 	for i in G.board.size():
 		var c: Dictionary = G.board[i]
-		if str(c["id"]) != id or int(c["lock"]) != 0 or G.cooking(i):
+		if str(c["id"]) != id or int(c["lock"]) != 0 or G.rules.orders.cooking(i):
 			continue
 		n += 1
 	return n
@@ -1034,33 +1127,34 @@ func _guide_allows_drop(from_i: int, to_i: int) -> bool:
 
 ## 合成泡泡（#08 #18）：物品裹在一颗会轻轻晃动的肥皂泡里，底下挂着倒计时小牌；最后 10 秒变红并加快晃动。
 const BUBBLE_RIM := Color("3f86b4")
-func _draw_merge_bubble(i: int, ctr: Vector2, sc: float) -> void:
-	var seconds := G.bubble_left(i)
+func _draw_merge_bubble(i: int, ctr: Vector2, sc: float, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
+	var seconds := G.rules.board.bubble_left(i)
 	var urgent := seconds <= 10
 	var ph := _t * (5.0 if urgent else 2.6) + float(i) * 0.9
 	var wob := Vector2(1.0 + 0.035 * sin(ph), 1.0 - 0.035 * sin(ph)) * sc
 	var c := ctr + Vector2(0, -4 + sin(ph * 0.5) * 1.5)
 	var radius := 40.0
-	draw_colored_polygon(Art.ell(ctr + Vector2(0, 38), Vector2(26, 5), i, 0.0, 14, 0.0, 0.0), Color(0.15, 0.3, 0.45, 0.16))
-	draw_set_transform(c, 0.0, wob)
-	draw_circle(Vector2.ZERO, radius, Color(0.62, 0.88, 1.0, 0.28))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	Art.item(self, str(G.board[i]["id"]), c + Vector2(0, 2), ITEM * 0.74 * sc, false)
-	draw_set_transform(c, 0.0, wob)
+	ci.draw_colored_polygon(Art.ell(ctr + Vector2(0, 38), Vector2(26, 5), i, 0.0, 14, 0.0, 0.0), Color(0.15, 0.3, 0.45, 0.16))
+	ci.draw_set_transform(c, 0.0, wob)
+	ci.draw_circle(Vector2.ZERO, radius, Color(0.62, 0.88, 1.0, 0.28))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Art.item(ci, str(G.board[i]["id"]), c + Vector2(0, 2), ITEM * 0.74 * sc, false)
+	ci.draw_set_transform(c, 0.0, wob)
 	# 泡泡下半圈有一点天蓝反光，上半圈是一条白色亮弧和一颗亮点
-	draw_arc(Vector2.ZERO, radius - 4.0, PI * 0.15, PI * 0.85, 18, Color(0.55, 0.85, 1.0, 0.55), 5.0, true)
-	draw_arc(Vector2.ZERO, radius, 0, TAU, 48, Color(BUBBLE_RIM, 0.9), 3.0, true)
-	draw_arc(Vector2.ZERO, radius - 7.0, PI * 1.08, PI * 1.42, 12, Color(1, 1, 1, 0.92), 5.0, true)
-	draw_circle(Vector2(-12, -30), 3.2, Color(1, 1, 1, 0.95))
-	draw_circle(Vector2(24, 20), 2.2, Color(1, 1, 1, 0.6))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	ci.draw_arc(Vector2.ZERO, radius - 4.0, PI * 0.15, PI * 0.85, 18, Color(0.55, 0.85, 1.0, 0.55), 5.0, true)
+	ci.draw_arc(Vector2.ZERO, radius, 0, TAU, 48, Color(BUBBLE_RIM, 0.9), 3.0, true)
+	ci.draw_arc(Vector2.ZERO, radius - 7.0, PI * 1.08, PI * 1.42, 12, Color(1, 1, 1, 0.92), 5.0, true)
+	ci.draw_circle(Vector2(-12, -30), 3.2, Color(1, 1, 1, 0.95))
+	ci.draw_circle(Vector2(24, 20), 2.2, Color(1, 1, 1, 0.6))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	# 倒计时小牌
 	var label := "%d:%02d" % [seconds / 60, seconds % 60]
 	var fs := 16
 	var f: Font = G.font_title
 	var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pill := Rect2(ctr.x - tw * 0.5 - 7, ctr.y + 19, tw + 14, 21)
-	Sprites.draw(self, "board_bpill_ink", pill)
-	Sprites.draw(self, "board_bpill_fill", pill, Art.CLAY if urgent else Color("2f6d93"))
+	Sprites.draw(ci, "board_bpill_ink", pill)
+	Sprites.draw(ci, "board_bpill_fill", pill, Art.CLAY if urgent else Color("2f6d93"))
 	var base := pill.position.y + 10.5 + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	ci.draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)

@@ -1,7 +1,18 @@
 extends Node
-## One reducer for local input and headless server replay. Only commands are uploaded.
+## Executes deterministic commands, durably records input, and synchronizes batches.
+const Values := preload("res://scripts/domain/StateValues.gd")
+const Rules := preload("res://scripts/replay/Reducer.gd")
+const JournalStore := preload("res://scripts/replay/Journal.gd")
+const RewardUpgrade := preload("res://scripts/storage/EarlyRewardUpgrade.gd")
+const FifthLineUpgrade := preload("res://scripts/storage/FifthLineUpgrade.gd")
 const PROTOCOL := 1
 const ENGINE := "4.6.3"
+const CHECKPOINT_OPERATIONS := 32
+const CHECKPOINT_SECONDS := 5.0
+## One compatible upgrade: recover old automatic payouts before switching to manual claims.
+const AUTOMATIC_ALBUM_RULES := "85bcaca55a055ded5dcbff79bd78d98ea037c4de1dead8415f66b45cdf0c7550"
+const MANUAL_ALBUM_RULES := "148e80059573539ac7a6780c5d7b775ce0de00abadb91be0ac300ec8ca3f3964"
+const HUD_FIELDS := ["level", "xp", "energy", "shells", "amber", "rush", "energy_stamp", "boost", "boost_gm", "inv", "inv_chests", "inv_cap", "discovered", "book_claimed", "builds", "cards", "stash", "tokens", "token_claimed", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season", "hot_bought", "hot_revision", "deals_bought", "deals_day", "shell_bought", "shell_period", "energy_buys", "offers", "ufo_offer", "gm_activities", "local_race", "duel_race", "tiger_escape", "fossil_dig"]
 var active := false
 var executing := false
 var worker := false
@@ -12,440 +23,454 @@ var authorized := false
 var pending: Array = []
 var inflight: Dictionary = {}
 var meta: Dictionary = {}
+var recovery_error := ""
 var _timer := 0.0
+var _checkpoint_timer := 0.0
 var _rules := ""
+var _rules_revision := -1
+var _session_rules := ""
+var _failed_rules_edit := false
+var _rules_edit_authorized := false
+var _rules_edit_hash := ""
+var _generation := ""
+var _ops_since_checkpoint := 0
+var _recovering := false
+var _reducer: RefCounted
 
 func _ready() -> void:
-	worker = "--replay-worker" in OS.get_cmdline_user_args()
-	active = worker or get_tree().get_script() == null or "--replay-test" in OS.get_cmdline_user_args()
+	var arguments := OS.get_cmdline_user_args()
+	worker = "--replay-worker" in arguments or "--replay-service" in arguments
+	active = worker or get_tree().get_script() == null or "--replay-test" in arguments
+	_reducer = Rules.new(self)
 	if not active: return
+	meta = G.replay_meta
+	seq = int(meta.get("seq", 0))
+	clock = int(meta.get("at", 0))
+	if worker: return
 	var saved: Dictionary = G.replay_local
 	base = int(saved.get("base", 0))
 	pending = saved.get("pending", [])
 	inflight = saved.get("inflight", {})
 	authorized = bool(saved.get("authorized", false))
-	# G loads these fields before the Replay autoload is ready.
-	meta = G.replay_meta
-	seq = int(meta.get("seq", 0))
-	clock = int(meta.get("at", 0))
-	if not worker and not Cloud.enabled:
+	_generation = str(saved.get("generation", ""))
+	if _generation == "": _generation = _new_generation()
+	if not Cloud.enabled:
 		meta["allow_gm"] = true
 		authorized = true
 		if G.random_seed == "": G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
-	if not worker: G.save_game()
+	var upgrade_fifth_line := G.loaded_save and not Cloud.enabled and FifthLineUpgrade.applies(str(saved.get("rules", "")), rules_hash(), [RewardUpgrade.FROM_RULES, AUTOMATIC_ALBUM_RULES])
+	var upgrade_rewards := G.loaded_save and not Cloud.enabled and RewardUpgrade.applies(str(saved.get("rules", "")), rules_hash(), AUTOMATIC_ALBUM_RULES)
+	var upgrade_albums := G.loaded_save and not Cloud.enabled and str(saved.get("rules", "")) == AUTOMATIC_ALBUM_RULES and (rules_hash() == MANUAL_ALBUM_RULES or upgrade_rewards)
+	_reducer.legacy_album_rewards = upgrade_albums
+	if G.loaded_save and str(saved.get("rules", "")) != rules_hash() and not upgrade_albums and not upgrade_rewards and not upgrade_fifth_line:
+		recovery_error = "本地测试存档规则版本已更新"
+		pending = []
+		inflight = {}
+		base = 0
+		seq = 0
+		meta = {}
+		_generation = _new_generation()
+		G.loaded_save = false
+		authorized = not Cloud.enabled
+		Cloud._say.call_deferred(recovery_error + ("，已开始新的测试进度" if not Cloud.enabled else "，正在等待服务器确认"))
+		if Cloud.enabled: return
+		G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
+		G.random_streams = {}
+	_session_rules = rules_hash()
+	if authorized:
+		if G.loaded_save:
+			var current_config := FifthLineUpgrade.begin() if upgrade_fifth_line else {}
+			var current_rewards := RewardUpgrade.begin() if upgrade_rewards else {}
+			_recover()
+			if upgrade_rewards: RewardUpgrade.finish(current_rewards)
+			if upgrade_fifth_line: FifthLineUpgrade.finish(current_config)
+		else:
+			clock = int(Cloud.server_now())
+			executing = true
+			G.new_game()
+			meta = {"allow_gm": not Cloud.enabled}
+			advance()
+			_canonicalize_live()
+			snapshot()
+			executing = false
+			G.clear_presentations()
+	_reducer.legacy_album_rewards = false
+	if upgrade_albums or upgrade_rewards or upgrade_fifth_line:
+		# The offline journal was recovered with its original payout behavior.
+		# Already-paid markers, ownership, currencies and identity are retained.
+		base = seq
+		pending = []
+		inflight = {}
+	if not checkpoint() and (upgrade_albums or upgrade_rewards or upgrade_fifth_line): authorized = false
 
 func journal() -> Dictionary:
-	return {"base": base, "pending": pending, "inflight": inflight, "authorized": authorized}
+	return {"base": base, "pending": pending, "inflight": inflight, "authorized": authorized,
+		"generation": _generation, "rules": _session_rules if _session_rules != "" else rules_hash()}
 
 func rules_hash() -> String:
-	if _rules == "":
-		var parts := ["replay-v1-rules-20261109.1-godot-" + ENGINE]
-		for dir in ["res://data"]: _rule_files(dir, parts)
+	var revision: int = Data.ConfigFiles.revision
+	if _rules == "" or revision != _rules_revision:
+		var parts := ["tribe-rules-1-godot-" + ENGINE]
+		for name in DirAccess.get_files_at("res://data"):
+			if name.ends_with(".json"):
+				var path := "res://data/" + name
+				parts.append(path + ":" + FileAccess.get_sha256(path))
 		parts.sort()
 		_rules = "\n".join(parts).sha256_text()
+		_rules_revision = revision
 	return _rules
 
-func _rule_files(dir: String, parts: Array) -> void:
-	for name in DirAccess.get_files_at(dir):
-		if (dir == "res://data" and name.ends_with(".json")) or name.ends_with(".gd"):
-			var path := dir.path_join(name)
-			parts.append(path + ":" + FileAccess.get_sha256(path))
-	for name in DirAccess.get_directories_at(dir): _rule_files(dir.path_join(name), parts)
-
-func snapshot() -> Dictionary:
-	G.replay_meta = meta
+func snapshot(previous: Dictionary = {}) -> Dictionary:
 	meta["seq"] = seq
 	meta["at"] = clock
-	var s := G.save_dict().duplicate(true)
-	for k in ["settings", "replay_local", "tiger_escape_seen"]: s.erase(k)
-	return normalize(s)
+	G.replay_meta = meta
+	var raw: Dictionary = G.save_dict(false)
+	var out := {}
+	var keys: Array = raw.keys()
+	keys.sort()
+	for key in keys:
+		# Reuse owned immutable snapshot branches, never references to live state.
+		# Metadata is always owned because tick comparison temporarily edits its clock.
+		if key != "replay_meta" and previous.has(key) and raw[key] == previous[key]: out[key] = previous[key]
+		else: out[key] = Values.copy(raw[key], true)
+	return out
 
 func normalize(value):
-	if value is Dictionary:
-		var out := {}
-		var keys: Array = value.keys()
-		keys.sort()
-		for k in keys: out[str(k)] = normalize(value[k])
-		return out
-	if value is Array:
-		var out := []
-		for v in value: out.append(normalize(v))
-		return out
-	if value is float:
-		return int(value) if value == floor(value) else snappedf(value, 0.000001)
-	return value
+	return Values.copy(value, true)
+
+func _canonicalize(value):
+	return Values.in_place(value)
+
+func _canonicalize_live() -> void:
+	# Mutate nested business values directly; do not serialize/reload the game.
+	G.replay_meta = meta
+	var state: Dictionary = G.save_dict(false)
+	for key in state:
+		var value = state[key]
+		if value is Array or value is Dictionary: _canonicalize(value)
+		elif value is float: G.set(key, _canonicalize(value))
 
 func digest() -> String:
 	return JSON.stringify(snapshot()).sha256_text()
 
-func restore(s: Dictionary) -> void:
-	var settings: Dictionary = G.settings.duplicate(true)
+func restore(state: Dictionary) -> bool:
+	var was_executing := executing
 	executing = true
-	meta = s.get("replay_meta", {}).duplicate(true)
+	if not G.load_snapshot(state):
+		executing = was_executing
+		return false
+	meta = G.replay_meta
 	seq = int(meta.get("seq", 0))
 	clock = int(meta.get("at", 0))
-	G.load_snapshot(s, false)
-	G.settings = settings
-	G.replay_meta = meta
+	executing = was_executing
+	return true
+
+func checkpoint() -> bool:
+	if not active or worker or executing or _recovering: return true
+	var previous_generation := _generation
+	_generation = _new_generation()
+	var error := JournalStore.write_checkpoint(G.save_path, G.save_dict(true))
+	if error != OK:
+		_generation = previous_generation
+		Cloud._say("无法保存进度，请检查可用存储空间")
+		return false
+	JournalStore.rotate(_journal_path())
+	_ops_since_checkpoint = 0
+	_checkpoint_timer = 0.0
+	return true
+
+func restart_local_rules() -> bool:
+	# This is a new local test session, never a migration of an existing game.
+	if Cloud.enabled or worker or executing or not active: return false
+	var before := snapshot()
+	var old_pending := pending
+	var old_inflight := inflight
+	var old_base := base
+	var old_authorized := authorized
+	var old_generation := _generation
+	var old_rules := _session_rules if _session_rules != "" else (_rules if _rules != "" else rules_hash())
+	var old_ops := _ops_since_checkpoint
+	var old_checkpoint_timer := _checkpoint_timer
+	var old_loaded: bool = G.loaded_save
+	var old_seen: Dictionary = G.tiger_escape_seen.duplicate(true)
+	var old_layout := {}
+	for field in ["COLS", "ROWS", "MAX_ENERGY", "REGEN_SEC", "RANDOM_ORDERS", "TOKEN_STEP"]:
+		old_layout[field] = G.get(field)
+	var was_blocked: bool = G.is_blocking_signals()
+	G.set_block_signals(true)
+	G.clear_presentations()
+	executing = true
+	authorized = false
+	pending = []
+	inflight = {}
+	base = 0
+	seq = 0
+	clock = int(Cloud.server_now())
+	meta = {"allow_gm": true}
+	G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
+	G.random_streams = {}
+	G._apply_rules()
+	G.new_game()
+	advance()
+	_canonicalize_live()
 	executing = false
+	authorized = true
+	_rules = ""
+	_rules_revision = -1
+	_session_rules = rules_hash()
+	snapshot()
+	if not checkpoint():
+		# The previous state is a trusted in-memory transaction snapshot. Restore
+		# fields directly because the editor has not restored the old data files yet.
+		for field in old_layout: G.set(field, old_layout[field])
+		G.random_load(before["replay_rng"])
+		for field in G.StateCodec.FIELDS: G.set(field, before[field])
+		G.clear_transient()
+		meta = G.replay_meta
+		seq = int(meta["seq"])
+		clock = int(meta["at"])
+		pending = old_pending
+		inflight = old_inflight
+		base = old_base
+		_generation = old_generation
+		_session_rules = old_rules
+		_ops_since_checkpoint = old_ops
+		_checkpoint_timer = old_checkpoint_timer
+		G.loaded_save = old_loaded
+		G.tiger_escape_seen = old_seen
+		authorized = false
+		_failed_rules_edit = true
+		_rules_edit_authorized = old_authorized
+		_rules_edit_hash = old_rules
+		G.set_block_signals(was_blocked)
+		return false
+	_failed_rules_edit = false
+	_rules_edit_hash = ""
+	_rules_edit_authorized = false
+	_timer = 0.0
+	G.loaded_save = true
+	G.clear_presentations()
+	G.set_block_signals(was_blocked)
+	notify_restored()
+	return true
+
+func restore_rules_edit_authorization() -> bool:
+	# The editor calls this only after exact file rollback and Data.refresh().
+	if Cloud.enabled or worker or executing: return false
+	if not _failed_rules_edit: return true
+	if rules_hash() != _rules_edit_hash: return false
+	for pair in [["COLS", "cols"], ["ROWS", "rows"], ["MAX_ENERGY", "max_energy"], ["REGEN_SEC", "regen_sec"], ["RANDOM_ORDERS", "random_orders"], ["TOKEN_STEP", "token_step"]]:
+		if int(G.get(pair[0])) != int(Data.RULES.get(pair[1], -1)): return false
+	authorized = _rules_edit_authorized
+	_failed_rules_edit = false
+	_rules_edit_hash = ""
+	_rules_edit_authorized = false
+	return true
+
+func _journal_path() -> String:
+	return G.save_path + ".journal"
+
+func _new_generation() -> String:
+	return Crypto.new().generate_random_bytes(16).hex_encode()
+
+func _recover() -> void:
+	var loaded: Dictionary = JournalStore.read(_journal_path(), _generation, seq)
+	recovery_error = str(loaded["error"])
+	_recovering = true
+	for operation in loaded["ops"]:
+		var before := snapshot()
+		var result = perform(str(operation["name"]), operation["args"], int(operation["at"]))
+		if _failed(result) or seq != int(operation["seq"]) or digest() != str(operation["hash"]):
+			restore(before)
+			recovery_error = "本地操作恢复校验失败，已保留最后完整操作"
+			break
+		pending.append(operation)
+	_recovering = false
+	G.clear_presentations()
+	if recovery_error != "": push_error(recovery_error)
 
 func _process(delta: float) -> void:
 	if not active or worker or not authorized or executing: return
 	_timer += delta
+	_checkpoint_timer += delta
 	if _timer >= 1.0:
-		_timer = 0.0
+		_timer = fmod(_timer, 1.0)
 		perform("tick")
+	if _ops_since_checkpoint > 0 and _checkpoint_timer >= CHECKPOINT_SECONDS: checkpoint()
+
+func _failed(result) -> bool:
+	return result is Dictionary and (result.has("error") or result.get("ok", true) == false)
 
 func perform(name: String, args: Dictionary = {}, at := -1):
 	if not active: return {"error": "未启用操作重放"}
 	if executing: return {"error": "操作正在处理"}
 	if not worker and not authorized: return {"error": "首次进入需要联网取得存档"}
+	if not worker and not _recovering and _session_rules != "" and rules_hash() != _session_rules:
+		return {"error": "配置已变化，请保存并重开测试局"}
 	var before := snapshot()
+	var old_opened: Array = G.opened.duplicate()
+	var old_cooked: Array = G.cooked_pop.duplicate()
 	var old_clock := clock
-	clock = maxi(clock, int(Cloud.server_now()) if at < 0 else at)
+	var current_time := int(G.simulation_time) if G.simulation_time >= 0 else int(Cloud.server_now())
+	var target_clock := maxi(clock, current_time if at < 0 else at)
+	var was_blocked: bool = G.is_blocking_signals()
+	G.set_block_signals(true)
+	G.clear_presentations()
+	clock = target_clock
 	executing = true
 	advance()
-	var result = dispatch.call(name, args)
-	executing = false
-	if result is Dictionary and (result.has("error") or result.get("ok", true) == false):
+	var result: Dictionary = _reducer.dispatch(name, args)
+	result["ok"] = not _failed(result)
+	if not result["ok"] and not result.has("error"): result["error"] = str(result.get("message", "操作失败"))
+	var failed := _failed(result)
+	var committed_name := name
+	var committed_args := args
+	if failed:
+		# Roll back the invalid input, then keep legitimate elapsed-time changes.
 		restore(before)
-		return result
-	# Idle time produces no log entries unless a timer actually changes state.
-	if name == "tick":
-		clock = old_clock
-		if snapshot() == before: return result
-		clock = maxi(old_clock, int(Cloud.server_now()) if at < 0 else at)
+		G.opened = old_opened
+		G.cooked_pop = old_cooked
+		G.clear_presentations()
+		clock = target_clock
+		advance()
+		committed_name = "tick"
+		committed_args = {}
+	_canonicalize_live()
+	var after := snapshot(before) if not worker or committed_name == "tick" else {}
+	if committed_name == "tick":
+		after["replay_meta"]["at"] = old_clock
+		if after == before:
+			clock = old_clock
+			meta["at"] = old_clock
+			executing = false
+			G.clear_presentations()
+			G.set_block_signals(was_blocked)
+			return result
 	seq += 1
 	meta["seq"] = seq
 	meta["at"] = clock
-	# Use the same canonical numeric values between commands on both sides,
-	# including when a server checkpoint splits an offline sequence.
-	var canonical: Dictionary = JSON.parse_string(JSON.stringify(snapshot()))
-	G.load_snapshot(canonical, false)
-	meta = G.replay_meta
-	if not worker:
-		pending.append({"seq": seq, "at": clock, "name": name, "args": args.duplicate(true), "hash": digest()})
-		G.save_game() # Snapshot and log are one atomic file, before animations.
+	if not worker and not _recovering:
+		after["replay_meta"]["seq"] = seq
+		after["replay_meta"]["at"] = clock
+		var operation := {"seq": seq, "at": clock, "name": committed_name, "args": committed_args.duplicate(true), "hash": JSON.stringify(after).sha256_text()}
+		var error := JournalStore.append(_journal_path(), _generation, operation)
+		if error != OK:
+			restore(before)
+			G.opened = old_opened
+			G.cooked_pop = old_cooked
+			executing = false
+			G.clear_presentations()
+			G.set_block_signals(was_blocked)
+			return {"error": "无法保存操作，请检查可用存储空间"}
+		pending.append(operation)
+		_ops_since_checkpoint += 1
+	executing = false
+	G.set_block_signals(was_blocked)
+	if not worker and not _recovering:
+		if _ops_since_checkpoint >= CHECKPOINT_OPERATIONS: checkpoint()
+		_notify(before, after)
+		G.flush_presentations()
+	else:
+		G.clear_presentations()
+	return result
+
+func _notify(before: Dictionary, after: Dictionary) -> void:
+	if before.get("board") != after.get("board"): G.board_changed.emit()
+	if before.get("orders") != after.get("orders") or before.get("pending_orders") != after.get("pending_orders"): G.orders_changed.emit()
+	for field in HUD_FIELDS:
+		if before.get(field) != after.get(field):
+			G.changed.emit()
+			break
+	if before.get("merge_events") != after.get("merge_events"): G.merge_event_changed.emit()
+	if before.get("seven_day") != after.get("seven_day"): G.seven_day_changed.emit()
+
+func notify_restored() -> void:
 	G.board_changed.emit()
 	G.orders_changed.emit()
 	G.changed.emit()
 	G.merge_event_changed.emit()
-	return result
+	G.seven_day_changed.emit()
 
 func advance() -> void:
-	G._check_day()
-	G._tick_bubbles()
-	if G.energy < G.MAX_ENERGY: G._regen()
-	G._tick_cooks()
-	TigerEscape.tick()
-	DuelRace.tick()
-	LocalRace.tick()
-	SevenDay.login()
-	DuelRace.state()
-	TigerEscape.state()
-	UfoOffer.state()
-	var c := MergeEvent.current()
-	if MergeEvent.available(c): MergeEvent.state(c)
-	# Tutorial effects are rules, never values supplied by the interface.
-	if G.tutorial_on and G.board_has("basket_5") >= 0:
-		if G.energy < 1 and not meta.get("tutorial_energy", false):
-			G.energy = 5
-			meta["tutorial_energy"] = true
-		if not meta.get("seed_order", false):
-			G.orders.insert(0, {"who": 1, "items": ["seed_1"], "rw": {"xp": 1, "shell": 50}, "story": true, "say": "草籽能种出新的果树，你学得真快！"})
-			meta["seed_order"] = true
+	_reducer.advance()
 
-func order_rewards(o: Dictionary) -> Array:
-	var rw: Dictionary = o.get("rw", {})
-	var out := []
-	for pair in [["shell", "shell_2"], ["xp", "xp_1"], ["token", "token_1"]]:
-		if int(rw.get(pair[0], 0)) > 0: out.append([pair[1], int(rw[pair[0]])])
-	if rw.get("rewards") is Array and not rw["rewards"].is_empty(): out.append_array(Rewards.items(rw["rewards"]))
-	elif int(rw.get("pack", 0)) > 0: out.append(["pack_1", int(rw["pack"])])
-	return out
-
-func grant(rw: Array, delivery: Dictionary = {}) -> void:
-	Rewards.grant(rw, Callable(), false, true, delivery)
-
-func dispatch(name: String, a: Dictionary):
-	var i := int(a.get("cell", -1))
-	match name:
-		"tick": return {}
-		"drop":
-			var r := G.try_drop(int(a.get("from", -1)), int(a.get("to", -1)))
-			return {"kind": r} if r != "" else {"error": "不能移动或合成"}
-		"tap": return await tap(i)
-		"stash": return await stash(int(a.get("index", -1)))
-		"store":
-			if not valid_cell(i) or G.cooking(i) or G.inv.size() >= G.inv_cap or Data.type_of(G.cell_id(i)) == "egen" or G.is_merge_bubble(i) or Data.is_dish(G.cell_id(i)): return {"error": "无法存入"}
-			G.inv.append(G.cell_id(i)); G.board[i] = {"id": "", "lock": 0}
-			return {}
-		"inventory":
-			var index := int(a.get("index", -1))
-			var to := G.find_empty_near(0)
-			if index < 0 or index >= G.inv.size() or to < 0: return {"error": "无法取出"}
-			G.board[to]["id"] = G.inv.pop_at(index); G.discover(G.cell_id(to))
-			return {"to": to}
-		"discard":
-			if not valid_cell(i) or G.cooking(i) or G.is_merge_bubble(i) or Data.type_of(G.cell_id(i)) in ["gen", "egen"] or Data.is_dish(G.cell_id(i)): return {"error": "不能丢弃"}
-			settle_trash()
-			meta["trash"] = {"cell": i, "id": G.cell_id(i)}; G.board[i]["id"] = ""
-			return {}
-		"discard_finish": settle_trash(); return {}
-		"undo":
-			var t: Dictionary = meta.get("trash", {})
-			if t.is_empty() or G.cell_id(int(t["cell"])) != "": return {"error": "无法撤销"}
-			G.board[int(t["cell"])]["id"] = t["id"]; meta.erase("trash"); return {}
-		"order":
-			if i < 0 or i >= G.orders.size() or not G.order_ready(G.orders[i]): return {"error": "订单尚未完成"}
-			var o: Dictionary = G.orders[i].duplicate(true)
-			var rw := order_rewards(o)
-			var cells := G.complete_order(i)
-			LocalRace.order(o.get("items", []))
-			grant(rw)
-			return {"cells": cells, "rewards": rw}
-		"craft":
-			if i < 0 or i >= G.orders.size(): return {"error": "订单不存在"}
-			var r := G.begin_craft(i)
-			return {"flights": r} if not r.is_empty() else {"error": "材料不足"}
-		"rush":
-			if not valid_cell(i) or not G.cooking(i): return {"error": "未在制作"}
-			return {"used": G.rush_cook(i)}
-		"boost": G.set_boost(bool(a.get("on", false))); return {}
-		"energy":
-			if not await G.buy_energy(): return {"error": "琥珀不足"}
-			G.add_currency("energy", 100); return {"ok": true}
-		"expand": return {"ok": await G.expand_storage()}
-		"build":
-			var r: Dictionary = await G.do_build(str(a.get("id", "")))
-			if r.is_empty(): return {"error": "无法建造"}
-			grant(r.get("rewards", [])); return r
-		"book":
-			var n: int = await G.claim_book(str(a.get("id", "")))
-			if n <= 0: return {"error": "尚未发现或已领取"}
-			G.add_currency("energy", n); return {"energy": n}
-		"level":
-			var lv := int(a.get("level", 0))
-			var key := "level:%d" % lv
-			if lv < 2 or lv > G.level or meta.has(key): return {"error": "等级奖励不可领取"}
-			meta[key] = true; var rw := Data.level_rewards(lv); grant(rw); return {"rewards": rw}
-		"pack": return await pack()
-		"shop_view": return {"list": G.HotDeals.today()}
-		"shop":
-			var r: Dictionary = await G.shop_buy(str(a.get("key", "")), str(a.get("id", "")), 0, false)
-			if not r.get("ok", false): return r
-			G.stash_push(str(a["id"])); return r
-		"hot_refresh": return await G.refresh_hot()
-		"shell_refresh": return await G.refresh_shell()
-		"bubble_buy":
-			if not G.is_merge_bubble(i): return {"error": "气泡不存在"}
-			return await G.buy_bubble(i)
-		"bubble_reward":
-			if i < 0 or i >= G.board.size() or int(G.board[i].get("lock", 2)) == 2: return {"error": "未解锁"}
-			var rw := G.Layout.parse_reward(G.board[i].get("rw", null))
-			if rw.is_empty(): return {"error": "已领取"}
-			G.board[i].erase("rw"); grant([rw]); return {"rewards": [rw]}
-		"pass":
-			var track := str(a.get("track", "")); var lv := int(a.get("level", 0)); var rw: Array = []
-			if track == "free": rw = await G.claim_pass_free(lv)
-			elif track == "prem": rw = await G.claim_pass_prem(lv)
-			elif track == "super": rw = await G.claim_pass_super(lv)
-			elif track == "endless": rw = await G.claim_pass_endless()
-			if rw.is_empty(): return {"error": "不可领取"}
-			grant(rw); return {"rewards": rw}
-		"daily":
-			if str(a.get("key", "")) == "deal_ad": return {"error": "广告奖励需要平台验证"}
-			return await DailyShop.claim(str(a.get("key", "")))
-		"seven": return await SevenDay.claim(str(a.get("id", "")), bool(a.get("stage", false)))
-		"choice": return await ChoiceChest.choose(i, G.cell_id(i) if valid_cell(i) else "", int(a.get("option", -1)))
-		"activity":
-			var c := MergeEvent.definition(str(a.get("season", "")))
-			if not MergeEvent.available(c) or (str(a.get("action", "")) != "claim" and not MergeEvent.active(c)): return {"error": "活动尚未开放"}
-			var state := MergeEvent.state(c)
-			var roll := -1.0
-			if str(a.get("action", "")) == "drop":
-				var from := int(a.get("from", -1)); var to := int(a.get("to", -1))
-				if MergeGrid.drop_kind(state["cells"], from, to, func(id): return MergeEvent.next_id(c, id)) == "merge":
-					roll = G.random_for("activity:" + str(c["key"])).randf()
-			var r := MergeEvent.local_action(c, state, str(a.get("action", "")), a, roll)
-			if r.has("error"): return r
-			for id in r.get("drops", []): grant([[id, 1, "physical"]])
-			grant(r.get("rewards", [])); return r
-		"duel": return await DuelRace.act(str(a.get("action", "")), int(a.get("milestone", 0)))
-		"tiger": return await TigerEscape.act(str(a.get("action", "")), int(a.get("node", 0)))
-		"race_join": return LocalRace.join()
-		"race_claim":
-			var r := LocalRace.claim(str(a.get("id", ""))); if r.get("ok", false): grant(r.get("rewards", []))
-			return r
-		"offer": return {"ok": await Offers.open_window(str(a.get("kind", "")))}
-		"ufo": UfoOffer.local_visit(); return {}
-		"reset":
-			var id := G.player_id; G.new_game(); G.player_id = id; meta = {"allow_gm": meta.get("allow_gm", false)}; return {}
-		"gm":
-			if not meta.get("allow_gm", false): return {"error": "当前环境未开放 GM"}
-			G.boost_gm = true; G.gm_activities = true; return {}
-		"gift":
-			var view := gift_view()
-			var step := int(a.get("step", -1))
-			if step != int(view["step"]) or step >= view["steps"].size() or float(view["steps"][step]["price"]) > 0: return {"error": "礼包不可领取"}
-			meta["gift_cycle"] = view["cycle"]; meta["gift_step"] = step + 1
-			var rw: Array = view["steps"][step]["rewards"]; grant(rw); return {"ok": true, "rewards": rw}
-		"ufo_refresh":
-			if UfoOffer.active(): UfoOffer.state()["offer"]["items"] = UfoOffer.candidate()
-			return {}
-		"tutorial_finish":
-			if int(G.builds.get("fire", 0)) < 2 or G.board_has("seed_1") >= 0 or not meta.get("seed_order", false): return {"error": "引导尚未完成"}
-			G.tutorial_on = false; G.seen_tutorial = true; G.refill_orders(); return {}
-		_: return {"error": "不支持的操作"}
-
-func valid_cell(i: int) -> bool:
-	return i >= 0 and i < G.board.size() and int(G.board[i].get("lock", 2)) == 0 and G.cell_id(i) != ""
-
-func settle_trash() -> void:
-	var t: Dictionary = meta.get("trash", {})
-	if not t.is_empty():
-		var id := str(t["id"])
-		if Data.type_of(id) == "item": G.add_currency("shell", maxi(0, Data.value_of(id)))
-	meta.erase("trash")
-
-func tap(i: int) -> Dictionary:
-	if not valid_cell(i) or G.cooking(i): return {"error": "请选择可用物品"}
-	var id := G.cell_id(i)
-	var t := Data.type_of(id)
-	if t in ["gen", "egen"]:
-		if Data.gen_stats(id).is_empty() or G.gen_left(i) == 0: return {"error": "生产器尚未就绪"}
-		var to := G.find_empty_near(i)
-		# Tutorial landing positions are fixed rules.
-		if G.tutorial_on and i == 31:
-			for candidate in [24, 32]:
-				if G._vacant(candidate): to = candidate; break
-		if to < 0: return {"error": "棋盘已满"}
-		if t == "gen" and not G.spend("energy", G.gen_cost()): return {"error": "体力不足"}
-		G.gen_use(i)
-		var out := G.roll_produce(id)
-		if t == "gen": out = G.boost_drop(out)
-		if G.tutorial_on and id == "basket_5" and not meta.get("seed_produced", false): out = "seed_1"; meta["seed_produced"] = true
-		G.discover(out); G.board[to]["id"] = out
-		return {"kind": "produce", "id": out, "to": to}
-	if t in ["energy", "shell", "amber", "sand"]:
-		var n := Data.value_of(id)
-		if n <= 0: return {"error": "需要合成后收取"}
-		G.board[i]["id"] = ""; G.add_currency(t, n); return {"kind": "collect"}
-	if t == "chest":
-		var ids: Array = await G.open_chest(id)
-		G.board[i]["id"] = ""; grant(Rewards.items(ids), {"board_origin": i}); return {"kind": "chest", "items": ids}
-	return {"error": "该物品不能直接使用"}
-
-func stash(index: int) -> Dictionary:
-	if index < 0 or index >= G.stash.size(): return {"error": "物品不存在"}
-	var id := str(G.stash[index]); var t := Data.type_of(id)
-	if t == "pack": return {"error": "请打开卡包"}
-	if t in ["energy", "shell", "amber", "sand"] and Data.value_of(id) > 0:
-		G.stash.remove_at(index); G.add_currency(t, Data.value_of(id)); return {}
-	if t == "chest":
-		var ids: Array = await G.open_chest(id)
-		G.stash.remove_at(index); grant(Rewards.items(ids), {"board_origin": 0}); return {"items": ids}
-	var to := G.find_empty_near(0)
-	if to < 0: return {"error": "棋盘已满"}
-	G.stash.remove_at(index); G.board[to]["id"] = id; G.discover(id); return {"to": to, "id": id}
-
-func pack() -> Dictionary:
-	if G.level < Data.CARD_LEVEL: return {"error": "典藏卡尚未解锁"}
-	var board_index := G.board_has("pack_1")
-	var stash_index := G.stash.find("pack_1")
-	if board_index < 0 and stash_index < 0: return {"error": "没有卡包"}
-	if stash_index >= 0: G.stash.remove_at(stash_index)
-	else: G.board[board_index]["id"] = ""
-	var complete_before := []
-	for album in Data.ALBUMS.size():
-		if G.album_count(album) == 9: complete_before.append(album)
-	var cards: Array = await G.open_pack()
-	var economy: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/replay_economy.json"))
-	for album in Data.ALBUMS.size():
-		var key := "album:%d" % album
-		if G.album_count(album) == 9 and not album in complete_before and not meta.get(key, false):
-			meta[key] = true
-			grant(economy["album_reward"])
-	return {"cards": cards}
+func gift_view() -> Dictionary:
+	return _reducer.gift_view()
 
 func connect_session(why: String) -> void:
 	Cloud._busy = true
-	var r: Array = await Cloud._call("POST", "/v2/session", {})
+	var response: Array = await Cloud._call("POST", "/v2/session", {})
 	Cloud._busy = false
-	if r[0] != 200:
+	if response[0] != 200:
 		Cloud._offline("boot")
 		return
-	var d: Dictionary = r[1]
-	if str(d.get("rules", "")) != rules_hash():
-		Cloud._say("游戏规则版本不一致，暂时保留本地进度")
+	var data: Dictionary = response[1]
+	if str(data.get("rules", "")) != rules_hash():
+		Cloud._say("游戏规则版本不一致，请更新客户端")
 		Cloud._offline("boot")
 		return
 	if authorized and not inflight.is_empty() and why != "login":
 		Cloud._after_boot()
 		await upload()
 		return
-	if not authorized or pending.is_empty() or why == "login" or int(d["version"]) != base:
-		accept(d, true)
+	if not authorized or pending.is_empty() or why == "login" or int(data["version"]) != base:
+		if not accept(data, true): return
 	Cloud._after_boot()
 	if not pending.is_empty(): upload()
 
-func accept(d: Dictionary, replace: bool) -> void:
-	base = int(d["version"])
-	authorized = true
+func accept(data: Dictionary, replace: bool) -> bool:
+	if str(data.get("rules", "")) != rules_hash(): return false
 	if replace:
-		var raw := Marshalls.base64_to_raw(str(d["data"])).decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
-		var s = JSON.parse_string(raw.get_string_from_utf8())
-		if not s is Dictionary: return
-		restore(s)
-		pending = []; inflight = {}
+		var raw := Marshalls.base64_to_raw(str(data.get("data", ""))).decompress_dynamic(4 * 1024 * 1024, FileAccess.COMPRESSION_GZIP)
+		var state = JSON.parse_string(raw.get_string_from_utf8())
+		if not state is Dictionary: return false
+		var previous := snapshot()
+		if not restore(state): return false
+		if digest() != str(data.get("hash", "")):
+			restore(previous)
+			return false
+		pending = []
+		inflight = {}
 		G.loaded_save = true
-		G.board_changed.emit()
-		G.orders_changed.emit()
-		G.changed.emit()
-		G.merge_event_changed.emit()
-		G.seven_day_changed.emit()
-		Cloud.restored.emit()
-	G.save_game()
+	base = int(data["version"])
+	_session_rules = str(data["rules"])
+	authorized = true
+	if not checkpoint(): return false
 	Cloud.last_sync = Cloud.server_now()
 	Cloud._save_state()
+	if replace:
+		notify_restored()
+		Cloud.restored.emit()
+	return true
 
 func upload() -> void:
 	if Cloud._busy or not Cloud.can_talk() or not authorized or pending.is_empty(): return
 	if inflight.is_empty():
-		var ops := []
+		var operations := []
 		for entry in pending.slice(0, 256):
-			var op: Dictionary = entry.duplicate(true); op.erase("hash"); ops.append(op)
-		inflight = {"base": base, "rules": rules_hash(), "hash": str(pending[ops.size()-1]["hash"]),
-			"batch": Crypto.new().generate_random_bytes(16).hex_encode(), "ops": ops}
-		G.save_game()
+			operations.append({"seq": int(entry["seq"]), "at": int(entry["at"]), "name": str(entry["name"]), "args": entry["args"]})
+		inflight = {"base": base, "rules": rules_hash(), "hash": str(pending[operations.size() - 1]["hash"]),
+			"batch": Crypto.new().generate_random_bytes(16).hex_encode(), "ops": operations}
+		if not checkpoint():
+			inflight = {}
+			return
 	Cloud._busy = true
 	Cloud._last_up = Cloud._ticks()
-	var r: Array = await Cloud._call("POST", "/v2/sync", inflight)
+	var response: Array = await Cloud._call("POST", "/v2/sync", inflight)
 	Cloud._busy = false
-	if r[0] != 200:
+	if response[0] != 200:
 		Cloud._offline("upload")
 		return
-	var d: Dictionary = r[1]
-	if d.get("reset", false):
-		accept(d, true)
-		Cloud._say(str(d.get("reason", "进度校验不一致")) + "，已恢复服务器存档")
+	var data: Dictionary = response[1]
+	if data.get("reset", false):
+		if not accept(data, true): return
+		Cloud._say(str(data.get("reason", "进度校验不一致")) + "，已恢复服务器存档")
 	else:
-		var ack := int(d["seq"])
-		pending = pending.filter(func(op): return int(op["seq"]) > ack)
+		var acknowledged := int(data["seq"])
+		pending = pending.filter(func(operation): return int(operation["seq"]) > acknowledged)
 		inflight = {}
-		accept(d, false)
+		if not accept(data, false): return
 	Cloud.online = true
 	Cloud.uploads += 1
 	Cloud.synced.emit("replay", true)
 	if not pending.is_empty(): upload.call_deferred()
-
-func gift_view() -> Dictionary:
-	var c: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/gift_chain.json"))
-	var days := maxi(1, int(c.get("cycle_days", 7)))
-	var day := floori((G.now() + 28800) / 86400.0)
-	var cycle := floori(float(day - 4 - int(c.get("anchor_weekday", 0))) / days)
-	var step := int(meta.get("gift_step", 0)) if int(meta.get("gift_cycle", -1)) == cycle else 0
-	var rows: Array = c["steps"]
-	return {"cycle": cycle, "step": step, "ends_at": (4 + (cycle+1)*days)*86400-28800,
-		"visible": c.get("visible", 3), "total": rows.size(), "steps": rows,
-		"free_ready": step < rows.size() and float(rows[step]["price"]) == 0, "done": step >= rows.size()}

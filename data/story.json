@@ -1110,7 +1110,7 @@
 			"orders": [
 				{
 					"items": [
-						"veg_7",
+						"fruit_7",
 						"armor_3"
 					],
 					"rewards": [],
@@ -1121,8 +1121,8 @@
 				},
 				{
 					"items": [
-						"veg_8",
-						"veg_5",
+						"tool_8",
+						"cloth_5",
 						"tool_2"
 					],
 					"rewards": [
@@ -1136,7 +1136,7 @@
 				{
 					"items": [
 						"beast_4",
-						"veg_4",
+						"fruit_4",
 						"fruit_4"
 					],
 					"rewards": [],
@@ -1147,7 +1147,7 @@
 				},
 				{
 					"items": [
-						"veg_6",
+						"fruit_6",
 						"bird_1"
 					],
 					"rewards": [],
@@ -1160,7 +1160,7 @@
 					"items": [
 						"tool_7",
 						"beast_3",
-						"veg_3"
+						"fruit_3"
 					],
 					"rewards": [],
 					"say": "今天收获不错！",
@@ -1171,7 +1171,7 @@
 				{
 					"items": [
 						"beast_4",
-						"veg_2"
+						"fruit_2"
 					],
 					"rewards": [],
 					"say": "够全部落吃三天。",
@@ -1181,8 +1181,8 @@
 				},
 				{
 					"items": [
-						"veg_9",
-						"veg_7"
+						"fruit_9",
+						"tool_7"
 					],
 					"rewards": [],
 					"say": "烤得真香！",
@@ -1199,7 +1199,7 @@
 				{
 					"items": [
 						"fruit_8",
-						"veg_6"
+						"cloth_6"
 					],
 					"rewards": [],
 					"say": "丰收的季节到了。",
@@ -1209,7 +1209,7 @@
 				},
 				{
 					"items": [
-						"veg_7",
+						"cloth_7",
 						"bird_1"
 					],
 					"rewards": [
@@ -1223,7 +1223,7 @@
 				{
 					"items": [
 						"tool_8",
-						"veg_2"
+						"tool_2"
 					],
 					"rewards": [],
 					"say": "磨得真快，能削木头了。",
@@ -1233,7 +1233,7 @@
 				},
 				{
 					"items": [
-						"veg_8",
+						"tool_8",
 						"bird_1"
 					],
 					"rewards": [],
@@ -1245,7 +1245,7 @@
 				{
 					"items": [
 						"cloth_7",
-						"veg_6"
+						"fruit_6"
 					],
 					"rewards": [],
 					"say": "新衣服好软！",
@@ -1256,7 +1256,7 @@
 				{
 					"items": [
 						"cloth_8",
-						"veg_5",
+						"tool_5",
 						"cloth_5"
 					],
 					"rewards": [],
@@ -1267,7 +1267,7 @@
 				},
 				{
 					"items": [
-						"veg_9",
+						"tool_9",
 						"seed_3"
 					],
 					"rewards": [],
@@ -1284,7 +1284,7 @@
 			"orders": [
 				{
 					"items": [
-						"veg_8",
+						"cloth_8",
 						"gem_1"
 					],
 					"rewards": [],
@@ -1295,7 +1295,7 @@
 				},
 				{
 					"items": [
-						"veg_8",
+						"fruit_8",
 						"tool_5"
 					],
 					"rewards": [
@@ -1309,7 +1309,7 @@
 				{
 					"items": [
 						"beast_4",
-						"veg_4"
+						"cloth_4"
 					],
 					"rewards": [],
 					"say": "阿石叔叔好厉害！",
@@ -1320,7 +1320,7 @@
 				{
 					"items": [
 						"beast_3",
-						"veg_3",
+						"fruit_3",
 						"gem_3"
 					],
 					"rewards": [],
@@ -1331,9 +1331,9 @@
 				},
 				{
 					"items": [
-						"veg_7",
 						"fruit_7",
-						"roast_3"
+						"fruit_7",
+						"armor_3"
 					],
 					"rewards": [],
 					"say": "烤得真香！",
@@ -1343,7 +1343,7 @@
 				},
 				{
 					"items": [
-						"veg_8",
+						"tool_8",
 						"fruit_6",
 						"fruit_5"
 					],
@@ -1355,8 +1355,8 @@
 				},
 				{
 					"items": [
-						"veg_9",
-						"veg_2",
+						"cloth_9",
+						"fruit_2",
 						"gem_2"
 					],
 					"rewards": [],

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>石器部落 · 合成 —— 难度曲线</title>
+<title>合合部落 —— 难度曲线</title>
 <style>
 .viz-root {
   color-scheme: light;
@@ -217,7 +217,7 @@ function draw() {
   });
   lineChart('c-story', {
     title: '剧情订单：每级 3 张，每张要点几下',
-    sub: '剧情单是升级的唯一来源，占每级约 ' + Math.round(D.knobs.story_share * 100) + '% 的点击；其余点击花在随机单上换贝币。',
+    sub: '剧情单是升级的唯一来源，占每级约 ' + Math.round(D.knobs.story_share * 100) + '% 的点击；其余点击花在随机单上换不拿拿。',
     unit: ' 下',
     series: [{name: '剧情单平均', color: c1, values: R.map(r => r.story_order_taps.reduce((a, b) => a + b, 0) / 3), area: true}],
     extra: r => row('三张分别', r.story_order_taps.join(' / ') + ' 下') + row('升级要声望', r.xp_need),
@@ -246,7 +246,7 @@ function draw() {
     extra: r => row('生产器等级', Object.entries(r.gens).map(([k, v]) => k + v).join(' ')),
   });
   lineChart('c-coins', {
-    title: '贝币：累计收入 vs 累计建造花费',
+    title: '不拿拿：累计收入 vs 累计建造花费',
     sub: '建造价格按每级收入反推，总价 ≈ 收入的 ' + Math.round(D.knobs.build_share * 100) + '%，留一点余量给玩家选。',
     unit: ' 贝',
     series: [

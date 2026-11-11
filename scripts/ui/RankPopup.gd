@@ -1,5 +1,6 @@
 class_name RankPopup
 extends RefCounted
+const Meme := preload("res://scripts/Meme.gd")
 ## 部落排行：按部落解锁进度（已建成部件数）排名，平分时先达到的在前。前三名站领奖台，第四名起是列表，自己高亮，底部固定显示自己的名次。
 ## 名字头像以后接平台账号，这里不提供改名。连不上服务器时列表区显示提示和「重试」，不影响游戏。
 
@@ -20,7 +21,7 @@ static func open() -> PopupBase:
 static func _build(p: PopupBase) -> void:
 	var r := R
 	Popups.frame(p, r, "部落排行", Art.AMBER)
-	if not G.server_mode():
+	if not Cloud.enabled:
 		UI.lbl(p.box, "本地试玩版\n在线排行榜暂未开放", Rect2(72, 500, 576, 180), 28, Art.INK)
 		return
 	var x0 := r.position.x + 30
@@ -140,7 +141,6 @@ static func _podium(pod: Control, top: Array) -> void:
 		var ac := Vector2(x + sw * 0.5, y - 92)
 		var ar := 42.0 if rk == 1 else 36.0
 		UI.box(pod, Rect2(ac - Vector2(ar + 8, ar + 8), Vector2(ar + 8, ar + 8) * 2), func(ci, sz): _paint_avatar(ci, sz * 0.5, ar, rk, mine))
-		UI.lbl(pod, nm.left(1), Rect2(ac - Vector2(ar, ar), Vector2(ar, ar) * 2), int(ar * 0.9), Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 		if rk == 1:
 			UI.box(pod, Rect2(ac + Vector2(-30, -ar - 40), Vector2(60, 40)), func(ci, sz): _paint_crown(ci, sz))
 
@@ -149,7 +149,9 @@ static func _paint_step(ci: CanvasItem, sz: Vector2, rk: int) -> void:
 	Sprites.draw(ci, "ev_rank_step_%d" % rk, Rect2(Vector2.ZERO, sz))
 
 static func _paint_avatar(ci: CanvasItem, c: Vector2, rad: float, rk: int, mine: bool) -> void:
-	Sprites.draw(ci, "ev_rank_avatar_%d%s" % [rk, "_me" if mine else ""], Rect2(c - Vector2(rad + 8, rad + 8), Vector2(rad + 8, rad + 8) * 2.0))
+	ci.draw_circle(c, rad + 4, Art.AMBER if mine else Art.WOOD_D)
+	ci.draw_circle(c, rad, Art.HIDE)
+	Meme.portrait(ci, Meme.HERO if mine else posmod(rk, 5), c, rad * 2.0)
 
 static func _paint_crown(ci: CanvasItem, sz: Vector2) -> void:
 	Sprites.draw(ci, "ev_rank_crown", Rect2(Vector2.ZERO, sz))

@@ -1,6 +1,6 @@
 """请求 / 响应模型。请求严格校验（多余字段报错）；响应声明主要字段。"""
 
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -10,6 +10,7 @@ DEVICE = Field(default="", max_length=64)
 
 class Req(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
 
 
 class Resp(BaseModel):
@@ -22,8 +23,6 @@ class Resp(BaseModel):
 # ---------------------------------------------------------------- 账号
 
 class GuestReq(Req):
-    # 老客户端已经有 player_id 时带上，没被占用就沿用；否则服务器生成
-    player_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_\-]{1,32}$")
     device_id: str = DEVICE
 
 
@@ -45,7 +44,7 @@ class SessionResp(Resp):
     expires_at: float
     renew_after: float
     created: bool = False
-    # 登录到已有账号时，云端进度摘要（客户端据此让玩家选用哪边）
+    # 登录到已有账号时展示的确认进度摘要
     cloud: dict[str, Any] | None = None
 
 
@@ -63,131 +62,5 @@ class TransferCodeResp(Resp):
     code: str
 
 
-# ---------------------------------------------------------------- 存档
-
-class Event(Req):
-    id: str = Field(min_length=1, max_length=64)
-    type: Literal["order", "bubble", "collect", "refund", "found", "merge", "egen", "merge_board"]
-    at: float | None = Field(default=None, ge=0, allow_inf_nan=False)
-    board_action: "MergeEventReq | None" = None
-    order: dict[str, Any] | None = None
-    cell: int | None = None
-    item: str | None = Field(default=None, max_length=32)
-    gen: str | None = Field(default=None, max_length=32)  # egen：点的是哪台体力生产器
-
-
-class SaveReq(Req):
-    base: int = Field(ge=0)
-    hash: str = Field(pattern=r"^[0-9a-f]{8,64}$")
-    data: str = Field(max_length=90_000)
-    events: list[Event] = Field(default_factory=list, max_length=200)
-
-
-class SaveResp(Resp):
-    version: int
-    hash: str = ""
-    data: str = ""
-    state: dict[str, Any]
-    events: list[dict[str, Any]] = Field(default_factory=list)
-    same: bool = False
-
-
-class EventsReq(Req):
-    events: list[Event] = Field(max_length=200)
-
-
-# ---------------------------------------------------------------- 经济操作
-
-class ActionResp(Resp):
-    state: dict[str, Any]
-    give: dict[str, Any] = Field(default_factory=dict)
-
-
-class MergeBubbleReq(Req):
-    item: str = Field(min_length=1, max_length=32)
-
-
-class BubbleBuyReq(Req):
-    uid: str = Field(pattern=r"^[a-f0-9]{32}$")
-
-
-class ShopBuyReq(Req):
-    key: str = Field(pattern=r"^(deal|hot|shell)_\d{1,2}$")
-    item: str = Field(default="", max_length=32)
-
-
-class PassBuyReq(Req):
-    tier: Literal["vip", "super"]
-
-
-class PassOrderReq(Req):
-    tier: Literal["vip", "super"]
-    provider: str = Field(default="mock", pattern=r"^[a-z0-9_]{1,16}$")
-
-
-class PassClaimReq(Req):
-    track: Literal["free", "prem", "super", "endless"]
-    level: int = Field(default=0, ge=0, le=1000)
-
-
-class BuildReq(Req):
-    area: str = Field(pattern=r"^[a-z0-9_]{1,32}$")
-
-
-class BookReq(Req):
-    item: str = Field(pattern=r"^[a-z0-9]{1,16}(?:_\d{1,2})?$")
-
-
-class LevelReq(Req):
-    level: int = Field(ge=2, le=10000)
-
-
 class NameReq(Req):
     name: str = Field(min_length=1, max_length=16)
-
-
-class PayOrderReq(Req):
-    pack: int = Field(ge=0, le=50)
-    provider: str = Field(default="mock", pattern=r"^[a-z0-9_]{1,16}$")
-
-
-class PayOrderResp(Resp):
-    order_id: str
-    status: str
-    amber: int
-    price: str
-    provider: str
-    pay_params: dict[str, Any] = Field(default_factory=dict)
-    state: dict[str, Any] | None = None
-
-
-class MergeEventReq(Req):
-    season: str = Field(min_length=3, max_length=80, pattern=r"^[a-z0-9_]+:[0-9]+$")
-    action: Literal["spawn", "drop", "recycle", "claim"]
-    view: int = Field(default=0, ge=0, le=1000)
-    from_cell: int = Field(default=-1, alias="from", ge=-1, le=10000)
-    to: int = Field(default=-1, ge=-1, le=10000)
-    cell: int = Field(default=-1, ge=-1, le=10000)
-
-
-class ChoiceChestReq(Req):
-    box: str = Field(pattern=r"^[a-z0-9]+_[0-9]+$")
-    option: int = Field(ge=0, le=2)
-
-
-class SevenDayClaimReq(Req):
-    entry: str = Field(pattern=r"^[a-z0-9_]{1,40}$")
-    stage: bool = False
-
-
-class DuelActionReq(Req):
-    action: Literal["join", "refresh", "claim", "milestone"]
-    milestone: int = Field(default=0, ge=0, le=12)
-
-
-class TigerActionReq(Req):
-    action: Literal["join", "restart", "refresh", "claim"]
-    node: int = Field(default=0, ge=0, le=100)
-
-
-Event.model_rebuild()

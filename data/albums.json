@@ -1,17 +1,39 @@
 [
 	{
 		"cards": [
-			"雪原足迹",
-			"长牙首领",
-			"幼崽",
-			"河边饮水",
-			"围猎",
-			"风雪夜",
-			"长鼻嬉戏",
-			"迁徙路",
-			"猛犸之歌"
+			"果子熟了",
+			"分工合作",
+			"酸果子",
+			"我的果子",
+			"不太好摘",
+			"会飞的籽",
+			"藏好了",
+			"酋长的树",
+			"找到了"
 		],
-		"name": "猛犸迁徙"
+		"name": "采摘",
+		"texts": [
+			"兄弟，我发现有些果子不用摘，树自己会扔。",
+			"兄弟，我发现你在上面摘的时候，我在下面也能吃饱。",
+			"兄弟，这个果子吃完，脸就挤到一起了。",
+			"兄弟，我发现每个果子咬一口，它们就都归我了。",
+			"兄弟，果子摘下来了，树还了我一巴掌。",
+			"兄弟，这个果子里面的籽会追人。",
+			"兄弟，我把果子藏好了。你帮我找找。",
+			"兄弟，这棵树比酋长还老，但他说是他的。",
+			"兄弟，我想起来果子藏哪了。"
+		],
+		"art": [
+			"res://assets/cards/gathering/ripe_fruit.png",
+			"res://assets/cards/gathering/teamwork.png",
+			"res://assets/cards/gathering/sour_fruit.png",
+			"res://assets/cards/gathering/all_mine.png",
+			"res://assets/cards/gathering/branch_rebound.png",
+			"res://assets/cards/gathering/flying_seeds.png",
+			"res://assets/cards/gathering/well_hidden.png",
+			"res://assets/cards/gathering/chiefs_tree.png",
+			"res://assets/cards/gathering/found_it.png"
+		]
 	},
 	{
 		"cards": [

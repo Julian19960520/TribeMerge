@@ -16,8 +16,8 @@ from .logs import log
 from .models import Account, AuthSession, Identity, Save
 from .ratelimit import limiter
 from .schemas import AccountResp, GuestReq, ProviderReq, Resp, SessionResp, TransferCodeResp, TransferLoginReq
-from .security import Auth, current, hash_secret, new_session, same_secret
-from .services import economy, stamp, summary, unpack_blob
+from .security import Auth, current, hash_secret, lock_account, new_session, same_secret
+from .services import stamp, summary
 
 router = APIRouter(prefix="/v1", tags=["账号"])
 logger = logging.getLogger("tribe.auth")
@@ -50,17 +50,15 @@ def _new_id(db: Session) -> str:
 
 def _cloud(db: Session, acc: Account) -> dict:
     sv = db.get(Save, acc.id)
-    return summary(acc, unpack_blob(sv.data) if sv and sv.data else None)
+    return summary(acc, bool(sv and sv.data))
 
 
 @router.post("/auth/guest", response_model=SessionResp)
 def guest(req: GuestReq, request: Request, db: Session = Depends(get_db)):
-    """游客注册：第一次打开游戏自动调用。带了本地老存档的 player_id 且没被占用就沿用。"""
+    """Create a server-issued identity; gameplay starts through /v2/session."""
     _guard(request, "guest", 20)
-    pid = req.player_id if req.player_id and db.get(Account, req.player_id) is None else _new_id(db)
-    st = economy().new_state()
-    # 带着老存档来的（本机有进度），第一份快照信一次，见 economy.adopt
-    st["adopt_pending"] = bool(req.player_id) and get_settings().allow_adopt
+    pid = _new_id(db)
+    st = {}
     acc = Account(id=pid, created_at=clock.utcnow(), state=st, nick="")
     db.add(acc)
     db.flush()
@@ -73,6 +71,7 @@ def guest(req: GuestReq, request: Request, db: Session = Depends(get_db)):
 @router.post("/auth/refresh", response_model=SessionResp)
 def refresh(auth: Auth = Depends(current), db: Session = Depends(get_db)):
     """续期：发新 token，作废当前这个。不影响其他设备（本来也只有这一台在线）。"""
+    lock_account(db, auth.id)
     sess = db.get(AuthSession, auth.session.token_hash)
     sess.revoked_at = clock.utcnow()
     sess.revoke_reason = "refreshed"
@@ -83,6 +82,7 @@ def refresh(auth: Auth = Depends(current), db: Session = Depends(get_db)):
 
 @router.post("/auth/logout", response_model=Resp)
 def logout(auth: Auth = Depends(current), db: Session = Depends(get_db)):
+    lock_account(db, auth.id)
     sess = db.get(AuthSession, auth.session.token_hash)
     sess.revoked_at = clock.utcnow()
     sess.revoke_reason = "logout"

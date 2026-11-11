@@ -11,6 +11,7 @@ func run() -> void:
 	g.set_process(false)
 	g.seen_tutorial = true
 	g.tutorial_on = false
+	load("res://scripts/events/ActivityRules.gd").initialize()
 	tasks.login("2026-11-01")
 	tasks.login("2026-11-01")
 	check(tasks.state()["stats"]["login_days"] == 1,"same login day counts once")
@@ -18,10 +19,10 @@ func run() -> void:
 	check(tasks.state()["stats"]["login_days"] == 2,"distinct login days accumulate")
 	check(tasks.config()["days"].size() == 7,"seven pages configured")
 	for day in tasks.config()["days"]: check(day["tasks"].size() == 5,"five tasks on each page")
-	g.add_currency("shell",100)
-	g.add_currency("amber",10)
-	g.spend("amber",5)
-	g.add_xp(30)
+	g.rules.progression.add_currency("shell",100)
+	g.rules.progression.add_currency("amber",10)
+	g.rules.progression.spend("amber",5)
+	g.rules.progression.add_xp(30)
 	check(tasks.state()["stats"]["shell"] == 100 and tasks.state()["stats"]["amber"] == 10 and tasks.state()["stats"]["amber_spent"] == 5 and tasks.state()["stats"]["xp"] == 30,"income/spend/xp follow game transactions")
 	var cfg: Dictionary = tasks.config()
 	var all: Array = []
@@ -53,7 +54,7 @@ func run() -> void:
 	check(kinds.size() == 9,"all nine task types present")
 	var rewards_ok := true
 	for t in all + cfg["milestones"]:
-		for rw in t["rewards"]: rewards_ok = rewards_ok and load("res://scripts/Data.gd").CHAINS.has(load("res://scripts/Data.gd").chain(str(rw[0]))) and int(rw[1]) > 0
+		for rw in t["rewards"]: rewards_ok = rewards_ok and load("res://scripts/Data.gd").is_known(str(rw[0])) and int(rw[1]) > 0
 	check(rewards_ok,"every reward id is a real item")
 	tasks.record("orders",75)
 	check(tasks.done(tasks.find_entry("d7_2",false)),"seventh page completes early without date gate")
@@ -79,7 +80,7 @@ func run() -> void:
 	g.load_game()
 	check(g.seven_day == saved,"all progress and claims survive reload")
 	g.shell_bought = {"shell_0":3,"shell_1":3,"shell_5":2}
-	g.check_shell_period()
+	g.rules.clock.check_shell_period()
 	var amber: int = g.amber
 	check((await g.refresh_shell()).get("ok",false) and g.amber == amber - 5 and g.shell_bought.is_empty(),"5 amber refresh replenishes every shell shop slot")
 	g.amber = 0
@@ -90,10 +91,11 @@ func run() -> void:
 	g.board[0]["id"] = "fruit_1"
 	g.board[1]["id"] = "fruit_1"
 	var data = load("res://scripts/Data.gd")
-	var coin_config: Dictionary = data.RULES["merge_coin"].duplicate(true)
-	data.RULES["merge_coin"]["chance"] = 1.0
+	var original_rules: Dictionary = data.RULES
+	data.RULES = original_rules.duplicate(true)
+	data.RULES["merge_resource_drops"]["main"] = [{"item": "shell_1", "chance": 1.0, "min_level": 1, "items_only": true}]
 	var merged_before: int = tasks.state()["stats"]["merges"]
-	check(g.try_drop(0,1) == "merge" and g.board[0]["id"] == data.merge_coin_item("fruit_2"),"successful merge drops configured physical coin in nearest free cell")
+	check(g.try_drop(0,1) == "merge" and g.board[0]["id"] == "shell_1","successful merge drops configured physical coin in nearest free cell")
 	check(tasks.state()["stats"]["merges"] == merged_before+1,"merge counted exactly once")
 	check(g.try_drop(1,1) == "" and tasks.state()["stats"]["merges"] == merged_before+1,"failed drag gives no task progress")
 	g.board[2]["id"] = "fruit_1"; g.board[3]["id"] = "fruit_1"
@@ -101,11 +103,11 @@ func run() -> void:
 	g.try_drop(2,3)
 	check(g.board[2]["id"] == "","tutorial has no bonus coin")
 	g.tutorial_on = false
-	data.RULES["merge_coin"]["chance"] = 0.0
+	data.RULES["merge_resource_drops"]["main"] = []
 	g.board[4]["id"] = "fruit_1"; g.board[5]["id"] = "fruit_1"
 	g.try_drop(4,5)
 	check(g.board[4]["id"] == "","zero configured probability yields no bonus")
-	data.RULES["merge_coin"] = coin_config
+	data.RULES = original_rules
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	main.show_screen("board",true)

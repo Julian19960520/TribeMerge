@@ -1,0 +1,36 @@
+{
+	"cards": [
+		"抓篮子",
+		"松手比划",
+		"小点声",
+		"先扔鱼",
+		"说一样大",
+		"鳄鱼也是鱼",
+		"换两条鱼",
+		"咱俩没问题",
+		"别教他了"
+	],
+	"name": "河边捕鱼",
+	"texts": [
+		"兄弟，鱼是抓住了。现在得先把篮子抓回来。",
+		"兄弟，我就问问鱼有多大，没让你松手比划。",
+		"兄弟，小点声，喊来一个，就得多分一份。",
+		"兄弟，先把鱼扔上来，我空出手再拉你。",
+		"兄弟，回去说鱼有多大的时候，咱俩得说一样。",
+		"兄弟，鳄鱼也是鱼。你先搭把手。",
+		"兄弟，拿果子换两条鱼回来。别换晒干的，不好解释。",
+		"天不对，风不对，水也不对。咱俩肯定没问题。",
+		"兄弟，别教他了，他没学的时候还能抓到。"
+	],
+	"art": [
+		"res://assets/cards/fishing/catch_the_basket.png",
+		"res://assets/cards/fishing/let_go_to_measure.png",
+		"res://assets/cards/fishing/another_share.png",
+		"res://assets/cards/fishing/throw_the_fish_first.png",
+		"res://assets/cards/fishing/agree_on_the_size.png",
+		"res://assets/cards/fishing/crocodile_is_a_fish.png",
+		"res://assets/cards/fishing/trade_for_fish.png",
+		"res://assets/cards/fishing/nothing_wrong_with_us.png",
+		"res://assets/cards/fishing/stop_teaching_him.png"
+	]
+}

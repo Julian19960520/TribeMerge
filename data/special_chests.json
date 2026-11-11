@@ -1,0 +1,324 @@
+{
+	"orderbox": {
+		"levels": [
+			{
+				"count": 2,
+				"high_tier_bias": 0
+			},
+			{
+				"count": 3,
+				"high_tier_bias": 0.5
+			},
+			{
+				"count": 4,
+				"high_tier_bias": 1
+			},
+			{
+				"count": 5,
+				"high_tier_bias": 1.5
+			},
+			{
+				"count": 6,
+				"high_tier_bias": 2
+			},
+			{
+				"count": 7,
+				"high_tier_bias": 2.5
+			},
+			{
+				"count": 8,
+				"high_tier_bias": 3
+			},
+			{
+				"count": 9,
+				"high_tier_bias": 3.5
+			},
+			{
+				"count": 10,
+				"high_tier_bias": 4
+			},
+			{
+				"count": 12,
+				"high_tier_bias": 4.5
+			}
+		]
+	},
+	"premiumbox": {
+		"levels": [
+			{
+				"count": 8,
+				"resource_weights": {
+					"fire": 65,
+					"amber": 35
+				},
+				"tier_weights": [
+					0,
+					40,
+					30,
+					18,
+					10,
+					2
+				],
+				"guaranteed_resources": [
+					"fire",
+					"amber"
+				]
+			},
+			{
+				"count": 12,
+				"resource_weights": {
+					"fire": 65,
+					"amber": 35
+				},
+				"tier_weights": [
+					0,
+					15,
+					30,
+					30,
+					20,
+					5
+				],
+				"guaranteed_resources": [
+					"fire",
+					"amber"
+				]
+			},
+			{
+				"count": 16,
+				"resource_weights": {
+					"fire": 65,
+					"amber": 35
+				},
+				"tier_weights": [
+					0,
+					0,
+					15,
+					30,
+					40,
+					15
+				],
+				"guaranteed_resources": [
+					"fire",
+					"amber"
+				]
+			},
+			{
+				"count": 24,
+				"resource_weights": {
+					"fire": 65,
+					"amber": 35
+				},
+				"tier_weights": [
+					0,
+					0,
+					0,
+					20,
+					40,
+					40
+				],
+				"guaranteed_resources": [
+					"fire",
+					"amber"
+				]
+			},
+			{
+				"count": 36,
+				"resource_weights": {
+					"fire": 65,
+					"amber": 35
+				},
+				"tier_weights": [
+					0,
+					0,
+					0,
+					0,
+					25,
+					75
+				],
+				"guaranteed_resources": [
+					"fire",
+					"amber"
+				]
+			}
+		]
+	},
+	"energybox": {
+		"levels": [
+			{
+				"items": [
+					"fire_5",
+					"fire_5",
+					"fire_5"
+				]
+			},
+			{
+				"items": [
+					"fire_5",
+					"fire_5",
+					"fire_5",
+					"fire_6",
+					"fire_6"
+				]
+			},
+			{
+				"items": [
+					"fire_5",
+					"fire_5",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6"
+				]
+			},
+			{
+				"items": [
+					"fire_5",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6"
+				]
+			},
+			{
+				"items": [
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6",
+					"fire_6"
+				]
+			}
+		]
+	},
+	"chest": {
+		"levels": [
+			{
+				"count": 3,
+				"base_pool": [
+					"fire_4",
+					"shell_4",
+					"amber_2",
+					"sand_2"
+				],
+				"main_tiers": [
+					2,
+					3
+				],
+				"sub_tiers": [
+					1
+				],
+				"gen_tier": 1,
+				"gen_chance": 0.1
+			},
+			{
+				"count": 6,
+				"base_pool": [
+					"fire_5",
+					"shell_5",
+					"amber_3",
+					"sand_3"
+				],
+				"main_tiers": [
+					3,
+					4
+				],
+				"sub_tiers": [
+					2
+				],
+				"gen_tier": 1,
+				"gen_chance": 0.12
+			},
+			{
+				"count": 9,
+				"base_pool": [
+					"fire_6",
+					"shell_6",
+					"amber_4",
+					"sand_4"
+				],
+				"main_tiers": [
+					4,
+					5
+				],
+				"sub_tiers": [
+					3
+				],
+				"gen_tier": 2,
+				"gen_chance": 0.14
+			},
+			{
+				"count": 12,
+				"base_pool": [
+					"fire_6",
+					"shell_6",
+					"amber_5",
+					"sand_5"
+				],
+				"main_tiers": [
+					5,
+					6
+				],
+				"sub_tiers": [
+					4
+				],
+				"gen_tier": 2,
+				"gen_chance": 0.16
+			},
+			{
+				"count": 18,
+				"base_pool": [
+					"fire_6",
+					"shell_6",
+					"amber_6",
+					"sand_6"
+				],
+				"main_tiers": [
+					6,
+					7
+				],
+				"sub_tiers": [
+					5
+				],
+				"gen_tier": 3,
+				"gen_chance": 0.2
+			}
+		]
+	}
+}

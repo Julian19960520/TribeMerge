@@ -70,7 +70,7 @@ func _ready() -> void:
 	buy_btn = UI.btn(box, Rect2(170, 984, 380, 94), "¥%d 购买" % price, "green", _buy, 42)
 	buy_btn.title_font = false
 	buy_btn.name = "ufo_buy"
-	UI.lbl(box, "试玩购买，不扣款", Rect2(160, 1086, 400, 30), 19, Color("9a8468"))
+	UI.lbl(box, "支付暂未开放", Rect2(160, 1086, 400, 30), 19, Color("9a8468"))
 	_refresh()
 
 ## 夜空、远山、星星（飞碟和光束单独一层，好做飞走动画）
@@ -135,7 +135,7 @@ func _items() -> void:
 		# 下面一行小字：订单物品写名字，加赠的货币写到账多少
 		var cap := Data.name_of(id)
 		if Rewards.is_resource(id) and Data.value_of(id) > 0:
-			cap = "%d%s" % [Data.value_of(id), {"energy": "体力", "amber": "琥珀", "shell": "贝币", "sand": "沙漏"}.get(Rewards.kind(id), "")]
+			cap = "%d%s" % [Data.value_of(id), {"energy": "体力", "amber": "琥珀", "shell": "不拿拿", "sand": "沙漏"}.get(Rewards.kind(id), "")]
 		UI.lbl(box, cap, Rect2(cx - cell * 0.5, cy + tile * 0.5 + 4, cell, 28), 18, Color("6b3d1a") if is_bonus else Color("6b4a2a"))
 		if is_bonus:
 			var tg := UI.box(box, Rect2(cx - 30, cy - tile * 0.5 - 16, 60, 28), func(ci, sz):

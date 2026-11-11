@@ -1,0 +1,24 @@
+{
+  "title": "恐龙化石",
+  "unlock_level": 1,
+  "shovels_per_order": 3,
+  "dig_cost": 1,
+  "stages": 10,
+  "shapes": [
+    {"kind": "limb", "name": "趾骨", "w": 1, "h": 2},
+    {"kind": "spine", "name": "尾椎", "w": 1, "h": 3},
+    {"kind": "limb", "name": "腿骨", "w": 1, "h": 4},
+    {"kind": "skull", "name": "头骨", "w": 2, "h": 2},
+    {"kind": "ribs", "name": "肋骨", "w": 2, "h": 3},
+    {"kind": "pelvis", "name": "骨盆", "w": 3, "h": 3},
+    {"kind": "spine", "name": "脊椎", "w": 1, "h": 5},
+    {"kind": "ribs", "name": "胸骨", "w": 2, "h": 4}
+  ],
+  "milestones": [
+    {"bones": 2, "rewards": [["fire_2", 20], ["shell_2", 100]]},
+    {"bones": 9, "rewards": [["amber_2", 10], ["sand_2", 5]]},
+    {"bones": 20, "rewards": [["fire_2", 50], ["chest_1", 1]]},
+    {"bones": 35, "rewards": [["amber_2", 25], ["choice_1", 1]]},
+    {"bones": 65, "rewards": [["fire_2", 100], ["amber_2", 50], ["choice_1", 2]]}
+  ]
+}

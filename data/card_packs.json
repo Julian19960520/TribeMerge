@@ -1,0 +1,12 @@
+{
+	"cards_per_pack": 2,
+	"card_stars_by_slot": [1, 1, 1, 2, 2, 3, 3, 4, 5],
+	"normalization": "relative_weights",
+	"packs": [
+		{"id": "pack_1", "weights": [87.5, 12.5, 0, 0, 0]},
+		{"id": "pack_2", "weights": [57.75, 41.25, 0, 0, 0]},
+		{"id": "pack_3", "weights": [57.75, 8.25, 33, 0, 0]},
+		{"id": "pack_4", "weights": [35.87, 29.35, 9.78, 25, 0]},
+		{"id": "pack_5", "weights": [22.33, 20, 6.67, 25, 25]}
+	]
+}

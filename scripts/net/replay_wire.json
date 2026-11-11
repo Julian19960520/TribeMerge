@@ -17,7 +17,7 @@
   ["build", ["id"]],
   ["book", ["id"]],
   ["level", ["level"]],
-  ["pack", []],
+  ["pack", ["id", "cell", "stash"]],
   ["shop", ["key", "id"]],
   ["shop_view", []],
   ["hot_refresh", []],
@@ -37,7 +37,9 @@
   ["ufo", []],
   ["ufo_refresh", []],
   ["gift", ["step"]],
-  ["gm", []],
+  ["gm", ["action", "album"]],
   ["reset", []],
-  ["tutorial_finish", []]
+  ["tutorial_finish", []],
+  ["fossil", ["action", "value"]],
+  ["album_claim", ["album"]]
 ]

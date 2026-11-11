@@ -1,0 +1,36 @@
+{
+	"cards": [
+		"你先提",
+		"先藏好矛",
+		"名字还没起",
+		"刚学会走",
+		"轮流当酋长",
+		"想事情",
+		"全凭自愿",
+		"夸你勇敢",
+		"酋长不在"
+	],
+	"name": "酋长与族人",
+	"texts": [
+		"兄弟，酋长说可以提意见。你先提，我看看。",
+		"兄弟，酋长正讲他怎么抓的鹿，你把咱俩的矛先藏好。",
+		"兄弟，下任酋长已经定了，就是名字还没起。",
+		"兄弟，酋长儿子刚学会走，怎么就开始给咱们带路了？",
+		"兄弟，说好轮流当酋长，怎么只在他家轮？",
+		"兄弟，咱俩坐着叫偷懒，酋长坐着怎么叫想事情？",
+		"兄弟，酋长说这回全凭自愿，你怎么还在洞口拦人？",
+		"兄弟，大家突然都夸你勇敢，你先别急着高兴。",
+		"兄弟，我发现空着手来的时候，酋长总是不在。"
+	],
+	"art": [
+		"res://assets/cards/chief/you_speak_first.png",
+		"res://assets/cards/chief/hide_the_spears.png",
+		"res://assets/cards/chief/unnamed_heir.png",
+		"res://assets/cards/chief/toddler_leader.png",
+		"res://assets/cards/chief/family_rotation.png",
+		"res://assets/cards/chief/sitting_or_thinking.png",
+		"res://assets/cards/chief/entirely_voluntary.png",
+		"res://assets/cards/chief/suddenly_brave.png",
+		"res://assets/cards/chief/empty_handed_visit.png"
+	]
+}

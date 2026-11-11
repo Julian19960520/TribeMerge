@@ -65,7 +65,7 @@ static func fmt(v: float) -> String:
 		return str(n)
 	return "%.1f" % v
 
-## 随机订单贝币：每理论火苗 3 贝币，主产物和副产物同价，稀有的副产物不再吃亏。
+## 随机订单不拿拿：每理论火苗 3 不拿拿，主产物和副产物同价，稀有的副产物不再吃亏。
 const PAY_PER_FLAME := 3.0
 
 static func shell_of(items: Array) -> int:

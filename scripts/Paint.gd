@@ -3,6 +3,8 @@ extends RefCounted
 const Meme := preload("res://scripts/Meme.gd")
 ## 生成图片用的尺寸、种子表都在目录文件里
 const PS := preload("res://scripts/sprites/paint.gd")
+const COLLECTION_CARD_TRIM := preload("res://assets/ui/collection_card_trim.svg")
+const COLLECTION_PICTURE_TRIM := preload("res://assets/ui/collection_picture_trim.svg")
 ## 界面部件、角色、卡牌与村庄的程序化绘制。
 
 const BTN := {
@@ -164,32 +166,25 @@ static func face(ci: CanvasItem, c: Vector2, r: float, skin: Color, _seed: int, 
 	Sprites.at(ci, "paint_face_top" if smile else "paint_face_top_plain", c, k)
 
 static func portrait(ci: CanvasItem, kind: int, c: Vector2, s: float) -> void:
-	Sprites.at(ci, "paint_portrait_%d" % (kind % 4), c, s / 100.0)
+	Meme.portrait(ci, kind, c, s)
 
 static func face_mouth_only(ci: CanvasItem, c: Vector2, r: float) -> void:
 	Sprites.at(ci, "paint_face_mouth", c, r / PS.R_MOUTH)
 
-## 小牙：原来是剑齿虎幼崽，现在是披着虎皮帽的「兄弟，我发现」族人（Meme.XIAOYA）。
-## 尺寸和原来的画法对齐：c 在身体中间，s 约等于整只的高度。prop == "hammer" 时手边贴一把石锤。
-static func mascot(ci: CanvasItem, c: Vector2, s: float, prop: String = "") -> void:
-	Sprites.at(ci, "paint_mascot_hammer" if prop == "hammer" else "paint_mascot", c, s / PS.S_MASCOT)
+## 小酋长使用完整画像，衣饰直接包含在原图中。
+static func mascot(ci: CanvasItem, c: Vector2, s: float, _prop: String = "") -> void:
+	Meme.draw_portrait(ci, Meme.XIAOYA, Rect2(c + Vector2(-0.48, -0.66) * s, Vector2(0.96, 1.28) * s))
 
 ## 主角阿焰（Meme.HERO）和小牙站在一起。c、s 和原来的画法对齐（整张约 280*s/100 高）。
 static func heroine(ci: CanvasItem, c: Vector2, s: float) -> void:
 	var k := s / 100.0
-	var w := 250.0 / Meme.BUST_RECT.size.y * 100.0 * k
-	var hc := c + Vector2(-14, 130.0 * k - Meme.BUST_RECT.end.y * w / 100.0)
-	_hero_at(ci, hc, w)
+	Meme.draw_portrait(ci, Meme.HERO, Rect2(c + Vector2(-107.75, -120) * k, Vector2(187.5, 250) * k))
 	mascot(ci, c + Vector2(96, 84) * k, 92.0 * k)
 
 ## 阿焰半身。原点在胸口，头顶朝上（尺寸和原来的画法对齐，整张约 164*s/100 高）。
 static func bust(ci: CanvasItem, c: Vector2, s: float) -> void:
 	var k := s / 100.0
-	var w := 164.0 / Meme.BUST_RECT.size.y * 100.0 * k
-	_hero_at(ci, c + Vector2(0, 58.0 * k - Meme.BUST_RECT.end.y * w / 100.0), w)
-
-static func _hero_at(ci: CanvasItem, hc: Vector2, w: float) -> void:
-	Sprites.at(ci, "paint_hero", hc, w / PS.W_HERO)
+	Meme.draw_portrait(ci, Meme.HERO, Rect2(c + Vector2(-61.5, -106) * k, Vector2(123, 164) * k))
 
 static func speech(ci: CanvasItem, r: Rect2, point_left: bool, _seed: int = 8) -> void:
 	Sprites.draw(ci, "speech_body", r)
@@ -202,11 +197,18 @@ const ALBUM_COL := [Color("c98a55"), Color("b8a27a"), Color("6b4a3a"), Color("a0
 	Color("b9894a"), Color("8f8478"), Color("a86a4a"), Color("7f9a7a"), Color("94705a"), Color("5f6a8a")]
 
 ## 底色和斑点是平涂圆，直接画；岩画图案贴白色图、按墨色染
-static func card_art(ci: CanvasItem, album: int, idx: int, r: Rect2) -> void:
+static func card_art(ci: CanvasItem, album: int, idx: int, r: Rect2, clip: PackedVector2Array = PackedVector2Array()) -> void:
+	var illustration := CardArtwork.texture(album, idx)
+	if illustration != null:
+		if clip.is_empty(): ci.draw_texture_rect(illustration, r, false)
+		else: _card_texture(ci, illustration, r, clip)
+		return
 	var bg: Color = ALBUM_COL[album % ALBUM_COL.size()]
-	ci.draw_rect(r, bg)
+	if clip.is_empty(): ci.draw_rect(r, bg)
+	else: ci.draw_colored_polygon(clip, bg)
+	var speckles := r if clip.is_empty() else r.grow(-minf(32.0, r.size.x * 0.22))
 	for i in 30:
-		var p := r.position + Vector2(Art.srnd(album * 100 + idx * 10 + i) * r.size.x, Art.srnd(album * 77 + idx * 13 + i * 3) * r.size.y)
+		var p := speckles.position + Vector2(Art.srnd(album * 100 + idx * 10 + i) * speckles.size.x, Art.srnd(album * 77 + idx * 13 + i * 3) * speckles.size.y)
 		ci.draw_circle(p, 2.0 + Art.srnd(i + idx) * 10.0, Color(bg.darkened(0.2), 0.35))
 	var ink := Color("7a2412") if album != 2 else Color("f2c96a")
 	var c := r.get_center()
@@ -236,6 +238,11 @@ static func card_art(ci: CanvasItem, album: int, idx: int, r: Rect2) -> void:
 				_hunter(ci, Vector2(-30 + i * 60, 10), 0.85, ink, idx + i)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+static func _card_texture(ci: CanvasItem, texture: Texture2D, r: Rect2, clip: PackedVector2Array) -> void:
+	var uv := PackedVector2Array()
+	for point in clip: uv.append((point - r.position) / r.size)
+	ci.draw_polygon(clip, PackedColorArray([Color.WHITE]), uv, texture)
+
 static func _mammoth(ci: CanvasItem, c: Vector2, s: float, col: Color, _seed: int) -> void:
 	Sprites.at(ci, "paint_rock_mammoth", c, s / PS.K_ROCK, 0.0, col)
 	Sprites.at(ci, "paint_rock_mammoth_tusk", c, s / PS.K_ROCK)
@@ -252,18 +259,62 @@ static func _hand(ci: CanvasItem, c: Vector2, s: float, col: Color, _seed: int) 
 static func _fish_glyph(ci: CanvasItem, c: Vector2, col: Color, _seed: int) -> void:
 	Sprites.at(ci, "paint_rock_fish", c, 1.0 / PS.K_ROCK, 0.0, col)
 
-static func card(ci: CanvasItem, r: Rect2, album: int, idx: int, owned: bool, _name: String = "") -> void:
+static func card(ci: CanvasItem, r: Rect2, album: int, idx: int, owned: bool, flush: bool = false) -> void:
+	if flush:
+		_collection_card(ci, r, album, idx, owned)
+		return
 	Sprites.draw(ci, "paint_card_frame", r)
-	var ar := Rect2(r.position + Vector2(8, 8), Vector2(r.size.x - 16, r.size.y * 0.72))
+	var side := minf(r.size.x - 16.0, r.size.y * 0.72)
+	var ar := Rect2(Vector2(r.get_center().x - side * 0.5, r.position.y + 8), Vector2.ONE * side)
 	if owned:
 		card_art(ci, album, idx, ar)
 	else:
 		ci.draw_rect(ar, Color("8a6a4a"))
 		Sprites.draw(ci, "paint_card_locked", ar)
-	ci.draw_rect(ar, Art.INK, false, 2.0)
 	var bandr := Rect2(r.position + Vector2(4, r.size.y * 0.74), Vector2(r.size.x - 8, r.size.y * 0.22))
+	ci.draw_rect(ar, Art.INK, false, 2.0)
 	Sprites.draw(ci, "paint_card_band", bandr)
-	Sprites.at(ci, "paint_card_star", Vector2(r.get_center().x, bandr.position.y + 2))
+	var stars := CardPacks.stars(album, idx)
+	var spacing := minf(24.0, r.size.x / 7.0)
+	for star in stars:
+		Sprites.at(ci, "paint_card_star", Vector2(r.get_center().x + (float(star) - float(stars - 1) * 0.5) * spacing, bandr.position.y + 2), 0.72)
+
+static func _collection_card(ci: CanvasItem, r: Rect2, album: int, idx: int, owned: bool) -> void:
+	var edge := Art.rrect(r, 22, 0, 0.0)
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 5), r.size), 22, 0, 0.0), Color(0, 0, 0, 0.3))
+	ci.draw_colored_polygon(edge, Art.OCHRE)
+	var ar := Rect2(r.position, Vector2.ONE * r.size.x)
+	var top := PackedVector2Array([ar.position, Vector2(ar.end.x, ar.position.y), ar.end, Vector2(ar.position.x, ar.end.y)])
+	var clip: PackedVector2Array = Geometry2D.intersect_polygons(edge, top)[0]
+	if owned:
+		card_art(ci, album, idx, ar, clip)
+	else:
+		ci.draw_colored_polygon(clip, Color("8a6a4a"))
+		var lines := Sprites.frame_texture("paint_card_locked", Art.boil)
+		if lines != null: _card_texture(ci, lines, ar, clip)
+	ci.draw_texture_rect(COLLECTION_CARD_TRIM, r, false)
+	var stars := CardPacks.stars(album, idx)
+	var spacing := minf(24.0, r.size.x / 7.0)
+	for star in stars:
+		Sprites.at(ci, "paint_card_star", Vector2(r.get_center().x + (float(star) - float(stars - 1) * 0.5) * spacing, ar.end.y + 10), 0.72)
+
+static func collection_picture(ci: CanvasItem, r: Rect2, album: int, idx: int) -> void:
+	var edge := Art.rrect(r, 30, 0, 0.0)
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 10), r.size), 30, 0, 0.0), Color(0, 0, 0, 0.35))
+	card_art(ci, album, idx, r, edge)
+	ci.draw_texture_rect(COLLECTION_PICTURE_TRIM, r, false)
+
+static func collection_cover(ci: CanvasItem, album: int, r: Rect2) -> void:
+	var c := r.get_center()
+	var radius := minf(r.size.x, r.size.y) * 0.5 - 4.0
+	ci.draw_circle(c + Vector2(0, 5), radius + 3, Color(0, 0, 0, 0.3))
+	var edge := Art.ell(c, Vector2.ONE * radius, 0, 0.0, 64, 0.0, 0.0)
+	ci.draw_colored_polygon(edge, Art.LEATHER)
+	var texture := CardArtwork.cover(album)
+	if texture != null: _card_texture(ci, texture, r, edge)
+	Art.outline(ci, edge, 7, Art.LEATHER)
+	Art.outline(ci, Art.ell(c, Vector2.ONE * (radius + 3), 0, 0.0, 64, 0.0, 0.0), 2.0, Art.INK)
+	Art.dashed(ci, edge, 7, 5, Art.ROPE, 1.5)
 
 # ---------------------------------------------------------------- 背景与村庄
 

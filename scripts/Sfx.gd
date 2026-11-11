@@ -6,42 +6,50 @@ var _streams := {}
 var _players: Array = []
 var _music: AudioStreamPlayer
 
+const VisualRuntime := preload("res://scripts/resources/VisualRuntime.gd")
+const EFFECTS := {"tap": ["_wood", 0.09], "pop": ["_pop", 0.22], "merge": ["_merge", 0.35],
+	"coin": ["_coin", 0.3], "whoosh": ["_whoosh", 0.3], "drum": ["_drum", 0.35],
+	"fanfare": ["_fanfare", 1.2], "deny": ["_deny", 0.25], "crumble": ["_crumble", 0.32]}
+var _enabled := false
+
 func _ready() -> void:
-	_streams["tap"] = _make(_wood, 0.09)
-	_streams["pop"] = _make(_pop, 0.22)
-	_streams["merge"] = _make(_merge, 0.35)
-	_streams["coin"] = _make(_coin, 0.3)
-	_streams["whoosh"] = _make(_whoosh, 0.3)
-	_streams["drum"] = _make(_drum, 0.35)
-	_streams["fanfare"] = _make(_fanfare, 1.2)
-	_streams["deny"] = _make(_deny, 0.25)
-	_streams["crumble"] = _make(_crumble, 0.32)
+	_enabled = VisualRuntime.enabled() and DisplayServer.get_name() != "headless"
+	if _enabled:
+		call_deferred("refresh_music")
+
+func _ensure_players() -> void:
+	if not _players.is_empty(): return
 	for i in 8:
-		var p := AudioStreamPlayer.new()
-		add_child(p)
-		_players.append(p)
-	_music = AudioStreamPlayer.new()
-	_music.volume_db = -8.0
-	add_child(_music)
-	_music.stream = _load_music()
-	call_deferred("refresh_music")
+		var player := AudioStreamPlayer.new()
+		add_child(player)
+		_players.append(player)
 
 func play(name: String, pitch: float = 1.0) -> void:
-	if not G.settings.get("sound", true) or not _streams.has(name):
+	if not _enabled or not G.settings.get("sound", true) or not EFFECTS.has(name):
 		return
-	for p in _players:
-		if not p.playing:
-			p.stream = _streams[name]
-			p.pitch_scale = pitch
-			p.play()
+	if not _streams.has(name):
+		var spec: Array = EFFECTS[name]
+		_streams[name] = _make(Callable(self, str(spec[0])), float(spec[1]))
+	_ensure_players()
+	for player in _players:
+		if not player.playing:
+			player.stream = _streams[name]
+			player.pitch_scale = pitch
+			player.play()
 			return
 
 func refresh_music() -> void:
-	if G.settings.get("music", true):
-		if not _music.playing:
-			_music.play()
-	else:
-		_music.stop()
+	if not _enabled: return
+	if not G.settings.get("music", true):
+		if is_instance_valid(_music): _music.stop()
+		return
+	if not is_instance_valid(_music):
+		_music = AudioStreamPlayer.new()
+		_music.volume_db = -8.0
+		_music.stream = _load_music()
+		add_child(_music)
+	if _music.stream != null and not _music.playing:
+		_music.play()
 
 func _make(fn: Callable, dur: float) -> AudioStreamWAV:
 	var n := int(dur * RATE)

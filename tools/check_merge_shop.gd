@@ -12,73 +12,76 @@ func _run() -> void:
 	g.set_process(false)
 	g.new_game()
 	g.tutorial_on = false
+	load("res://scripts/events/ActivityRules.gd").initialize()
 	g.seen_tutorial = true
 	check(data.daily_deals(1).size() == 5 and data.daily_deals(8).size() == 5, "five daily offers at every level")
 	var daily = load("res://scripts/events/DailyShop.gd")
 	g.amber = 0
 	var r: Dictionary = await daily.claim("deal_2")
-	check(r.get("ok", false) and g.amber == 0 and not g.has_free_daily(), "free daily claim works at zero balance and clears dot")
+	check(r.get("ok", false) and g.amber == 0 and not g.rules.progression.has_free_daily(), "free daily claim works at zero balance and clears dot")
 	r = await daily.claim("deal_2")
 	check(not r.get("ok", false) and int(g.deals_bought["deal_2"]) == 1, "duplicate free claim rejected")
 	g.deals_day = "2000-01-01"
-	g._check_day()
-	check(g.has_free_daily(), "new day restores free claim")
+	g.rules.clock._check_day()
+	check(g.rules.progression.has_free_daily(), "new day restores free claim")
 	g.hot_bought = {"hot_0": 5}
 	g.deals_bought = {"deal_2": 1}
 	g.amber = 9
 	r = await g.refresh_hot()
 	check(not r.get("ok", false) and g.amber == 9 and g.hot_bought.get("hot_0") == 5, "failed refresh preserves balance and stock")
 	g.amber = 10
-	var hot = load("res://scripts/HotDeals.gd")
-	var before_hot: Array = hot.today().duplicate(true)
+	var before_hot: Array = g.shop_view().duplicate(true)
 	r = await g.refresh_hot()
 	check(r.get("ok", false) and g.amber == 0 and g.hot_bought.is_empty() and g.hot_revision == 1, "refresh costs exactly 10 and resets hot stock")
-	check(not g.has_free_daily(), "hot refresh cannot reset daily free item")
-	var after_hot: Array = hot.today().duplicate(true)
+	check(not g.rules.progression.has_free_daily(), "hot refresh cannot reset daily free item")
+	var after_hot: Array = g.shop_view().duplicate(true)
 	var all_changed := true
 	for k in before_hot.size():
-		all_changed = all_changed and before_hot[k]["id"] != after_hot[k]["id"]
-	check(all_changed, "paid refresh changes every hot slot")
-	hot.clear_cache()
-	check(hot.today() == after_hot, "refreshed goods survive cache reload")
+		if data.max_lv(data.chain(str(before_hot[k]["id"]))) > 1:
+			all_changed = all_changed and before_hot[k]["id"] != after_hot[k]["id"]
+		else:
+			all_changed = all_changed and before_hot[k]["id"] == after_hot[k]["id"]
+	check(all_changed, "paid refresh changes multi-grade goods and replenishes fixed supplies")
+	var shop_snapshot: Dictionary = g.business_snapshot().duplicate(true)
+	check(g.load_snapshot(shop_snapshot) and g.shop_view() == after_hot, "refreshed goods survive business-state restore")
 	g.discovered.erase("salad")
 	check(await g.claim_book("salad") == 0, "uncrafted dish has no codex reward")
-	var prizes_before: int = g.book_prize_count()
-	g.discover("salad")
-	check(g.book_prize_count() == prizes_before + 1, "crafted dish contributes to codex red dot")
+	var prizes_before: int = g.rules.board.book_prize_count()
+	g.rules.board.discover("salad")
+	check(g.rules.board.book_prize_count() == prizes_before + 1, "crafted dish contributes to codex red dot")
 	check(await g.claim_book("salad") == 1 and await g.claim_book("salad") == 0, "dish discovery reward is claimable only once")
 	g.board = []
 	for i in 63: g.board.append({"id": "", "lock": 0})
 	g.board[0]["id"] = "fruit_5"
 	g.board[1]["id"] = "fruit_5"
 	for seed_value in 100:
-		g.rng.seed = seed_value
-		if g.rng.randf() < float(data.bubble_rule()["chance"]):
-			g.rng.seed = seed_value
+		g.random_for("bubbles").seed = seed_value
+		if g.random_for("bubbles").randf() < float(data.bubble_rule()["chance"]):
+			g.random_for("bubbles").seed = seed_value
 			break
-	var chance_state: int = g.rng.state
-	g._maybe_spawn_bubble("fruit_5", 1)
-	check(not g.is_merge_bubble(2), "low-level merge never creates bubble")
+	var chance_state: int = g.random_for("bubbles").state
+	g.rules.board._maybe_spawn_bubble("fruit_5", 1)
+	check(not g.rules.board.is_merge_bubble(2), "low-level merge never creates bubble")
 	for iid in ["basket_6", "shell_5", "amber_5", "fire_5", "chest_1"]:
 		check(not data.bubble_ok(iid), "%s never bubbles" % iid)
 	check(data.bubble_ok("fruit_6") and data.bubble_ok("seed_3") and not data.bubble_ok("seed_2"), "high tier is judged by rarity (theoretical flames)")
 	check(data.bubble_price("fruit_6") == 10 and data.bubble_price("fruit_9") == 50 and data.bubble_price("fruit_14") == 300, "bubble price curve matches server")
 	check(data.merge_coin_item("fruit_2") == "shell_2" and data.merge_coin_item("fruit_6") == "shell_3" and data.merge_coin_item("fruit_10") == "shell_4", "merge coin grows with merged level")
 	g.tutorial_on = true
-	g._maybe_spawn_bubble("fruit_6", 1)
-	check(not g.is_merge_bubble(2), "tutorial never creates bubble")
+	g.rules.board._maybe_spawn_bubble("fruit_6", 1)
+	check(not g.rules.board.is_merge_bubble(2), "tutorial never creates bubble")
 	g.tutorial_on = false
-	g.rng.state = chance_state
+	g.random_for("bubbles").state = chance_state
 	check(g.try_drop(0, 1) == "merge", "normal merge succeeds")
-	check(g.board[1]["id"] == "fruit_6" and g.is_merge_bubble(0) and g.board[0]["id"] == "fruit_6", "bonus copies merged result in nearest vacant cell")
-	check(g.bubble_left(0) > 58 and g.bubble_left(0) <= 60, "bubble starts with 60 real seconds")
+	check(g.board[1]["id"] == "fruit_6" and g.rules.board.is_merge_bubble(0) and g.board[0]["id"] == "fruit_6", "bonus copies merged result in nearest vacant cell")
+	check(g.rules.board.bubble_left(0) > 58 and g.rules.board.bubble_left(0) <= 60, "bubble starts with 60 real seconds")
 	g.board[2]["id"] = "fruit_6"
-	check(g.try_drop(2, 0) == "" and g.try_drop(0, 3) == "", "unpaid bubble cannot merge or move")
-	check(g.board_has("fruit_6", [1, 2]) == -1, "unpaid bubble cannot satisfy order inventory")
+	check(g.try_drop(0, 3) == "move" and g.rules.board.is_merge_bubble(3) and g.try_drop(3, 0) == "move" and g.rules.board.is_merge_bubble(0), "unpaid bubble moves while keeping its protection")
+	check(g.rules.orders.board_has("fruit_6", [1, 2]) == -1, "unpaid bubble cannot satisfy order inventory")
 	check(data.bubble_price("seed_5") > data.bubble_price("fruit_6") and data.bubble_price("fruit_7") > data.bubble_price("fruit_6"), "price increases with rarity and level")
 	g.amber = 0
 	r = await g.buy_bubble(0)
-	check(not r.get("ok", false) and g.is_merge_bubble(0), "failed bubble purchase preserves item")
+	check(not r.get("ok", false) and g.rules.board.is_merge_bubble(0), "failed bubble purchase preserves item")
 	g.amber = 100
 	var price: int = data.bubble_price("fruit_6")
 	r = await g.buy_bubble(0)
@@ -86,14 +89,19 @@ func _run() -> void:
 	r = await g.buy_bubble(0)
 	check(not r.get("ok", false) and g.amber == 100 - price, "duplicate bubble purchase rejected")
 	g.board[3] = {"id": "seed_3", "lock": 3, "bubble": {"uid": "test", "price": 10, "expires": g.now() - 1}}
-	g._tick_bubbles()
-	check(g.board[3]["id"] == "" and g.board[3]["lock"] == 0, "expired bubble frees its cell")
+	var shells_before: int = g.shells
+	g.rules.board._tick_bubbles()
+	check(g.board[3] == {"id": "shell_3", "lock": 0} and g.shells == shells_before, "expired bubble leaves a physical level-three coin in the same cell")
+	g.rules.board._tick_bubbles()
+	check(g.board[3] == {"id": "shell_3", "lock": 0} and g.shells == shells_before and g.board[0]["id"] == "fruit_6", "expiry is paid once and purchased items stay intact")
 	g.board[3] = {"id": "seed_3", "lock": 3, "bubble": {"uid": "saved", "price": 10, "expires": g.now() + 30}}
 	var expiry: float = g.board[3]["bubble"]["expires"]
 	g.save_game()
 	g.board[3] = {"id": "", "lock": 0}
 	g.load_game()
-	check(g.is_merge_bubble(3) and absf(float(g.board[3]["bubble"]["expires"]) - expiry) < 0.01, "reload preserves original bubble deadline")
+	check(g.rules.board.is_merge_bubble(3) and absf(float(g.board[3]["bubble"]["expires"]) - expiry) < 0.01, "reload preserves original bubble deadline")
+	root.get_node("Replay").active = true
+	root.get_node("Replay").authorized = true
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	main.show_screen("board", true)
@@ -117,7 +125,7 @@ func _run() -> void:
 	check(p != null, "shop renders free item and timed refresh")
 	p.close()
 	for i in 20: await process_frame
-	var popups = load("res://scripts/ui/Popups.gd")
+	var popups = load("res://scripts/ui/popups/ItemPopups.gd")
 	var book = popups.book(data.LINES.size())
 	main.add_child(book)
 	for i in 3: await process_frame

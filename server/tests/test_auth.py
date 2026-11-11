@@ -8,11 +8,11 @@ def test_guest_and_account(client, player):
     assert j["account_id"] == player.id and j["bindings"] == [] and not j["has_transfer_code"]
 
 
-def test_guest_keeps_existing_player_id(client):
-    a = Player(client, player_id="TRB12345678")
-    assert a.id == "TRB12345678"
-    b = Player(client, player_id="TRB12345678")  # 被占用了就换一个
-    assert b.id != "TRB12345678"
+def test_guest_identity_is_always_server_issued(client):
+    a, b = Player(client), Player(client)
+    assert a.id != b.id
+    response = client.post('/v1/auth/guest', json={'device_id': 'device', 'player_id': 'TRB12345678'})
+    assert response.status_code == 422
 
 
 def test_missing_or_bad_token(client):
@@ -22,7 +22,7 @@ def test_missing_or_bad_token(client):
 
 
 def test_error_format(client, player):
-    r = player.post("/v1/build", json={"area": "fire", "extra": 1})
+    r = player.post("/v1/rank/name", json={"name": "酋长", "extra": 1})
     assert r.status_code == 422
     j = r.json()
     assert j["ok"] is False and j["error"] == "invalid_request" and "message" in j

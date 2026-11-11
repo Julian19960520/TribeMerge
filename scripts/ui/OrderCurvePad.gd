@@ -1074,11 +1074,7 @@ func _draw_order() -> void:
 	_text(str(shell), chip_c + Vector2(-6, 7), 20, Art.INK)
 
 func _who_name(i: int) -> String:
-	if Data.PEOPLE.is_empty():
-		return ""
-	var s := str(Data.PEOPLE[posmod(i, Data.PEOPLE.size())])
-	var at := s.find(" ")
-	return s.substr(at + 1) if at >= 0 else s
+	return Meme.customer_name(i, true)
 
 func _text_w(text: String, fs: int) -> float:
 	var f: Font = G.font_body

@@ -24,7 +24,7 @@ func _run() -> void:
 	g.seen_tutorial = true
 	g.level = 14
 	ok(g.pass_season == "0", "season 0 five days after start")
-	ok(g.pass_secs_left() == span - 5 * 86400 - 3600, "countdown reads the real season end")
+	ok(g.rules.clock.pass_secs_left() == span - 5 * 86400 - 3600, "countdown reads the real season end")
 	g.pass_pts = 120
 	g.pass_tier = 2
 	g.pass_super_bonus = true
@@ -33,10 +33,10 @@ func _run() -> void:
 	g.save_game()
 	g.load_game()
 	ok(g.pass_season == "0" and g.pass_pts == 120 and g.pass_free == [1], "same season survives save/load")
-	g._check_day()
+	g.rules.clock._check_day()
 	ok(g.pass_pts == 120 and g.pass_tier == 2, "no reset inside the season")
 	g.simulation_time = start + span + 60
-	g._check_day()
+	g.rules.clock._check_day()
 	ok(g.pass_season == "1", "season 1 after one span")
 	ok(g.pass_pts == 0 and g.pass_tier == 0 and g.pass_free.is_empty() and g.pass_prem.is_empty() and g.pass_super.is_empty() and g.pass_endless == 0 and not g.pass_super_bonus, "rollover clears points, claims and tier")
 	ok((await g.claim_pass_free(2)).is_empty(), "old-season tier is not claimable after rollover")

@@ -18,7 +18,7 @@ const HEADER_SIZE := Vector2(652, 243)
 
 static func entries() -> Array:
 	var out: Array = []
-	for role in Meme.BODY.size():
+	for role in Meme.ROLE_COUNT:
 		out.append({"key": "meme_portrait_%d" % role, "w": int(PORTRAIT_BOX.size.x), "h": int(PORTRAIT_BOX.size.y), "pad": 12,
 			"draw": func(ci, r): Meme.live_portrait(ci, role, r.position - PORTRAIT_BOX.position, PORTRAIT_S)})
 	out.append({"key": "tiger_head", "w": int(TIGER_BOX.size.x), "h": int(TIGER_BOX.size.y), "pad": 10,

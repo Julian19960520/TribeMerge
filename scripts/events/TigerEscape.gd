@@ -1,17 +1,12 @@
 class_name TigerEscape
 extends RefCounted
-## 本地与服务端共用 tiger_escape.json；在线时只由服务端计分和发奖。
-const CONFIG = preload("res://data/tiger_escape.json")
-static var busy := false
-static var _config: Dictionary = {}
+## Shared elimination-race rules executed by the operation reducer.
 
 static func config() -> Dictionary:
-	if _config.is_empty(): _config = Data.ConfigFiles.ints(CONFIG.data)
-	return _config
+	return Data.ConfigFiles.shared("res://data/tiger_escape.json")
 
 static func state() -> Dictionary:
-	if G.tiger_escape.is_empty(): G.tiger_escape = {"rounds": 0, "round": {}}
-	return G.tiger_escape
+	return G.tiger_escape if not G.tiger_escape.is_empty() else {"rounds": 0, "round": {}}
 
 static func round_state() -> Dictionary:
 	return state()["round"]
@@ -37,17 +32,7 @@ static func _create_bots(m: Dictionary) -> Array:
 		bots.append({"name": str(names[i % names.size()]) if not names.is_empty() else "同行者", "avatar": i % 8, "arrivals": arrivals, "stage": 0, "status": "running"})
 	return bots
 
-static func _migrate(m: Dictionary) -> void:
-	if m.is_empty() or int(m.get("rule_version", 0)) == 2: return
-	m["rule_version"] = 2
-	m["interval"] = config()["attack_interval_sec"]
-	m["points_per_order"] = maxi(1, int(config()["points_per_order"]))
-	m["points"] = 0
-	if m["status"] == "running":
-		m["stages"] = config()["stages"].duplicate(true)
-		m["destroyed"] = -1
-	m["bots"] = _create_bots(m)
-	G.dirty()
+
 
 static func _tick_bots(m: Dictionary, now: float) -> void:
 	var elapsed := maxf(0, minf(now, float(m.get("finished_at", now))) - float(m["start"]))
@@ -68,10 +53,8 @@ static func _tick_bots(m: Dictionary, now: float) -> void:
 
 static func tick() -> void:
 	if G.replay_input(): return
-	if G.server_mode(): return
 	var m := round_state()
 	if m.is_empty(): return
-	_migrate(m)
 	if m["status"] == "running":
 		var destroyed := mini(m["stages"].size() - 1, int(maxf(0, G.now() - float(m["start"])) / float(m["interval"])) - 1)
 		var previous := int(m["destroyed"])
@@ -83,7 +66,6 @@ static func tick() -> void:
 	_tick_bots(m, G.now())
 
 static func on_order(_order: Dictionary) -> void:
-	if G.server_mode(): return
 	tick()
 	var m := round_state()
 	if m.is_empty() or m["status"] != "running": return
@@ -141,25 +123,10 @@ static func local_action(action: String, node := 0) -> Dictionary:
 	return {"error": "未知操作"}
 
 static func act(action: String, node := 0) -> Dictionary:
-	if G.replay_input(): return await Replay.perform("tiger", {"action": action, "node": node})
-	if busy: return {"error": "正在处理"}
-	busy = true
-	var result: Dictionary
-	if G.server_mode():
-		var minus: Array = []
-		var m := round_state()
-		if action == "restart" and not m.is_empty(): minus = pending_rewards(m)
-		elif action == "claim" and not m.is_empty() and node > 0 and node <= int(m["stage"]) and not node in m["claimed"]:
-			minus = m["stages"][node - 1]["rewards"]
-		var response: Dictionary = await G._cloud().act("/v1/tiger/action", {"action": action, "node": node}, minus)
-		result = response.get("give", {}) if response.get("ok", false) else {"error": response.get("message", "暂时无法连接")}
-	else:
-		result = local_action(action, node)
-	busy = false
+	if G.replay_input(): return Replay.perform("tiger", {"action": action, "node": node})
+	var result := local_action(action, node)
 	if not result.has("error"):
-		Rewards.grant(result.get("rewards", []), Callable(), false)
-		G.save_game()
-		G.changed.emit()
+		Rewards.settle(result.get("rewards", []))
 	return result
 
 static func attack_left() -> int:

@@ -139,7 +139,7 @@ static func _paint_matching(ci: CanvasItem, sz: Vector2, race: Node, el: float) 
 		# 座位：圆底
 		var seat := Rect2(c + Vector2(-70, -62), Vector2(140, 140))
 		Sprites.draw(ci, "ev_race_seat_" + ("me" if i == 0 else ("on" if locked else "off")), seat)
-		var role := int(me.get("avatar", 0)) if i == 0 else int(el * 9.0 + i * 3) % 8
+		var role := Meme.HERO if i == 0 else int(el * 9.0 + i * 3) % 8
 		var name := "我"
 		if i > 0 and locked:
 			var m: Dictionary = _other(ms, i)
@@ -171,7 +171,7 @@ static func race_panel() -> PopupBase:
 	p.name = "race_progress"
 	var r := Rect2(36, 196, 648, 1110)
 	Popups.frame(p, r, "香蕉竞速", Art.CLAY, "fire")
-	var area := Rect2(r.position.x + 24, r.position.y + 48, r.size.x - 48, r.size.y - 70)
+	var area := Rect2(r.position.x + 24, r.position.y + 48, r.size.x - 48, r.size.y - 174)
 	var box := UI.box(p.box, area, func(ci, sz): _paint_race(ci, sz, race), false)
 	# 竹筒顶上的金银铜宝箱：点一下弹气泡看这一名的奖励，点空白收起
 	var bubble := Control.new()
@@ -186,6 +186,10 @@ static func race_panel() -> PopupBase:
 		hit.name = "race_chest_col_%d" % i
 	p.box.add_child(bubble)
 	p.on_tap = func(): _toggle_rank_bubble(p, bubble, race, 0, 0, 0)
+	var orders := UI.btn(p.box, Rect2(190, r.end.y - 100, 340, 80), "去完成订单", "green", func():
+		G.main.show_screen("board", true)
+		p.close(), 34)
+	orders.name = "race_go_orders"
 	race.watch(p)
 	var t := Timer.new()
 	t.wait_time = 0.033
@@ -310,7 +314,7 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 		var hc := Vector2(cx, tube_bot + 140 - absf(sin(t * 18.0)) * 8.0 * dash)
 		if mine:
 			Sprites.draw(ci, "ev_disc", Rect2(hc + Vector2(-52, -46), Vector2(104, 104)), Color(1.0, 0.86, 0.35, 0.9))
-		Meme.portrait(ci, int(m.get("avatar", 0)), hc, 88.0)
+		Meme.portrait(ci, Meme.HERO if mine else int(m.get("avatar", 0)), hc, 88.0)
 		var rk: int = race.place_of(m)
 		var mc := hc + Vector2(36, 30)
 		_medal(ci, mc, 17.0, rk)
@@ -408,7 +412,7 @@ static func _result_row(ci: CanvasItem, sz: Vector2, m: Dictionary, tg: float) -
 	var mc := Vector2(34, sz.y * 0.5)
 	_medal(ci, mc, 22.0, rk)
 	_txt(ci, str(rk), mc, 24, Color.WHITE, 5)
-	Meme.portrait(ci, int(m.get("avatar", 0)), Vector2(100, sz.y * 0.5 + 6), 62.0)
+	Meme.portrait(ci, Meme.HERO if mine else int(m.get("avatar", 0)), Vector2(100, sz.y * 0.5 + 6), 62.0)
 	var f: Font = G.font_body
 	if f:
 		ci.draw_string(f, Vector2(142, sz.y * 0.5 + 9), str(m.get("name", "")) + ("（我）" if mine else ""), HORIZONTAL_ALIGNMENT_LEFT, 230, 24, Art.INK)

@@ -1,4 +1,4 @@
-"""石器部落 · 合成 服务器入口（FastAPI）。
+"""合合部落 服务器入口（FastAPI）。
 
 本地：python server/run.py（自动跑迁移再起 Uvicorn），或 docker compose up。
 接口文档：启动后打开 /docs（dev 环境）。
@@ -7,12 +7,13 @@
 import logging
 import time
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from . import api_auth, api_game, errors, logs, race
+from . import api_auth, api_public, errors, logs, replay_engine
 from .config import get_settings
 from .db import init_engine
 from .errors import body
@@ -21,11 +22,17 @@ from .ratelimit import limiter
 logger = logging.getLogger("tribe.http")
 
 
+@asynccontextmanager
+async def lifespan(_app):
+    yield
+    replay_engine.close_pools()
+
+
 def create_app() -> FastAPI:
     s = get_settings()
     logs.setup(s.log_level, s.log_json)
     init_engine(s.database_url)
-    app = FastAPI(title="石器部落 · 合成", version="1.0.0",
+    app = FastAPI(title="合合部落", version="2.0.0", lifespan=lifespan,
                   docs_url=None if s.is_prod else "/docs", redoc_url=None, openapi_url=None if s.is_prod else "/openapi.json")
     errors.install(app)
     if s.cors_origins:
@@ -65,10 +72,7 @@ def create_app() -> FastAPI:
     from . import api_replay
     app.include_router(api_replay.router)
     app.include_router(api_auth.router)
-    app.include_router(api_game.router)
-    app.include_router(race.router)
-    from . import gift_chain  # 礼包链（直购活动）
-    app.include_router(gift_chain.router)
+    app.include_router(api_public.router)
     return app
 
 

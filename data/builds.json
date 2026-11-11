@@ -9,34 +9,34 @@
 	]},
 	{"id": "gather", "name": "采集园", "line": "food", "parts": [
 		{"id": "berrybush", "name": "浆果丛", "cost": 630, "rewards": [["fruit_3", 1], ["fire_2", 10]]},
-		{"id": "basketrack", "name": "草篓架", "cost": 660, "rewards": [["basket_3", 1], ["fruit_2", 2]]},
+		{"id": "basketrack", "name": "草篓架", "cost": 660, "rewards": [["basket_1", 1], ["fruit_2", 2]]},
 		{"id": "dryingmat", "name": "晒果草席", "cost": 840, "rewards": [["fruit_4", 2], ["fire_2", 15]]},
 		{"id": "seedjar", "name": "种子陶罐", "cost": 850, "rewards": [["seed_2", 2], ["seed_3", 1]]},
 		{"id": "sprouts", "name": "小苗圃", "cost": 880, "rewards": [["seed_5", 1], ["fire_2", 20]]},
-		{"id": "fruittree", "name": "大果树", "cost": 1020, "rewards": [["basket_4", 1], ["fruit_6", 1], ["chest_1", 1]]}
+		{"id": "fruittree", "name": "大果树", "cost": 1020, "rewards": [["basket_1", 1], ["fruit_6", 1], ["chest_1", 1]]}
 	]},
 	{"id": "stone", "name": "石匠坊", "line": "tool", "parts": [
 		{"id": "rockpile", "name": "河卵石堆", "cost": 860, "rewards": [["tool_2", 2], ["gem_1", 1]]},
-		{"id": "anvilstone", "name": "敲石砧", "cost": 860, "rewards": [["anvil_3", 1], ["fire_2", 15]]},
+		{"id": "anvilstone", "name": "敲石砧", "cost": 860, "rewards": [["anvil_1", 1], ["fire_2", 15]]},
 		{"id": "flintpit", "name": "燧石坑", "cost": 1210, "rewards": [["gem_2", 2], ["tool_3", 1]]},
 		{"id": "toolrack", "name": "石器架", "cost": 1290, "rewards": [["tool_4", 1], ["tool_3", 1]]},
-		{"id": "whetstone", "name": "磨石台", "cost": 1300, "rewards": [["anvil_3", 1], ["fire_2", 25]]},
+		{"id": "whetstone", "name": "磨石台", "cost": 1300, "rewards": [["anvil_1", 1], ["fire_2", 25]]},
 		{"id": "obsidian", "name": "黑曜石矿", "cost": 1960, "rewards": [["gem_4", 1], ["tool_5", 1], ["chest_1", 1]]}
 	]},
 	{"id": "weave", "name": "编织棚", "line": "cloth", "parts": [
 		{"id": "grassstack", "name": "晒草垛", "cost": 1080, "rewards": [["cloth_2", 2], ["fire_2", 15]]},
-		{"id": "loomframe", "name": "编草架", "cost": 1280, "rewards": [["loom_3", 1], ["cloth_3", 1]]},
+		{"id": "loomframe", "name": "编草架", "cost": 1280, "rewards": [["loom_1", 1], ["cloth_3", 1]]},
 		{"id": "dyepot", "name": "染缸", "cost": 1290, "rewards": [["cloth_4", 1], ["armor_1", 2]]},
 		{"id": "clothesline", "name": "晾衣绳", "cost": 1450, "rewards": [["cloth_5", 1], ["fire_2", 25]]},
-		{"id": "hidetent", "name": "兽皮帐篷", "cost": 2860, "rewards": [["loom_3", 1], ["armor_3", 1]]},
+		{"id": "hidetent", "name": "兽皮帐篷", "cost": 2860, "rewards": [["loom_1", 1], ["armor_3", 1]]},
 		{"id": "featherpole", "name": "羽毛幡", "cost": 2990, "rewards": [["cloth_7", 1], ["armor_4", 1], ["chest_1", 1]]}
 	]},
 	{"id": "hunt", "name": "猎人营", "line": "hunt", "parts": [
 		{"id": "spears", "name": "长矛架", "cost": 3840, "rewards": [["beast_1", 2], ["bird_1", 1]]},
-		{"id": "snare", "name": "绳套陷阱", "cost": 3900, "rewards": [["trap_3", 1], ["fire_2", 20]]},
+		{"id": "snare", "name": "绳套陷阱", "cost": 3900, "rewards": [["trap_1", 1], ["fire_2", 20]]},
 		{"id": "meatrack", "name": "晾肉架", "cost": 3920, "rewards": [["beast_2", 1], ["bird_1", 1]]},
 		{"id": "hidedry", "name": "晒皮框", "cost": 4010, "rewards": [["beast_3", 1], ["fire_2", 30]]},
-		{"id": "hunttent", "name": "猎人帐", "cost": 5010, "rewards": [["trap_3", 1], ["bird_2", 1]]},
+		{"id": "hunttent", "name": "猎人帐", "cost": 5010, "rewards": [["trap_1", 1], ["bird_2", 1]]},
 		{"id": "skullgate", "name": "猛犸骨门", "cost": 5050, "rewards": [["beast_4", 1], ["bird_4", 1], ["chest_1", 1]]}
 	]},
 	{"id": "cook", "name": "火塘灶", "line": "fire", "parts": [

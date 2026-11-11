@@ -43,7 +43,7 @@ static func drop_kind(cells: Array, a: int, b: int, next_id: Callable) -> String
 	var cb: Dictionary = cells[b]
 	var id := str(ca.get("id", ""))
 	if id == "" or int(ca.get("lock", 0)) != 0 or int(cb.get("lock", 0)) >= 2: return ""
-	if id == str(cb.get("id", "")) and str(next_id.call(id)) != "": return "merge"
+	if id == str(cb.get("id", "")) and str(next_id.call(id)) != "" and not ca.has("chest") and not cb.has("chest"): return "merge"
 	if int(cb.get("lock", 0)) != 0: return ""
 	return "move" if str(cb.get("id", "")) == "" else "swap"
 

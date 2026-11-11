@@ -41,7 +41,7 @@ func _run() -> void:
 	g.board[21] = {"id": "fruit_8", "lock": 3, "bubble": {"uid": "shot", "item": "fruit_8", "expires": g.now() + 47, "price": D.bubble_price("fruit_8")}}
 	for k in [30, 37, 44]: g.board[k]["id"] = "fruit_2"
 	for k in g.board.size():
-		if int(g.board[k]["lock"]) != 2 and str(g.board[k]["id"]) != "": g.discover(str(g.board[k]["id"]))
+		if int(g.board[k]["lock"]) != 2 and str(g.board[k]["id"]) != "": g.rules.board.discover(str(g.board[k]["id"]))
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	await create_timer(0.5).timeout

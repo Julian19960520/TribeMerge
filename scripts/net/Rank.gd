@@ -35,7 +35,6 @@ func _ready() -> void:
 	var r: Dictionary = Data.RULES
 	url = str(r.get("rank_server", DEFAULT_URL)).strip_edges().trim_suffix("/")
 	top_n = clampi(int(r.get("rank_top", 50)), 1, 200)
-	_ensure_player_id()
 	_load()
 	G.changed.connect(_check)
 	_check()
@@ -48,12 +47,6 @@ func _process(delta: float) -> void:
 	_retry_t -= delta
 	if _retry_t < 0.0:
 		submit()
-
-## 老存档的默认 id 是 TRB00000000（所有人一样），换成随机的写回存档
-func _ensure_player_id() -> void:
-	if G.player_id == "" or G.player_id == "TRB00000000":
-		G.player_id = "TRB" + str(G.rng.randi_range(10000000, 99999999))
-		G.dirty()
 
 # ---------------------------------------------------------------- 进度
 
@@ -123,7 +116,7 @@ func set_nick(s: String) -> void:
 
 ## 上传当前进度。上一笔还没回来就排队，回来后再传一次。
 func submit() -> void:
-	if is_instance_valid(get_node_or_null("/root/Replay")) and Replay.active: return
+	if not Cloud.can_talk(): return
 	_retry_t = -1.0
 	if _sending:
 		_again = true

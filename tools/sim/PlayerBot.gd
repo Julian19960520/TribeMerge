@@ -37,6 +37,7 @@ var in_session := true
 var ph_events: Array = []
 var ph_state: Dictionary = {}
 var pass_season_seen := ""
+var _simulation_ready := false
 
 func run() -> int:
 	var config_path := "res://tools/sim/config.json"
@@ -70,6 +71,7 @@ func run() -> int:
 	for conn in G.changed.get_connections():
 		if conn.callable.get_object() == Rank: G.changed.disconnect(conn.callable)
 	G.orders_changed.connect(func(): target_dirty=true)
+	Replay.set_process(false)
 	main_limit=int(cfg.get("main_story_max_level",0))
 	if main_limit<=0 and not Data.STORY.is_empty(): main_limit=int(Data.STORY.keys().max())
 	wall_start = Time.get_ticks_msec()
@@ -141,8 +143,9 @@ func snap() -> Dictionary:
 	for v in G.builds.values(): parts += int(v)
 	var moon := 0
 	var c := MergeEvent.current()
-	if MergeEvent.available(c): moon = MergeEvent.progress(c, MergeEvent.state(c))
-	var state: Dictionary={"level": G.level, "xp": G.xp, "energy": G.energy, "coins": G.shells, "gems": G.amber, "empty": G.empty_count(), "storage": G.inv.size(), "stash": G.stash.size(), "parts": parts, "moon": moon, "cards": G.cards_total(), "duel_wins": int(DuelRace.state()["wins"]), "orders": G.orders.size()}
+	var activity := MergeEvent.state(c) if MergeEvent.available(c) else {}
+	if not activity.is_empty(): moon = MergeEvent.progress(c, activity)
+	var state: Dictionary={"level": G.level, "xp": G.xp, "energy": G.energy, "coins": G.shells, "gems": G.amber, "empty": G.rules.board.empty_count(), "storage": G.inv.size(), "stash": G.stash.size(), "parts": parts, "moon": moon, "cards": G.rules.progression.cards_total(), "duel_wins": int(DuelRace.state()["wins"]), "orders": G.orders.size()}
 	state.merge(production_line_totals())
 	state.merge(production_line_levels())
 	state.merge({"sand":G.rush,"amber_earned":int(resource_earned.get("amber",0)),"sand_earned":int(resource_earned.get("sand",0))})
@@ -282,25 +285,17 @@ func observe_level() -> void:
 
 func tick(seconds: float, mode: String = "active") -> void:
 	if not lv_acc.is_empty():
-		# 体力满着的那段时间，自然恢复被浪费
-		var wasted:=maxf(0,seconds-float(G.energy_full_left()))/G.REGEN_SEC
-		lv_acc["energy_wasted"]=int(lv_acc["energy_wasted"])+int(wasted)
-		lv_acc[mode+"_sec"]=float(lv_acc[mode+"_sec"])+seconds
-	var energy_before:=G.energy
+		var wasted := maxf(0, seconds - float(G.rules.clock.energy_full_left())) / G.REGEN_SEC
+		lv_acc["energy_wasted"] = int(lv_acc["energy_wasted"]) + int(wasted)
+		lv_acc[mode + "_sec"] = float(lv_acc[mode + "_sec"]) + seconds
+	var energy_before := G.energy
+	var cooked_before := G.cooked_pop.size()
 	G.simulation_time += seconds
-	G._regen()
-	regen_pending+=maxi(0,G.energy-energy_before)
-	var cooked_before:=G.cooked_pop.size()
-	G._tick_cooks()
-	for k in range(cooked_before,G.cooked_pop.size()):
-		var at:=int(G.cooked_pop[k])
-		record("craft","制作完成 · "+Data.name_of(G.cell_id(at)),"计时结束",{"dish":G.cell_id(at),"cell":at})
-	G._tick_bubbles()
-	G._check_day()
-	SevenDay.login()
-	if bool(cfg.get("play_events", true)):
-		LocalRace.tick()
-		DuelRace.tick()
+	command("tick")
+	regen_pending += maxi(0, G.energy - energy_before)
+	for k in range(cooked_before, G.cooked_pop.size()):
+		var at := int(G.cooked_pop[k])
+		record("craft", "制作完成 · " + Data.name_of(G.rules.board.cell_id(at)), "计时结束", {"dish": G.rules.board.cell_id(at), "cell": at})
 
 func play() -> void:
 	start = float(Time.get_unix_time_from_datetime_string(str(cfg["start_utc"])))
@@ -308,9 +303,23 @@ func play() -> void:
 	G.rng.seed = int(cfg["seed"]) + run_id - 1
 	seed(int(cfg["seed"]) + run_id - 1)
 	resource_tracking=false
+	Replay.active = true
+	Replay.worker = true
+	Replay.authorized = true
+	Replay.executing = true
+	Replay.meta = {"allow_gm": false}
+	Replay.seq = 0
+	Replay.base = 0
+	Replay.clock = int(start)
+	Replay.pending = []
+	Replay.inflight = {}
+	G.replay_meta = Replay.meta
 	G.new_game()
+	Replay.advance()
+	Replay.executing = false
+	G.clear_presentations()
+	_simulation_ready = true
 	begin_resource_tracking()
-	SevenDay.login()
 	claimed_levels = {}
 	ph_state = {}
 	pass_season_seen = ""
@@ -350,19 +359,19 @@ func play() -> void:
 		if not in_session:
 			in_session=true
 			lv_acc["sessions"]=int(lv_acc["sessions"])+1
-		if await upgrade_tribe(): pass
-		elif await rewards(): pass
+		if upgrade_tribe(): pass
+		elif rewards(): pass
 		elif finish_tutorial(): pass
 		elif submit_orders(): pass
 		else:
 			choose_target()
 			if retrieve(): pass
 			elif merge_main(): pass
-			elif await events_step(false): pass
+			elif events_step(false): pass
 			elif produce(): pass
 			# 活动玩法（月石合成、占位活动抽奖）排在主棋盘生产之后：没体力、没事干时用来填空档
-			elif await events_step(true): pass
-			elif await make_room(): pass
+			elif events_step(true): pass
+			elif make_room(): pass
 			else:
 				var previous_target:=str(target)
 				target_dirty=true
@@ -392,11 +401,13 @@ func valid_state() -> bool:
 	return G.energy >= 0 and G.shells >= 0 and G.amber >= 0 and G.inv.size() <= G.inv_cap and G.board.size() == G.COLS*G.ROWS and G.orders.size() <= Data.order_total(G.level)
 
 func grant(rw: Array) -> void:
-	Rewards.grant(rw, Callable(), false)
+	# Placeholder-event budgets are intentionally simulator-only.
+	Rewards.settle(rw)
+	track_resources()
 
 func reward_summary(rewards: Array) -> String:
 	var parts:=PackedStringArray()
-	var labels:={"energy":"体力","shell":"贝币","amber":"琥珀","sand":"沙漏","xp":"经验","token":"祭典积分"}
+	var labels:={"energy":"体力","shell":"不拿拿","amber":"琥珀","sand":"沙漏","xp":"经验","token":"祭典积分"}
 	for rw in rewards:
 		if not rw is Array or rw.size()<2: continue
 		var id:=str(rw[0])
@@ -415,41 +426,43 @@ func rewards() -> bool:
 	for lv in range(2, G.level+1):
 		if not claimed_levels.has(lv):
 			claimed_levels[lv] = true
-			var rw: Array=await G.claim_level(lv)
-			grant(rw)
+			var result := command("level", {"level": lv})
+			var rw: Array = result.get("rewards", [])
+			if result.has("error"): continue
 			record_reward("level", "领取 %d 级奖励" % lv, "达到等级，领取一次",{"level":lv,"rewards":rw.duplicate(true),"received":reward_summary(rw)})
 			return true
 	for id in G.discovered:
-		if G.book_prize(id):
-			var amount: int = await G.claim_book(id)
-			G.add_currency("energy", amount)
+		if G.rules.board.book_prize(id):
+			var result := command("book", {"id": id})
+			if result.has("error"): continue
+			var amount := int(result.get("energy", 0))
 			record_reward("book", "图鉴 · " + Data.name_of(id), "发现新物品", {"energy":amount})
 			return true
 	for day in SevenDay.config()["days"]:
 		for task in day["tasks"]:
 			if SevenDay.done(task) and not SevenDay.got(task):
-				await SevenDay.claim(str(task["id"]))
+				command("seven", {"id": str(task["id"]), "stage": false})
 				record_reward("seven_day_task", "七日任务奖励", "任务已完成", {"task":task})
 				return true
 	for stage in SevenDay.config()["milestones"]:
 		if SevenDay.stage_ready(stage):
-			await SevenDay.claim(str(stage["id"]),true)
+			command("seven", {"id": str(stage["id"]), "stage": true})
 			record_reward("seven_day_stage", "七日里程碑", "累计任务积分达标", {"stage":stage})
 			return true
 	if pass_season_seen != G.pass_season:
 		if pass_season_seen != "":
 			record("milestone","通行证换季","第 %s 季开始，积分与已领档位清零"%G.pass_season,{"season":G.pass_season})
 		pass_season_seen = G.pass_season
-	for lv in range(1,G.pass_reached()+1):
-		if not G.pass_got(false,lv):
-			var rw: Array = await G.claim_pass_free(lv)
+	for lv in range(1,G.rules.progression.pass_reached()+1):
+		if not G.rules.progression.pass_got(false,lv):
+			var result := command("pass", {"track": "free", "level": lv})
+			var rw: Array = result.get("rewards", [])
 			if not rw.is_empty():
-				grant(rw)
 				record_reward("pass", "通行证免费奖励", "已达到第 %d 档"%lv)
 				return true
 	for deal in Data.daily_deals(G.level):
 		if int(deal.get("price",0)) == 0 and str(deal.get("mode","")) != "ad" and DailyShop.can_claim(deal):
-			var claimed: Dictionary=await DailyShop.claim(str(deal["key"]))
+			var claimed := command("daily", {"key": str(deal["key"])})
 			if not claimed.get("ok",false): continue
 			record_reward("daily", "领取每日免费补给", "今日尚未领取", {"key":deal["key"]})
 			return true
@@ -457,25 +470,24 @@ func rewards() -> bool:
 		if int(G.board[i]["lock"]) != 0: continue
 		if G.board[i].has("rw"):
 			var rw: Array = G.board[i]["rw"]
-			G.board[i].erase("rw")
-			grant([rw])
+			var result := command("bubble_reward", {"cell": i})
+			if result.has("error"): continue
 			record_reward("land", "领取开地奖励", "覆盖已经揭开", {"cell":i,"rewards":rw})
 			return true
-		var id: String = G.cell_id(i)
-		if id == "" or G.cooking(i): continue
+		var id: String = G.rules.board.cell_id(i)
+		if id == "" or G.rules.orders.cooking(i): continue
 		var kind := Data.type_of(id)
 		if kind in Rewards.RESOURCE_TYPES and Data.value_of(id)>0:
 			# Prefer merging resources; collect when needed, full, or at maximum tier.
 			# 沙漏：有制作在计时就收，攒着加速
-			var urgent: bool = (kind=="energy" and G.energy < 10) or G.empty_count()<2 or Data.next_id(id)=="" or (kind=="sand" and cooking_any())
+			var urgent: bool = (kind=="energy" and G.energy < 10) or G.rules.board.empty_count()<2 or Data.next_id(id)=="" or (kind=="sand" and cooking_any())
 			if urgent:
-				G.board[i]["id"] = ""
-				G.add_currency(kind,Data.value_of(id))
+				var result := command("tap", {"cell": i})
+				if result.has("error"): continue
 				record_reward("resource_"+kind, "收取 "+Data.name_of(id), "需要资源或腾出棋盘格子", {"item":id})
 				return true
 		if kind == "pack" and G.level>=Data.CARD_LEVEL:
-			G.board[i]["id"] = ""
-			await G.open_pack()
+			command("pack", {"id": id, "cell": i})
 			record_reward("cards", "打开典藏卡包", "典藏卡已解锁")
 			return true
 		if not ChoiceChest.definition(id).is_empty():
@@ -483,32 +495,30 @@ func rewards() -> bool:
 			var option := 0
 			for j in choices.size():
 				if useful(str(choices[j])): option=j; break
-			await ChoiceChest.choose(i,id,option)
+			command("choice", {"cell": i, "option": option})
 			record_reward("choice_chest", "打开自选宝箱", "优先选择当前订单产线", {"item":choices[option]})
 			return true
 		if kind == "chest":
-			var got: Array = await G.open_chest(id)
-			G.board[i]["id"] = ""
-			Rewards.grant(Rewards.items(got),Callable(),false,true,{"board_origin":i})
-			record_reward("chest", "打开宝箱", "获取资源与生产器", {"items":got})
+			var drop := command("tap", {"cell": i})
+			if drop.has("error"): continue
+			record_reward("chest", "领取宝箱物品", "每次取出一件，领完宝箱消失", {"items":[drop["id"]]})
 			return true
-	var si: int = G.stash_claim_index()
+	var si: int = G.rules.board.stash_claim_index()
 	if si>=0:
 		var id := str(G.stash[si])
 		var k := Data.type_of(id)
 		if k == "pack":
-			G.stash.remove_at(si)
-			await G.open_pack()
+			command("pack", {"id": id, "stash": si})
 			record_reward("cards", "领取暂存卡包", "8 级后开启")
 			return true
 		if k in Rewards.RESOURCE_TYPES and Data.value_of(id)>0:
-			G.stash.remove_at(si)
-			grant([[id,1,"item"]])
+			var result := command("stash", {"index": si})
+			if result.has("error"): return false
 			record_reward("stash", "收取暂存资源", "无需占用棋盘", {"item":id})
 			return true
-		if G.empty_count()>1:
-			G.stash.remove_at(si)
-			G.place(G.find_empty_near(31),id)
+		if G.rules.board.empty_count()>1:
+			var result := command("stash", {"index": si})
+			if result.has("error"): return false
 			record("stash", "取出 "+Data.name_of(id), "棋盘有空位", {"item":id})
 			return true
 	return false
@@ -519,78 +529,65 @@ func submit_orders() -> bool:
 		var o: Dictionary = G.orders[i]
 		if main_finished and bool(o.get("story",false)): continue
 		if target_story and not bool(o.get("story",false)) and (o.get("items",[]) as Array).any(func(id):return useful(str(id))): continue
-		if G.order_ready(o):
+		if G.rules.orders.order_ready(o):
 			var rw: Dictionary = o["rw"].duplicate(true)
 			var detail := o.duplicate(true)
-			G.complete_order(i)
+			var completed := command("order", {"cell": i})
+			if completed.has("error"): continue
 			ph_gain("per_order",1)
 			if int(rw.get("xp",0))>0: ph_gain("per_xp_order",1)
-			if bool(cfg.get("play_events",true)): LocalRace.order(detail["items"])
-			var rws := []
-			for p in [["shell","shell_2"],["xp","xp_1"],["token","token_1"]]:
-				if int(rw.get(p[0],0))>0: rws.append([p[1],int(rw[p[0]])])
-			if rw.get("rewards") is Array: rws.append_array(Rewards.items(rw["rewards"]))
-			elif int(rw.get("pack",0))>0: rws.append(["pack_1",int(rw["pack"])])
-			grant(rws)
 			record("order", ("主线" if detail.get("story",false) else "副线")+"订单完成", "所需物品已齐全",detail)
 			last_order_time = G.now()-start
 			warned_stall = false
 			return true
-		if G.craft_mats_ready(o):
-			G.begin_craft(i)
+		if G.rules.orders.craft_mats_ready(o):
+			var made := command("craft", {"cell": i})
+			if made.has("error"): continue
 			record("craft", "开始制作 · "+Data.name_of(str(o.get("dish",""))), "材料齐全，等待制作完成",o.duplicate(true))
 			return true
 	return rush_crafts()
 
 func cooking_any() -> bool:
 	for i in G.board.size():
-		if G.cooking(i): return true
+		if G.rules.orders.cooking(i): return true
 	return false
 
 ## 沙漏够把一格制作直接做完就用（剩不到 1 份时间的不浪费沙漏）
 func rush_crafts() -> bool:
 	if G.rush<1: return false
 	for i in G.board.size():
-		if not G.cooking(i) or G.cook_left(i)<=int(cfg.get("rush_min_left",60)): continue
-		var need: int=G.rush_need(i)
+		if not G.rules.orders.cooking(i) or G.rules.orders.cook_left(i)<=int(cfg.get("rush_min_left",60)): continue
+		var need: int=G.rules.orders.rush_need(i)
 		if need>G.rush: continue
 		var dish:=str(G.board[i]["ck"]["dish"])
-		var left:=G.cook_left(i)
-		var used: int=G.rush_cook(i)
+		var left:=G.rules.orders.cook_left(i)
+		var used := int(command("rush", {"cell": i}).get("used", 0))
 		record("craft","沙漏加速 · "+Data.name_of(dish),"沙漏够直接做完",{"dish":dish,"sand":used,"saved_sec":left,"sand_left":G.rush})
 		return true
 	return false
 
 func upgrade_tribe() -> bool:
-	var b: String = G.next_build_id()
-	if b!="" and G.shells>=G.build_cost(b):
-		var cost: int=G.build_cost(b)
-		var result: Dictionary = await G.do_build(b)
-		if result.is_empty(): return false
-		grant(result.get("rewards",[]))
-		record("build", "升级部落 · "+str(Data.build_def(b).get("name",b)), "贝币足够，独立推进部落", {"building":b,"stage":G.builds[b],"cost":cost,"rewards":result.get("rewards",[])})
+	var b: String = G.rules.progression.next_build_id()
+	if b!="" and G.shells>=G.rules.progression.build_cost(b):
+		var cost: int=G.rules.progression.build_cost(b)
+		var result := command("build", {"id": b})
+		if result.is_empty() or result.has("error"): return false
+		record("build", "升级部落 · "+str(Data.build_def(b).get("name",b)), "不拿拿足够，独立推进部落", {"building":b,"stage":G.builds[b],"cost":cost,"rewards":result.get("rewards",[])})
 		return true
 	return false
 
 func finish_tutorial() -> bool:
-	if G.tutorial_on and int(G.builds.get("fire",0))>=2:
-		var pending := false
-		for o in G.orders:
-			if o.has("tutorial"): pending=true
-		if not pending:
-			G.tutorial_on=false
-			G.seen_tutorial=true
-			target_dirty=true
-			var guide:=Guide.new()
-			guide._ensure_seed_order()
-			guide._grant_normal_orders()
-			guide.free()
-			record("milestone","新手阶段完成","教学订单与首次部落升级完成，进入正式订单")
-			return true
-	return false
+	if not G.tutorial_on or int(G.builds.get("fire", 0)) < 2: return false
+	for order in G.orders:
+		if order.has("tutorial") or "seed_1" in order.get("items", []): return false
+	var result := command("tutorial_finish")
+	if result.has("error"): return false
+	target_dirty = true
+	record("milestone", "新手阶段完成", "教学订单与首次部落升级完成，进入正式订单")
+	return true
 
 func free_item(i: int) -> bool:
-	return G.is_free(i) and G.cell_id(i)!="" and not G.cooking(i)
+	return G.rules.board.is_free(i) and G.rules.board.cell_id(i)!="" and not G.rules.orders.cooking(i)
 
 func choose_target() -> void:
 	if not target_dirty and action_count%50!=0: return
@@ -601,18 +598,18 @@ func choose_target() -> void:
 	target_story=false
 	for o in G.orders:
 		if main_finished and bool(o.get("story",false)): continue
-		var ids: Array = G._order_need_ids(o)
+		var ids: Array = G.rules.orders._order_need_ids(o)
 		if ids.is_empty(): continue
 		var cost := 0.0
 		var reachable := true
 		for raw in ids:
 			var id := str(raw)
-			if G.board_has(id)>=0 or G.inv.has(id): continue
+			if G.rules.orders.board_has(id)>=0 or G.inv.has(id): continue
 			var ch := Data.chain(id)
 			var prob := production_rate(ch)
 			var mass := 0.0
 			for j in G.board.size():
-				if free_item(j) and Data.chain(G.cell_id(j))==ch and Data.lv(G.cell_id(j))<Data.lv(id): mass+=pow(2,Data.lv(G.cell_id(j))-1)
+				if free_item(j) and Data.chain(G.rules.board.cell_id(j))==ch and Data.lv(G.rules.board.cell_id(j))<Data.lv(id): mass+=pow(2,Data.lv(G.rules.board.cell_id(j))-1)
 			if prob<=0 and mass<pow(2,Data.lv(id)-1): reachable=false
 			cost += maxf(0,pow(2,Data.lv(id)-1)-mass)/maxf(prob,0.01)
 		if bool(o.get("story",false)) and bool(cfg.get("story_first",true)): cost-=100000
@@ -638,7 +635,7 @@ func production_rate(ch: String) -> float:
 	var rate := 0.0
 	for i in G.board.size():
 		if not free_item(i): continue
-		var st := Data.gen_stats(G.cell_id(i))
+		var st := Data.gen_stats(G.rules.board.cell_id(i))
 		var r := 0.0
 		for d in st.get("drops",[]):
 			if Data.chain(str(d["id"]))==ch: r+=float(d["p"])*pow(2,Data.lv(str(d["id"]))-1)/100.0
@@ -646,17 +643,17 @@ func production_rate(ch: String) -> float:
 	return rate
 
 func retrieve() -> bool:
-	if G.empty_count()<1: return false
+	if G.rules.board.empty_count()<1: return false
 	for j in G.inv.size():
 		var id := str(G.inv[j])
 		var spare := 0
 		for cell in G.board.size():
-			if free_item(cell) and G.cell_id(cell)==id: spare+=1
+			if free_item(cell) and G.rules.board.cell_id(cell)==id: spare+=1
 		spare-=target.count(id)
 		var can_merge := spare>0 and Data.next_id(id)!=""
-		if (target.has(id) and G.board_has(id)<0) or can_merge:
-			G.inv.remove_at(j)
-			G.place(G.find_empty_near(31),id)
+		if (target.has(id) and G.rules.orders.board_has(id)<0) or can_merge:
+			var result := command("inventory", {"index": j})
+			if result.has("error"): continue
 			record("storage","取回 "+Data.name_of(id),"订单需要或可继续合成",{"item":id})
 			return true
 	return false
@@ -669,13 +666,13 @@ func merge_main() -> bool:
 	for id in target: reserve[id]=int(reserve.get(id,0))+1
 	for i in G.board.size():
 		if not free_item(i): continue
-		var id: String=G.cell_id(i)
+		var id: String=G.rules.board.cell_id(i)
 		if Data.next_id(id)=="": continue
 		var available := 0
 		for j in G.board.size():
-			if free_item(j) and G.cell_id(j)==id: available+=1
+			if free_item(j) and G.rules.board.cell_id(j)==id: available+=1
 		for j in G.board.size():
-			if i==j or G.cell_id(j)!=id or int(G.board[j]["lock"])>=2 or G.cooking(j): continue
+			if i==j or G.rules.board.cell_id(j)!=id or int(G.board[j]["lock"])>=2 or G.rules.orders.cooking(j): continue
 			var locked := int(G.board[j]["lock"])==1
 			if not locked and available-int(reserve.get(id,0))<2: continue
 			var score := 0.0
@@ -687,65 +684,64 @@ func merge_main() -> bool:
 			score-=Data.lv(id)
 			if score>best: best=score; a=i; b=j
 	if a<0: return false
-	var id: String=G.cell_id(a)
+	var id: String=G.rules.board.cell_id(a)
 	var locked := int(G.board[b]["lock"])==1
-	var result: String=G.try_drop(a,b)
+	var result := str(command("drop", {"from": a, "to": b}).get("kind", ""))
 	if result!="merge": return false
-	record("merge","合成 "+Data.name_of(G.cell_id(b)),"解锁藤蔓" if locked else "满足订单、升级生产器或整理棋盘",{"from":a,"to":b,"item":id,"result":G.cell_id(b),"revealed":G.opened.duplicate(),"unlock_recorded":locked})
-	if locked: record_unlock("main",b,id,G.cell_id(b),G.COLS)
+	record("merge","合成 "+Data.name_of(G.rules.board.cell_id(b)),"解锁藤蔓" if locked else "满足订单、升级生产器或整理棋盘",{"from":a,"to":b,"item":id,"result":G.rules.board.cell_id(b),"revealed":G.opened.duplicate(),"unlock_recorded":locked})
+	if locked: record_unlock("main",b,id,G.rules.board.cell_id(b),G.COLS)
 	return true
 
 ## 火种罐这类体力生产器点击不耗体力：有次数、棋盘留得出空位就点
 func tap_energy_gen() -> bool:
-	if G.empty_count()<2: return false
+	if G.rules.board.empty_count() < 2: return false
 	for i in G.board.size():
-		if not free_item(i) or Data.type_of(G.cell_id(i))!="egen" or G.gen_left(i)==0: continue
-		var gen: String=G.cell_id(i)
-		G.gen_use(i)
-		var id: String=G.roll_produce(gen)
-		G.place(G.find_empty_near(i),id)
-		record("egen","点火种罐 · "+Data.name_of(id),"体力生产器不耗体力",{"generator":gen,"item":id,"left":G.gen_left(i)})
+		if not free_item(i) or Data.type_of(G.rules.board.cell_id(i)) != "egen" or G.rules.board.gen_left(i) == 0: continue
+		var gen := G.rules.board.cell_id(i)
+		var result := command("tap", {"cell": i})
+		if result.has("error"): continue
+		var id := str(result.get("id", ""))
+		record("egen", "点火种罐 · " + Data.name_of(id), "体力生产器不耗体力", {"generator": gen, "item": id, "left": G.rules.board.gen_left(i)})
 		return true
 	return false
 
 func produce() -> bool:
 	if tap_energy_gen(): return true
-	if G.energy<1 or G.empty_count()<1: return false
+	if G.energy<1 or G.rules.board.empty_count()<1: return false
 	var missing := {}
 	var used: Array=[]
 	for raw in target:
 		var id:=str(raw)
-		var cell: int=G.board_has(id,used)
+		var cell: int=G.rules.orders.board_has(id,used)
 		if cell>=0: used.append(cell)
 		else: missing[Data.chain(id)]=true
 	var best := 0.0
 	var chosen := -1
 	for i in G.board.size():
 		if not free_item(i): continue
-		var st:=Data.gen_stats(G.cell_id(i))
-		if st.is_empty() or G.gen_left(i)==0: continue
+		var st:=Data.gen_stats(G.rules.board.cell_id(i))
+		if st.is_empty() or G.rules.board.gen_left(i)==0: continue
 		var score:=0.0
 		for d in st.get("drops",[]):
 			if missing.has(Data.chain(str(d["id"]))): score+=float(d["p"])*pow(2,Data.lv(str(d["id"]))-1)
 		if score>best: best=score; chosen=i
 	if chosen<0: return false
-	var id: String=G.roll_produce(G.cell_id(chosen))
-	G.spend("energy",1)
-	ph_gain("per_energy",1)
-	G.gen_use(chosen)
-	G.place(G.find_empty_near(chosen),id)
-	record("produce","生产 "+Data.name_of(id),target_name,{"generator":G.cell_id(chosen),"item":id})
+	var result := command("tap", {"cell": chosen})
+	if result.has("error"): return false
+	var id := str(result.get("id", ""))
+	ph_gain("per_energy", G.rules.board.gen_cost())
+	record("produce", "生产 " + Data.name_of(id), target_name, {"generator": G.rules.board.cell_id(chosen), "item": id})
 	return true
 
 func make_room() -> bool:
-	if G.empty_count()>1: return false
+	if G.rules.board.empty_count()>1: return false
 	var best_store:=-1
 	var store_value:=-1.0
 	var worst:=-1
 	var worst_value:=INF
 	for i in G.board.size():
 		if not free_item(i): continue
-		var id: String=G.cell_id(i)
+		var id: String=G.rules.board.cell_id(i)
 		var kind:=Data.type_of(id)
 		if target.has(id): continue
 		var value:=OrderRoll.flames(id)
@@ -755,22 +751,23 @@ func make_room() -> bool:
 		if kind=="item" and not useful(id) and Data.lv(id)<=int(cfg.get("delete_max_level",10)) and value<worst_value:
 			worst=i; worst_value=value
 	if best_store>=0 and bool(cfg.get("use_storage",true)):
-		if G.inv.size()>=G.inv_cap and bool(cfg.get("expand_storage",false)) and G.inv_cap<int(cfg.get("max_storage",20)) and G.amber>=G.storage_price():
-			await G.expand_storage()
+		if G.inv.size()>=G.inv_cap and bool(cfg.get("expand_storage",false)) and G.inv_cap<int(cfg.get("max_storage",20)) and G.amber>=G.rules.progression.storage_price():
+			command("expand")
 			record("storage","扩建储物洞","保护高价值物品，使用配置允许的琥珀预算")
 			return true
 		if G.inv.size()<G.inv_cap:
-			var id: String=G.cell_id(best_store)
+			var id: String=G.rules.board.cell_id(best_store)
 			# Active generators carry cooldown state; leave them on board.
 			if not G.board[best_store].has("gm"):
-				G.inv.append(id)
-				G.board[best_store]["id"]=""
+				var result := command("store", {"cell": best_store})
+				if result.has("error"): return false
 				record("storage","存入 "+Data.name_of(id),"棋盘拥挤，保留当前暂时不用的高价值物品",{"item":id})
 				return true
 	if worst>=0:
-		var id: String=G.cell_id(worst)
-		G.board[worst]["id"]=""
-		G.add_currency("shell",Data.value_of(id))
+		var id: String=G.rules.board.cell_id(worst)
+		var result := command("discard", {"cell": worst})
+		if result.has("error"): return false
+		command("discard_finish")
 		record("delete","丢弃 "+Data.name_of(id),"储物洞无法再收纳，清理非目标产线低价值物品",{"item":id,"refund":Data.value_of(id)})
 		return true
 	return false
@@ -839,27 +836,28 @@ func events_step(play: bool) -> bool:
 		var match_state: Dictionary=duel["match"]
 		var milestones:=DuelRace.ready_milestones()
 		if not milestones.is_empty():
-			await DuelRace.act("milestone",int(milestones[0]))
+			command("duel", {"action": "milestone", "milestone": int(milestones[0])})
 			record_reward("duel_milestone","双人竞速累计胜利奖励","达到胜场里程碑",{"wins":milestones[0]})
 			return true
 		if not match_state.is_empty() and match_state["status"]!="running" and not match_state.get("claimed",false):
 			var result: Dictionary=match_state.duplicate(true)
-			await DuelRace.act("claim")
+			command("duel", {"action": "claim"})
 			record_reward("duel_match","双人竞速胜利" if result["status"]=="won" else "双人竞速落败","先达到配置目标积分的一方获胜",{"match":result,"wins":duel["wins"]})
 			return true
 		if match_state.is_empty() or match_state.get("claimed",false):
-			await DuelRace.act("join")
+			command("duel", {"action": "join"})
 			record("event","参加双人竞速","完成主棋盘订单获得积分")
 			return true
 	var race:=LocalRace.state()
 	if not race.get("results",[]).is_empty():
 		var r: Dictionary=race["results"][0]
-		var result: Dictionary=LocalRace.claim(str(r["group"]["id"]))
-		grant(result.get("rewards",[]))
+		var result := command("race_claim", {"id": str(r["group"]["id"])})
+		if result.has("error"): return false
 		record_reward("banana","香蕉竞速结算","比赛结束，领取排名奖励",{"place":r["me"].get("place",0)})
 		return true
 	if race.get("current",{}).is_empty() and G.level>=int(LocalRace.rules().get("unlock_level",12)):
-		LocalRace.join()
+		var result := command("race_join")
+		if result.has("error"): return false
 		record("event","参加香蕉竞速","已解锁，主棋盘订单同步增加香蕉")
 		return true
 	var c:=MergeEvent.current()
@@ -867,7 +865,7 @@ func events_step(play: bool) -> bool:
 	var s:=MergeEvent.state(c)
 	if bool(s["claimed"]): return false
 	if not MergeEvent.claimable(c,s).is_empty():
-		var result: Dictionary=await MergeEvent.act(c,"claim")
+		var result := command("activity", {"season": c["key"], "action": "claim"})
 		record_reward("moon","月石里程碑奖励","解锁格子数达到阶段目标",result)
 		return true
 	if not play: return false
@@ -889,36 +887,36 @@ func events_step(play: bool) -> bool:
 	if a>=0:
 		var locked:=int(cells[b]["lock"])==1
 		var item:=str(cells[b]["id"])
-		var result: Dictionary=await MergeEvent.act(c,"drop",{"from":a,"to":b})
+		var result := command("activity", {"season": c["key"], "action": "drop", "from": a, "to": b})
 		record("event","月石合成","优先合并锁定遗物，并揭开相邻覆盖",result)
 		if locked and not result.has("error"):
 			var after: Dictionary=MergeEvent.state(c)
 			if int(after["cells"][b]["lock"])==0: record_unlock("moon",b,item,str(after["cells"][b]["id"]),int(c["board"]["cols"]))
 		return true
 	if int(s["points"])>=int(c["points"]["spawn_cost"]):
-		var result: Dictionary=await MergeEvent.act(c,"spawn")
+		var result := command("activity", {"season": c["key"], "action": "spawn"})
 		if not result.has("error"):
 			record("event","月石活动生产","使用订单获得的活动积分",result)
 			return true
 		# Recycle a completed highest-tier relic only when the event board is full.
 		for i in range(lo,hi):
 			if int(cells[i]["lock"])==0 and str(cells[i]["id"])!="" and MergeEvent.next_id(c,str(cells[i]["id"]))=="":
-				await MergeEvent.act(c,"recycle",{"cell":i})
+				command("activity", {"season": c["key"], "action": "recycle", "cell": i})
 				record("event","整理月石棋盘","满级遗物无法继续合并，腾出空间")
 				return true
 	return false
 
 func wait_next() -> void:
-	var seconds:=float(G.secs_to_midnight())
+	var seconds:=float(G.rules.clock.secs_to_midnight())
 	var why:="等待次日免费补给"
 	if G.energy<1:
-		var regen:=float(G.energy_left()+G.REGEN_SEC*(clampi(int(cfg.get("wait_energy_batch",10)),1,G.MAX_ENERGY)-1))
+		var regen:=float(G.rules.clock.energy_left()+G.REGEN_SEC*(clampi(int(cfg.get("wait_energy_batch",10)),1,G.MAX_ENERGY)-1))
 		if regen<seconds: seconds=regen; why="体力耗尽，等待恢复"
 	for i in G.board.size():
 		var wait:=0
-		if G.cooking(i): wait=G.cook_left(i)
-		elif free_item(i) and not Data.gen_stats(G.cell_id(i)).is_empty(): wait=G.gen_wait(i)
-		elif G.is_merge_bubble(i): wait=G.bubble_left(i)
+		if G.rules.orders.cooking(i): wait=G.rules.orders.cook_left(i)
+		elif free_item(i) and not Data.gen_stats(G.rules.board.cell_id(i)).is_empty(): wait=G.rules.board.gen_wait(i)
+		elif G.rules.board.is_merge_bubble(i): wait=G.rules.board.bubble_left(i)
 		if wait>0 and wait<seconds: seconds=wait; why="等待制作、生产器冷却或气泡消失"
 	seconds=minf(maxf(seconds,1),float(cfg["cycle_days"])*86400-(G.now()-start))
 	# 真人没事干要等太久就下线；等体力这种算「卡体力」
@@ -939,7 +937,29 @@ func write_report() -> void:
 	var hashes:={}
 	for file in DirAccess.get_files_at("res://data"):
 		if file.ends_with(".json"): hashes[file]=FileAccess.get_sha256("res://data/"+file)
-	var report:={"schema":1,"config":cfg,"main_story_max_level":main_limit,"source_hashes":hashes,"production_counting":"level1_equivalent","resource_counting":"credited_gains_excluding_initial","production_lines":production_line_metrics(),"runs":summaries,"events":events,"wall_seconds":(Time.get_ticks_msec()-wall_start)/1000.0,"notes":["直接调用本地游戏规则；不访问线上账号。","各产线生产器折合一级份数：1 级计 1、2 级计 2、3 级计 4，之后每级翻倍（含低级部件），统计已解锁棋盘、储物洞和暂存区，不含锁定格及未购买气泡。","生产器最高等级统计当前已拥有的棋盘、储物洞和暂存区物品；琥珀、沙漏累计获得仅计本轮实际到账，排除初始资源，消耗不回减。","藤蔓解锁与触发合成记录在同一时间点，不额外消耗操作时间。","连续在线、零付费、跳过广告与引导手势；每个决策消耗配置的游戏内秒数。","时间快进会执行体力恢复、制作完成、跨日和活动结算。","到时长或动作上限即重开；不等同于通关。策略是可复现启发式，并非最优解。"]}
+	var report:={"schema":1,"config":cfg,"main_story_max_level":main_limit,"source_hashes":hashes,"production_counting":"level1_equivalent","resource_counting":"credited_gains_excluding_initial","production_lines":production_line_metrics(),"runs":summaries,"events":events,"wall_seconds":(Time.get_ticks_msec()-wall_start)/1000.0,"notes":["通过共享规则命令执行；不访问线上账号，不写入玩家日志。","各产线生产器折合一级份数：1 级计 1、2 级计 2、3 级计 4，之后每级翻倍（含低级部件），统计已解锁棋盘、储物洞和暂存区，不含锁定格及未购买气泡。","生产器最高等级统计当前已拥有的棋盘、储物洞和暂存区物品；琥珀、沙漏累计获得仅计本轮实际到账，排除初始资源，消耗不回减。","藤蔓解锁与触发合成记录在同一时间点，不额外消耗操作时间。","连续在线、零付费、跳过广告与引导手势；每个决策消耗配置的游戏内秒数。","时间快进会执行体力恢复、制作完成、跨日和活动结算。","到时长或动作上限即重开；不等同于通关。策略是可复现启发式，并非最优解。"]}
 	var f:=FileAccess.open(output,FileAccess.WRITE)
 	f.store_string(JSON.stringify(report))
 	f.close()
+
+func ensure_simulation() -> void:
+	if _simulation_ready: return
+	Replay.set_process(false)
+	Replay.active = true
+	Replay.worker = true
+	Replay.authorized = true
+	Replay.executing = false
+	Replay.meta = G.replay_meta
+	Replay.seq = int(Replay.meta.get("seq", 0))
+	Replay.clock = int(G.simulation_time) if G.simulation_time >= 0 else int(G.now())
+	Replay.pending = []
+	Replay.inflight = {}
+	_simulation_ready = true
+
+func command(name: String, args: Dictionary = {}) -> Dictionary:
+	ensure_simulation()
+	var result = Replay.perform(name, args)
+	track_resources()
+	if name in ["order", "craft", "rush", "build", "level", "tick", "tutorial_finish"]:
+		target_dirty = true
+	return result if result is Dictionary else {}

@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 from app import replay_wire as wire
-from app.api_replay import COMMANDS, SyncReq
+from app.replay_models import COMMANDS, SyncReq
 from app.config import REPO_DIR
 
 GODOT = os.environ.get('TRIBE_REPLAY_GODOT')
@@ -118,7 +118,7 @@ def test_bounded_gzip_and_malformed_wire(wire_samples):
             pass
 
 
-def test_binary_http_commit_retry_and_json_compatibility(player, monkeypatch, tmp_path):
+def test_binary_http_commit_retry_and_reject_json(player, monkeypatch, tmp_path):
     from test_replay import begin, worker, body, op
     s, d = begin(player, monkeypatch)
     ops = [op(1, d['replay_meta']['at'], 'drop', **{'from': 28, 'to': 29})]
@@ -131,7 +131,7 @@ def test_binary_http_commit_retry_and_json_compatibility(player, monkeypatch, tm
     ack = r.json()
     assert not ack['reset'] and ack['hash'] == expected['hash'] and 'data' not in ack
     assert player.c.post('/v2/sync', content=compressed, headers=headers).json() == ack
-    assert player.post('/v2/sync', req).json() == ack
+    assert player.c.post('/v2/sync', json=req, headers=player.h()).status_code == 415
     # Recovery still returns the confirmed snapshot.
     req['base'] = ack['version']; req['batch'] = 'ab' * 16; req['hash'] = '0' * 64
     req['ops'] = [op(2, d['replay_meta']['at'], 'drop', **{'from': 29, 'to': 28})]
@@ -149,14 +149,14 @@ def test_corrupt_http_payloads_are_bounded_before_replay(player):
     assert player.c.post('/v2/sync', content=b'TRP1', headers=headers).status_code == 415
 
 
-def test_trp1_compatibility_vector(tmp_path):
-    # This fixed vector detects accidental changes to persistent opcode numbers
+def test_trp1_known_vector(tmp_path):
+    # This fixed vector detects accidental changes to current opcode numbers
     # or field order even when the sender and receiver share a changed registry.
     body = {'base': 0, 'rules': '00' * 32, 'hash': '11' * 32, 'batch': '22' * 16, 'ops': [
         {'seq': 1, 'at': 1000, 'name': 'drop', 'args': {'from': 1, 'to': 2}},
         {'seq': 2, 'at': 1005, 'name': 'pack', 'args': {}},
     ]}
     golden = (b'TRP1\x00' + bytes.fromhex('00' * 32 + '11' * 32 + '22' * 16)
-              + bytes.fromhex('01 e8 07 02 00 00 01 03 02 04 05 12'))
+              + bytes.fromhex('01 e8 07 02 00 00 01 03 02 04 05 12 00'))
     actual = base64.b64decode(encoded([body], tmp_path)[0]['raw'])
     assert actual == golden and wire.decode(golden) == body

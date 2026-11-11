@@ -1,0 +1,83 @@
+{
+  "_说明": "完整人物与头像裁切共用六张原图，不叠加装扮。保留旧订单人物编号；重复编号映射到相同顾客，不更改玩法配置或存档。",
+  "roles": [
+    "chief",
+    "elder",
+    "companion",
+    "child",
+    "woman",
+    "companion",
+    "elder",
+    "woman",
+    "hero",
+    "child"
+  ],
+  "characters": {
+    "hero": {
+      "name": "主角 阿焰",
+      "art": "res://assets/characters/hero.png",
+      "avatar": [
+        0.2,
+        0,
+        0.6,
+        0.45
+      ],
+      "chest": [
+        0.08,
+        0,
+        0.84,
+        0.65
+      ]
+    },
+    "companion": {
+      "name": "族人 阿石",
+      "art": "res://assets/characters/companion.png",
+      "avatar": [
+        0.2,
+        0,
+        0.6,
+        0.45
+      ]
+    },
+    "chief": {
+      "name": "酋长 巴图",
+      "art": "res://assets/characters/chief.png",
+      "avatar": [
+        0.24,
+        0,
+        0.64,
+        0.48
+      ]
+    },
+    "elder": {
+      "name": "长者 老凿",
+      "art": "res://assets/characters/elder.png",
+      "avatar": [
+        0.2,
+        0,
+        0.6,
+        0.45
+      ]
+    },
+    "woman": {
+      "name": "女族人 月禾",
+      "art": "res://assets/characters/woman.png",
+      "avatar": [
+        0.18,
+        0,
+        0.64,
+        0.48
+      ]
+    },
+    "child": {
+      "name": "小酋长 果果",
+      "art": "res://assets/characters/child.png",
+      "avatar": [
+        0.14,
+        0,
+        0.64,
+        0.48
+      ]
+    }
+  }
+}

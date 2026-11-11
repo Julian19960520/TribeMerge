@@ -1,7 +1,10 @@
 class_name HomeScreen
 extends Control
 
-var _spots_signature := ""
+var _spot_nodes: Dictionary = {}
+var spot_created_count := 0
+var _spots_dirty := false
+var _clock_elapsed := 0.0
 var _spots_root: Control
 var _event_lbl: Label
 var go: TButton
@@ -66,13 +69,13 @@ func _ready() -> void:
 	var bk := UI.btn(self, Rect2(150, 1330, 110, 112), "", "hide", func(): G.main.open("book"))
 	bk.extra = func(ci, sz):
 		Paint.book(ci, sz * 0.5 + Vector2(0, -10), 0.9)
-		if G.book_prize_count() > 0:
+		if G.rules.board.book_prize_count() > 0:
 			Paint.badge_num(ci, Vector2(sz.x - 18, 16), 4)
 	UI.lbl(bk, "图鉴", Rect2(0, 72, 110, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	var cd := UI.btn(self, Rect2(270, 1330, 110, 112), "", "hide", func(): G.main.open("event"))
 	cd.extra = func(ci, sz): Paint.cards_icon(ci, sz * 0.5 + Vector2(0, -10), 0.85)
 	UI.lbl(cd, "卡册", Rect2(0, 72, 110, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	cd.visible = G.level >= Data.CARD_LEVEL
+	cd.visible = G.rules.progression.feature_unlocked(Data.CARD_LEVEL)
 	_cards_btn = cd
 	go = UI.btn(self, Rect2(398, 1310, 306, 136), "去合成", "green", func(): G.main.show_screen("board"), 54)
 	_go_ix = go.get_index()
@@ -90,7 +93,7 @@ func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
 	var card := Rect2(10, 4, sz.x - 20, 92)
 	var mc := Vector2(sz.x * 0.5, 38)
 	var f := G.font_title
-	var lv := str(maxi(G.pass_reached(), 0) + 1)
+	var lv := str(maxi(G.rules.progression.pass_reached(), 0) + 1)
 	var fs := 24 if lv.length() < 2 else 20
 	var tw := f.get_string_size(lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var tp := Vector2(mc.x - tw * 0.5, mc.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
@@ -98,12 +101,12 @@ func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
 	ci.draw_string(f, tp, lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 	# 到下一级的进度
 	var bar := Rect2(card.position.x + 12, card.end.y - 20, card.size.x - 24, 11)
-	var fr := G.pass_frac()
+	var fr := G.rules.progression.pass_frac()
 	if fr > 0.0:
 		Sprites.draw(ci, "tribe_pass_fill", Rect2(bar.position, Vector2(maxf(11.0, bar.size.x * fr), bar.size.y)))
 	# 剩余时间小牌
 	Paint.glyph(ci, "clock", Vector2(24, 134), 0.55, Color("ffe7a8"))
-	if G.pass_claimable():
+	if G.rules.progression.pass_claimable():
 		var c := Vector2(sz.x - 14, 8)
 		var bounce := absf(sin(float(Time.get_ticks_msec()) / 260.0)) * 4.0
 		c.y -= bounce
@@ -113,33 +116,46 @@ func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
 		ci.draw_string_outline(f, pos, "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 4, Art.INK)
 		ci.draw_string(f, pos, "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
 
-func _process(_d: float) -> void:
-	if _event_lbl and Engine.get_process_frames() % 30 == 0:
-		_event_lbl.text = G.fmt_time(G.pass_secs_left())
+func set_active(active: bool) -> void:
+	visible = active
+	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+	if active and _spots_dirty: _build_spots()
+
+func _process(delta: float) -> void:
+	_clock_elapsed += delta
+	if _event_lbl and _clock_elapsed >= 1.0:
+		_clock_elapsed = fmod(_clock_elapsed, 1.0)
+		_event_lbl.text = G.fmt_time(G.rules.clock.pass_secs_left())
 
 func _build_spots() -> void:
-	var signature := str(G.level) + ":" + str(G.shells) + ":" + JSON.stringify(G.builds)
-	if signature == _spots_signature:
-		return
-	_spots_signature = signature
+	_spots_dirty = true
 	if _cards_btn != null:
-		_cards_btn.visible = G.level >= Data.CARD_LEVEL
-	for c in _spots_root.get_children():
-		c.queue_free()
+		_cards_btn.visible = G.rules.progression.feature_unlocked(Data.CARD_LEVEL)
+	if not is_visible_in_tree(): return
+	_spots_dirty = false
+	var wanted := {}
 	for b in Data.BUILDS:
 		var id: String = b["id"]
-		var tag := UI.hit(_spots_root, Rect2(TribeArt.tag_at(id) - Vector2(74, 26), Vector2(148, 52)), _open_build.bind(id))
-		tag.extra = func(ci, sz): _paint_tag(ci, sz, id)
-	for c in get_children():
-		if c is DrawBox:
-			c.queue_redraw()
+		wanted[id] = true
+		var tag: TButton = _spot_nodes.get(id)
+		if tag == null:
+			tag = UI.hit(_spots_root, Rect2(TribeArt.tag_at(id) - Vector2(74, 26), Vector2(148, 52)), _open_build.bind(id))
+			tag.extra = func(ci, sz): _paint_tag(ci, sz, id)
+			_spot_nodes[id] = tag
+			spot_created_count += 1
+		tag.queue_redraw()
+	for id in _spot_nodes.keys():
+		if wanted.has(id): continue
+		_spot_nodes[id].queue_free()
+		_spot_nodes.erase(id)
+	_village.queue_redraw()
 
 ## 区域木牌：名字 + 进度条；未开放显示等级；钱够下一件时右上角亮红点
 func _paint_tag(ci: CanvasItem, sz: Vector2, id: String) -> void:
 	var b := Data.build_def(id)
 	var total := Data.build_stages(b)
 	var st := clampi(int(G.builds.get(id, 0)), 0, total)
-	var open := G.build_open(id)
+	var open := G.rules.progression.build_open(id)
 	var done := st >= total
 	var seed := absi(id.hash()) % 90
 	Sprites.draw(ci, TribeSprites.tag_key(id, open), Rect2(Vector2.ZERO, TribeSprites.TAG_SIZE))
@@ -165,7 +181,7 @@ func _paint_tag(ci: CanvasItem, sz: Vector2, id: String) -> void:
 		var t := "Lv.%d 开放" % Data.build_unlock(b)
 		ci.draw_string_outline(G.font_body, Vector2(48, 44), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Art.INK)
 		ci.draw_string(G.font_body, Vector2(48, 44), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("ffe7a8"))
-	if open and not done and G.shells >= G.build_cost(id):
+	if open and not done and G.shells >= G.rules.progression.build_cost(id):
 		var c := Vector2(sz.x - 8, 6)
 		Paint.badge_num(ci, c, seed + 4)
 		var bf := G.font_title
@@ -182,7 +198,7 @@ func _open_build(id: String) -> void:
 func _open_next_build() -> void:
 	if is_building():
 		return
-	var id := G.next_build_id()
+	var id := G.rules.progression.next_build_id()
 	if id == "":
 		var all_done := true
 		for b in Data.BUILDS:

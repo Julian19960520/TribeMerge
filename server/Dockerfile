@@ -1,4 +1,4 @@
-# 石器部落游戏服务器。构建上下文是仓库根目录（要带上 data/ 里的游戏配置）：
+# 合合部落游戏服务器。构建上下文是仓库根目录（要带上 data/ 里的游戏配置）：
 #   docker build -f server/Dockerfile -t tribe-server .
 FROM python:3.12-slim AS godot
 RUN apt-get update && apt-get install -y --no-install-recommends curl unzip ca-certificates && \

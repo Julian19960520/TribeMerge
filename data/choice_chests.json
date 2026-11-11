@@ -1,8 +1,48 @@
 {
 	"choice_1": {
-		"title": "自选宝箱",
-		"_说明": "棋盘上点开三选一，选中的物品替换宝箱所在格。三项按琥珀当量（AE，见 gift_chain.json：琥珀 1、体力 0.4、宝箱 15）做到价值相近、用途不同：熊熊大火 40 体力 ≈ 16 AE（现在缺体力）、虫珀 15 琥珀 = 15 AE（攒琥珀）、藤编宝箱 3 件随机物品 ≈ 15 AE（赌一把）。服务器 economy.choose_chest 读同一份。",
-		"choices": ["fire_5", "amber_4", "chest_1"],
-		"icon": "res://assets/ui/choice_chest.svg"
+		"title": "1级自选宝箱",
+		"_说明": "三选一，所选物品替换宝箱所在格。等级越高，三个选项的内容越好。",
+		"choices": [
+			"fire_5",
+			"amber_4",
+			"chest_1"
+		],
+		"icon": "res://assets/ui/items/choice_1.svg"
+	},
+	"choice_2": {
+		"title": "2级自选宝箱",
+		"choices": [
+			"fire_6",
+			"amber_5",
+			"chest_2"
+		],
+		"icon": "res://assets/ui/items/choice_2.svg"
+	},
+	"choice_3": {
+		"title": "3级自选宝箱",
+		"choices": [
+			"energybox_2",
+			"amber_6",
+			"chest_3"
+		],
+		"icon": "res://assets/ui/items/choice_3.svg"
+	},
+	"choice_4": {
+		"title": "4级自选宝箱",
+		"choices": [
+			"energybox_3",
+			"premiumbox_3",
+			"chest_4"
+		],
+		"icon": "res://assets/ui/items/choice_4.svg"
+	},
+	"choice_5": {
+		"title": "5级自选宝箱",
+		"choices": [
+			"energybox_4",
+			"premiumbox_4",
+			"chest_5"
+		],
+		"icon": "res://assets/ui/items/choice_5.svg"
 	}
 }

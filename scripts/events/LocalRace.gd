@@ -1,25 +1,18 @@
 class_name LocalRace
 extends RefCounted
-## 单机版香蕉竞速（没开服务器时 Race.gd 走这里），规则和服务器 race.py 一样，数值读 data/race.json：
+## Shared banana-race rules. Progress is part of the confirmed operation state.
 ## - 假匹配：我 + 4 个影子。影子按等级生成一条阶梯曲线（开局先交一波，之后一单一单地涨，偶尔歇一会儿），
 ##   和服务器 gen_curve 同一套参数；按开赛后的时间回放。
 ## - 前 podium 名都收满或时间到就结束；名次先比收满时间，再比香蕉数；只有前三名有奖。
 ## 状态存在 G.local_race（随存档）。
 
-static var _rules := {}
 
 static func rules() -> Dictionary:
-	if _rules.is_empty():
-		_rules = JSON.parse_string(FileAccess.get_file_as_string("res://data/race.json"))
-	return _rules
+	return Data.ConfigFiles.shared("res://data/race.json")
 
 static func state() -> Dictionary:
-	if G.local_race.is_empty():
-		G.local_race = {"rules": rules(), "current": {}, "results": []}
-	G.local_race["rules"] = rules()
-	return G.local_race
+	return G.local_race if not G.local_race.is_empty() else {"current": {}, "results": []}
 
-## 按等级生成影子曲线 [[距开赛秒数, 累计香蕉], ...]（和服务器 race.gen_curve 一样）
 static func gen_curve(rng: RandomNumberGenerator, level: int, dur: float, target: float) -> Array:
 	var sh: Dictionary = rules().get("shadow", {})
 	var nominal := float(sh.get("nominal_sec", 14400))
@@ -121,10 +114,7 @@ static func join() -> Dictionary:
 	var cur: Dictionary = s.get("current", {})
 	if not cur.is_empty() and cur.get("group", {}).get("state", "") != "ended":
 		return {"ok": true}  # 这一局还没比完：还是这一局
-	var rng := G.random_for("banana") if Replay.active else RandomNumberGenerator.new()
-	if Replay.active: pass
-	elif G.simulation_time >= 0: rng.seed = G.random_for("banana").randi()
-	else: rng.randomize()
+	var rng := G.random_for("banana")
 	var now := G.now()
 	var dur := float(rl.get("duration_sec", 14400))
 	var tg := float(rl.get("target", 150))
@@ -146,7 +136,7 @@ static func join() -> Dictionary:
 		var lv := maxi(1, G.level + rng.randi_range(-1, 1))
 		ms.append({"slot": k + 1, "me": false, "name": str(names[k]) if k < names.size() else "原始人%02d" % rng.randi_range(0, 99),
 			"avatar": av, "level": lv, "score": 0.0, "finished_at": null, "place": null, "points": gen_curve(rng, lv, dur, tg)})
-	var gid := "local_" + str(int(now)) + "_" + str(rng.randi_range(1000, 9999))
+	var gid := "banana_" + str(int(now)) + "_" + str(rng.randi_range(1000, 9999))
 	s["current"] = {"group": {"id": gid, "start": now, "end": now + dur, "ended_at": null, "target": tg, "size": 5,
 		"state": "running", "members": ms}, "me": {"score": 0.0}}
 	G.save_game()

@@ -4,7 +4,7 @@ extends Control
 ## 点一下小人也会说一句。人数跟着开工的区域变多。只在小人身上接收点击，别处点击穿透到下面。
 
 const Meme := preload("res://scripts/Meme.gd")
-## 小人和气泡都贴预生成的图（tribe_walker_{角色}、tribe_bubble），这里只用它的尺寸常量
+## 人物使用共享圆形头像；气泡继续贴预生成的图。
 const TribeSprites := preload("res://scripts/sprites/tribe.gd")
 
 ## 路口（主页坐标）和路口之间的小路
@@ -16,7 +16,7 @@ const NODES := [
 ]
 const EDGES := [[0, 1], [1, 2], [2, 3], [3, 4], [1, 5], [3, 6], [5, 8], [6, 9], [7, 8], [9, 10], [8, 11], [9, 12], [11, 12]]
 const SPEED := 38.0
-const HIT := Vector2(56, 96)
+const HIT := Vector2(76, 80)
 ## 两次自动冒话之间至少隔多久（秒）
 const CHAT_GAP := Vector2(5.0, 9.0)
 const SAY_TIME := 4.2
@@ -149,16 +149,11 @@ func _draw() -> void:
 		var st := float(w["say_t"])
 		if st > 0.0:
 			var a := clampf(st / 0.3, 0.0, 1.0) * clampf((SAY_TIME - st) / 0.15, 0.0, 1.0)
-			_bubble(w["pos"] + Vector2(0, -104), str(w["say"]), a)
+			_bubble(w["pos"] - Vector2(0, Meme.WALKER_DIAMETER + 18), str(w["say"]), a)
 
-## 一蹦一蹦挪动的半身贴纸（和 Meme.walker 同一套动作）；脚下的影子是普通椭圆
+## 与烘焙素材共用圆形头像，走动时保留轻微上下跳动。
 func _walker(role: int, feet: Vector2, t: float, moving: bool) -> void:
-	var h := TribeSprites.WALKER_H
-	var hop := absf(sin(t * 7.0)) * (7.0 if moving else 0.0)
-	var sh := 1.0 - hop / (h * 0.5)
-	draw_colored_polygon(Art.ell(feet + Vector2(0, 1), Vector2(22, 6) * sh, 5, 0.0, 14, 0.0, 0.0), Color(0, 0, 0, 0.22))
-	var box := TribeSprites.walker_box(role)
-	Sprites.draw(self, "tribe_walker_%d" % (role % TribeSprites.WALKER_BOUNDS.size()), Rect2(feet + Vector2(0, -hop) + box.position, box.size))
+	Meme.walker(self, role, feet, t, 1.0, moving)
 
 ## 头顶对话气泡（同 Meme.bubble 的排版）。anchor 是尾尖指向的点，a 是透明度。
 func _bubble(anchor: Vector2, text: String, a: float) -> void:

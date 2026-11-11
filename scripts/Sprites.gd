@@ -9,20 +9,26 @@ extends Node
 ##   Sprites.has(key)                     有没有这张图
 
 const DIR := "res://assets/sprites"
+const TextureCache := preload("res://scripts/resources/TextureCache.gd")
+const VisualRuntime := preload("res://scripts/resources/VisualRuntime.gd")
+const CACHE_BYTES := 48 * 1024 * 1024
 
 ## key -> {w, h, pad, nine: [l, t, r, b] 或空, frames}
 var _meta := {}
-## key -> Array[Texture2D]，第一次用到才读
-var _tex := {}
+## Only requested frames occupy the cache; animation groups are never eager.
+var _cache = TextureCache.new(CACHE_BYTES)
+var _enabled := false
 var _missing := {}
 
 func _ready() -> void:
+	_enabled = VisualRuntime.enabled()
 	reload()
 
 func reload() -> void:
 	_meta.clear()
-	_tex.clear()
+	_cache.clear()
 	_missing.clear()
+	if not _enabled: return
 	var d := DirAccess.open(DIR)
 	if d == null:
 		return
@@ -37,7 +43,7 @@ func reload() -> void:
 			_meta[str(key)] = sprites[key]
 
 func has(key: String) -> bool:
-	return not _frames(key).is_empty()
+	return _enabled and _meta.has(key) and not _missing.has(key)
 
 ## 登记时的内容尺寸（不含 pad）。没有这张图返回 Vector2.ZERO。
 func size_of(key: String) -> Vector2:
@@ -89,37 +95,19 @@ func at(ci: CanvasItem, key: String, c: Vector2, s: float = 1.0, rot: float = 0.
 		PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]), tex)
 
 func _current(key: String) -> Texture2D:
-	var arr := _frames(key)
-	if arr.is_empty():
-		return null
-	return arr[Art.boil % arr.size()]
+	return frame_texture(key, Art.boil)
 
-func _frames(key: String) -> Array:
-	if _tex.has(key):
-		return _tex[key]
-	var arr: Array = []
+func frame_texture(key: String, frame: int) -> Texture2D:
+	if not _enabled:
+		return null
+	var texture: Texture2D = null
 	if _meta.has(key):
-		var n := maxi(int(_meta[key].get("frames", 1)), 1)
-		for i in n:
-			var t := _load("%s/png/%s_%d.png" % [DIR, key, i])
-			if t == null:
-				arr.clear()
-				break
-			arr.append(t)
-	if arr.is_empty() and not _missing.has(key):
+		var count := maxi(int(_meta[key].get("frames", 1)), 1)
+		texture = _cache.fetch("%s/png/%s_%d.png" % [DIR, key, posmod(frame, count)])
+	if texture == null and not _missing.has(key):
 		_missing[key] = true
 		push_warning("界面图 %s 还没生成，请运行「生成物品图.bat」。" % key)
-	_tex[key] = arr
-	return arr
+	return texture
 
-static func _load(path: String) -> Texture2D:
-	if ResourceLoader.exists(path):
-		var t = load(path)
-		if t is Texture2D:
-			return t
-	# 刚生成、编辑器还没导入时直接读文件
-	if FileAccess.file_exists(path):
-		var img := Image.new()
-		if img.load_png_from_buffer(FileAccess.get_file_as_bytes(path)) == OK and not img.is_empty():
-			return ImageTexture.create_from_image(img)
-	return null
+func cache_stats() -> Dictionary:
+	return _cache.stats()

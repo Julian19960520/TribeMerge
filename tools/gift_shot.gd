@@ -81,7 +81,7 @@ func _run() -> void:
 	_shot("popup_shift_b")
 	await create_timer(1.4).timeout
 	_ok(g.energy == e0 + 50, "火苗 +50（%d → %d）" % [e0, g.energy])
-	_ok(g.shells == s0 + 100, "贝币 +100（服务器值 %d）" % g.shells)
+	_ok(g.shells == s0 + 100, "不拿拿 +100（服务器值 %d）" % g.shells)
 	_shot("popup_step2")
 	# 2) 付费步 ¥6（mock 支付）
 	var a0: int = g.amber

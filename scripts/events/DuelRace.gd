@@ -1,14 +1,12 @@
 class_name DuelRace
 extends RefCounted
 ## First-to-target practice race, with lifetime win milestones. Server owns state when enabled.
-static var _config: Dictionary={}
-static var busy:=false
 static func config() -> Dictionary:
-	if _config.is_empty(): _config=JSON.parse_string(FileAccess.get_file_as_string("res://data/duel_race.json"))
-	return _config
+	return Data.ConfigFiles.shared("res://data/duel_race.json")
+
 static func state() -> Dictionary:
-	if G.duel_race.is_empty(): G.duel_race={"wins":0,"rounds":0,"claimed":[],"match":{}}
-	return G.duel_race
+	return G.duel_race if not G.duel_race.is_empty() else {"wins": 0, "rounds": 0, "claimed": [], "match": {}}
+
 static func unlocked() -> bool: return G.gm_activities or G.level>=int(config()["unlock_level"])
 static func order_points(order: Dictionary) -> int:
 	var score:=1
@@ -28,7 +26,6 @@ static func _finish(won: bool, at: float) -> void:
 	G.dirty()
 static func tick() -> void:
 	if G.replay_input(): return
-	if G.server_mode(): return
 	var m: Dictionary=state()["match"]
 	if m.is_empty() or m["status"]!="running": return
 	var elapsed:=G.now()-float(m["start"])
@@ -39,7 +36,6 @@ static func tick() -> void:
 			_finish(false,float(m["start"])+float(p[0]))
 			break
 static func on_order(order: Dictionary) -> void:
-	if G.server_mode(): return
 	tick()
 	var m: Dictionary=state()["match"]
 	if m.is_empty() or m["status"]!="running": return
@@ -56,26 +52,13 @@ static func pending() -> bool:
 	tick()
 	var m: Dictionary=state()["match"]
 	return (not m.is_empty() and m["status"] in ["won","lost"] and not m.get("claimed",false)) or not ready_milestones().is_empty()
-static func act(action: String, milestone:=0) -> Dictionary:
-	if G.replay_input(): return await Replay.perform("duel", {"action": action, "milestone": milestone})
-	if busy: return {"error":"正在处理"}
-	busy=true
-	var result: Dictionary
-	if G.server_mode():
-		var minus: Array=[]
-		if action=="claim": minus=config()["win_rewards"] if state()["match"].get("status","")=="won" else config()["lose_rewards"]
-		elif action=="milestone":
-			for row in config()["milestones"]:
-				if int(row["wins"])==milestone: minus=row["rewards"]
-		var r: Dictionary=await G._cloud().act("/v1/duel/action",{"action":action,"milestone":milestone},minus)
-		result=r.get("give",{}) if r.get("ok",false) else {"error":r.get("message","暂时无法连接")}
-	else: result=local_action(action,milestone)
-	busy=false
+static func act(action: String, milestone := 0) -> Dictionary:
+	if G.replay_input(): return Replay.perform("duel", {"action": action, "milestone": milestone})
+	var result := local_action(action, milestone)
 	if not result.has("error"):
-		Rewards.grant(result.get("rewards",[]),Callable(),false)
-		G.save_game()
-		G.changed.emit()
+		Rewards.settle(result.get("rewards", []))
 	return result
+
 static func local_action(action: String, milestone:=0) -> Dictionary:
 	if not unlocked(): return {"error":"%d级解锁双人竞速"%int(config()["unlock_level"])}
 	tick()

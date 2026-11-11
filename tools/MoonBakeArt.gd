@@ -220,7 +220,7 @@ func _paint_earn(ci: CanvasItem, sz: Vector2, glow := false) -> void:
 	Art.fill(ci, Art.rrect(tk, 6, 610, 0.4), Color("f6e7c8"), 2.4, INK)
 	for k in 3: ci.draw_line(tk.position + Vector2(8, 14 + k * 11), tk.position + Vector2(32, 14 + k * 11), Color(0.4, 0.27, 0.12, 0.55), 2.0)
 	Paint.check_mark(ci, tk.position + Vector2(34, 44), 0.7)
-	ci.draw_texture_rect(MergeEvent.texture(str(cfg["theme"]["point_icon"])), Rect2(56, 52, 40, 40), false)
+	ci.draw_texture_rect(MergeEventArt.texture(str(cfg["theme"]["point_icon"])), Rect2(56, 52, 40, 40), false)
 
 
 func _paint_spawn(ci: CanvasItem, sz: Vector2, can := true) -> void:
@@ -236,7 +236,7 @@ func _paint_spawn(ci: CanvasItem, sz: Vector2, can := true) -> void:
 	ci.draw_circle(c + Vector2(30, -32), 5, Color(1, 1, 1, 0.8))
 	var pill := Rect2(Vector2(20, 124), Vector2(112, 36))
 	Art.fill(ci, Art.rrect(pill, 18, 623, 0.3), Color("10232a"), 2.5, INK)
-	ci.draw_texture_rect(MergeEvent.texture(str(cfg["theme"]["point_icon"])), Rect2(pill.position + Vector2(-8, -4), Vector2(44, 44)), false)
+	ci.draw_texture_rect(MergeEventArt.texture(str(cfg["theme"]["point_icon"])), Rect2(pill.position + Vector2(-8, -4), Vector2(44, 44)), false)
 	if can: Paint.plus_badge(ci, c + Vector2(46, 38))
 
 

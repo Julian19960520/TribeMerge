@@ -83,11 +83,11 @@ func _run() -> void:
 		p.close()
 		await create_timer(0.4).timeout
 	if _want("chest"):
-		g.board[g.idx(3, 4)]["id"] = "choice_1"
-		g.board[g.idx(3, 4)]["lock"] = 0
+		g.board[g.rules.board.idx(3, 4)]["id"] = "choice_1"
+		g.board[g.rules.board.idx(3, 4)]["lock"] = 0
 		g.board_changed.emit()
 		await create_timer(0.5).timeout
-		var p = main.open("choice_chest", g.idx(3, 4))
+		var p = main.open("choice_chest", g.rules.board.idx(3, 4))
 		await create_timer(1.2).timeout
 		_shot("chest")
 		p._choose(1)
@@ -95,8 +95,8 @@ func _run() -> void:
 		_shot("chest_pick")
 		p.close()
 		await create_timer(0.4).timeout
-		g.board[g.idx(2, 4)]["id"] = "energybox_1"
-		g.board[g.idx(2, 4)]["lock"] = 0
+		g.board[g.rules.board.idx(2, 4)]["id"] = "energybox_1"
+		g.board[g.rules.board.idx(2, 4)]["lock"] = 0
 		g.board_changed.emit()
 		await create_timer(0.8).timeout
 		_shot("chest_board")

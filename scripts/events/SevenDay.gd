@@ -1,26 +1,24 @@
 class_name SevenDay
 extends RefCounted
 ## All seven pages share lifetime counters; page numbers never gate progress.
-static var _config: Dictionary = {}
-static var busy := false
 static func config() -> Dictionary:
-	if _config.is_empty(): _config = JSON.parse_string(FileAccess.get_file_as_string("res://data/seven_day.json"))
-	return _config
+	return Data.ConfigFiles.shared("res://data/seven_day.json")
+
 static func state() -> Dictionary:
-	if G.seven_day.is_empty():
-		G.seven_day = {"id": config()["id"], "stats": {}, "claimed": {}, "stages": {}, "days": {}}
-		G.dirty()
-	return G.seven_day
+	return G.seven_day if not G.seven_day.is_empty() else initial_state()
+
+static func initial_state() -> Dictionary:
+	return {"id": config()["id"], "stats": {}, "claimed": {}, "stages": {}, "days": {}}
+
 static func login(day := "") -> void:
-	if G.server_mode(): return
-	if day == "": day = G.today()
+	if day == "": day = G.rules.clock.today()
 	var s := state()
 	if not s["days"].has(day):
 		s["days"][day] = true
 		s["stats"]["login_days"] = s["days"].size()
 		_changed()
 static func record(metric: String, amount: int) -> void:
-	if G.server_mode() or amount <= 0 or metric == "paid_cents": return
+	if amount <= 0 or metric == "paid_cents": return
 	var s := state()
 	s["stats"][metric] = int(s["stats"].get(metric, 0)) + amount
 	_changed()
@@ -73,23 +71,14 @@ static func find_entry(id: String, stage: bool) -> Dictionary:
 				if str(task["id"]) == id: return task
 	return {}
 static func claim(id: String, stage := false) -> Dictionary:
-	if G.replay_input(): return await Replay.perform("seven", {"id": id, "stage": stage})
-	if busy: return {"error": ""}
+	if G.replay_input(): return Replay.perform("seven", {"id": id, "stage": stage})
 	var entry := find_entry(id, stage)
 	if entry.is_empty(): return {"error": "任务不存在"}
 	var s := state()
 	var book: Dictionary = s["stages"] if stage else s["claimed"]
 	if book.has(id): return {"error": "已领取"}
 	if (points() < int(entry["points"]) if stage else not done(entry)): return {"error": "尚未完成"}
-	busy = true
-	if G.server_mode():
-		var response: Dictionary = await G._cloud().act("/v1/seven-day/claim", {"entry": id, "stage": stage}, entry["rewards"])
-		if not response.get("ok", false):
-			busy = false
-			return {"error": str(response.get("message", "领取失败"))}
-	else: book[id] = true
-	Rewards.grant(entry["rewards"], Callable(), true)
-	G.save_game()
-	busy = false
+	book[id] = true
+	Rewards.settle(entry["rewards"])
 	_changed()
-	return {"ok": true}
+	return {"ok": true, "rewards": entry["rewards"]}

@@ -107,7 +107,7 @@ func _refresh() -> void:
 		btns[k].text = Offers.price_text(KIND, k) if n > 0 else "已购买"
 		if not live and n > 0: btns[k].text = "已结束"
 		btns[k].queue_redraw()
-	var left := G.energy_full_left()
+	var left := G.rules.clock.energy_full_left()
 	var s := left
 	var hms := "%02d:%02d:%02d" % [s / 3600, (s % 3600) / 60, s % 60]
 	wait_lbl.text = "体力已满，先去合成吧！" if left == 0 else "或者等待 %s 体力恢复到 %d" % [hms, G.MAX_ENERGY]
@@ -117,12 +117,11 @@ func _buy(k: int) -> void:
 	_busy = true
 	_refresh()
 	var from := btns[k].get_global_rect().get_center() + Vector2(0, -300)
-	var r: Dictionary = await Offers.buy(KIND, k, func(_j): return from)
+	var r: Dictionary = await Offers.buy(KIND, k)
 	if not is_instance_valid(self): return
 	_busy = false
 	if not r.get("ok", false):
 		var msg := str(r.get("message", ""))
 		if msg != "": G.main.toast(msg)
-	elif not G.server_mode():
-		G.main.toast("演示版本：礼包已到账")
+	else: RewardPresenter.present(r.get("rewards", []), func(_k): return from)
 	_refresh()

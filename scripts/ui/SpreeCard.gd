@@ -9,7 +9,7 @@ func _ready() -> void:
 	position = RECT.position
 	size = RECT.size
 	mouse_filter = MOUSE_FILTER_IGNORE
-	Offers.inst()
+	OfferController.inst()
 	_btn = UI.hit(self, Rect2(Vector2.ZERO, RECT.size), func(): G.main.open("spree"))
 	_btn.name = "spree_card"
 	_btn.extra = _paint

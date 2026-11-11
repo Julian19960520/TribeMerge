@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="石器部落游戏服务器")
+    ap = argparse.ArgumentParser(description="合合部落游戏服务器")
     ap.add_argument("--host", default=os.environ.get("TRIBE_HOST", "127.0.0.1"))
     ap.add_argument("--port", type=int, default=int(os.environ.get("TRIBE_PORT", "8765")))
     ap.add_argument("--database-url", help="覆盖 TRIBE_DATABASE_URL")

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TribeMerge · 自动演算</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>合合部落 · 自动演算</title>
 <style>
 :root{--bg:#0f181c;--panel:#16232a;--panel2:#1d2d34;--line:#2c3d44;--grid:#22333a;--text:#f1eadb;--muted:#9fb0b2;--faint:#6f8186;--accent:#e9bb69;--critical:#e66767;--good:#4fbf7a;
   --g-progress:#3987e5;--g-energy:#d95926;--g-reward:#9085e9;--g-activity:#199e70;--g-misc:#7d8c91}
@@ -75,7 +75,7 @@ details summary{cursor:pointer;color:var(--muted);margin-top:6px}
     <input aria-label="时间轴平移" id="range" type="range" min="0" max="1000" value="0">
     <div class="toolbar" style="margin-top:12px"><b>体力</b><span class="muted" id="energyNote"></span></div>
     <canvas id="curveEnergy" aria-label="体力随时间变化"></canvas>
-    <div class="toolbar" style="margin-top:10px"><b>对照指标</b><select id="metric" aria-label="资源与进度指标"><option value="level">玩家等级</option><option value="energy">体力</option><option value="coins">贝币</option><option value="gems">琥珀 · 现有</option><option value="amber_earned">琥珀 · 累计获得</option><option value="sand">沙漏 · 现有</option><option value="sand_earned">沙漏 · 累计获得</option><option value="empty">棋盘空格</option><option value="parts">部落部件</option><option value="moon">月石进度</option><option value="duel_wins">双人竞速胜场</option></select></div>
+    <div class="toolbar" style="margin-top:10px"><b>对照指标</b><select id="metric" aria-label="资源与进度指标"><option value="level">玩家等级</option><option value="energy">体力</option><option value="coins">不拿拿</option><option value="gems">琥珀 · 现有</option><option value="amber_earned">琥珀 · 累计获得</option><option value="sand">沙漏 · 现有</option><option value="sand_earned">沙漏 · 累计获得</option><option value="empty">棋盘空格</option><option value="parts">部落部件</option><option value="moon">月石进度</option><option value="duel_wins">双人竞速胜场</option></select></div>
     <canvas id="curve" aria-label="所选指标随时间变化"></canvas>
   </section>
   <section class="panel"><h2>每级明细</h2><p class="sub">每行是在这一级停留期间的数据。红色 = 这一级卡过体力。点一行，时间轴就跳到这一级。</p>
@@ -94,7 +94,7 @@ const groupColor=Object.fromEntries(SE.groups.map(g=>[g.id,g.color]));
 const keyGroup=new Map(SE.tracks.flatMap(t=>t.keys.map(k=>[k,t.group])));
 const keyTrack=new Map(SE.tracks.flatMap(t=>t.keys.map(k=>[k,t])));
 const PLOT_LEFT=128,PLOT_RIGHT=12,LANE=24,HEAD=24,AXIS=26;
-const stateNames={level:'等级',xp:'经验',energy:'体力',coins:'贝币',gems:'现有琥珀',sand:'现有沙漏',amber_earned:'累计获得琥珀',sand_earned:'累计获得沙漏',empty:'棋盘空格',storage:'储物洞',stash:'暂存物品',parts:'部落部件',moon:'月石解锁',cards:'典藏卡',duel_wins:'双人竞速胜场',orders:'当前订单'};
+const stateNames={level:'等级',xp:'经验',energy:'体力',coins:'不拿拿',gems:'现有琥珀',sand:'现有沙漏',amber_earned:'累计获得琥珀',sand_earned:'累计获得沙漏',empty:'棋盘空格',storage:'储物洞',stash:'暂存物品',parts:'部落部件',moon:'月石解锁',cards:'典藏卡',duel_wins:'双人竞速胜场',orders:'当前订单'};
 const mainStats=['level','xp','energy','coins','gems','sand'];
 const incomeNames={level:'等级奖励',seven_day_task:'七日任务',seven_day_stage:'七日里程碑',resource_energy:'棋盘体力',book:'图鉴',banana:'香蕉竞速',duel_match:'双人竞速',duel_milestone:'双人里程碑',build:'部落建造',moon:'月石',land:'开地',pass:'通行证',daily:'每日补给',chest:'宝箱',stash:'暂存',egen:'火种罐'};
 let productionLabel='折合一级份数';
@@ -329,7 +329,7 @@ tl.onpointerup=e=>{
   if(drag&&Math.abs(e.clientX-drag.x)<5){const n=nearest(e);if(n){choose(n);draw()}}drag=null};
 tl.onpointercancel=()=>drag=null;
 for(const id of ['curveEnergy','curve']){const c=$(id);c.onpointermove=e=>{const x=local(e,c).x;if(x<PLOT_LEFT)return;hoverT=left+(x-PLOT_LEFT)/plotW()*span;draw()};c.onpointerleave=()=>{hoverT=null;draw()}}
-$('download').onclick=()=>{if(!report)return;const u=URL.createObjectURL(new Blob([JSON.stringify(SE.compactReport(report,[...$('metric').options].map(o=>({key:o.value,label:o.textContent}))),null,2)+'\n'],{type:'application/json;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download='TribeMerge-timeline.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+$('download').onclick=()=>{if(!report)return;const u=URL.createObjectURL(new Blob([JSON.stringify(SE.compactReport(report,[...$('metric').options].map(o=>({key:o.value,label:o.textContent}))),null,2)+'\n'],{type:'application/json;charset=utf-8'}));const a=document.createElement('a');a.href=u;a.download='合合部落-timeline.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
 let resizeT=0;new ResizeObserver(()=>{cancelAnimationFrame(resizeT);resizeT=requestAnimationFrame(()=>{if(report){renderDays();draw()}})}).observe(document.querySelector('main'));
 fetch('simulation-report.json.gz').then(r=>{if(!r.ok)throw Error('无法获取演算文件');return r.arrayBuffer()}).then(b=>decode(b,true)).then(load).catch(e=>$('status').textContent='加载失败：'+e.message);
 </script></body></html>

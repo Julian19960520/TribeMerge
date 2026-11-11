@@ -69,18 +69,18 @@ static func _tag(id: String) -> String:
 	match Rewards.kind(id):
 		"energy": return "补体力"
 		"amber": return "攒琥珀"
-		"shell": return "攒贝币"
+		"shell": return "攒不拿拿"
 		"sand": return "加速"
 		"chest": return "碰运气"
 		"pack": return "抽卡"
 	return "直接用"
 
 static func _amount(id: String) -> String:
-	var unit := {"energy": "体力", "amber": "琥珀", "shell": "贝币", "sand": "沙漏"}
+	var unit := {"energy": "体力", "amber": "琥珀", "shell": "不拿拿", "sand": "沙漏"}
 	var kind := Rewards.kind(id)
 	if unit.has(kind) and Data.value_of(id) > 0:
 		return "%d %s" % [Data.value_of(id), unit[kind]]
-	if kind == "chest": return "3 件随机物品"
+	if kind == "chest": return "%d 件物品" % SpecialChests.count(id)
 	if kind == "pack": return "一包典藏卡"
 	return "×1"
 
