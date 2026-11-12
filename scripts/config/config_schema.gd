@@ -25,7 +25,7 @@ func _validate() -> void:
 		"pass": {"season": TYPE_DICTIONARY, "levels": TYPE_ARRAY},
 		"random_orders": {"curves": TYPE_ARRAY, "slots": TYPE_ARRAY},
 		"unlocks": {"levels": TYPE_INT, "rows": TYPE_ARRAY},
-		"card_packs": {"cards_per_pack": TYPE_INT, "card_stars_by_slot": TYPE_ARRAY, "packs": TYPE_ARRAY},
+		"card_packs": {"cards_per_pack": TYPE_INT, "card_stars_by_slot": TYPE_ARRAY, "packs": TYPE_ARRAY, "duplicate_stars_by_rarity": TYPE_ARRAY, "star_exchange": TYPE_ARRAY},
 		"seven_day": {"id": TYPE_STRING, "days": TYPE_ARRAY, "milestones": TYPE_ARRAY},
 		"merge_events": {"version": TYPE_INT, "seasons": TYPE_ARRAY},
 		"duel_race": {"order_thresholds": TYPE_ARRAY, "order_points": TYPE_ARRAY, "opponent_seconds": TYPE_ARRAY, "milestones": TYPE_ARRAY},
@@ -272,7 +272,7 @@ func _progression() -> void:
 					if not value is String or str(value) == "": _error("albums." + field, "entries must be nonempty strings")
 					elif field == "art" and not str(value).begins_with("res://assets/cards/"): _error("albums.art", "expected a card asset resource path")
 	var packs: Dictionary = docs.card_packs
-	if _fields(packs, "card_packs", {"cards_per_pack": TYPE_INT, "card_stars_by_slot": TYPE_ARRAY, "packs": TYPE_ARRAY}):
+	if _fields(packs, "card_packs", {"cards_per_pack": TYPE_INT, "card_stars_by_slot": TYPE_ARRAY, "packs": TYPE_ARRAY, "duplicate_stars_by_rarity": TYPE_ARRAY, "star_exchange": TYPE_ARRAY}):
 		_positive(packs.cards_per_pack, "card_packs.cards_per_pack")
 		for star in packs.card_stars_by_slot: _number(star, "card_packs.card_stars_by_slot", 1, 5, true)
 		for row in packs.packs:
@@ -280,6 +280,18 @@ func _progression() -> void:
 				_item(row.id, "card_packs.packs.id")
 				if row.weights.size() != 5: _error("card_packs.packs.weights", "expected five star weights")
 				_weights(row.weights, "card_packs.packs.weights")
+		if packs.duplicate_stars_by_rarity.size() != 5: _error("card_packs.duplicate_stars_by_rarity", "expected one duplicate value per rarity")
+		for value in packs.duplicate_stars_by_rarity: _positive(value, "card_packs.duplicate_stars_by_rarity")
+		var costs := {}
+		for offer in packs.star_exchange:
+			if not _fields(offer, "card_packs.star_exchange", {"cost": TYPE_INT, "pack": TYPE_STRING}): continue
+			_positive(offer.cost, "card_packs.star_exchange.cost")
+			if costs.has(offer.cost): _error("card_packs.star_exchange.cost", "duplicate exchange cost")
+			costs[offer.cost] = true
+			var found := false
+			for row in packs.packs:
+				if row is Dictionary and row.get("id") == offer.pack: found = true
+			if not found: _error("card_packs.star_exchange.pack", "unknown card pack")
 
 ## Every chest grade has one explicit definition; there is no flat legacy format.
 func _chests() -> void:

@@ -41,10 +41,11 @@ static func event() -> PopupBase:
 		var count := UI.lbl(hit, _collection_progress(a), Rect2(0, 240, 220, 32), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 		Popups.live(p, G.changed, func(): count.text = _collection_progress(a))
 	sc.set_length(840.0 + 3 * 330.0 + 330.0 - 128.0)
-	var shop := UI.hit(p.box, Rect2(590, 1340, 120, 130), func(): G.main.open("pack"))
+	var shop := UI.hit(p.box, Rect2(414, 1340, 120, 130), func(): G.main.open("pack"))
 	shop.extra = func(ci, sz):
 		Art.item(ci, "pack_1", Vector2(sz.x * 0.5, 56), 100)
 	UI.lbl(shop, "打开卡包", Rect2(0, 96, 120, 34), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	CardStarUI.button(p)
 	_gm_button(p.box, Rect2(24, 1352, 218, 60))
 	return p
 
@@ -114,6 +115,7 @@ static func album(a: int) -> PopupBase:
 		progress.queue_redraw()
 	refresh_header.call()
 	_gm_button(p.box, Rect2(236, r.end.y + 20, 248, 52), a)
+	CardStarUI.button(p)
 	var holder := Control.new()
 	holder.name = "album_cards"
 	holder.size = Vector2(720, 1480)
@@ -191,7 +193,10 @@ static func _gm_button(parent: Control, rect: Rect2, album: int = -1) -> void:
 			G.main.toast(str(result["error"]))
 			return
 		var received: Array = result.get("cards", [])
-		if not received.is_empty(): G.main.open("card", {"album": int(received[0][0]), "index": int(received[0][1])}), 21)
+		if not received.is_empty():
+			var rewards: Array = result.get("card_rewards", [])
+			if not rewards.is_empty() and int(rewards[0]["stars"]) > 0: G.main.open("card_received", result)
+			else: G.main.open("card", {"album": int(received[0][0]), "index": int(received[0][1])}), 21)
 	button.name = "gm_random_card"
 
 # ---------------------------------------------------------------- 开卡包
@@ -201,7 +206,7 @@ static func pack(request: Dictionary = {}) -> PopupBase:
 	p.dim_alpha = 0.82
 	var source := G.rules.progression.find_pack_source(str(request.get("id", "")), int(request.get("cell", -1)), int(request.get("stash", -1)))
 	var pack_id := str(source.get("id", "pack_1"))
-	UI.title(p.box, Data.name_of(pack_id), Rect2(70, 250, 580, 80), 40, Color.WHITE)
+	var title := UI.title(p.box, Data.name_of(pack_id), Rect2(70, 250, 580, 80), 40, Color.WHITE)
 	var chance := UI.lbl(p.box, "卡片星级概率\n" + CardPacks.probability_text(pack_id), Rect2(80, 880, 560, 170), 24, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	chance.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var state := {"open": false, "t": 0.0}
@@ -228,27 +233,15 @@ static func pack(request: Dictionary = {}) -> PopupBase:
 		Sfx.play("merge", 1.3)
 		hint.visible = false
 		chance.hide()
-		var got: Array = await G.open_pack(pack_id, int(source.get("cell", -1)), int(source.get("stash", -1)))
-		if got.is_empty():
+		var result: Dictionary = await G.open_pack_result(pack_id, int(source.get("cell", -1)), int(source.get("stash", -1)))
+		if not is_instance_valid(p) or not p.is_inside_tree(): return
+		if result.has("error") or result.get("cards", []).is_empty():
 			p.close()
 			return
-		for k in got.size():
-			var ab: int = got[k][0]
-			var ix: int = got[k][1]
-			var cr := Rect2(110 + k * 270, 520, 230, 320)
-			var cb := UI.hit(p.box, cr, func(): G.main.open("card", {"album": ab, "index": ix}))
-			cb.extra = func(ci, sz): Paint.card(ci, Rect2(Vector2(6, 12), sz - Vector2(12, 18)), ab, ix, true)
-			UI.lbl(cb, CardArtwork.card_name(ab, ix), Rect2(20, 252, 190, 50), 24, Color("5a3a1e"), HORIZONTAL_ALIGNMENT_CENTER)
-			cb.pivot_offset = cr.size * 0.5
-			cb.scale = Vector2(0.0, 1.0)
-			var tw := cb.create_tween()
-			tw.tween_interval(0.15 + k * 0.2)
-			tw.tween_property(cb, "scale", Vector2(1.1, 1.1), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw.tween_property(cb, "scale", Vector2.ONE, 0.1)
-			UI.lbl(p.box, CardArtwork.title(ab), Rect2(cr.position.x, cr.position.y - 50, cr.size.x, 40), 22, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-		var btn := UI.btn(p.box, Rect2(210, 1100, 300, 104), "收下", "green", p.close, 44)
-		btn.scale = Vector2.ZERO
-		btn.create_tween().tween_property(btn, "scale", Vector2.ONE, 0.25).set_delay(0.6).set_trans(Tween.TRANS_BACK)
+		timer.stop()
+		pack_box.hide()
+		title.text = "获得卡牌"
+		CardRewardPresentation.fill(p, result.get("card_rewards", []))
 	return p
 
 ## 计时制作的订单成品，和普通合成链分开。

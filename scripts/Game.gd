@@ -75,6 +75,7 @@ var pending_orders: Array = []
 var cooked_pop: Array = []
 var builds := {}
 var cards := {}
+var card_stars := 0
 var stash: Array = []
 var tokens := 0
 var token_claimed := 0
@@ -268,6 +269,7 @@ func new_game() -> void:
 	book_claimed = {}
 	builds = {"fire": 1}
 	cards = {}
+	card_stars = 0
 	stash = []
 	ufo_offer = {}
 	offers = {}
@@ -431,8 +433,11 @@ func do_build(id: String) -> Dictionary:
 	return rules.progression.do_build(id)
 
 func open_pack(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> Array:
-	if replay_input(): return (Replay.perform("pack", {"id": pack_id, "cell": cell, "stash": stash_index})).get("cards", [])
-	return rules.progression.open_pack(pack_id, cell, stash_index)
+	return open_pack_result(pack_id, cell, stash_index).get("cards", [])
+
+func open_pack_result(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> Dictionary:
+	if replay_input(): return Replay.perform("pack", {"id": pack_id, "cell": cell, "stash": stash_index})
+	return rules.progression.open_pack_result(pack_id, cell, stash_index)
 
 func refresh_shell() -> Dictionary:
 	if replay_input(): return Replay.perform("shell_refresh")

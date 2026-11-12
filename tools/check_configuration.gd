@@ -38,6 +38,15 @@ func run() -> void:
 	var packs: Dictionary = Files.read("res://data/card_packs.json")
 	packs.packs[0].weights = [0, 0, 0, 0, 0]
 	rejects({"res://data/card_packs.json": packs}, "empty weighted distribution is rejected")
+	packs = Files.read("res://data/card_packs.json")
+	packs.star_exchange[0].cost = -100
+	rejects({"res://data/card_packs.json": packs}, "negative star prices are rejected")
+	packs = Files.read("res://data/card_packs.json")
+	packs.star_exchange[0].pack = "pack_99"
+	rejects({"res://data/card_packs.json": packs}, "unknown exchange packs are rejected")
+	packs = Files.read("res://data/card_packs.json")
+	packs.duplicate_stars_by_rarity = [1, 2]
+	rejects({"res://data/card_packs.json": packs}, "incomplete duplicate rarity values are rejected")
 	var before := FileAccess.get_sha256(Files.BOARD)
 	check(Files.write(Files.BOARD, board) == ERR_INVALID_DATA, "invalid editor write is refused")
 	check(before == FileAccess.get_sha256(Files.BOARD), "refused write preserves the configuration file")

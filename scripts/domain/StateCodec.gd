@@ -7,7 +7,7 @@ const FIELDS := [
 	"replay_meta", "player_id", "seen_tutorial", "tutorial_on",
 	"level", "xp", "energy", "shells", "amber", "rush", "energy_stamp",
 	"boost", "boost_gm", "board", "inv", "inv_chests", "inv_cap", "stash",
-	"discovered", "book_claimed", "orders", "order_serial", "story_done", "pending_orders", "builds", "cards",
+	"discovered", "book_claimed", "orders", "order_serial", "story_done", "pending_orders", "builds", "cards", "card_stars",
 	"tokens", "token_claimed", "hot_bought", "hot_revision", "deals_bought", "deals_day",
 	"shell_bought", "shell_period", "energy_buys",
 	"pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season",
@@ -51,6 +51,7 @@ static func validate(game: Node, state: Dictionary) -> bool:
 	if state.get("schema") != SCHEMA or not state.get("replay_rng") is Dictionary:
 		return false
 	migrate_ids(state)
+	migrate_card_stars(state)
 	var random_state: Dictionary = state["replay_rng"]
 	if not random_state.get("seed") is String or not random_state.get("streams") is Dictionary:
 		return false
@@ -85,7 +86,24 @@ static func validate(game: Node, state: Dictionary) -> bool:
 	for container in [state["inv"], state["stash"]]:
 		for item in container:
 			if not item is String or not Data.is_known(item) or Data.is_numeric_resource(item): return false
-	return int(state["level"]) >= 1 and int(state["inv_cap"]) >= 1
+	return int(state["level"]) >= 1 and int(state["inv_cap"]) >= 1 and int(state["card_stars"]) >= 0
+
+## Older saves kept duplicate copies. Convert only when adding the new wallet,
+## so reloading a checkpoint can never pay those copies twice.
+static func migrate_card_stars(state: Dictionary) -> void:
+	if state.has("card_stars"): return
+	state["card_stars"] = 0
+	if not state.get("cards") is Dictionary: return
+	for key in state["cards"]:
+		var parts := str(key).split("_")
+		if parts.size() != 2 or not parts[0].is_valid_int() or not parts[1].is_valid_int(): continue
+		var album := int(parts[0])
+		var index := int(parts[1])
+		if album < 0 or album >= Data.ALBUMS.size() or index < 0 or index >= Data.ALBUMS[album]["cards"].size(): continue
+		var copies := int(state["cards"][key])
+		if copies > 1:
+			state["card_stars"] += (copies - 1) * CardPacks.duplicate_value(album, index)
+			state["cards"][key] = 1
 
 static func restore(game: Node, state: Dictionary) -> bool:
 	if not validate(game, state): return false

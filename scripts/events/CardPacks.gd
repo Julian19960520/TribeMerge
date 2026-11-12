@@ -21,6 +21,14 @@ static func stars(album: int, index: int) -> int:
 	var slots: Array = Data.ALBUMS[album].get("stars", config()["card_stars_by_slot"])
 	return clampi(int(slots[index]), 1, 5)
 
+static func duplicate_value(album: int, index: int) -> int:
+	return int(config()["duplicate_stars_by_rarity"][stars(album, index) - 1])
+
+static func exchange_offer(cost: int) -> Dictionary:
+	for offer in config()["star_exchange"]:
+		if int(offer["cost"]) == cost: return offer
+	return {}
+
 static func star_at_roll(id: String, roll: float) -> int:
 	var cursor := 0.0
 	var probabilities := probabilities(id)

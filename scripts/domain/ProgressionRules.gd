@@ -69,7 +69,9 @@ func buy_energy() -> bool:
 	return true
 
 func storage_price() -> int:
-	return int(Data.RULES.get("storage_expand_price", 50)) + maxi(0, state.inv_cap - int(Data.RULES.get("storage_initial", 5))) * int(Data.RULES.get("storage_expand_step", 10))
+	var initial := int(Data.RULES.get("storage_initial", 5))
+	var row := maxi(0, state.inv_cap / Data.STORAGE_COLS - initial / Data.STORAGE_COLS)
+	return int(Data.RULES.get("storage_expand_price", 50)) + row * int(Data.RULES.get("storage_expand_step", 10))
 
 func expand_storage() -> bool:
 	if state._storage_busy: return false
@@ -381,15 +383,18 @@ func consume_pack_source(source: Dictionary) -> void:
 	else: state.board[int(source["cell"])]["id"] = ""
 
 func open_pack(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> Array:
-	if state._pack_busy or not feature_unlocked(Data.CARD_LEVEL): return []
+	return open_pack_result(pack_id, cell, stash_index).get("cards", [])
+
+func open_pack_result(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> Dictionary:
+	if state._pack_busy or not feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡尚未解锁"}
 	var source = find_pack_source(pack_id, cell, stash_index)
 	if source.is_empty():
 		state.present("notice", {"text": "没有可以打开的卡包"})
-		return []
+		return {"error": "没有可以打开的卡包"}
 	state._pack_busy = true
 	consume_pack_source(source)
-	var result: Array = roll_card_pack(str(source["id"]))
-	if result.is_empty():
+	var result := draw_card_pack(str(source["id"]))
+	if result.has("error"):
 		var at = int(source["cell"])
 		if at >= 0 and context.board._vacant(at): state.board[at]["id"] = source["id"]
 		else: state.stash.append(source["id"])
@@ -400,24 +405,46 @@ func open_pack(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> A
 	return result
 
 func roll_card_pack(pack_id: String = "pack_1") -> Array:
+	return draw_card_pack(pack_id).get("cards", [])
+
+func draw_card_pack(pack_id: String = "pack_1") -> Dictionary:
 	if not feature_unlocked(Data.CARD_LEVEL):
 		state.present("notice", {"text": "典藏卡在 %d 级解锁" % Data.CARD_LEVEL})
-		return []
-	if CardPacks.definition(pack_id).is_empty(): return []
+		return {"error": "典藏卡尚未解锁"}
+	if CardPacks.definition(pack_id).is_empty(): return {"error": "卡包不存在"}
 	var out = []
 	for i in int(CardPacks.config()["cards_per_pack"]):
 		var selected = CardPacks.draw(pack_id, context.random_for("cards"))
-		if selected.is_empty(): return []
+		if selected.is_empty(): return {"error": "卡池为空"}
 		out.append(selected)
-	collect_cards(out)
-	return out
+	return {"cards": out, "card_rewards": collect_cards(out)}
 
-func collect_cards(entries: Array) -> void:
+func collect_cards(entries: Array) -> Array:
+	var rewards := []
 	for entry in entries:
-		var key = "%d_%d" % [int(entry[0]), int(entry[1])]
-		state.cards[key] = int(state.cards.get(key, 0)) + 1
+		var album := int(entry[0])
+		var index := int(entry[1])
+		var key := "%d_%d" % [album, index]
+		var value := CardPacks.duplicate_value(album, index) if state.cards.has(key) else 0
+		state.card_stars += value
+		state.cards[key] = 1
+		rewards.append({"album": album, "index": index, "stars": value})
 	context.record("cards", entries.size())
 	state.dirty()
+	return rewards
+
+func exchange_card_stars(cost: int) -> Dictionary:
+	if not feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡尚未解锁"}
+	var offer := CardPacks.exchange_offer(cost)
+	if offer.is_empty(): return {"error": "兑换档位不存在"}
+	if state.card_stars < cost: return {"error": "星星不足"}
+	state.card_stars -= cost
+	var pack_id := str(offer["pack"])
+	# Keep the pack intact, even with a full board or an older pack in storage.
+	state.stash.append(pack_id)
+	state.dirty()
+	state.changed.emit()
+	return {"cost": cost, "pack": pack_id, "stash": state.stash.size() - 1}
 
 func album_count(a: int) -> int:
 	var n = 0

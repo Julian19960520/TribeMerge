@@ -1,9 +1,9 @@
 extends PopupBase
 const PS := preload("res://scripts/sprites/popups.gd")
-## 储物洞：山洞石壁上一层层木搁板，每层 5 格，往下无限加层（需求 #33：无限格子、可滚动、每格 +10、行距小）。
+## 储物洞：山洞石壁上一层层木搁板，每层 5 格，往下无限加层；同排同价，每排 +10 琥珀。
 ## 已开的格子是石壁里凿出的小龛；下一格是可扩建的虚线格（点它或底部按钮扩建）；同一层剩下的位置是碎石堵着。
 ## 只给看得见的几层建控件（POOL_ROWS 层循环复用），格子再多界面节点数也不变。
-const COLS := 5
+const COLS := Data.STORAGE_COLS
 const ROW_H := 126.0
 const POOL_ROWS := 6
 const SLOT := 108.0
@@ -116,7 +116,7 @@ func _layout(force := false) -> void:
 func _refresh() -> void:
 	if scroll == null: return
 	capacity.text = "已存 %d / %d 格" % [G.inv.size(), G.inv_cap]
-	next_lbl.text = "每扩一格，下一格 +%d" % int(Data.RULES.get("storage_expand_step", 10))
+	next_lbl.text = "同排同价，每排 +%d" % int(Data.RULES.get("storage_expand_step", 10))
 	unlock.text = "%d 扩建" % G.rules.progression.storage_price()
 	unlock.enabled = not _busy
 	unlock.queue_redraw()

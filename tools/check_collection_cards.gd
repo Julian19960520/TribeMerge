@@ -65,11 +65,12 @@ func run() -> void:
 	check(str(g.random_save()["streams"]["cards"]) == normal_stream, "GM acquisitions do not advance the normal pack random stream")
 	check(not replay.meta.get("album:0", false) and claim.enabled and [g.energy, g.shells, g.amber, g.rush, g.stash] == unclaimed_wallet, "completing a collection enables manual claiming without paying automatically")
 	var wallet := [g.energy, g.shells, g.amber, g.rush]
+	var stars_before: int = g.card_stars
 	album.box.get_node("gm_random_card").pressed.emit()
 	main.popup_layer.top().free()
 	var copies := 0
 	for amount in g.cards.values(): copies += int(amount)
-	check(g.rules.progression.album_count(0) == 9 and copies == 10, "a completed album can still receive a random duplicate")
+	check(g.rules.progression.album_count(0) == 9 and copies == 9 and g.card_stars > stars_before, "a completed album converts its random duplicate into stars")
 	check(wallet == [g.energy, g.shells, g.amber, g.rush], "duplicate acquisition does not grant the album reward again")
 	album.box.get_node("album_cards/card_0_8").pressed.emit()
 	check(main.popup_layer.top().box.get_node("card_text").text == Data.ALBUMS[0]["texts"][8], "tapping a collected card opens its own full illustration and caption")

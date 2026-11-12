@@ -15,7 +15,11 @@ const MAX_PENDING := 500
 ## One compatible upgrade: recover old automatic payouts before switching to manual claims.
 const AUTOMATIC_ALBUM_RULES := "85bcaca55a055ded5dcbff79bd78d98ea037c4de1dead8415f66b45cdf0c7550"
 const MANUAL_ALBUM_RULES := "148e80059573539ac7a6780c5d7b775ce0de00abadb91be0ac300ec8ca3f3964"
-const HUD_FIELDS := ["level", "xp", "energy", "shells", "amber", "rush", "energy_stamp", "boost", "boost_gm", "inv", "inv_chests", "inv_cap", "discovered", "book_claimed", "builds", "cards", "stash", "tokens", "token_claimed", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season", "hot_bought", "hot_revision", "deals_bought", "deals_day", "shell_bought", "shell_period", "energy_buys", "offers", "ufo_offer", "gm_activities", "local_race", "duel_race", "tiger_escape", "fossil_dig"]
+## The preceding browser release can retain its checkpoint across the cloud-save update.
+const PREVIOUS_OFFLINE_RULES := "7b5522454546bf929f010087a8dd4b3f4bfa6ee083cf312b0fc9d12795514b7d"
+const BEFORE_CARD_STARS_RULES := "abdb072fabf8603a575f3325b536dbe42681bc7f12fb96248ebd2abf689a5e07"
+const BEFORE_STORAGE_ROW_RULES := "b40bce3652724254881454ff4f1e64944a2b5184fa3062481df01afffe1622a3"
+const HUD_FIELDS := ["level", "xp", "energy", "shells", "amber", "rush", "energy_stamp", "boost", "boost_gm", "inv", "inv_chests", "inv_cap", "discovered", "book_claimed", "builds", "cards", "card_stars", "stash", "tokens", "token_claimed", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season", "hot_bought", "hot_revision", "deals_bought", "deals_day", "shell_bought", "shell_period", "energy_buys", "offers", "ufo_offer", "gm_activities", "local_race", "duel_race", "tiger_escape", "fossil_dig"]
 var active := false
 var executing := false
 var worker := false
@@ -64,12 +68,13 @@ func _ready() -> void:
 	if not Cloud.enabled: meta["allow_gm"] = true
 	if G.random_seed == "": G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
 	var skip_journal := false
+	var upgrade_snapshot := G.loaded_save and not Cloud.enabled and ((str(saved.get("rules", "")) == PREVIOUS_OFFLINE_RULES and rules_hash() == FifthLineUpgrade.TO_RULES) or str(saved.get("rules", "")) in [BEFORE_CARD_STARS_RULES, BEFORE_STORAGE_ROW_RULES])
 	var upgrade_fifth_line := G.loaded_save and not Cloud.enabled and FifthLineUpgrade.applies(str(saved.get("rules", "")), rules_hash(), [RewardUpgrade.FROM_RULES, AUTOMATIC_ALBUM_RULES])
 	var upgrade_rewards := G.loaded_save and not Cloud.enabled and RewardUpgrade.applies(str(saved.get("rules", "")), rules_hash(), AUTOMATIC_ALBUM_RULES)
 	var upgrade_albums := G.loaded_save and not Cloud.enabled and str(saved.get("rules", "")) == AUTOMATIC_ALBUM_RULES and (rules_hash() == MANUAL_ALBUM_RULES or upgrade_rewards)
 	_reducer.legacy_album_rewards = upgrade_albums
 	if G.loaded_save and str(saved.get("rules", "")) != rules_hash() and not upgrade_albums and not upgrade_rewards and not upgrade_fifth_line:
-		if Cloud.enabled:
+		if Cloud.enabled or upgrade_snapshot:
 			# A new client version: keep the last checkpoint and drop only the few
 			# seconds of journal written under the old rules.
 			skip_journal = true
@@ -113,7 +118,7 @@ func _ready() -> void:
 		base = seq
 		pending = []
 		inflight = {}
-	if not checkpoint() and (upgrade_albums or upgrade_rewards or upgrade_fifth_line): authorized = false
+	if not checkpoint() and (upgrade_albums or upgrade_rewards or upgrade_fifth_line or upgrade_snapshot): authorized = false
 
 func journal() -> Dictionary:
 	return {"base": base, "pending": pending, "inflight": inflight, "authorized": authorized,

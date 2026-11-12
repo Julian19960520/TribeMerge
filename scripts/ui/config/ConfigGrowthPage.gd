@@ -440,7 +440,7 @@ func _rules() -> float:
 	y = _rule(d, y, "energy_price_max", "体力最高价格", 1, 999)
 	y = _rule(d, y, "token_step", "鼓换卡包", 1, 999)
 	y = _rule(d, y, "storage_expand_price", "储物首次价格", 1, 999)
-	y = _rule(d, y, "storage_expand_step", "储物每格涨价", 1, 999)
+	y = _rule(d, y, "storage_expand_step", "储物每排涨价", 1, 999)
 	return y + 20
 
 func _order_capacity_rules(d: Dictionary, y: float) -> float:

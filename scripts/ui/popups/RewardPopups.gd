@@ -142,7 +142,6 @@ static func board_reward(entries: Array) -> PopupBase:
 			var sr := (3.0 + Art.srnd(k * 3) * 5.0) * (0.45 + 0.55 * tw) * open
 			if sr > 2.4:
 				Sprites.at(ci, "pop_sparkle", sp, sr / PS.SPARK_R, 0.0, Color(1, 0.95, 0.75, 0.6 * tw))
-		Paint.mascot(ci, Vector2(br.end.x - 36, br.position.y - 8), 74)
 		Paint.banner(ci, br, Color("c4532e")))
 	UI.title(p.box, "获得奖励", Rect2(br.position.x + 40, br.position.y + 4, br.size.x - 80, br.size.y - 10), 46, Color("fff1c4"))
 	# 奖励：依次弹出，落地后轻轻浮动

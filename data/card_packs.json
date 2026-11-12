@@ -1,5 +1,11 @@
 {
 	"cards_per_pack": 2,
+	"duplicate_stars_by_rarity": [1, 2, 3, 4, 5],
+	"star_exchange": [
+		{"cost": 100, "pack": "pack_3"},
+		{"cost": 200, "pack": "pack_4"},
+		{"cost": 400, "pack": "pack_5"}
+	],
 	"card_stars_by_slot": [1, 1, 1, 2, 2, 3, 3, 4, 5],
 	"normalization": "relative_weights",
 	"packs": [

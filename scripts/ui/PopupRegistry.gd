@@ -3,7 +3,7 @@ extends RefCounted
 ## Feature factories and access conditions; Main only presents the returned view.
 const PassPopupScript := preload("res://scripts/ui/PassPopup.gd")
 static func create(name: String, arg = null) -> PopupBase:
-	if name in ["album", "pack", "event", "card"] and not G.rules.progression.feature_unlocked(Data.CARD_LEVEL):
+	if name in ["album", "pack", "event", "card", "card_star_shop", "card_received"] and not G.rules.progression.feature_unlocked(Data.CARD_LEVEL):
 		G.main.toast("典藏卡在 %d 级解锁" % Data.CARD_LEVEL)
 		return null
 	var p: PopupBase
@@ -49,6 +49,8 @@ static func create(name: String, arg = null) -> PopupBase:
 		"album": p = CollectionPopups.album(arg)
 		"card": p = CollectionPopups.card(int(arg.get("album", -1)), int(arg.get("index", -1)))
 		"pack": p = CollectionPopups.pack(arg if arg is Dictionary else {})
+		"card_star_shop": p = CardStarUI.shop()
+		"card_received": p = CardRewardPresentation.popup(arg if arg is Dictionary else {})
 		"level": p = RewardPopups.level_info()
 		_: return null
 	return p

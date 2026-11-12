@@ -39,6 +39,8 @@ static var UNLOCK_ROWS: Dictionary = {}
 const CARD_LEVEL := 8
 ## 双倍火种（生产器加速）：这一级解锁。开启后生产器每次耗 2 火种，产物高 1 级。
 const BOOST_LEVEL := 18
+## 储物洞每排格数：界面布局与扩容计价共用。
+const STORAGE_COLS := 5
 
 static var valid := false
 static var revision := 0

@@ -14,7 +14,7 @@ static func build(id: String) -> PopupBase:
 	var done := st >= total
 	var open := G.rules.progression.build_open(id)
 	var r := Rect2(40, 390, 640, 780)
-	Popups.frame(p, r, str(d.get("name", id)), Color("4f8fc0"), "hammer")
+	Popups.frame(p, r, str(d.get("name", id)), Color("4f8fc0"))
 	var line_name := ""
 	for l in Data.LINES:
 		if str(l.get("id", "")) == str(d.get("line", "")):

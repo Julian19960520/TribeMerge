@@ -2,14 +2,12 @@ class_name Popups
 extends RefCounted
 ## Shared popup chrome and scoped signal subscriptions. Feature views live in popups/.
 
-static func frame(p: PopupBase, r: Rect2, title: String, col: Color = Art.TEAL, mascot: String = "") -> void:
+static func frame(p: PopupBase, r: Rect2, title: String, col: Color = Art.TEAL, decoration: String = "") -> void:
 	var br := Rect2(r.get_center().x - 180, r.position.y - 34, 360, 78)
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
-		if mascot != "":
-			if mascot == "fire":
-				for k in 5:
-					Art.item(ci, "fire_2", Vector2(br.position.x + 30 + k * 75, br.position.y + 6 - (k % 2) * 20), 56)
-			Paint.mascot(ci, Vector2(r.get_center().x, br.position.y - 60), 120, "hammer" if mascot == "hammer" else "")
+		if decoration == "fire":
+			for k in 5:
+				Art.item(ci, "fire_2", Vector2(br.position.x + 30 + k * 75, br.position.y + 6 - (k % 2) * 20), 56)
 		Paint.panel(ci, r)
 		Paint.banner(ci, br, col))
 	UI.title(p.box, title, Rect2(br.position.x + 40, br.position.y + 4, br.size.x - 80, br.size.y - 10), 38, Color.WHITE)

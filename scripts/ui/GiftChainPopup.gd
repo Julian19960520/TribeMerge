@@ -36,7 +36,7 @@ static func pop_open() -> PopupBase:
 func _setup() -> void:
 	chain = Net.inst()
 	var r := R
-	Popups.frame(self, r, "部落礼包链", Art.CLAY, "meme")
+	Popups.frame(self, r, "部落礼包链", Art.CLAY)
 	_prog = UI.lbl(box, "", Rect2(r.position.x + 40, r.position.y + 52, 260, 36), 22, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
 	_time = UI.lbl(box, "", Rect2(r.end.x - 320, r.position.y + 52, 280, 36), 22, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_RIGHT)
 	var tip := UI.lbl(box, "按顺序领取 · 越往后越丰厚", Rect2(r.position.x, r.position.y + 90, r.size.x, 34), 20, Color("8a6a4a"))

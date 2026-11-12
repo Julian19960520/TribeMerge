@@ -95,6 +95,7 @@ func dispatch(name: String, a: Dictionary):
 			if lv < 2 or lv > G.level or meta.has(key): return {"error": "等级奖励不可领取"}
 			meta[key] = true; var rw := Data.level_rewards(lv); grant(rw); return {"rewards": rw}
 		"pack": return pack(a)
+		"card_star_exchange": return G.rules.progression.exchange_card_stars(int(a.get("cost", 0)))
 		"album_claim": return claim_album(int(a.get("album", -1)))
 		"shop_view": return {"list": G.rules.shop.today()}
 		"shop":
@@ -262,10 +263,10 @@ func pack(args: Dictionary = {}) -> Dictionary:
 	if legacy_album_rewards:
 		for album in Data.ALBUMS.size():
 			if G.rules.progression.album_count(album) == 9: complete_before.append(album)
-	var cards: Array = G.rules.progression.roll_card_pack(str(source["id"]))
-	if cards.is_empty(): return {"error": "卡包无法打开"}
+	var result: Dictionary = G.rules.progression.draw_card_pack(str(source["id"]))
+	if result.has("error"): return result
 	if legacy_album_rewards: grant_album_rewards(complete_before)
-	return {"cards": cards}
+	return result
 
 func claim_album(album: int) -> Dictionary:
 	if not G.rules.progression.feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡尚未解锁"}
@@ -311,9 +312,9 @@ func gm(args: Dictionary) -> Dictionary:
 	var candidates: Array = missing if not missing.is_empty() else pool
 	var rng: RandomNumberGenerator = G.random_for("gm_cards")
 	var entry: Array = candidates[int(rng.randi() % candidates.size())]
-	G.rules.progression.collect_cards([entry])
+	var rewards: Array = G.rules.progression.collect_cards([entry])
 	if legacy_album_rewards: grant_album_rewards(complete_before)
-	return {"cards": [entry]}
+	return {"cards": [entry], "card_rewards": rewards}
 
 func gift_view() -> Dictionary:
 	var c: Dictionary = Data.ConfigFiles.shared("res://data/gift_chain.json")
