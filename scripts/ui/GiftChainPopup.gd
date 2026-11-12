@@ -214,7 +214,7 @@ func _paint_card(ci: CanvasItem, sz: Vector2, i: int, live: bool, paid: bool, cn
 	var cell := _cell(cnt)
 	var x0 := _x0(cnt)
 	for k in cnt:
-		var id := str(rw[k][0])
+		var id := Rewards.before_cards(str(rw[k][0]))
 		var c := Vector2(x0 + cell * (k + 0.5), 86)
 		Art.item(ci, Art.AMBER_ICON if id.begins_with("amber_") else id, c, minf(96.0, cell - 10.0))
 	# 标签印章

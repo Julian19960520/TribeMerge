@@ -24,7 +24,7 @@ static func event() -> PopupBase:
 	Popups.live(p, G.changed, func(): total.text = "%d/%d" % [G.rules.progression.cards_total(), Data.ALBUMS.size() * 9])
 	var got := G.tokens - G.token_claimed
 	UI.lbl(root, "祭典鼓 %d/%d" % [got, G.TOKEN_STEP], Rect2(170, 616, 420, 36), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(root, "完成订单收集祭典鼓，攒满换兽皮卡包", Rect2(60, 656, 600, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
+	UI.lbl(root, "帮族人实现心愿收集祭典鼓，攒满换兽皮卡包", Rect2(60, 656, 600, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	for a in Data.ALBUMS.size():
 		var cx := 128.0 + (a % 3) * 232.0
 		var cy := 840.0 + (a / 3) * 330.0

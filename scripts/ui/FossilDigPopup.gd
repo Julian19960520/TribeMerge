@@ -184,7 +184,7 @@ func _refresh() -> void:
 	progress_label.text = "收集进度  %d / %d" % [int(s["recovered"]), int(FossilDig.config()["milestones"][-1]["bones"])]
 	count_label.text = "铲子  %d" % int(s["shovels"])
 	primary.enabled = not working and flies.is_empty()
-	primary.text = "去完成订单"
+	primary.text = "去帮族人"
 	if FossilDig.cleared():
 		if not flies.is_empty(): primary.text = "化石归位中…"
 		elif FossilDig.finished():
@@ -192,7 +192,7 @@ func _refresh() -> void:
 			primary.enabled = not working and not FossilDig.ready_rewards().is_empty()
 		else: primary.text = "下一关 · %d×%d" % [int(b["n"]) + 1, int(b["n"]) + 1]
 		hint.text = "本关化石已集齐！" if not FossilDig.finished() else "远古骨骼全部重见天日！"
-	elif int(s["shovels"]) < int(FossilDig.config()["dig_cost"]): hint.text = "完成主棋盘订单，每单获得 %d 把铲子" % int(FossilDig.config()["shovels_per_order"])
+	elif int(s["shovels"]) < int(FossilDig.config()["dig_cost"]): hint.text = "每实现一个心愿，获得 %d 把铲子" % int(FossilDig.config()["shovels_per_order"])
 	else: hint.text = "点击土块开挖，集齐完整骨头"
 	primary.queue_redraw()
 	var bsig := str([s["stage"], b["n"]])
@@ -324,7 +324,7 @@ func _preview(need: int) -> void:
 func _instructions() -> void:
 	var p := PopupBase.new()
 	Popups.frame(p, Rect2(66, 392, 588, 680), "挖掘手记", Color("7b6842"))
-	var text := "完成主棋盘订单，每单获得 %d 把铲子。\n\n每点击一格消耗 %d 把铲子，泥土下可能是骨头，也可能是空地。\n\n挖开一块骨头占据的全部格子，骨头就会飞入顶部对应的剪影。\n\n集齐本关骨头即可进入更大的挖掘区。累计收集骨头，点击顶部宝箱领取进度奖励。" % [int(FossilDig.config()["shovels_per_order"]), int(FossilDig.config()["dig_cost"])]
+	var text := "每实现一个心愿，获得 %d 把铲子。\n\n每点击一格消耗 %d 把铲子，泥土下可能是骨头，也可能是空地。\n\n挖开一块骨头占据的全部格子，骨头就会飞入顶部对应的剪影。\n\n集齐本关骨头即可进入更大的挖掘区。累计收集骨头，点击顶部宝箱领取进度奖励。" % [int(FossilDig.config()["shovels_per_order"]), int(FossilDig.config()["dig_cost"])]
 	var label := UI.lbl(p.box, text, Rect2(108, 474, 504, 456), 26, Art.INK)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	UI.btn(p.box, Rect2(208, 964, 304, 74), "开始考古", "green", p.close, 32)

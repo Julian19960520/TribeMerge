@@ -164,7 +164,7 @@ func _build_bottom() -> void:
 	spawn_btn.extra = _paint_spawn
 	spawn_btn.name = "moon_place_button"
 	points = UI.lbl(spawn_btn, "", Rect2(30, 122, 120, 38), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, INK, true)
-	orders_btn = UI.btn(box, Rect2(190, BUBBLE.y - 44, 340, 88), "去完成订单", "green", _go_orders, 34)
+	orders_btn = UI.btn(box, Rect2(190, BUBBLE.y - 44, 340, 88), "去帮族人", "green", _go_orders, 34)
 	orders_btn.name = "moon_go_orders"
 
 func _go_orders() -> void:

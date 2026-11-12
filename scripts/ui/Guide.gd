@@ -2,9 +2,12 @@ class_name Guide
 extends Control
 ## 新手引导挂在棋盘界面上，离开棋盘就一起藏起来。
 ## 升级部落和回到棋盘这几步发生在棋盘外面，临时提到最上层。
-## 强引导只有第一次合成和升级部落：半透明黑罩只留出该点的地方。
-## 其余是弱引导，不盖黑罩，只留提示和箭头，棋盘可以照常操作。
+## 流程照竞品：合成→打开石头里的东西→合出生产器（弹「新生产器」）→生产→交两单→第一次建设→讲订单和等级。
+## 关键节点先说一句「点击继续」的剧情句。生产器升级放到第二次建设送礼物之后，由一次性提示（Tips）带。
+## 每一步都是强引导：全屏黑罩只留出这一步要点、要拖的地方，别处点不动。
+## 只有棋盘布局对不上、走「plain」兜底时不盖黑罩。
 
+const Meme := preload("res://scripts/Meme.gd")
 const SRC := 28
 const DST := 29
 const VINE2 := 30
@@ -14,7 +17,6 @@ const BERRY := 32
 const VINE3 := 23
 const OPEN_LAND := [28, 22, 29]
 const LADDER := [32, 33, 40, 39, 38, 37, 36]
-const STRONG := ["merge1", "upgrade"]
 const OFF_BOARD := ["to_build", "build", "rewarded", "back"]
 
 var _step := ""
@@ -43,9 +45,16 @@ var _t := 0.0
 var _done := false
 var _reward_until := 0
 var _stones_until := 0
+## 进入当前步骤的时刻（毫秒）
+var _step_at := 0
+## 正在说的剧情句（步骤名），空表示没有
+var _beat := ""
+var _beat_at := 0
+var _cont: Label
+## 教学订单客人的称呼缓存：订单交掉后还要说出名字
+var _who_cache := {}
 ## 全屏领奖盖住引导时先藏起来，领完再把「石头裂开」那一句补上
 var _reward_cover := false
-var _gave_seed_order := false
 var _tw: Tween
 
 func _ready() -> void:
@@ -74,10 +83,12 @@ func _ready() -> void:
 	_bust = DrawBox.new()
 	_bust.mouse_filter = MOUSE_FILTER_IGNORE
 	_bust.painter = func(ci, sz):
-		Paint.bust(ci, sz * 0.5 + Vector2(0, 16), 122)
+		Meme.walker_portrait(ci, Meme.HERO, Vector2(sz.x * 0.5, sz.y - 6.0), sz.x - 14.0)
 	add_child(_bust)
-	_label = UI.lbl(self, "", Rect2(), 28, Art.INK)
+	_label = UI.lbl(self, "", Rect2(), 26, Art.INK)
 	_label.add_theme_constant_override("line_spacing", 6)
+	_cont = UI.lbl(self, "点击继续", Rect2(), 22, Color("4f9a3a"), HORIZONTAL_ALIGNMENT_RIGHT)
+	_cont.visible = false
 	_ghost = DrawBox.new()
 	_ghost.boil = false
 	_ghost.mouse_filter = MOUSE_FILTER_IGNORE
@@ -127,17 +138,20 @@ func merge_hint() -> Vector2i:
 func allows_drop(a: int, b: int) -> bool:
 	if not visible or _done or not _strong():
 		return true
+	if _beat != "":
+		return false
 	if a == b:
 		return true
 	match _step:
 		"merge1":
 			return a == SRC and b == DST
-		"vine":
+		"vine", "stones":
+			## 石头刚裂开那一下也能接着合，不用等提示走完
 			return _vine_ok(a, b)
 		"to_prod":
 			return b == PROD and _same(a, b)
 		"make_fruit2":
-			return b == BERRY and _lock(b) == 1 and _same(a, b)
+			return b != BERRY and _lock(a) == 0 and _lock(b) == 0 and _same(a, b)
 		"climb":
 			var pair := _climb_pair()
 			return pair.x >= 0 and a == pair.x and b == pair.y
@@ -147,13 +161,17 @@ func allows_drop(a: int, b: int) -> bool:
 func allows_activate(i: int) -> bool:
 	if not visible or _done or not _strong():
 		return true
+	if _beat != "":
+		return false
+	## 爬藤时手上没有能合的果子（比如棋盘被打乱了），放开小草篓，免得卡死。
+	if _step == "climb" and _climb_pair().x < 0:
+		return i == PROD
 	if _step != "produce" and _step != "produce_more":
 		return false
-	return i == PROD and spawn_cell() >= 0
+	## 落点由规则决定（优先 24、32 格，满了就近放），这里只限定点小草篓
+	return i == PROD
 
-func force_drop(i: int) -> String:
-	if visible and not _done and _step == "byprod" and _id(i) == "basket_5":
-		return "seed_1"
+func force_drop(_i: int) -> String:
 	return ""
 
 func spawn_cell() -> int:
@@ -243,6 +261,11 @@ func _process(dt: float) -> void:
 func _gui_input(e: InputEvent) -> void:
 	if not (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT):
 		return
+	if _beat != "":
+		accept_event()
+		if Time.get_ticks_msec() - _beat_at > 400:
+			skip_beat()
+		return
 	if _step == "stones":
 		_enter(detect())
 		accept_event()
@@ -262,43 +285,54 @@ func _follow() -> void:
 		_enter(nxt)
 	else:
 		_layout()
+		_open_build_if_stuck()
 
 func _enter(step: String) -> void:
 	if step == "done":
 		_finish()
 		return
 	_step = step
+	_step_at = Time.get_ticks_msec()
 	_sig = ""
 	_attach()
 	if step == "stones":
 		_stones_until = Time.get_ticks_msec() + 1600
-	if step in ["submit1", "submit2", "submit_seed", "upgrade", "wait_pay", "take3", "byprod"]:
+	_beat = ""
+	if _beat_text(step) != "" and not G.tips_seen.has("guide_beat_" + step):
+		G.tips_seen["guide_beat_" + step] = true
+		_beat = step
+		_beat_at = Time.get_ticks_msec()
+	if step in ["submit1", "submit2", "upgrade", "wait_pay", "level"]:
 		G.main.board_screen.guide_focus_row()
 	_layout()
+
+## 「正往部落里走」蒙着黑、别处点不动：到了部落 1.5 秒还没弹出升级窗，就由引导直接打开，不能卡住
+func _open_build_if_stuck() -> void:
+	if _step != "to_build" or Time.get_ticks_msec() - _step_at < 1500:
+		return
+	if G.main.screen != "home" or _popup_open() or G.main.home.is_building():
+		return
+	var id := G.rules.progression.next_build_id()
+	if id == "":
+		return
+	_step_at = Time.get_ticks_msec()
+	G.main.open("build", id)
 
 func detect() -> String:
 	if int(G.builds.get("fire", 0)) >= 2:
 		var now := Time.get_ticks_msec()
 		if _reward_until == 0:
 			_reward_until = now + 1100
+		## 玩家点开了等级详情：引导到此结束
+		if _step == "level" and _popup_open():
+			G.tips_seen["guide_level"] = true
+			return "done"
 		if _popup_open() or now < _reward_until or G.main.home.is_building():
 			return "rewarded"
 		if G.main.screen != "board":
 			return "back"
-		if _has_open("basket_5"):
-			## 草籽单交掉以后，棋盘上的草籽也没了。这时要结束引导，不能回到「掉草籽」再发一张。
-			## 读档后 _gave_seed_order 会丢，用等级判断：两张教学单和草籽单各给 1 点经验，草籽单交掉正好升到 2 级。
-			if _seed_order_alive():
-				return "submit_seed" if _free("seed_1") else "byprod"
-			if _gave_seed_order or G.level > 1:
-				return "done"
-			return "byprod"
-		if _free_count("basket_4") >= 2:
-			return "merge5"
-		if _free("basket_3") and _vine3_ready():
-			return "merge3"
-		if _stash_has("basket_3"):
-			return "take3"
+		if not G.tips_seen.has("guide_level"):
+			return "level"
 		return "done"
 	if not _order_alive(1) and not _order_alive(2) and _shells_ready():
 		if _build_popup():
@@ -314,12 +348,14 @@ func detect() -> String:
 	if not _order_alive(1):
 		if _free("fruit_8"):
 			return "submit2"
-		if _free_count("fruit_1") >= 2 or _best_fruit() >= 2:
+		if _free_count("fruit_1") >= 2 or _best_fruit() >= 2 or (_free("fruit_1") and _berry_ready()):
 			return "climb"
 		return "produce_more"
 	if _free("fruit_2"):
 		return "submit1"
-	if _free("fruit_1"):
+	## 第一张单的樱桃用两颗摘下来的野莓在空地上合，不碰藤蔓：藤蔓下的樱桃要等交完单爬藤时才露出来，
+	## 免得同一颗樱桃「交单」和「开藤蔓」只能选一个。
+	if _free_count("fruit_1") >= 2:
 		return "make_fruit2"
 	if _seen("basket_4"):
 		return "produce"
@@ -330,7 +366,7 @@ func detect() -> String:
 	return "merge1"
 
 func _layout() -> void:
-	if _step in ["submit1", "submit2", "submit_seed", "upgrade", "wait_pay", "take3", "byprod"]:
+	if _step in ["submit1", "submit2", "upgrade", "wait_pay", "level"]:
 		G.main.board_screen.guide_focus_row()
 	_holes.clear()
 	_pass.clear()
@@ -340,13 +376,21 @@ func _layout() -> void:
 	_anchor = Rect2()
 	_text = ""
 	_fill_step()
-	for h in _holes:
-		_pass.append(h.grow(6))
+	if _beat != "":
+		_text = _beat_text(_beat)
+		_arrow_on = false
+		_merge_a = -1
+		_merge_b = -1
+	## 等不拿拿飞回来、剧情句时只亮出来给玩家看，不让点。
+	if _step != "wait_pay" and _beat == "":
+		for h in _holes:
+			_pass.append(h.grow(6))
 	_label.text = _text
+	_cont.visible = _beat != "" or _step == "stones"
 	if G.main != null and G.main.board_screen != null:
 		G.main.board_screen.board.hide_drag = _strong()
 	mouse_filter = MOUSE_FILTER_STOP if _strong() else MOUSE_FILTER_IGNORE
-	var sig := _step + "|" + str(_holes)
+	var sig := _step + "|" + _beat + "|" + str(_holes)
 	_sync_mask()
 	if sig == _sig:
 		return
@@ -358,7 +402,7 @@ func _layout() -> void:
 func _fill_step() -> void:
 	match _step:
 		"merge1":
-			_text = "把左边的干草束\n拖到右边合成"
+			_text = "把两个一样的东西拖到一起\n就能合成更高级的！"
 			_merge_a = SRC
 			_merge_b = DST
 			_add_cells([DST, SRC])
@@ -369,108 +413,102 @@ func _fill_step() -> void:
 				_arrow_b = u.position + Vector2(u.size.x * 0.78, -34)
 			_anchor = _union()
 		"stones":
-			_text = "旁边的石头裂开了"
+			_text = "在石头旁边合成\n就能把石头震开！"
 			_add_cells([DST, VINE2, SRC, 22, 36])
 			_anchor = _union()
 		"vine":
-			_text = "拖到藤蔓上可以合成\n空地也可以放物品"
+			_text = "石头里露出了东西\n拖一样的过去就能打开它"
 			_add_cells([DST, VINE2, SRC, 22, 36])
 			_aim(_open_id("basket_2"), VINE2 if _lock(VINE2) == 1 and _id(VINE2) == "basket_2" else -1)
 			_anchor = _union()
 		"to_prod":
-			_text = "再合成，做出4级小草篓\n小草篓才能生产"
+			_text = "再合一次就是小草篓\n小草篓能摘出野莓！"
 			_add_cells([VINE2, PROD])
 			_aim(_open_id("basket_3"), PROD if _id(PROD) == "basket_3" and _lock(PROD) != 2 else -1)
 			_anchor = _union()
 		"produce":
-			_text = "点一下小草篓\n野莓会落到旁边"
+			_text = "点一下小草篓\n摘点野莓来！" if not _free("fruit_1") else "再点一下\n多摘一颗野莓！"
 			_add_cells([PROD, SPAWN])
 			_anchor = _cell_local(PROD)
 		"make_fruit2":
-			_text = "把两颗野莓合成樱桃\n就能交订单"
-			_add_cells([SPAWN, BERRY])
-			_aim_fruit2()
+			_text = "继续合成，发现新东西！\n两颗野莓能合成樱桃"
+			var ones := _fruit2_pair()
+			if ones.x >= 0:
+				_add_cells([ones.x, ones.y])
+				_aim(ones.x, ones.y)
 			_anchor = _union()
 		"submit1":
-			_text = "点订单上的对勾\n把樱桃交出去"
+			_text = "樱桃好啦！\n点对勾交给%s" % _who(1)
 			_add_cells(_free_cells("fruit_2"))
 			_add_global(G.main.board_screen.guide_deliver_rect())
 			_anchor = _holes.back() if not _holes.is_empty() else Rect2()
 		"produce_more":
-			_text = "再点小草篓，多做几颗野莓\n合成更高级的水果"
+			_text = "点小草篓摘更多野莓\n继续帮族人实现心愿吧！"
 			_add_cells([PROD, SPAWN, BERRY])
 			_anchor = _cell_local(PROD)
 		"climb":
-			_text = "继续拖到藤蔓上合成\n一路做到8级石榴"
+			_text = "顺着藤蔓一路合上去\n合出8级石榴！"
 			var pair := _climb_pair()
 			if pair.x >= 0:
 				_add_cells([pair.x, pair.y])
 				_aim(pair.x, pair.y)
+			else:
+				_add_cells([PROD])
 			_anchor = _union()
 		"submit2":
-			_text = "石榴做好了\n交给订单"
+			_text = "石榴做好了！\n点对勾交给%s" % _who(2)
 			_add_cells(_free_cells("fruit_8"))
 			_add_global(G.main.board_screen.guide_deliver_rect())
 			_anchor = _holes.back() if not _holes.is_empty() else Rect2()
 		"wait_pay":
-			_text = "不拿拿正在回来\n刚好够升级部落"
+			_text = "族人的谢礼到手啦！"
 			_add_global(_shell_rect())
 			_anchor = _union()
 		"upgrade":
-			_text = "不拿拿刚好够了\n点这里升级部落"
+			_text = "点这里\n开始建设部落"
 			_add_ctrl(G.main.board_screen._hammer_btn)
 			_anchor = _union()
 		"to_build":
-			_text = "正在打开部落升级"
+			_text = "正在前往部落……"
 			_anchor = Rect2(160, 280, 400, 80)
 		"build":
-			_text = "点绿色按钮升级\n还有一只半编草篓"
+			_text = "先把柴火堆建起来\n点绿色按钮"
 			for pp in G.main.popup_layer.get_children():
 				if pp.has_meta("build_rects"):
 					for br in pp.get_meta("build_rects"):
 						_add_popup((br as Rect2).grow(6))
 			_anchor = _union()
 		"rewarded":
-			_text = "半编草篓进了暂存区"
+			_text = "建好啦！\n部落有点模样了"
 			_anchor = Rect2(150, 280, 420, 80)
 		"back":
-			_text = "回到棋盘\n把半编草篓合成上去"
+			_text = "点这里回到棋盘\n继续帮族人"
 			if G.main.home != null and G.main.home.go != null:
 				_add_ctrl(G.main.home.go)
 			_anchor = _union()
-		"take3":
-			_text = "升级送了半编草篓\n点暂存区放到棋盘"
-			_add_global(G.main.board_screen._stash_wrap.get_global_rect())
+		"level":
+			_text = "帮族人实现心愿能涨经验，再实现 %d 个就升级\n点这里看看升级能拿什么" % maxi(1, G.rules.progression.xp_need() - G.xp)
+			_add_ctrl(G.main.board_screen._base_btn)
 			_anchor = _union()
-		"merge3":
-			_text = "拖到藤蔓上的半编草篓\n合成4级小草篓"
-			var src3 := _open_id("basket_3")
-			var cells3: Array = []
-			if src3 >= 0:
-				cells3.append(src3)
-			if _vine3_ready():
-				cells3.append(VINE3)
-			_add_cells(cells3)
-			_aim(src3, VINE3 if _vine3_ready() else -1)
-			_anchor = _union()
-		"merge5":
-			_text = "再和你的4级小草篓合成\n5级才会掉副产物"
-			var pair := _basket4_pair()
-			if pair.x >= 0:
-				_add_cells([pair.x, pair.y])
-				_aim(pair.x, pair.y)
-			_anchor = _union()
-		"byprod":
-			_text = "点一下藤篮\n这次掉出的是草籽"
-			var gen := _open_id("basket_5")
-			if gen >= 0:
-				_add_cells([gen])
-			_anchor = _union()
-		"submit_seed":
-			_text = "草籽是副产物\n交给这张有经验的订单"
-			_add_cells(_free_cells("seed_1"))
-			_add_global(G.main.board_screen.guide_deliver_rect())
-			_anchor = _holes.back() if not _holes.is_empty() else Rect2()
+
+## 竞品式「点击继续」剧情句：进入这些步骤前先说一句，目标亮着但点不了，点任意处才开始操作。每句只说一次。
+func _beat_text(step: String) -> String:
+	match step:
+		"merge1": return "你就是新来的伙伴吧！\n部落正缺人手，快来帮帮我"
+		"produce": return "太棒了！有了小草篓\n我们就能摘到野莓啦"
+		"produce_more": return "第一个心愿实现啦！\n%s吃得可开心了" % _who(1)
+		"upgrade": return "不拿拿攒够了！\n是时候把我们的部落建起来了"
+		"back": return "多帮族人、多攒不拿拿\n部落就会越来越热闹"
+		"level": return "部落热闹起来啦！\n东西备齐了，记得点对勾送给族人"
+	return ""
+
+## 跳过当前剧情句（点任意处）
+func skip_beat() -> void:
+	if _beat == "":
+		return
+	_beat = ""
+	_sig = ""
+	_layout()
 
 func _finish() -> void:
 	if _done:
@@ -505,36 +543,37 @@ func _check_plain() -> void:
 		return
 	_finish()
 
+## 头像 + 气泡贴在这一步要操作的区域旁边：默认放在下方，下面放不下就放上方；没有目标时放在底部。
+const AVATAR := 120.0
+const TALK_W := 620.0
+const TALK_H := 140.0
+
 func _place() -> void:
-	var bust_sz := Vector2(200, 292)
-	var bw := 500.0
-	var bh := 148.0
-	var margin := 16.0
-	## 棋盘中部是解开的空地。角色和气泡固定贴在底部，只压住还锁着的最下两排。
-	var top := 1124.0
 	var h := _anchor
-	if h.size.x > 1.0 and Rect2(0, top, size.x, size.y - top).intersects(h):
-		top = h.position.y - bust_sz.y - 8.0
-	top = clampf(top, 96.0, size.y - 120.0)
+	var x := (size.x - TALK_W) * 0.5
+	var y := 1120.0
+	if h.size.x > 1.0:
+		x = clampf(h.get_center().x - TALK_W * 0.5, 16.0, size.x - 16.0 - TALK_W)
+		y = h.end.y + 22.0
+		if y + TALK_H > size.y - 30.0:
+			y = h.position.y - 22.0 - TALK_H
+		y = clampf(y, 90.0, size.y - TALK_H - 30.0)
 	_bust.visible = true
-	_bust.size = bust_sz
-	_bust.position = Vector2(-20, top)
+	_bust.size = Vector2(AVATAR, AVATAR)
+	_bust.position = Vector2(x, y + (TALK_H - AVATAR) * 0.5)
 	_bust_home = _bust.position
-	var bx := 168.0
-	var by := clampf(top + 108.0, top + 8.0, size.y - bh - margin)
-	_set_bubble(Rect2(bx, by, minf(bw, size.x - bx - margin), bh), true)
+	_set_bubble(Rect2(x + AVATAR + 8.0, y, TALK_W - AVATAR - 8.0, TALK_H), true)
 
 func _set_bubble(r: Rect2, point_left: bool) -> void:
 	_point_left = point_left
 	_bubble.position = r.position
 	_bubble.size = r.size
-	_label.position = r.position + Vector2(28, 12)
-	_label.size = r.size - Vector2(56, 24)
+	_label.position = r.position + Vector2(28, 10)
+	_label.size = r.size - Vector2(56, 40)
+	_cont.position = Vector2(r.position.x + 28, r.end.y - 38)
+	_cont.size = Vector2(r.size.x - 56, 30)
 
 func _paint_frames(ci: CanvasItem, _sz: Vector2) -> void:
-	if _strong():
-		for h in _holes:
-			Sprites.draw(ci, "pop_guide_frame", h.grow(7))
 	if not _arrow_on:
 		return
 	_paint_merge_arrow(ci)
@@ -612,7 +651,7 @@ func _attach() -> void:
 	host.move_child(self, host.get_child_count() - 1)
 
 func _strong() -> bool:
-	return _step in STRONG
+	return _step != "" and _step != "plain"
 
 func _open_id(id: String) -> int:
 	for i in G.board.size():
@@ -638,18 +677,16 @@ func _aim(a: int, b: int) -> void:
 	_arrow_a = ca + lift
 	_arrow_b = cb - dir.normalized() * 18.0 + lift
 
-func _aim_fruit2() -> void:
-	var from := -1
+## 两颗摊开的野莓，优先合到 24 格（离藤蔓樱桃远，不会把它震出来）
+func _fruit2_pair() -> Vector2i:
 	var ones := _free_cells("fruit_1")
-	for i in ones:
-		if int(i) != BERRY:
-			from = int(i)
-			break
-	var to := BERRY if _lock(BERRY) == 1 and _id(BERRY) == "fruit_1" else -1
-	if to < 0 and ones.size() >= 2:
-		from = int(ones[0])
-		to = int(ones[1])
-	_aim(from, to)
+	if ones.size() < 2:
+		return Vector2i(-1, -1)
+	var to := int(ones[1])
+	if ones.has(SPAWN):
+		to = SPAWN
+	var from := int(ones[0]) if int(ones[0]) != to else int(ones[1])
+	return Vector2i(from, to)
 
 func _has_point(point: Vector2) -> bool:
 	if _done or not visible or not _strong():
@@ -766,11 +803,17 @@ func _vine_ok(a: int, b: int) -> bool:
 		return true
 	return _lock(b) == 0 and _id(b) == "" and b in OPEN_LAND
 
+func _berry_ready() -> bool:
+	return _id(BERRY) == "fruit_1" and _lock(BERRY) == 1
+
 func _climb_pair() -> Vector2i:
 	var ones: Array[int] = []
 	for i in G.board.size():
 		if _lock(i) == 0 and _id(i) == "fruit_1":
 			ones.append(i)
+	## 先把野莓合到藤蔓上那颗：樱桃落在藤蔓樱桃旁边，后面一路往上爬
+	if not ones.is_empty() and _berry_ready():
+		return Vector2i(ones[0], BERRY)
 	if ones.size() >= 2:
 		var target := ones[1]
 		if ones.has(BERRY):
@@ -852,40 +895,15 @@ func _seen(id: String) -> bool:
 			return true
 	return false
 
-func _has_open(id: String) -> bool:
-	for i in G.board.size():
-		if _id(i) == id and _lock(i) != 2:
-			return true
-	return false
-
 func _vine3_ready() -> bool:
 	return _id(VINE3) == "basket_3" and _lock(VINE3) == 1
 
-func _stash_has(id: String) -> bool:
-	for it in G.stash:
-		if str(it) == id:
-			return true
-	return false
-
-func _seed_order_alive() -> bool:
+## 教学订单客人的称呼（取订单上的人物，和订单卡上显示的名字一致）
+func _who(n: int) -> String:
 	for o in G.orders:
-		var items: Array = o.get("items", [])
-		if items.size() == 1 and str(items[0]) == "seed_1":
-			return true
-	return false
-
-## 引导最后一步的副产物订单。它是教学的一部分，不看速查表开没开草籽；声望算进 1 级要的 3 点里。
-func _basket4_pair() -> Vector2i:
-	var cells := _free_cells("basket_4")
-	if cells.size() < 2:
-		return Vector2i(-1, -1)
-	var target := int(cells[1])
-	if _id(PROD) == "basket_4" and _lock(PROD) == 0:
-		target = PROD
-	var src := int(cells[0])
-	if src == target:
-		src = int(cells[1])
-	return Vector2i(src, target)
+		if int(o.get("tutorial", 0)) == n:
+			_who_cache[n] = Meme.customer_name(int(o.get("who", 0)), true)
+	return str(_who_cache.get(n, "大伙"))
 
 func _order_alive(n: int) -> bool:
 	for o in G.orders:

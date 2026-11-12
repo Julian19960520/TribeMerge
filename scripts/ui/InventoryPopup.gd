@@ -151,5 +151,5 @@ func _expand() -> void:
 		_layout(true)
 		Sfx.play("merge", 1.2)
 	else:
-		G.main.toast("扩建失败，请检查琥珀余额或连接")
+		G.main.toast("没扩建成功，看看琥珀够不够、网络通不通")
 		_refresh()

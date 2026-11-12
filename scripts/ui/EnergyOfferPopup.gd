@@ -19,7 +19,7 @@ var _busy := false
 func _ready() -> void:
 	dim_alpha = 0.78
 	UI.box(box, Rect2(0, 50, 720, 1480), _paint_head)
-	var t := UI.title(box, str(Offers.cfg(KIND).get("title", "火种大礼包")), Rect2(60, 142, 600, 110), 76, Color("ffd23f"))
+	var t := UI.title(box, str(Offers.cfg(KIND).get("title", "体力大礼包")), Rect2(60, 142, 600, 110), 76, Color("ffd23f"))
 	t.rotation = -0.02
 	var x := UI.hit(box, Rect2(630, 140, 70, 70), close)
 	x.name = "energy_offer_close"

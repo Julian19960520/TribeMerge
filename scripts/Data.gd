@@ -37,6 +37,25 @@ static var RANDOM_SLOTS: Array = [0.0, 0.3, 0.55, 1.0]
 static var UNLOCK_ROWS: Dictionary = {}
 ## 典藏卡册是后期活动。这一级之前不发卡包，主页也不露出卡册。
 const CARD_LEVEL := 8
+## 活动和入口按等级一个个开放：竞品开局什么活动都没有，玩熟了合成再陆续出现。
+## 带自己配置文件的活动（剑齿虎、化石、双人竞速、篝火竞速、月石遗迹）用各自的 unlock_level。
+const FEATURE_LEVELS := {"seven": 3, "gift": 4, "pass": 5, "rank": 6, "ufo": 7}
+const FEATURE_NAMES := {"seven": "七日任务", "gift": "部落礼包", "pass": "通行证", "rank": "排行榜", "ufo": "飞碟商人"}
+static func feature_level(id: String) -> int:
+	return int(FEATURE_LEVELS.get(id, 1))
+
+## 各活动开放等级（升级面板「新内容」和入口显示共用）
+static func activity_levels() -> Dictionary:
+	var out := {}
+	for id in FEATURE_LEVELS: out[FEATURE_NAMES[id]] = int(FEATURE_LEVELS[id])
+	for f in ["tiger_escape", "fossil_dig", "duel_race", "race"]:
+		var c: Dictionary = ConfigFiles.shared("res://data/%s.json" % f)
+		var title := str(c.get("title", {"duel_race": "双人竞速", "race": "篝火竞速"}.get(f, f)))
+		out[title] = int(c.get("unlock_level", 1))
+	for s in ConfigFiles.shared("res://data/merge_events.json").get("seasons", []):
+		if bool(s.get("enabled", true)): out[str(s.get("entry_title", s.get("title", "")))] = int(s.get("unlock_level", 1))
+	return out
+
 ## 双倍火种（生产器加速）：这一级解锁。开启后生产器每次耗 2 火种，产物高 1 级。
 const BOOST_LEVEL := 18
 ## 储物洞每排格数：界面布局与扩容计价共用。
@@ -227,22 +246,25 @@ static func level_unlocks(level: int) -> Array:
 	var out: Array = []
 	for l in LINES:
 		if int(l.get("unlock", 0)) == level and level > 1:
-			out.append("新产线：%s" % str(l.get("name", "")))
+			out.append("能做%s了" % str(l.get("name", "")))
 		var sub := str(l.get("sub", ""))
 		if sub != "" and level > 1 and product_open(level, sub) and not product_open(level - 1, sub):
-			out.append("订单开始要%s" % str(CHAINS.get(str(l["sub"]), {}).get("name", "")))
+			out.append("族人开始想要%s" % str(CHAINS.get(str(l["sub"]), {}).get("name", "")))
 	if level == int(RULES.get("craft_level", 3)):
-		out.append("新玩法：制作订单")
+		out.append("新玩法：族人想吃饭啦（要下锅做）")
 	for id in DISHES:
 		var d: Dictionary = DISHES[id]
 		if int(d["unlock"]) == level and level > int(RULES.get("craft_level", 3)):
 			out.append("新菜谱：%s" % str(d["name"]))
 	if level > 1 and order_total(level) > order_total(level - 1):
-		out.append("订单栏 +%d，现在 %d 张" % [order_total(level) - order_total(level - 1), order_total(level)])
+		out.append("同时许愿的族人 +%d，现在 %d 位" % [order_total(level) - order_total(level - 1), order_total(level)])
 	if level == CARD_LEVEL:
 		out.append("丰收祭卡册开放")
+	var acts := activity_levels()
+	for name in acts:
+		if int(acts[name]) == level and level > 1: out.append("新活动：%s" % name)
 	if level == BOOST_LEVEL:
-		out.append("新玩法：双倍火种（生产器产物升 1 级）")
+		out.append("新玩法：双倍体力（宝物变出的东西高 1 级）")
 	return out
 
 static func is_dish(id: String) -> bool:
@@ -463,13 +485,13 @@ static func describe(id: String) -> String:
 	if is_numeric_resource(id): return str(REWARD_RESOURCES[id]["description"])
 	if type_of(id) == "upgrade": return "拖到可升级物品上，使其提升1级，使用后消失。"
 	if type_of(id) == "scissors": return "拖到2级及以上物品上，拆成两个低一级物品，使用后消失。"
-	if Data.chain(id) == "orderbox": return "每次点击获得一个当前订单缺少的物品，共%d次。高级宝箱更偏向高阶需求，未打开时可合并升级。" % int(SpecialChests.order_definition(id)["count"])
-	if Data.chain(id) == "premiumbox": return "%d级高级宝箱，逐次点击获得%d件体力或琥珀，包含多个等级。未打开时可合并升级。" % [lv(id), SpecialChests.count(id)]
+	if Data.chain(id) == "orderbox": return "点一下就给一件族人正想要的东西，共%d次。篮子越高级给的越好，没打开前还能合成升级。" % int(SpecialChests.order_definition(id)["count"])
+	if Data.chain(id) == "premiumbox": return "%d级高级宝箱，点一下取出一件，共%d件体力或琥珀。没打开前还能合成升级。" % [lv(id), SpecialChests.count(id)]
 	if Data.chain(id) == "energybox":
 		var total := 0
 		for item in SpecialChests.definition(id)["items"]: total += value_of(str(item))
-		return "%d级体力宝箱，逐次取出%d件体力，共%d点体力。体力可继续合并，未打开的宝箱可合并升级。" % [lv(id), SpecialChests.count(id), total]
-	if Data.chain(id) == "chest": return "%d级藤编宝箱，逐次取出%d件随机物品，可获得资源、产线物品和生产器部件。未打开时可合并升级。" % [lv(id), SpecialChests.count(id)]
+		return "%d级体力宝箱，点一下取出一件，共%d件、%d点体力。取出的体力还能继续合成。" % [lv(id), SpecialChests.count(id), total]
+	if Data.chain(id) == "chest": return "%d级藤编宝箱，点一下拿出一件，共%d件：资源、好东西或宝物。没打开前还能合成升级。" % [lv(id), SpecialChests.count(id)]
 	if DISHES.has(id):
 		var d: Dictionary = DISHES[id]
 		var bits: PackedStringArray = []
@@ -496,20 +518,20 @@ static func describe(id: String) -> String:
 			var bits: PackedStringArray = []
 			for d in st["drops"]:
 				bits.append("%s %d" % [name_of(str(d["id"])), int(d["p"])])
-			return "点击产出%s。%s" % ["、".join(bits), tail]
+			return "点一下能拿到%s。%s" % ["、".join(bits), tail]
 		"egen":
 			var st := gen_stats(id)
 			if st.is_empty():
 				return "还不能生产。"
 			var rest := int(st["refill"])
 			var rest_text := "%d 小时" % (rest / 60) if rest % 60 == 0 else "%d 分钟" % rest
-			return "点击免费产出火种，一批 %d 次，点完休息 %s。攒着合成大火种再收！" % [int(st["charges"]), rest_text]
+			return "点一下免费掉出体力，每批 %d 次，用完休息 %s。体力合成到更高级再收，收得更多！" % [int(st["charges"]), rest_text]
 		"item":
 			var l := line_of(id)
 			var sell := value_of(id)
-			var back := "丢弃退回 %d 不拿拿。" % sell if sell > 0 else ""
+			var back := "丢掉可以换回 %d 不拿拿。" % sell if sell > 0 else ""
 			if not l.is_empty():
-				return "%s产出。%s%s" % [CHAINS[l["gen"]]["name"], back, tail]
+				return "从%s里拿到的。%s%s" % [CHAINS[l["gen"]]["name"], back, tail]
 			if back != "":
 				return back + tail
 		"energy", "shell", "amber", "sand" when value_of(id) <= 0:
@@ -523,15 +545,15 @@ static func describe(id: String) -> String:
 		"sand":
 			return "点击收取 %d 份沙漏。每份能让正在制作的成品快 %s。%s" % [value_of(id), rush_text(), tail]
 		"choice":
-			return "%d级自选宝箱，点击打开三选一。选择后宝箱变为所选物品，未打开时可合并升级。" % lv(id)
+			return "%d级自选宝箱，点开三选一，选中的物品会留在这一格。没打开前还能合成升级。" % lv(id)
 		"chest":
-			return "每次点击取出一个随机物品，领完后宝箱消失。"
+			return "点一下取出一件物品，取完宝箱就没了。"
 		"pack":
 			return "%d级卡包，每包%d张卡片。%s" % [lv(id), int(CardPacks.config()["cards_per_pack"]), CardPacks.probability_text(id)]
 		"token":
 			return "丰收祭的活动积分，每攒 %d 个换一个兽皮卡包。" % int(RULES.get("token_step", 10))
 		"xp":
-			return "主角的经验，只有带星标的剧情订单才会给，攒满即可升级。"
+			return "主角经验。实现带 ★ 的心愿就能获得，攒满就升级。"
 	return tail
 
 static func build_def(id: String) -> Dictionary:

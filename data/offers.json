@@ -16,7 +16,7 @@
 		]
 	},
 	"energy": {
-		"title": "火种大礼包",
+		"title": "体力大礼包",
 		"min_level": 16,
 		"duration_sec": 3600,
 		"cooldown_sec": 14400,

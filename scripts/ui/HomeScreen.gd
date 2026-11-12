@@ -9,6 +9,8 @@ var _spots_root: Control
 var _event_lbl: Label
 var go: TButton
 var _cards_btn: TButton
+## 按等级开放的左上卡片和排行按钮：[节点, 功能 id]
+var _gated: Array = []
 var _go_ix := -1
 var _go_tw: Tween
 var _go_n := 0
@@ -47,9 +49,12 @@ func _ready() -> void:
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	UI.lbl(ev, "通行证", Rect2(0, 74, 100, 24), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	_event_lbl = UI.lbl(ev, "", Rect2(24, 98, 72, 20), 13, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
+	_gated.append([ev, "pass"])
 
 	# 部落礼包占用原每日特惠位置。
-	add_child(preload("res://scripts/ui/GiftChainCard.gd").new())
+	var gift: Control = preload("res://scripts/ui/GiftChainCard.gd").new()
+	add_child(gift)
+	_gated.append([gift, "gift"])
 	# 赶大集（付费限时礼包）在部落礼包下面，只在这期进行中显示
 	add_child(preload("res://scripts/ui/SpreeCard.gd").new())
 
@@ -61,7 +66,9 @@ func _ready() -> void:
 	var rank := UI.btn(self, Rect2(626, 246, 80, 80), "", "teal", func(): RankPopupScript.open())
 	rank.is_round = true
 	rank.extra = func(ci, sz): Sprites.draw(ci, "tribe_trophy", Rect2(sz * 0.5 + TribeSprites.TROPHY_BOX.position, TribeSprites.TROPHY_BOX.size))
-	UI.lbl(self, "排行", Rect2(616, 322, 100, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+	var rank_lbl := UI.lbl(self, "排行", Rect2(616, 322, 100, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+	_gated.append([rank, "rank"])
+	_gated.append([rank_lbl, "rank"])
 
 	var build := UI.btn(self, Rect2(16, 1316, 124, 128), "", "wood", _open_next_build)
 	build.extra = func(ci, sz): Paint.hammer(ci, sz * 0.5 + Vector2(0, -6), 1.1)
@@ -84,6 +91,7 @@ func _ready() -> void:
 		Art.item(ci, "roast_7", Vector2(30, sz.y - 22), 50)
 
 	G.changed.connect(_build_spots)
+	_build_spots()
 
 ## 通行证按钮：青色兽皮卡上一枚琥珀勋章（带当前等级）、两条飘带，底部是到下一级的进度；买了通行证换金边。
 ## 卡底是预生成的图（tribe_pass / tribe_pass_prem），这里只叠等级数字、进度、时钟和红点。
@@ -131,6 +139,8 @@ func _build_spots() -> void:
 	_spots_dirty = true
 	if _cards_btn != null:
 		_cards_btn.visible = G.rules.progression.feature_unlocked(Data.CARD_LEVEL)
+	for pair in _gated:
+		if is_instance_valid(pair[0]): pair[0].visible = G.rules.progression.feature_unlocked(Data.feature_level(str(pair[1])))
 	if not is_visible_in_tree(): return
 	_spots_dirty = false
 	var wanted := {}
@@ -204,7 +214,7 @@ func _open_next_build() -> void:
 		for b in Data.BUILDS:
 			if int(G.builds.get(str(b["id"]), 0)) < Data.build_stages(b):
 				all_done = false
-		G.main.toast("部落已经全部建好啦！" if all_done else "升级主角等级，开放新的建造区域")
+		G.main.toast("部落已经全部建好啦！" if all_done else "主角升级后会开放新的建造区域")
 		return
 	G.main.open("build", id)
 

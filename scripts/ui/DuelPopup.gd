@@ -102,7 +102,7 @@ func _start_panel(s: Dictionary) -> void:
 	UI.title(body,"?",Rect2(470,430,100,100),60,Art.BONE)
 	_plate(Rect2(140,540,120,36),"你",Art.MOSS_D)
 	_plate(Rect2(460,540,120,36),"对手",Art.STONE_D)
-	UI.lbl(body,"完成订单收集香蕉，先到 %d 根获胜"%target,Rect2(80,594,560,36),23,Color("7a5a3a"))
+	UI.lbl(body,"帮族人实现心愿收集香蕉，先到 %d 根获胜"%target,Rect2(80,594,560,36),23,Color("7a5a3a"))
 	_reward_card(Rect2(90,640,266,124),"胜利奖励",DuelRace.config()["win_rewards"],Art.MOSS_D,Color("eef5d6"))
 	_reward_card(Rect2(364,640,266,124),"参与奖励",DuelRace.config()["lose_rewards"],Art.LEATHER,Color("f6e7c8"))
 	var button:=UI.btn(body,Rect2(200,782,320,84),"开始匹配","green",func(): _action("join"),38)
@@ -242,7 +242,7 @@ func _progress_panel(m: Dictionary) -> void:
 			,false)
 		pile.name="duel_banana_pile_%d"%side
 		UI.lbl(body,"%d / %d"%[points,target],Rect2(x-80,1004,160,34),24,Color.WHITE,HORIZONTAL_ALIGNMENT_CENTER,6,Art.INK)
-	var button:=UI.btn(body,Rect2(200,1084,320,80),"去完成订单","green",close,34)
+	var button:=UI.btn(body,Rect2(200,1084,320,80),"去帮族人","green",close,34)
 	button.name="duel_action"
 
 func _result_panel(m: Dictionary) -> void:

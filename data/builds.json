@@ -1,8 +1,8 @@
 [
 	{"id": "fire", "name": "篝火广场", "line": "", "parts": [
 		{"id": "campfire", "name": "石圈篝火", "cost": 0, "rewards": []},
-		{"id": "logpile", "name": "柴火堆", "cost": 370, "rewards": [["basket_3", 1], ["fire_2", 15], ["amber_2", 1]]},
-		{"id": "stumps", "name": "树桩凳", "cost": 610, "rewards": [["fire_2", 20], ["fruit_3", 1]]},
+		{"id": "logpile", "name": "柴火堆", "cost": 370, "rewards": [["fire_2", 10], ["amber_2", 1]]},
+		{"id": "stumps", "name": "树桩凳", "cost": 610, "rewards": [["fire_2", 10], ["basket_3", 1]]},
 		{"id": "drum", "name": "兽皮大鼓", "cost": 660, "rewards": [["fire_2", 25], ["chest_1", 1]]},
 		{"id": "totem", "name": "部落图腾", "cost": 660, "rewards": [["fire_2", 30], ["amber_3", 3]]},
 		{"id": "chiefhut", "name": "酋长大屋", "cost": 770, "rewards": [["fire_2", 40], ["amber_3", 5], ["chest_1", 1]]}

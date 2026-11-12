@@ -44,7 +44,7 @@ static func start(again := false) -> PopupBase:
 			var col := i if i < 5 else i - 5
 			var n := 5 if row == 0 else 4
 			Banana.draw(ci, Vector2(sz.x * 0.5 + (col - (n - 1) * 0.5) * 50, 78 - row * 30), 58, (col - 2) * 0.12), false)
-	var txt := "· 和 4 位族人比谁先收满 %d 根香蕉。\n· 交付订单就有香蕉飞进竞速入口，订单越值钱香蕉越多。\n· 前 %d 名都收满就结束；只有前 %d 名有奖励，名次越靠前越丰富，第 1 名还拿「%s」称号。\n· 随时可以开一局，比完再来下一局。" % [
+	var txt := "· 和 4 位族人比谁先收满 %d 根香蕉。\n· 每实现一个心愿就有香蕉飞进竞速入口，心愿越难香蕉越多。\n· 前 %d 名都收满就结束；只有前 %d 名有奖励，名次越靠前越丰富，第 1 名还拿「%s」称号。\n· 随时可以开一局，比完再来下一局。" % [
 		tg, podium, mini(3, podium), str(tt.get("name", "篝火王"))]
 	var l := UI.lbl(p.box, txt, Rect2(x0 + 4, r.position.y + 246, w - 8, 220), 22, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
 	l.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
@@ -186,7 +186,7 @@ static func race_panel() -> PopupBase:
 		hit.name = "race_chest_col_%d" % i
 	p.box.add_child(bubble)
 	p.on_tap = func(): _toggle_rank_bubble(p, bubble, race, 0, 0, 0)
-	var orders := UI.btn(p.box, Rect2(190, r.end.y - 100, 340, 80), "去完成订单", "green", func():
+	var orders := UI.btn(p.box, Rect2(190, r.end.y - 100, 340, 80), "去帮族人", "green", func():
 		G.main.show_screen("board", true)
 		p.close(), 34)
 	orders.name = "race_go_orders"
@@ -320,7 +320,7 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 		_medal(ci, mc, 17.0, rk)
 		_txt(ci, str(rk), mc, 19, Color.WHITE, 4)
 		_txt(ci, "我" if mine else str(m.get("name", "")), Vector2(cx, sz.y - 46), 21, Art.CLAY if mine else Color("6b4a2a"))
-	_txt(ci, "交付订单收香蕉，先收满的赢！", Vector2(sz.x * 0.5, sz.y - 14), 20, Color("a08a70"))
+	_txt(ci, "帮族人实现心愿收香蕉，先收满的赢！", Vector2(sz.x * 0.5, sz.y - 14), 20, Color("a08a70"))
 
 ## style：time 倒计时 / me 自己的香蕉数 / other 别人的
 static func _pill(ci: CanvasItem, r: Rect2, s: String, style: String, fg: Color) -> void:
@@ -401,7 +401,7 @@ static func result(res: Dictionary) -> PopupBase:
 		else:
 			busy["on"] = false
 			b.enabled = true
-			G.main.toast(str(out.get("message", "领取失败"))))
+			G.main.toast(str(out.get("message", "没领成，再试一次"))))
 	G.main._attach_popup(p)
 	return p
 

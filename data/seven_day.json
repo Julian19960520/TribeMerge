@@ -22,7 +22,7 @@
      "id": "d1_2",
      "metric": "orders",
      "target": 8,
-     "title": "完成8个订单",
+     "title": "实现8个心愿",
      "points": 10,
      "rewards": [
       [
@@ -92,7 +92,7 @@
      "id": "d2_2",
      "metric": "orders",
      "target": 20,
-     "title": "完成20个订单",
+     "title": "实现20个心愿",
      "points": 15,
      "rewards": [
       [
@@ -170,7 +170,7 @@
      "id": "d3_2",
      "metric": "orders",
      "target": 35,
-     "title": "完成35个订单",
+     "title": "实现35个心愿",
      "points": 20,
      "rewards": [
       [
@@ -334,7 +334,7 @@
      "id": "d5_2",
      "metric": "orders",
      "target": 55,
-     "title": "完成55个订单",
+     "title": "实现55个心愿",
      "points": 25,
      "rewards": [
       [
@@ -502,7 +502,7 @@
      "id": "d7_2",
      "metric": "orders",
      "target": 75,
-     "title": "完成75个订单",
+     "title": "实现75个心愿",
      "points": 30,
      "rewards": [
       [

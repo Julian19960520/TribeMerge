@@ -71,7 +71,7 @@ static func remaining() -> int:
 	return maxi(0,int(ceil(float(state()["offer"].get("expires_at",0))-G.now())))
 static func local_visit() -> void:
 	if G.replay_input(): Replay.perform("ufo"); return
-	if G.tutorial_on or not bool(config()["enabled"]): return
+	if G.tutorial_on or not bool(config()["enabled"]) or not G.rules.progression.feature_unlocked(Data.feature_level("ufo")): return
 	var s := state()
 	if G.now() < float(s["next_at"]): return
 	var items := candidate()
@@ -84,7 +84,7 @@ static func local_visit() -> void:
 	G.dirty()
 
 static func tick() -> void:
-	if G.tutorial_on or not bool(config()["enabled"]): return
+	if G.tutorial_on or not bool(config()["enabled"]) or not G.rules.progression.feature_unlocked(Data.feature_level("ufo")): return
 	if G.now() >= float(state()["next_at"]): local_visit()
 
 
@@ -94,5 +94,5 @@ static func buy(offer_id: String) -> Dictionary:
 	var offer: Dictionary = state()["offer"]
 	if not active() or str(offer.get("id", "")) != offer_id: return {"ok": false, "error": "飞碟已经飞走了", "message": "飞碟已经飞走了"}
 	var result: Dictionary = await Payments.buy("ufo", {"offer_id": offer_id, "items": offer.get("items", []).duplicate()})
-	if not result.get("ok", false): result["error"] = str(result.get("message", "购买失败"))
+	if not result.get("ok", false): result["error"] = str(result.get("message", "没买成，再试一次"))
 	return result

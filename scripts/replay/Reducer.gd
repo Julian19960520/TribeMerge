@@ -2,8 +2,6 @@ extends RefCounted
 ## Deterministic gameplay commands shared by the client and validation workers.
 ## This module has no storage, transport, scene or animation responsibilities.
 var runtime: Node
-## 升级时订单宝箱最多送几件订单材料。
-const LEVEL_ORDER_HELP := 3
 ## Only used while recovering the previous local version's verified journal.
 var legacy_album_rewards := false
 var meta: Dictionary:
@@ -21,13 +19,10 @@ func advance() -> void:
 	G.rules.orders._tick_cooks()
 	ActivityRules.tick()
 	# Tutorial effects are rules, never values supplied by the interface.
-	if G.tutorial_on and G.rules.orders.board_has("basket_5") >= 0:
-		if G.energy < 1 and not meta.get("tutorial_energy", false):
-			G.energy = 5
-			meta["tutorial_energy"] = true
-		if not meta.get("seed_order", false):
-			G.orders.insert(0, G.order_identity({"who": 1, "items": ["seed_1"], "rw": {"xp": 1, "shell": 50}, "story": true, "say": "草籽能种出新的果树，你学得真快！"}))
-			meta["seed_order"] = true
+	# 引导期间体力见底时补一次，保证教学能走完。
+	if G.tutorial_on and G.energy < 1 and not meta.get("tutorial_energy", false):
+		G.energy = 5
+		meta["tutorial_energy"] = true
 
 func grant(rw: Array, delivery: Dictionary = {}) -> void:
 	Rewards.settle(rw, delivery)
@@ -38,21 +33,21 @@ func dispatch(name: String, a: Dictionary):
 		"tick": return {}
 		"drop":
 			var r := G.try_drop(int(a.get("from", -1)), int(a.get("to", -1)))
-			return {"kind": r} if r != "" else {"error": "不能移动或合成"}
+			return {"kind": r} if r != "" else {"error": "这里放不了"}
 		"tap": return tap(i)
 		"stash": return stash(int(a.get("index", -1)))
 		"store":
-			if not valid_cell(i) or G.rules.orders.cooking(i) or G.inv.size() >= G.inv_cap or Data.type_of(G.rules.board.cell_id(i)) == "egen" or G.rules.board.is_merge_bubble(i) or Data.is_dish(G.rules.board.cell_id(i)): return {"error": "无法存入"}
-			if not G.rules.board.store_cell(i): return {"error": "无法存入"}
+			if not valid_cell(i) or G.rules.orders.cooking(i) or G.inv.size() >= G.inv_cap or Data.type_of(G.rules.board.cell_id(i)) == "egen" or G.rules.board.is_merge_bubble(i) or Data.is_dish(G.rules.board.cell_id(i)): return {"error": "这个不能放进仓库"}
+			if not G.rules.board.store_cell(i): return {"error": "这个不能放进仓库"}
 			return {}
 		"inventory":
 			var index := int(a.get("index", -1))
 			var to := G.rules.board.find_empty_near(0)
-			if index < 0 or index >= G.inv.size() or to < 0: return {"error": "无法取出"}
+			if index < 0 or index >= G.inv.size() or to < 0: return {"error": "暂时取不出来，先腾出空位"}
 			G.rules.board.take_inventory(index, to)
 			return {"to": to}
 		"discard":
-			if not valid_cell(i) or G.rules.orders.cooking(i) or G.rules.board.is_merge_bubble(i) or Data.type_of(G.rules.board.cell_id(i)) in ["gen", "egen"] or Data.is_dish(G.rules.board.cell_id(i)): return {"error": "不能丢弃"}
+			if not valid_cell(i) or G.rules.orders.cooking(i) or G.rules.board.is_merge_bubble(i) or Data.type_of(G.rules.board.cell_id(i)) in ["gen", "egen"] or Data.is_dish(G.rules.board.cell_id(i)): return {"error": "这个不能丢弃"}
 			settle_trash()
 			meta["trash"] = {"cell": i, "id": G.rules.board.cell_id(i), "chest": G.board[i].get("chest", []).duplicate()}
 			G.board[i]["id"] = ""; G.board[i].erase("chest")
@@ -60,23 +55,23 @@ func dispatch(name: String, a: Dictionary):
 		"discard_finish": settle_trash(); return {}
 		"undo":
 			var t: Dictionary = meta.get("trash", {})
-			if t.is_empty() or G.rules.board.cell_id(int(t["cell"])) != "": return {"error": "无法撤销"}
+			if t.is_empty() or G.rules.board.cell_id(int(t["cell"])) != "": return {"error": "已经撤销不了了"}
 			G.board[int(t["cell"])]["id"] = t["id"]
 			if not t.get("chest", []).is_empty(): G.board[int(t["cell"])]["chest"] = t["chest"].duplicate()
 			meta.erase("trash"); return {}
 		"order":
-			if i < 0 or i >= G.orders.size() or not G.rules.orders.order_ready(G.orders[i]): return {"error": "订单尚未完成"}
+			if i < 0 or i >= G.orders.size() or not G.rules.orders.order_ready(G.orders[i]): return {"error": "族人要的东西还没备齐"}
 			var o: Dictionary = G.orders[i].duplicate(true)
 			var rw := Rewards.for_order(o)
 			var cells := G.complete_order(i)
 			grant(rw)
 			return {"cells": cells, "rewards": rw, "who": int(o["who"]), "say": str(o.get("say", ""))}
 		"craft":
-			if i < 0 or i >= G.orders.size(): return {"error": "订单不存在"}
+			if i < 0 or i >= G.orders.size(): return {"error": "这个心愿已经没有了"}
 			var r := G.begin_craft(i)
-			return {"flights": r} if not r.is_empty() else {"error": "材料不足"}
+			return {"flights": r} if not r.is_empty() else {"error": "材料还没备齐"}
 		"rush":
-			if not valid_cell(i) or not G.rules.orders.cooking(i): return {"error": "未在制作"}
+			if not valid_cell(i) or not G.rules.orders.cooking(i): return {"error": "它没在制作"}
 			return {"used": G.rush_cook(i)}
 		"boost": G.set_boost(bool(a.get("on", false))); return {}
 		"energy":
@@ -84,26 +79,23 @@ func dispatch(name: String, a: Dictionary):
 			if not meta.get("free_energy", false):
 				meta["free_energy"] = true
 				G.rules.progression.add_currency("energy", 100); return {"ok": true, "free": true}
-			if not G.buy_energy(): return {"error": "琥珀不足"}
+			if not G.buy_energy(): return {"error": "琥珀不够了！"}
 			G.rules.progression.add_currency("energy", 100); return {"ok": true}
 		"expand": return {"ok": G.expand_storage()}
 		"build":
 			var r: Dictionary = G.do_build(str(a.get("id", "")))
-			if r.is_empty(): return {"error": "无法建造"}
+			if r.is_empty(): return {"error": "现在还不能建造"}
 			grant(r.get("rewards", [])); return r
 		"book":
 			var n: int = G.claim_book(str(a.get("id", "")))
-			if n <= 0: return {"error": "尚未发现或已领取"}
+			if n <= 0: return {"error": "已经领过了"}
 			G.rules.progression.add_currency("energy", n); return {"energy": n}
 		"level":
 			var lv := int(a.get("level", 0))
 			var key := "level:%d" % lv
-			if lv < 2 or lv > G.level or meta.has(key): return {"error": "等级奖励不可领取"}
-			meta[key] = true; var rw := Data.level_rewards(lv); grant(rw)
-			# 订单宝箱：当前订单还缺的材料直接落到棋盘上，放不下的进暂存区。
-			var help := G.rules.orders.missing_order_items(LEVEL_ORDER_HELP)
-			if not help.is_empty(): grant(Rewards.items(help), {"board_origin": G.board.size() / 2})
-			return {"rewards": rw, "help": help}
+			if lv < 2 or lv > G.level or meta.has(key): return {"error": "这份升级奖励已经领过了"}
+			# 订单宝箱在升级那一刻就发了（ProgressionRules._order_chest），这里只发等级奖励。
+			meta[key] = true; var rw := Data.level_rewards(lv); grant(rw); return {"rewards": rw}
 		"pack": return pack(a)
 		"card_star_exchange": return G.rules.progression.exchange_card_stars(int(a.get("cost", 0)))
 		"album_claim": return claim_album(int(a.get("album", -1)))
@@ -115,10 +107,10 @@ func dispatch(name: String, a: Dictionary):
 		"hot_refresh": return G.refresh_hot()
 		"shell_refresh": return G.refresh_shell()
 		"bubble_buy":
-			if not G.rules.board.is_merge_bubble(i): return {"error": "气泡不存在"}
+			if not G.rules.board.is_merge_bubble(i): return {"error": "泡泡已经消失了"}
 			return G.buy_bubble(i)
 		"bubble_reward":
-			if i < 0 or i >= G.board.size() or int(G.board[i].get("lock", 2)) == 2: return {"error": "未解锁"}
+			if i < 0 or i >= G.board.size() or int(G.board[i].get("lock", 2)) == 2: return {"error": "还没解锁"}
 			var rw := G.Layout.parse_reward(G.board[i].get("rw", null))
 			if rw.is_empty(): return {"error": "已领取"}
 			G.board[i].erase("rw"); grant([rw]); return {"rewards": [rw]}
@@ -128,7 +120,7 @@ func dispatch(name: String, a: Dictionary):
 			elif track == "prem": rw = G.claim_pass_prem(lv)
 			elif track == "super": rw = G.claim_pass_super(lv)
 			elif track == "endless": rw = G.claim_pass_endless()
-			if rw.is_empty(): return {"error": "不可领取"}
+			if rw.is_empty(): return {"error": "还不能领取"}
 			grant(rw); return {"rewards": rw}
 		"daily":
 			if str(a.get("key", "")) == "deal_ad": return {"error": "广告奖励需要平台验证"}
@@ -137,7 +129,7 @@ func dispatch(name: String, a: Dictionary):
 		"choice": return ChoiceChest.choose(i, G.rules.board.cell_id(i) if valid_cell(i) else "", int(a.get("option", -1)))
 		"activity":
 			var c := MergeEvent.definition(str(a.get("season", "")))
-			if not MergeEvent.available(c) or (str(a.get("action", "")) != "claim" and not MergeEvent.active(c)): return {"error": "活动尚未开放"}
+			if not MergeEvent.available(c) or (str(a.get("action", "")) != "claim" and not MergeEvent.active(c)): return {"error": "活动还没开始"}
 			var state := MergeEvent.state(c)
 			var roll := -1.0
 			if str(a.get("action", "")) == "drop":
@@ -170,7 +162,7 @@ func dispatch(name: String, a: Dictionary):
 		"gift":
 			var view := gift_view()
 			var step := int(a.get("step", -1))
-			if step != int(view["step"]) or step >= view["steps"].size() or float(view["steps"][step]["price"]) > 0: return {"error": "礼包不可领取"}
+			if step != int(view["step"]) or step >= view["steps"].size() or float(view["steps"][step]["price"]) > 0: return {"error": "这份礼包还不能领"}
 			meta["gift_cycle"] = view["cycle"]; meta["gift_step"] = step + 1
 			var rw: Array = view["steps"][step]["rewards"]; grant(rw); return {"ok": true, "rewards": rw}
 		"grant": return apply_grant(str(a.get("id", "")), a.get("content", {}))
@@ -178,9 +170,12 @@ func dispatch(name: String, a: Dictionary):
 			if UfoOffer.active(): UfoOffer.state()["offer"]["items"] = UfoOffer.candidate()
 			return {}
 		"tutorial_finish":
-			if int(G.builds.get("fire", 0)) < 2 or G.rules.orders.board_has("seed_1") >= 0 or not meta.get("seed_order", false): return {"error": "引导尚未完成"}
+			# 引导到第一次建设完、两张教学订单都交掉为止；之后的生产器升级由一次性提示带。
+			if int(G.builds.get("fire", 0)) < 2: return {"error": "引导尚未完成"}
+			for o in G.orders:
+				if int(o.get("tutorial", 0)) > 0: return {"error": "引导尚未完成"}
 			G.tutorial_on = false; G.seen_tutorial = true; G.rules.orders.refill_orders(); return {}
-		_: return {"error": "不支持的操作"}
+		_: return {"error": "暂时不能这样做"}
 
 ## Server-issued paid content (scripts/net/Payments.gd). The grant id is recorded in
 ## replay_meta.grants, so a grant applies once per save however often it is delivered.
@@ -228,46 +223,46 @@ func settle_trash() -> void:
 	meta.erase("trash")
 
 func tap(i: int) -> Dictionary:
-	if not valid_cell(i) or G.rules.orders.cooking(i): return {"error": "请选择可用物品"}
+	if not valid_cell(i) or G.rules.orders.cooking(i): return {"error": "选一个能用的物品"}
 	var id := G.rules.board.cell_id(i)
 	var t := Data.type_of(id)
 	if t in ["gen", "egen"]:
-		if Data.gen_stats(id).is_empty() or G.rules.board.gen_left(i) == 0: return {"error": "生产器尚未就绪"}
+		if Data.gen_stats(id).is_empty() or G.rules.board.gen_left(i) == 0: return {"error": "它累了，歇一会儿再来"}
 		var to := G.rules.board.find_empty_near(i)
 		# Tutorial landing positions are fixed rules.
 		if G.tutorial_on and i == 31:
 			for candidate in [24, 32]:
 				if G.rules.board._vacant(candidate): to = candidate; break
-		if to < 0: return {"error": "棋盘已满"}
-		if t == "gen" and not G.rules.progression.spend("energy", G.rules.board.gen_cost()): return {"error": "体力不足"}
+		if to < 0: return {"error": "棋盘满啦，先腾出空位"}
+		if t == "gen" and not G.rules.progression.spend("energy", G.rules.board.gen_cost()): return {"error": "体力不够了"}
 		G.rules.board.gen_use(i)
 		var out := G.rules.board.roll_produce(id)
 		if t == "gen": out = G.rules.board.boost_drop(out)
-		if G.tutorial_on and id == "basket_5" and not meta.get("seed_produced", false): out = "seed_1"; meta["seed_produced"] = true
 		G.rules.board.discover(out); G.board[to]["id"] = out
 		return {"kind": "produce", "id": out, "to": to}
 	if t in ["energy", "shell", "amber", "sand"]:
 		var n := Data.value_of(id)
-		if n <= 0: return {"error": "需要合成后收取"}
+		if n <= 0: return {"error": "合成到 2 级才能收取"}
 		G.board[i]["id"] = ""; G.rules.progression.add_currency(t, n); return {"kind": "collect", "id": id, "amount": n}
 	if t == "chest":
 		return G.dispense_chest(i)
-	return {"error": "该物品不能直接使用"}
+	return {"error": "拖它去合成吧"}
 
 func stash(index: int) -> Dictionary:
-	if index < 0 or index >= G.stash.size(): return {"error": "物品不存在"}
-	var id := str(G.stash[index]); var t := Data.type_of(id)
-	if t == "pack": return {"error": "请打开卡包"}
+	if index < 0 or index >= G.stash.size(): return {"error": "这件东西已经没有了"}
+	# 卡册没开时，暂存区里的卡包（老存档里早领到的）取出来就是藤编宝箱
+	var id := Rewards.before_cards(str(G.stash[index])); var t := Data.type_of(id)
+	if t == "pack": return {"error": "点开卡包看看吧"}
 	if t in ["energy", "shell", "amber", "sand"] and Data.value_of(id) > 0:
 		G.stash.remove_at(index); G.rules.progression.add_currency(t, Data.value_of(id)); return {}
 	var to := G.rules.board.find_empty_near(0)
-	if to < 0: return {"error": "棋盘已满"}
+	if to < 0: return {"error": "棋盘满啦，先腾出空位"}
 	G.stash.remove_at(index); G.board[to]["id"] = id; G.rules.board.discover(id); return {"to": to, "id": id}
 
 func pack(args: Dictionary = {}) -> Dictionary:
-	if not G.rules.progression.feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡尚未解锁"}
+	if not G.rules.progression.feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡还没解锁"}
 	var source := G.rules.progression.find_pack_source(str(args.get("id", "")), int(args.get("cell", -1)), int(args.get("stash", -1)))
-	if source.is_empty(): return {"error": "没有卡包"}
+	if source.is_empty(): return {"error": "还没有卡包"}
 	G.rules.progression.consume_pack_source(source)
 	var complete_before := []
 	if legacy_album_rewards:
@@ -279,11 +274,11 @@ func pack(args: Dictionary = {}) -> Dictionary:
 	return result
 
 func claim_album(album: int) -> Dictionary:
-	if not G.rules.progression.feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡尚未解锁"}
+	if not G.rules.progression.feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡还没解锁"}
 	if album < 0 or album >= Data.ALBUMS.size(): return {"error": "卡册不存在"}
 	var key := "album:%d" % album
 	if bool(meta.get(key, false)): return {"error": "奖励已领取"}
-	if G.rules.progression.album_count(album) != Data.ALBUMS[album]["cards"].size(): return {"error": "尚未集齐卡册"}
+	if G.rules.progression.album_count(album) != Data.ALBUMS[album]["cards"].size(): return {"error": "卡册还没集齐"}
 	var rewards: Array = Data.ConfigFiles.shared("res://data/replay_economy.json")["album_reward"]
 	meta[key] = true
 	grant(rewards)

@@ -18,15 +18,47 @@ func _trim_orders() -> void:
 		if remove<0: break # Active crafts retain their slots until delivery.
 		state.orders.remove_at(remove)
 
+## 还没开始做、但材料现在根本弄不到的做饭单（老存档里可能有）换掉，免得卡着
+func _drop_unsourced_crafts() -> void:
+	if state.gm_activities: return
+	var allowed := sourced_chains()
+	if allowed.is_empty(): return
+	for i in range(state.orders.size() - 1, -1, -1):
+		var o = state.orders[i]
+		if not (o is Dictionary) or str(o.get("kind", "")) != "craft" or str(o.get("phase", "need")) != "need":
+			continue
+		for m in o.get("mats", []):
+			if not allowed.has(Data.chain(str(m))):
+				state.orders.remove_at(i)
+				break
+
+## 新手引导用固定的教学单；引导结束后不再发手配剧情单，全部按当前等级和产线随机出单（含制作单）。
 func refill_orders() -> void:
 	if state.tutorial_on: return
 	_trim_orders()
-	_add_story_orders()
-	_trim_orders()
+	_drop_unsourced_crafts()
 	_ensure_craft_order(false)
 	_add_random_batch()
+	assign_xp()
 	state.dirty()
 	state.orders_changed.emit()
+
+## 经验只放在「还差几点升级」那么多张订单上（每张 ★1，按订单栏从左到右），其余订单只给不拿拿。
+## 订单变了、经验变了都重新分：升级后这一级要的经验变多，原来没星的订单就会带上星。
+## 引导期间的教学单经验是固定的，不参与分配。
+func assign_xp() -> void:
+	if state.tutorial_on: return
+	var need: int = maxi(0, context.progression.xp_need() - state.xp)
+	for o in state.orders:
+		if not (o is Dictionary) or int(o.get("tutorial", 0)) > 0:
+			continue
+		var rw: Dictionary = o.get("rw", {})
+		if need > 0:
+			rw["xp"] = 1
+			need -= 1
+		else:
+			rw.erase("xp")
+		o["rw"] = rw
 
 func _is_random_order(o: Dictionary) -> bool:
 	return not bool(o.get("story", false)) and str(o.get("kind", "")) != "craft"
@@ -115,7 +147,7 @@ func _make_order(target: int = -1, avoid: Array = []) -> Dictionary:
 	var t = target
 	if t < 1:
 		t = bounds.x if bounds.x >= bounds.y else context.random_for("orders").randi_range(bounds.x, bounds.y)
-	var made: Dictionary = context.roll.make(state.level, float(t), context.random_for("orders"), avoid)
+	var made: Dictionary = context.roll.make(state.level, float(t), context.random_for("orders"), avoid, {} if state.gm_activities else sourced_chains())
 	if made.is_empty():
 		made = _make_order_free()
 	return _spice(made)
@@ -136,16 +168,17 @@ func _make_order_free() -> Dictionary:
 	var shell = 0
 	var top: int = 2 + state.level / 2
 	var open = Data.unlocked_lines(state.level)
+	var allowed: Dictionary = {} if state.gm_activities else sourced_chains()
 	for i in n:
 		var ln: Dictionary = open[context.random_for("orders").randi() % open.size()]
 		var sub = str(ln.get("sub", ""))
-		if state.level >= 2 and sub != "" and Data.product_open(state.level, sub) and context.random_for("orders").randf() < 0.15:
+		if state.level >= 2 and sub != "" and Data.product_open(state.level, sub) and _sourced(sub, allowed) and context.random_for("orders").randf() < 0.15:
 			var sl = context.random_for("orders").randi_range(1, mini(3, 1 + state.level / 3))
 			items.append("%s_%d" % [sub, sl])
 			shell += 12 * int(pow(2, sl - 1)) + context.random_for("orders").randi_range(0, 4)
 			continue
 		var ch: String = ln["main"]
-		if not Data.product_open(state.level, ch):
+		if not Data.product_open(state.level, ch) or not _sourced(ch, allowed):
 			continue
 		var l = context.random_for("orders").randi_range(1 if state.level < 2 else 2, mini(top, Data.max_lv(ch)))
 		items.append("%s_%d" % [ch, l])
@@ -160,10 +193,36 @@ func _craft_count() -> int:
 			n += 1
 	return n
 
+## 玩家眼下真能弄到的物品链：手里（棋盘上没被封住的格子、暂存区、仓库）的生产器现在能掉出来的链。
+## 订单只要这些链上的东西：小草篓还没升到会掉种子的等级时，就不会出要种子的单。GM 全开时不限制。
+func sourced_chains() -> Dictionary:
+	var out := {}
+	var ids: Array = []
+	for c in state.board:
+		if int(c.get("lock", 0)) == 0: ids.append(str(c.get("id", "")))
+	ids.append_array(state.stash)
+	ids.append_array(state.inv)
+	for id in ids:
+		var sid := str(id)
+		if sid == "" or not Data.is_known(sid) or Data.type_of(sid) != "gen":
+			continue
+		for d in Data.gen_stats(sid).get("drops", []):
+			out[Data.chain(str(d["id"]))] = true
+	return out
+
+func _sourced(chain_id: String, allowed: Dictionary) -> bool:
+	return allowed.is_empty() or allowed.has(chain_id)
+
 func _pick_dish(avoid: Array = []) -> Dictionary:
 	var pool: Array = []
+	var allowed: Dictionary = {} if state.gm_activities else sourced_chains()
 	for d in (Data.DISHES.values() if state.gm_activities else Data.dishes_for(state.level)):
-		if not (str(d["id"]) in avoid):
+		if str(d["id"]) in avoid:
+			continue
+		var ok := true
+		for m in d["mats"]:
+			if not _sourced(Data.chain(str(m)), allowed): ok = false
+		if ok:
 			pool.append(d)
 	if pool.is_empty():
 		return {}

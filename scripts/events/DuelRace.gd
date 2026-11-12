@@ -81,7 +81,7 @@ static func local_action(action: String, milestone:=0) -> Dictionary:
 			m["claimed"]=true
 			return {"rewards":config()["win_rewards"] if m["status"]=="won" else config()["lose_rewards"]}
 		"milestone":
-			if not milestone in ready_milestones(): return {"error":"尚未达成或已领取"}
+			if not milestone in ready_milestones(): return {"error":"还没达成，或者已经领过了"}
 			s["claimed"].append(str(milestone))
 			for row in config()["milestones"]:
 				if int(row["wins"])==milestone: return {"rewards":row["rewards"]}

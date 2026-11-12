@@ -102,7 +102,7 @@ static func local_action(action: String, value := -1) -> Dictionary:
 		if value in b["dug"]: return {"error": "这里已经挖开了"}
 		if cleared(b): return {"error": "本关已完成"}
 		var cost := int(config()["dig_cost"])
-		if int(s["shovels"]) < cost: return {"error": "铲子不足，完成主棋盘订单获得铲子"}
+		if int(s["shovels"]) < cost: return {"error": "铲子不够了！帮族人实现心愿就能拿到铲子"}
 		s["shovels"] = int(s["shovels"]) - cost
 		s["spent"] = int(s["spent"]) + cost
 		b["dug"].append(value)

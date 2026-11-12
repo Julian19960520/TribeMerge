@@ -21,7 +21,7 @@ static func build(id: String) -> PopupBase:
 			line_name = str(l.get("name", ""))
 	var sub := "已建 %d/%d" % [st, total]
 	if line_name != "":
-		sub = "%s产线 · %s" % [line_name, sub]
+		sub = "%s · %s" % [line_name, sub]
 	UI.box(p.box, Rect2(200, r.position.y + 54, 320, 40), func(ci, sz):
 		Sprites.draw(ci, "pop_pill20", Rect2(Vector2.ZERO, sz), Color(0.6, 0.45, 0.25, 0.25)))
 	UI.lbl(p.box, sub, Rect2(200, r.position.y + 54, 320, 40), 22, Color("7a5a3a"))
@@ -55,7 +55,7 @@ static func build(id: String) -> PopupBase:
 		UI.lbl(p.box, "这里已经全部建好啦！", Rect2(box.position.x, box.position.y + 50, box.size.x, 50), 28, Color("6b4a2a"))
 	elif not open:
 		UI.lbl(p.box, "主角 %d 级开放「%s」" % [Data.build_unlock(d), str(d.get("name", id))], Rect2(box.position.x, box.position.y + 30, box.size.x, 50), 28, Color("6b4a2a"))
-		UI.lbl(p.box, "开放后这里的部件会送%s产线的物品" % line_name if line_name != "" else "", Rect2(box.position.x, box.position.y + 80, box.size.x, 40), 20, Color("8a6a4a"))
+		UI.lbl(p.box, "开放后这里会送%s类的好东西" % line_name if line_name != "" else "", Rect2(box.position.x, box.position.y + 80, box.size.x, 40), 20, Color("8a6a4a"))
 	else:
 		var nxt: Dictionary = parts[st]
 		UI.lbl(p.box, "建好「%s」获得" % str(nxt.get("name", "")), Rect2(box.position.x, box.position.y + 6, box.size.x, 36), 22, Color("7a5a3a"))
@@ -75,7 +75,7 @@ static func build(id: String) -> PopupBase:
 	b.pressed.connect(func():
 		if G.shells < cost:
 			Sfx.play("deny")
-			G.main.toast("不拿拿不够，去完成订单吧！")
+			G.main.toast("不拿拿还不够，多帮几位族人吧！")
 			return
 		var res: Dictionary = await G.do_build(id)
 		if res.is_empty():

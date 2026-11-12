@@ -90,4 +90,4 @@ static func _retry(method: String, path: String, body, key := "") -> Array:
 static func _fail(response: Array) -> Dictionary:
 	if int(response[0]) == 0: return {"ok": false, "error": "offline", "message": OFFLINE}
 	var data: Dictionary = response[1] if response[1] is Dictionary else {}
-	return {"ok": false, "error": str(data.get("error", "failed")), "message": str(data.get("message", "购买失败，请稍后再试"))}
+	return {"ok": false, "error": str(data.get("error", "failed")), "message": str(data.get("message", "没买成，请稍后再试"))}

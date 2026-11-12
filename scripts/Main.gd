@@ -3,6 +3,7 @@ extends Control
 
 const GuideScript := preload("res://scripts/ui/Guide.gd")
 const ScreenWipeScript := preload("res://scripts/ui/ScreenWipe.gd")
+const OrderChestFx := preload("res://scripts/ui/OrderChestFx.gd")
 
 var home: HomeScreen
 var board_screen: BoardScreen
@@ -223,16 +224,52 @@ func _on_presentation(kind: String, payload: Dictionary) -> void:
 			if screen == "board" and is_instance_valid(board_screen): board_screen.board.fly_in(int(payload["origin"]), int(payload["to"]), str(payload["id"]))
 		"craft_complete":
 			if screen == "board": Sfx.play("merge", 1.08)
+		"order_chest":
+			_play_order_chest(payload.get("items", []), int(payload.get("stashed", 0)))
 		"level_up":
-			var timer := get_tree().create_timer(0.7)
-			timer.timeout.connect(func():
-				if is_inside_tree(): open("levelup"), CONNECT_ONE_SHOT)
+			_open_levelup_after_chest()
+		"new_generator":
+			var gid := str(payload.get("id", ""))
+			_rw_q.append(func(): return RewardPopups.new_generator(gid))
+			_pump_rewards()
 		"packs_earned":
 			var count := int(payload.get("count", 0))
 			if count > 0: present_rewards([["pack_1", count]])
 		"overflow":
 			var count := int(payload.get("count", 0))
 			if count > 0: toast("放不下的 %d 个物品进了暂存区" % count)
+
+## 升级的订单宝箱（丰收圣筐全屏动画）播完的时刻
+var _chest_until := 0
+## 升级了、面板还没弹出来：这段时间一次性提示不许插进来
+var level_pending := false
+
+## 订单宝箱的物品真正落完（棋盘上没有在飞的物品）再弹升级面板；最多再等 3 秒兜底。
+func _open_levelup_after_chest() -> void:
+	level_pending = true
+	if is_instance_valid(tips) and tips.visible: tips.yield_to_popup()
+	await get_tree().create_timer(maxf(0.7, float(_chest_until - Time.get_ticks_msec()) / 1000.0 + 0.3)).timeout
+	var deadline := Time.get_ticks_msec() + 3000
+	while is_inside_tree() and is_instance_valid(board_screen) and not board_screen.board.flights.is_empty() and Time.get_ticks_msec() < deadline:
+		await get_tree().create_timer(0.1).timeout
+	if not is_inside_tree():
+		return
+	await get_tree().create_timer(0.25).timeout
+	open("levelup")
+	level_pending = false
+
+func _play_order_chest(items: Array, stashed: int) -> void:
+	if items.is_empty():
+		if stashed > 0: toast("族人要的 %d 件东西放进了暂存区" % stashed)
+		return
+	if screen != "board" or not is_instance_valid(board_screen):
+		return
+	## 全屏「丰收圣筐」：落筐、开盖，材料一件件飞到棋盘；升级面板等它播完再弹
+	var fx := OrderChestFx.new()
+	fx.items = items
+	fx.stashed = stashed
+	fx_layer.add_child(fx)
+	_chest_until = Time.get_ticks_msec() + int(fx.total() * 1000.0)
 
 func fly(id: String, from: Vector2, to: Vector2, cb: Callable = Callable(), s: float = 70.0) -> void:
 	var d := DrawBox.new()

@@ -329,7 +329,7 @@ static func _paint_rewards(ci: CanvasItem, rect: Rect2, rewards: Array) -> void:
 		var text := "×%d" % int(rewards[i][1])
 		var c: Vector2 = spots[i]
 		Sprites.draw(ci, "ev_ell_shadow", Rect2(c + Vector2(-icon_s * 0.36, icon_s * 0.26), Vector2(icon_s * 0.72, icon_s * 0.2)), Color(0.35, 0.2, 0.08, 0.18))
-		Art.item(ci, str(rewards[i][0]), c, icon_s)
+		Art.item(ci, Rewards.before_cards(str(rewards[i][0])), c, icon_s)
 		var baseline := c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5 + icon_s * 0.12
 		_outlined(ci, Vector2(c.x + icon_s * 0.3, baseline), text, fs, Color.WHITE, f)
 
@@ -415,7 +415,7 @@ static func _ticket(p: PopupBase, r: Rect2, super_vip: bool) -> void:
 		var y2 := iy + 146.0
 		UI.icon(p.box, "token_1", Vector2(x1, y2), 80)
 		UI.lbl(p.box, "×10", Rect2(x1 - 50, y2 + 42, 100, 32), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
-		UI.lbl(p.box, "订单额外 +1 积分", Rect2(x2 - 78, y2 - 8, 156, 64), 18, Color("6b4a2a"))
+		UI.lbl(p.box, "每个心愿额外 +1 积分", Rect2(x2 - 78, y2 - 8, 156, 64), 18, Color("6b4a2a"))
 		_stamp(p, r)
 	else:
 		UI.icon(p.box, "fire_2", r.position + Vector2(r.size.x * 0.5, 268), 110)
@@ -453,21 +453,21 @@ static func _stamp(p: PopupBase, r: Rect2) -> void:
 static func _do_vip(p: PopupBase) -> void:
 	if not await _purchase(p, "pass:vip"):
 		return
-	G.main.toast("已激活贵宾：火种 ×150，贵宾奖励已开放")
+	G.main.toast("已激活贵宾：体力 ×150，贵宾奖励已开放")
 
 static func _do_super(p: PopupBase) -> void:
 	var fresh := G.pass_tier == 0
 	if not await _purchase(p, "pass:super"):
 		return
 	if fresh:
-		G.main.toast("已激活超级贵宾：火种 ×150，通行证 +10，超级奖励和循环宝箱已开放")
+		G.main.toast("已激活超级贵宾：体力 ×150，通行证 +10，超级奖励和循环宝箱已开放")
 	else:
 		G.main.toast("已升级超级贵宾：通行证 +10，超级奖励和循环宝箱已开放")
 
 static func _purchase(p: PopupBase, product: String) -> bool:
 	var r: Dictionary = await Payments.buy(product)
 	if not r.get("ok", false):
-		G.main.toast(str(r.get("message", "购买失败")))
+		G.main.toast(str(r.get("message", "没买成，再试一次")))
 		return false
 	if is_instance_valid(p): p.close()
 	RewardPresenter.present(r.get("rewards", []), func(_k): return Vector2(360, 700))

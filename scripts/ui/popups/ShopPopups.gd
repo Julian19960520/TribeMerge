@@ -18,7 +18,7 @@ static func energy() -> PopupBase:
 	var free := not bool(Replay.meta.get("free_energy", false))
 	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.position.y + 560, 300, 100), "免费" if free else str(price), "green", Callable(), 44)
 	if not free: b.res = Art.AMBER_ICON
-	var note := "第一次补充体力免费！" if free else "今天第 %d 次购买，每次涨价，零点恢复。" % (G.energy_buys + 1)
+	var note := "第一次补充免费！" if free else "今天第 %d 次购买，价格逐次上涨，每天 0 点恢复" % (G.energy_buys + 1)
 	UI.lbl(p.box, note, Rect2(r.position.x + 30, r.position.y + 676, r.size.x - 60, 40), 22, Color("8a6a4a"))
 	b.pressed.connect(func():
 		if await G.buy_energy():
@@ -71,7 +71,7 @@ static func howto() -> PopupBase:
 		Paint._spot_hut(ci, Vector2(560, 1080), 4)
 		Sprites.draw(ci, "pop_howto_bub", PS.HOWTO_BUB)
 		Paint.hammer(ci, Vector2(620, 918), 0.5))
-	UI.lbl(p.box, "完成订单！", Rect2(40, 440, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
+	UI.lbl(p.box, "心愿实现啦！", Rect2(40, 440, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
 	UI.lbl(p.box, "赚取不拿拿！", Rect2(410, 630, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
 	UI.lbl(p.box, "开启宝箱！", Rect2(70, 940, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
 	UI.lbl(p.box, "建设部落！", Rect2(410, 1150, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
@@ -104,7 +104,7 @@ static func store() -> PopupBase:
 	UI.box(root, Rect2(0, 0, 720, 520), _paint_store)
 	UI.title(root, "篝火祭通行证", Rect2(50, 400, 360, 60), 34, Color.WHITE)
 	UI.lbl(root, "×10", Rect2(440, 300, 80, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(root, "订单额外 +1 不拿拿", Rect2(500, 304, 200, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(root, "每个心愿额外 +1 不拿拿", Rect2(500, 304, 200, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	UI.lbl(root, "¥ 30", Rect2(470, 344, 160, 44), 28, Color("5a3d24"), HORIZONTAL_ALIGNMENT_CENTER)
 	UI.btn(root, Rect2(430, 396, 240, 80), "激活", "green", func(): G.main.open("pass_buy"), 38)
 	Popups.section(root, "每日特惠", 516, Color("ffd23f"))
@@ -258,7 +258,7 @@ static func _daily_card(parent: Control, r: Rect2, d: Dictionary, k: int) -> voi
 		b.enabled = false
 		var result: Dictionary = await DailyShop.claim(key)
 		if result.get("ok", false): RewardPresenter.present(result.get("rewards", []), func(_k): return b.get_global_rect().get_center() - Vector2(0, 100))
-		if not result.get("ok", false): G.main.toast(str(result.get("message", "领取失败")))
+		if not result.get("ok", false): G.main.toast(str(result.get("message", "没领成，再试一次")))
 		if is_instance_valid(b): refresh.call())
 
 ## 刷新倒计时条：左边沙漏 + 标题 + 「07:12:33」+ 本轮剩余进度槽；右边可选的琥珀刷新按钮。
@@ -327,7 +327,7 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 		b.enabled = true
 		b.queue_redraw()
 		if not paid.get("ok", false):
-			G.main.toast(str(paid.get("message", "购买失败")))
+			G.main.toast(str(paid.get("message", "没买成，再试一次")))
 			return
 		RewardPresenter.present([[Art.AMBER_ICON, int(paid["amber"])]], func(_k): return b.get_global_rect().get_center() + Vector2(0, -100)))
 

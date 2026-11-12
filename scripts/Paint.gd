@@ -373,6 +373,7 @@ static func _spot_hut(ci: CanvasItem, c: Vector2, st: int) -> void:
 ## 格子上的奖励气泡。id 为空时画一枚淡淡的空泡，给编辑器点选。
 static func reward_bubble(ci: CanvasItem, c: Vector2, rad: float, id: String, n: int, _seed: int, lift: float = 0.0) -> void:
 	c += Vector2(0, lift)
+	id = Rewards.before_cards(id)
 	Sprites.at(ci, "paint_bubble_empty" if id == "" else "paint_bubble", c, rad / PS.R_BUBBLE)
 	if id == "":
 		return

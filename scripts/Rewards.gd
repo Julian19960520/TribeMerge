@@ -12,6 +12,12 @@ static func is_resource(id: String) -> bool:
 static func unit(id: String) -> String:
 	return str({"energy": "点体力", "shell": "个不拿拿", "amber": "个琥珀", "sand": "个沙漏"}.get(kind(id), ""))
 
+## 卡册 8 级才开：之前任何地方发的卡包（七日、通行证、礼包…）都换成藤编宝箱，暂存区里不会出现点不开的卡包。
+static func before_cards(id: String) -> String:
+	if G.rules == null or not Data.is_known(id) or Data.type_of(id) != "pack":
+		return id
+	return id if G.rules.progression.feature_unlocked(Data.CARD_LEVEL) else "chest_1"
+
 static func items(ids: Array) -> Array:
 	var out: Array = []
 	for id in ids:
@@ -23,7 +29,7 @@ static func settle(rewards: Array, delivery: Dictionary = {}) -> Dictionary:
 	var origin := int(delivery.get("board_origin", -1))
 	for reward in rewards:
 		if not reward is Array or reward.size() < 2: continue
-		var id := str(reward[0])
+		var id := before_cards(str(reward[0]))
 		var amount := int(reward[1])
 		var type := kind(id)
 		if amount <= 0 or type == "": continue
@@ -50,7 +56,7 @@ static func settle(rewards: Array, delivery: Dictionary = {}) -> Dictionary:
 					G.stash.append(id)
 					if origin >= 0: report["overflow"] += 1
 	if int(report["pack_count"]) > 0:
-		for _index in int(report["pack_count"]): G.stash.append("pack_1")
+		for _index in int(report["pack_count"]): G.stash.append(before_cards("pack_1"))
 		G.present("packs_earned", {"count": report["pack_count"]})
 	if int(report["overflow"]) > 0: G.present("overflow", {"count": report["overflow"]})
 	if bool(report["leveled"]): G.present("level_up", {})

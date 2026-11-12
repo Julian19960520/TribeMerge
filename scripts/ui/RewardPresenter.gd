@@ -8,7 +8,7 @@ static func present(rewards: Array, from: Callable = Callable(), delivery: Dicti
 	for index in rewards.size():
 		var reward = rewards[index]
 		if not reward is Array or reward.size() < 2 or int(reward[1]) <= 0: continue
-		var id := str(reward[0])
+		var id := Rewards.before_cards(str(reward[0]))
 		var type := Rewards.kind(id)
 		if type == "": continue
 		var pos: Vector2 = from.call(index) if from.is_valid() else Vector2(360, 700)

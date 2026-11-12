@@ -1,6 +1,6 @@
 {
   "title": "恐龙化石",
-  "unlock_level": 1,
+  "unlock_level": 7,
   "shovels_per_order": 3,
   "dig_cost": 1,
   "stages": 10,

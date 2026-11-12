@@ -6,6 +6,7 @@ pytestmark = requires_godot
 
 def test_fossil_refresh_commits_and_invalid_dig_is_rejected():
     d = new_game()
+    d.update(level=7, tutorial_on=False)  # 恐龙化石 7 级开放
     at = d['replay_meta']['at']
     refreshed = worker(dict(mode='replay', data=d, ops=[op(1, at, 'fossil', action='refresh')]))
     snapshot = refreshed['data']

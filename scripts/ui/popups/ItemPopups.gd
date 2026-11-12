@@ -232,12 +232,12 @@ static func item_info(id: String) -> PopupBase:
 				Popups.section(lower, "还不能生产", y)
 				var nxt := Data.first_prod_lv(Data.chain(cur_id))
 				if nxt <= 0:
-					UI.lbl(lower, "这一级没有配置产物", Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
+					UI.lbl(lower, "这一级还不能生产", Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
 				else:
 					UI.lbl(lower, "合成到 %d 级后才能点击生产" % nxt, Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
 					UI.icon(lower, "%s_%d" % [Data.chain(cur_id), nxt], Vector2(r.get_center().x, y + 160), 100)
 			else:
-				Popups.section(lower, "产出", y)
+				Popups.section(lower, "能变出", y)
 				var drops: Array = st["drops"]
 				y = _info_item_grid(lower, drops, y + 48, r.get_center().x)
 				if st.has("charges"):
@@ -255,7 +255,7 @@ static func item_info(id: String) -> PopupBase:
 			y += 210
 		else:
 			Popups.section(lower, "获取途径：", y)
-			UI.lbl(lower, "生产器随机掉落、开启宝箱、升级奖励", Rect2(r.position.x, y + 60, r.size.x, 60), 24, Color("7a5a3a"))
+			UI.lbl(lower, "宝物里随机掉、开宝箱、升级奖励", Rect2(r.position.x, y + 60, r.size.x, 60), 24, Color("7a5a3a"))
 		lower_scroll.set_length(maxf(y + 24, 220))
 	var buys: Array = []
 	var refresh_buys := func() -> void:
@@ -427,13 +427,13 @@ static func _book_dishes(holder: Control, r: Rect2) -> void:
 	for id in ids:
 		if G.discovered.has(id): discovered += 1
 	var mid := _book_cell_x(r, 0) + 126.0 * 1.5
-	Popups.section(sc.content, "订单成品（%d/%d）" % [discovered, ids.size()], 16, Color("8a5a30"), mid)
+	Popups.section(sc.content, "族人爱吃的菜（%d/%d）" % [discovered, ids.size()], 16, Color("8a5a30"), mid)
 	var heading: Label = sc.content.get_child(0)
 	Popups.live(sc, G.board_changed, func():
 		var count := 0
 		for id in ids:
 			if G.discovered.has(id): count += 1
-		heading.text = "订单成品（%d/%d）" % [count, ids.size()])
+		heading.text = "族人爱吃的菜（%d/%d）" % [count, ids.size()])
 	for k in ids.size():
 		var cell := Rect2(_book_cell_x(r, k % 4) - 52, 68 + (k / 4) * 116, 104, 104)
 		_book_slot(sc.content, cell, str(ids[k]), k)

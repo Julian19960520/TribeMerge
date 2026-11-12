@@ -313,8 +313,8 @@ func new_game() -> void:
 	var cost := rules.progression.build_cost("fire")
 	var first := 25
 	orders = [
-		{"who": 0, "items": ["fruit_2"], "rw": {"shell": first, "xp": 1}, "story": true, "tutorial": 1},
-		{"who": 1, "items": ["fruit_8"], "rw": {"shell": maxi(cost - first, 1), "xp": 1}, "story": true, "tutorial": 2},
+		{"who": 0, "items": ["fruit_2"], "rw": {"shell": first, "xp": 1}, "story": true, "tutorial": 1, "say": "樱桃真甜！谢谢你，新伙伴"},
+		{"who": 1, "items": ["fruit_8"], "rw": {"shell": maxi(cost - first, 1), "xp": 1}, "story": true, "tutorial": 2, "say": "这么大的石榴！今晚大家有口福了"},
 	]
 	for order in orders: order_identity(order)
 	dirty()

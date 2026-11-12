@@ -158,7 +158,7 @@ func _paint_stash(ci: CanvasItem, sz: Vector2) -> void:
 		if i != top: order.append(i)
 	for j in shown:
 		var k := shown - 1 - j
-		var id: String = G.stash[order[k]]
+		var id: String = Rewards.before_cards(str(G.stash[order[k]]))
 		var off := Vector2(float(k) * 5.0, -float(k) * 9.0)
 		var rot := (Art.srnd(n - k) - 0.5) * 0.14 if k > 0 else 0.0
 		var cr := Rect2(Vector2(16, 44) + off, Vector2(sz.x - 36, 124))
@@ -249,7 +249,7 @@ func _on_deliver(oi: int) -> void:
 	var fossil_earned := FossilDig.earning()
 	var result: Dictionary = Replay.perform("order", {"cell": oi})
 	if not result.get("ok", false):
-		G.main.toast(str(result.get("error", "订单交付失败")))
+		G.main.toast(str(result.get("error", "没送成，再试一次")))
 		return
 	_activity_row.order_delivered(card_pos, fossil_earned)
 	board.select(-1)
@@ -299,7 +299,8 @@ func _on_hammer() -> void:
 	if id == "" or G.main.screen != "board":
 		return
 	G.main.show_screen("home")
-	var tw := create_tween()
+	## 计时挂在 Main 上：棋盘切走后整棵子树会暂停，挂在棋盘上的计时就永远到不了点
+	var tw := G.main.create_tween()
 	tw.tween_interval(0.42)
 	tw.tween_callback(func():
 		if G.main.screen == "home":
@@ -361,7 +362,7 @@ func _on_select(i: int) -> void:
 			_set_desc("用琥珀买下泡泡里的物品，\n倒计时结束泡泡就会消失。")
 		elif c["lock"] == 2:
 			_info_name.text = "巨石"
-			_set_desc("在旁边合成就能震碎巨石，\n里面的物品会被藤蔓缠住。")
+			_set_desc("在旁边合成就能震开巨石，\n露出的东西拖一样的过去就能拿到。")
 		elif Data.is_dish(c["id"]):
 			_info_name.text = Data.name_of(c["id"])
 			_set_desc(Data.describe(c["id"]))
@@ -384,7 +385,7 @@ func _on_select(i: int) -> void:
 		_info_name.text = ""
 		_info_desc.position.x = 170
 		_info_desc.size.x = 410
-		_set_desc("点击物品查看详情，拖动相同物品合成。")
+		_set_desc("点物品看详情，拖动相同物品来合成")
 	for d in get_children():
 		if d is DrawBox:
 			d.queue_redraw()
@@ -456,7 +457,7 @@ func _on_delete() -> void:
 
 func _on_rush(i: int) -> void:
 	if G.rush < 1:
-		G.main.toast("没有沙漏。在棋盘上合成后再领取，一次能领更多。")
+		G.main.toast("还没有沙漏。棋盘上的沙漏合成后再收，一次收得更多")
 		Sfx.play("deny")
 		board.shake(i)
 		return
@@ -495,7 +496,7 @@ func _on_boost() -> void:
 		return
 	G.set_boost(not G.boost)
 	if G.boost:
-		G.main.toast("双倍体力已开启：生产器每次耗 2 点体力，产物升 1 级")
+		G.main.toast("双倍体力已开启：宝物每次耗 2 点体力，变出的东西高 1 级")
 	else:
 		G.main.toast("双倍体力已关闭")
 
@@ -521,7 +522,7 @@ func _on_activate(i: int) -> void:
 	var result: Dictionary = await Replay.perform("tap", {"cell": i})
 	if result.has("error"):
 		if Data.type_of(id) in ["gen", "egen"] and G.energy < G.rules.board.gen_cost(): G.main.tips.energy_out()
-		elif str(result["error"]) == "棋盘已满": G.main.tips.board_full(str(result["error"]))
+		elif str(result["error"]) == "棋盘满啦，先腾出空位": G.main.tips.board_full(str(result["error"]))
 		else: G.main.toast(str(result["error"]))
 	elif result.get("kind", "") == "produce": board.fly_in(i, int(result["to"]), str(result["id"]))
 	elif result.get("kind", "") == "chest": _present_chest_drop(i, result)
@@ -548,7 +549,7 @@ func _present_chest_drop(i: int, result: Dictionary) -> void:
 func _on_drop_outside(i: int, gp: Vector2) -> void:
 	if G.rules.orders.cooking(i) or not G.rules.board.is_free(i): return
 	if Data.is_dish(G.rules.board.cell_id(i)):
-		G.main.toast("做好的食物留在棋盘上，点订单交付")
+		G.main.toast("做好啦！菜在棋盘上，点对勾端给族人")
 		Sfx.play("deny")
 		return
 	if not _pouch.get_global_rect().has_point(gp): return
@@ -571,13 +572,13 @@ func _stored(i: int) -> void:
 
 func _on_stash() -> void:
 	if G.stash.is_empty():
-		G.main.toast("奖励、购买和放不下的物品会暂存在这里")
+		G.main.toast("奖励、买到的东西和放不下的物品都会先放在这里")
 		return
 	var at := G.rules.board.stash_claim_index()
 	if at < 0:
 		G.main.toast("卡包已保留，%d级开启" % Data.CARD_LEVEL)
 		return
-	if Data.type_of(str(G.stash[at])) == "pack": G.main.open("pack", {"id": str(G.stash[at]), "stash": at}); return
+	if Data.type_of(Rewards.before_cards(str(G.stash[at]))) == "pack": G.main.open("pack", {"id": str(G.stash[at]), "stash": at}); return
 	var result: Dictionary = await Replay.perform("stash", {"index": at})
 	if result.has("error"): G.main.toast(str(result["error"]))
 	elif result.has("to"): _fly_stash_to(str(result["id"]), int(result["to"]), 0.0)
@@ -658,13 +659,52 @@ func guide_focus_row() -> void:
 	_orders.offset = 0.0
 	_orders._apply()
 
+## 把第 oi 张订单卡滚到订单栏中间（提示要圈它之前用），返回它现在在屏幕上露出来的部分。
+func focus_order_card(oi: int) -> Rect2:
+	if oi < 0 or oi >= _cards.size() or not is_instance_valid(_cards[oi]):
+		return Rect2()
+	if _order_scroll != null and _order_scroll.is_valid():
+		_order_scroll.kill()
+	var card: Control = _cards[oi]
+	var x := card.position.x
+	var p := card.get_parent()
+	while p != null and p != _orders.content:
+		if p is Control: x += (p as Control).position.x
+		p = p.get_parent()
+	_orders.jump_to(x - (_orders.size.x - card.size.x) * 0.5)
+	return order_card_rect(oi)
+
+## 订单卡在屏幕上露出来的部分（被订单栏裁掉的不算）
+func order_card_rect(oi: int) -> Rect2:
+	if oi < 0 or oi >= _cards.size() or not is_instance_valid(_cards[oi]):
+		return Rect2()
+	var full := card_full_rect(oi)
+	var strip := _orders.get_global_rect()
+	## 只按订单栏左右裁；下面的对勾按钮会伸出订单栏，要整个露出来
+	var x0 := maxf(full.position.x, strip.position.x)
+	var x1 := minf(full.end.x, strip.end.x)
+	if x1 <= x0: return Rect2()
+	return Rect2(x0, full.position.y, x1 - x0, full.size.y)
+
+## 订单卡连同伸出卡外的按钮（对勾、制作）一起的范围
+func card_full_rect(oi: int) -> Rect2:
+	var r: Rect2 = _cards[oi].get_global_rect()
+	var stack: Array = [_cards[oi]]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		for c in n.get_children():
+			stack.append(c)
+			if c is TButton and (c as TButton).is_visible_in_tree():
+				r = r.merge((c as TButton).get_global_rect())
+	return r
+
 func guide_deliver_rect() -> Rect2:
 	for oi in _cards.size():
 		if oi >= G.orders.size() or not G.rules.orders.order_ready(G.orders[oi]):
 			continue
 		if _find_round_btn(_cards[oi]) == null:
 			continue
-		return _cards[oi].get_global_rect()
+		return order_card_rect(oi)
 	return Rect2()
 
 func _find_round_btn(n: Node) -> TButton:
@@ -710,7 +750,7 @@ func _build_bubble_offer() -> void:
 			Sfx.play("pop")
 			_on_select(at)
 		elif G.main:
-			G.main.toast(str(r.get("message", "购买失败")))
+			G.main.toast(str(r.get("message", "没买成，再试一次")))
 		_refresh_bubble_offer())
 	_bubble_offer.hide()
 
@@ -782,7 +822,7 @@ func _set_item_action(id: String, tangled: bool = false) -> void:
 		_set_desc("点击打开，三件物品里挑一件。")
 	elif kind == "chest":
 		var left: int = G.board[board.selected].get("chest", []).size() if board.selected >= 0 else 0
-		var detail := Data.describe(id) if Data.chain(id) in ["orderbox", "premiumbox"] else "每次点击取出一个物品，领完后宝箱消失。"
+		var detail := Data.describe(id) if Data.chain(id) in ["orderbox", "premiumbox"] else "点一下取出一件物品，取完宝箱就没了。"
 		_set_desc("剩余%d件。%s" % [left, detail] if left > 0 else detail)
 	elif kind == "pack":
 		_set_desc("%d级卡包，每包%d张卡片，点击查看星级概率。" % [Data.lv(id), int(CardPacks.config()["cards_per_pack"])] if G.rules.progression.feature_unlocked(Data.CARD_LEVEL) else "%d级解锁收藏卡。" % Data.CARD_LEVEL)

@@ -203,7 +203,7 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 	var cells: Array = s["cells"]
 	var cols := int(c["board"]["cols"])
 	var view := int(s["view"])
-	if action != "claim" and int(args.get("view", view)) != view: return {"error": "棋盘已滚动，请重试"}
+	if action != "claim" and int(args.get("view", view)) != view: return {"error": "棋盘动了一下，再试一次"}
 	var lo := view * cols
 	var hi := lo + int(c["board"]["visible_rows"]) * cols
 	var result := {}
@@ -211,9 +211,9 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 	s["view"] = view
 	if action == "spawn":
 		var cost := int(c["points"]["spawn_cost"])
-		if int(s["points"]) < cost: return {"error": "完成主棋盘订单可获得活动积分"}
+		if int(s["points"]) < cost: return {"error": "帮族人实现心愿可获得活动积分"}
 		var to := MergeGrid.nearest_empty(cells, cols, hi - cols + cols / 2, func(k): return k >= lo and k < hi)
-		if to < 0: return {"error": "当前区域已满，请先合并物品"}
+		if to < 0: return {"error": "这里满了，先合并一些物品"}
 		var id := str(c["chain"][int(c["points"]["spawn_tier"]) - 1]["id"])
 		s["points"] = int(s["points"]) - cost
 		s["spent"] = int(s["spent"]) + cost
@@ -227,7 +227,7 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		if int(cells[b]["lock"]) == 2: return {"error": "先在旁边合并，揭开覆盖"}
 		var next := func(id): return next_id(c, id)
 		var kind := MergeGrid.drop_kind(cells, a, b, next)
-		if kind == "": return {"error": "锁定物品需要用同级物品合并解锁" if int(cells[b]["lock"]) != 0 else ""}
+		if kind == "": return {"error": "拖一个一样的物品过去就能解锁" if int(cells[b]["lock"]) != 0 else ""}
 		var locked := int(cells[b]["lock"]) != 0
 		var id := str(cells[a]["id"])
 		var under := str(cells[b]["id"])
@@ -240,7 +240,7 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		if drop != "": result["drops"] = [drop]
 	elif action == "recycle":
 		var at := int(args.get("cell", -1))
-		if at < lo or at >= hi or int(cells[at]["lock"]) != 0 or str(cells[at]["id"]) == "": return {"error": "请选择一个未锁定的物品"}
+		if at < lo or at >= hi or int(cells[at]["lock"]) != 0 or str(cells[at]["id"]) == "": return {"error": "选一个没被锁住的物品"}
 		cells[at]["id"] = ""
 		result = {"kind": "recycle"}
 	elif action == "claim":

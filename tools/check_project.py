@@ -62,6 +62,8 @@ def main() -> None:
                 ("check_export_items", ["--cloud-off"], "source-resources"),
                 ("check_domain_rules", ["--replay-test", "--cloud-off"], "domains"),
                 ("check_onboarding_stages", ["--replay-test", "--cloud-off"], "onboarding-stages"),
+                ("check_guide_playthrough", ["--replay-test", "--cloud-off"], "guide-playthrough"),
+                ("check_tips_layering", ["--replay-test", "--cloud-off"], "tips-layering"),
                 ("check_storage", ["--replay-test", "--cloud-off"], "storage"),
                 ("check_chest_grades", ["--replay-test", "--cloud-off"], "chest-grades"),
                 ("check_rewards", ["--replay-test", "--cloud-off"], "rewards"),

@@ -72,8 +72,11 @@ static func shell_of(items: Array) -> int:
 	return maxi(int(round(total(items) * PAY_PER_FLAME)), 1)
 
 ## 按目标火苗随一单。avoid 里的物品组合会尽量避开，给「换一单」用。
-static func make(level: int, target: float, rng: RandomNumberGenerator, avoid: Array = []) -> Dictionary:
-	var pool := _pool(level, target)
+## allowed 非空时只出这些链上的东西（玩家现有生产器掉得出来的）
+static func make(level: int, target: float, rng: RandomNumberGenerator, avoid: Array = [], allowed: Dictionary = {}) -> Dictionary:
+	var pool := _pool(level, target, allowed)
+	if pool.is_empty() and not allowed.is_empty():
+		pool = _pool(level, target)
 	if pool.is_empty():
 		return {}
 	var n := _count(target, rng)
@@ -132,7 +135,7 @@ static func _weighted(bag: Array, target: float, rng: RandomNumberGenerator) -> 
 			return bag[i]
 	return bag[0]
 
-static func _pool(level: int, target: float) -> Array:
+static func _pool(level: int, target: float, allowed: Dictionary = {}) -> Array:
 	var cap := maxf(target * 1.55, target + 2.0)
 	var out: Array = []
 	var cheapest: Dictionary = {}
@@ -140,6 +143,8 @@ static func _pool(level: int, target: float) -> Array:
 		for key in ["main", "sub"]:
 			var ch := str(l.get(key, ""))
 			if ch == "" or not Data.CHAINS.has(ch) or not Data.product_open(level, ch):
+				continue
+			if not allowed.is_empty() and not allowed.has(ch):
 				continue
 			var n := Data.max_lv(ch)
 			for lv in n:

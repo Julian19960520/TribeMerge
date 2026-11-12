@@ -54,5 +54,31 @@ func _run() -> void:
 	g.board_changed.emit()
 	await create_timer(1.0).timeout
 	await _shot("egen_tip")
+	main.tips._close(false)
+	# 升级：订单宝箱的物品依次落到棋盘，然后弹升级面板
+	main.close_all()
+	var free: Array = []
+	for i in g.board.size():
+		if int(g.board[i]["lock"]) == 0 and str(g.board[i]["id"]) == "": free.append(i)
+	for i in [36, 37, 38]:
+		if free.size() >= 3: break
+		g.board[i] = {"id": "", "lock": 0}
+		free.append(i)
+	var items := []
+	var ids := ["fruit_5", "fruit_6", "fruit_2"]
+	for k in 3:
+		g.board[int(free[k])]["id"] = ids[k]
+		items.append({"to": int(free[k]), "id": ids[k]})
+	g.board_changed.emit()
+	g.present("order_chest", {"items": items, "stashed": 0})
+	g.present("level_up", {})
+	var last := 0.0
+	for t in [0.3, 0.8, 1.15, 1.45, 1.8, 2.3, 2.9]:
+		await create_timer(t - last).timeout
+		last = t
+		await RenderingServer.frame_post_draw
+		root.get_viewport().get_texture().get_image().save_png(out + "/ob_chest_%d.png" % int(t * 100))
+	await create_timer(1.6).timeout
+	await _shot("chest_levelup")
 	print("DONE")
 	quit(0)

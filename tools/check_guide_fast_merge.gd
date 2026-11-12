@@ -44,6 +44,8 @@ func run() -> void:
 	var board = main.board_screen.board
 	var guide = main._guide
 	check(guide.visible and guide._step == "merge1", "tutorial starts at merge1")
+	check(guide._beat == "merge1", "tutorial opens with the intro line before the first merge")
+	guide.skip_beat()
 	_drag(board, guide.SRC, guide.DST)
 	check(str(g.board[guide.DST]["id"]) == "basket_2", "first merge made basket_2")
 	check(not board.crumbles.is_empty() or not board.moves.is_empty(), "animations still running right after first merge")

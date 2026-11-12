@@ -28,11 +28,11 @@ func bubble_left(i: int) -> int:
 	return maxi(0, int(ceil(float(state.board[i]["bubble"].get("expires", 0)) - context.now()))) if is_merge_bubble(i) else 0
 
 func _maybe_spawn_bubble(id: String, near: int) -> void:
-	# 引导固定了每一步用到的格子，完成后才开始出现随机额外物品。只有高级普通物品才有（Data.bubble_ok）。
-	if state.tutorial_on or not Data.bubble_ok(id) or find_empty_near(near) < 0:
+	# 新手阶段（引导和之后几级）不出气泡，到 merge_bubble.min_level 级才开始；只有高级普通物品才有（Data.bubble_ok）。
+	var rule = Data.bubble_rule()
+	if state.tutorial_on or state.level < int(rule.get("min_level", 5)) or not Data.bubble_ok(id) or find_empty_near(near) < 0:
 		return
 	var offer: Dictionary
-	var rule = Data.bubble_rule()
 	if context.random_for("bubbles").randf() >= float(rule.get("chance", 0.1)):
 		return
 	offer = {"uid": "%s-%s" % [int(context.now()), context.random_for("bubbles").randi()], "item": id,
@@ -92,10 +92,8 @@ func stash_push(id: String) -> void:
 	state.changed.emit()
 
 func stash_claim_index() -> int:
-	for i in range(state.stash.size() - 1, -1, -1):
-		if context.progression.feature_unlocked(Data.CARD_LEVEL) or Data.type_of(str(state.stash[i])) != "pack":
-			return i
-	return -1
+	## 卡册没开时卡包取出来是藤编宝箱（见 Rewards.before_cards），所以不用再跳过
+	return state.stash.size() - 1
 
 func idx(c: int, r: int) -> int:
 	return r * state.COLS + c
@@ -165,6 +163,9 @@ func discover(id: String) -> bool:
 	var ch = Data.chain(id)
 	for l in range(1, Data.lv(id) + 1):
 		state.discovered["%s_%d" % [ch, l]] = true
+	# 第一次拿到能生产的生产器：弹「新生产器 / 生产器升级」
+	if Data.type_of(id) == "gen" and not Data.gen_stats(id).is_empty():
+		state.present("new_generator", {"id": id})
 	return true
 
 func unlock_around(i: int) -> Array:
@@ -350,14 +351,14 @@ func dispense_chest(i: int) -> Dictionary:
 		return {"error": "宝箱已不在原位置"}
 	if state._chest_busy.has(i): return {"error": "宝箱正在打开"}
 	var id = cell_id(i)
-	if SpecialChests.is_order(id) and SpecialChests.needs(state).is_empty(): return {"error": "当前订单已备齐，完成订单后再开启"}
+	if SpecialChests.is_order(id) and SpecialChests.needs(state).is_empty(): return {"error": "族人要的东西都齐了，先送过去再开吧"}
 	var items: Array = state.board[i].get("chest", [])
 	if items.is_empty():
 		if find_empty_near(i) < 0: return {"error": "棋盘满了，先腾出一个空格"}
 		state._chest_busy[i] = true
 		items = open_chest(id)
 		state._chest_busy.erase(i)
-		if items.is_empty(): return {"error": "宝箱暂时无法打开"}
+		if items.is_empty(): return {"error": "宝箱现在打不开"}
 		if cell_id(i) != id or not is_free(i): return {"error": "宝箱已不在原位置"}
 		state.board[i]["chest"] = items.duplicate()
 		items = state.board[i]["chest"]
@@ -366,7 +367,7 @@ func dispense_chest(i: int) -> Dictionary:
 		state.dirty()
 		return {"error": "棋盘满了，先腾出一个空格"}
 	var out = SpecialChests.order_drop(id, state) if str(items[0]) == SpecialChests.ORDER_SLOT else str(items[0])
-	if out == "": return {"error": "当前订单没有缺少的物品"}
+	if out == "": return {"error": "族人要的东西都齐了，先送过去吧"}
 	items.pop_front()
 	if items.is_empty():
 		state.board[i]["id"] = ""

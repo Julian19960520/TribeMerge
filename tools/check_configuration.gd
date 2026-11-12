@@ -65,7 +65,7 @@ func run() -> void:
 			chest_descriptions_ok = chest_descriptions_ok and description.contains("%d级" % grade)
 			if family != "choice":
 				var capacity: int = SpecialChests.count("%s_%d" % [family, grade])
-				var capacity_text: String = ("获得%d件" if family == "premiumbox" else "取出%d件") % capacity
+				var capacity_text: String = "共%d件" % capacity
 				chest_descriptions_ok = chest_descriptions_ok and description.contains(capacity_text)
 	check(chest_descriptions_ok, "all graded chest descriptions match the current grade and capacity")
 	var generation := Files.revision

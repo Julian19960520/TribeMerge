@@ -75,7 +75,7 @@ func run() -> void:
 	check(moon.spawn_btn.visible and not moon.orders_btn.visible, "moon event offers placement while points remain")
 	for i in 5: tap(moon.spawn_btn)
 	check(state["points"] == 0 and state["spent"] == 5 and moon.board.incoming.size() == 5, "five rapid taps place five unique items before any flight ends")
-	check(not moon.spawn_btn.visible and moon.orders_btn.visible and moon.orders_btn.text == "去完成订单", "empty moon supplies immediately become the order button")
+	check(not moon.spawn_btn.visible and moon.orders_btn.visible and moon.orders_btn.text == "去帮族人", "empty moon supplies immediately become the order button")
 	var flights: Array = moon.fx.parts.filter(func(part): return part["k"] == "fly")
 	flights[0]["done"].call()
 	check(moon.board.animating and moon.board.incoming.size() == 4, "first landing keeps the remaining four flights protected")
@@ -119,7 +119,7 @@ func run() -> void:
 	main.show_screen("home", true)
 	var banana = load("res://scripts/ui/RacePopup.gd").race_panel()
 	var orders = banana.find_child("race_go_orders", true, false)
-	check(orders != null and orders.visible and orders.text == "去完成订单" and orders.position.y >= 1200, "banana race has a bottom order button")
+	check(orders != null and orders.visible and orders.text == "去帮族人" and orders.position.y >= 1200, "banana race has a bottom order button")
 	tap(orders)
 	check(main.screen == "board" and banana._closing, "banana order button returns to orders")
 	await create_timer(0.2).timeout

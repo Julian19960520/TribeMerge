@@ -38,7 +38,7 @@ static func settings() -> PopupBase:
 		var g: String = labels[k][1]
 		b.extra = func(ci, sz): Paint.glyph(ci, g, Vector2(56, sz.y * 0.5 - 3), 1.6)
 		if k == 0:
-			b.pressed.connect(func(): G.main.toast("对着篝火喊三声，酋长就会来找你。"))
+			b.pressed.connect(func(): G.main.toast("遇到问题或有好点子，欢迎告诉我们！"))
 		else:
 			b.pressed.connect(func(): G.main.toast("目前仅支持简体中文。"))
 	var terms := UI.lbl(p.box, "条款与隐私", Rect2(260, r.position.y + 590, 200, 40), 24, Color("2f7f8a"))

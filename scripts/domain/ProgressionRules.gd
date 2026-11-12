@@ -90,7 +90,7 @@ func claim_level(lv: int) -> Array:
 	return Data.level_rewards(lv)
 
 func shop_buy(key: String, id: String) -> Dictionary:
-	if key.begins_with("deal_"): return {"ok":false,"message":"请从每日商品入口领取"}
+	if key.begins_with("deal_"): return {"ok":false,"message":"去每日特惠里领取吧"}
 	context.clock._check_day()
 	context.clock.check_shell_period()
 	var offer: Dictionary = {}
@@ -160,11 +160,34 @@ func add_xp(n: int) -> bool:
 		up = true
 		if not state.tutorial_on: context.orders.refill_orders()
 		state.orders_changed.emit()
-	if not up and not state.tutorial_on and context.orders._ensure_story():
+	if up and not state.tutorial_on: _order_chest()
+	if not state.tutorial_on:
+		context.orders.assign_xp()
 		state.orders_changed.emit()
 	state.dirty()
 	state.changed.emit()
 	return up
+
+## 升级时的「订单宝箱」：新订单还缺的材料（最多 ORDER_CHEST 件）立刻放到棋盘上，放不下的进暂存区。
+## 界面先依次播放落到棋盘的动画，再弹升级面板。
+const ORDER_CHEST := 3
+
+func _order_chest() -> void:
+	var help: Array = context.orders.missing_order_items(ORDER_CHEST)
+	if help.is_empty(): return
+	var placed: Array = []
+	var stashed := 0
+	for id in help:
+		var to: int = context.board.find_empty_near(state.board.size() / 2)
+		if to >= 0:
+			state.board[to]["id"] = str(id)
+			context.board.discover(str(id))
+			placed.append({"to": to, "id": str(id)})
+		else:
+			state.stash.append(str(id))
+			stashed += 1
+	state.board_changed.emit()
+	state.present("order_chest", {"items": placed, "stashed": stashed})
 
 func add_tokens(n: int) -> int:
 	state.tokens += n
@@ -386,7 +409,7 @@ func open_pack(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> A
 	return open_pack_result(pack_id, cell, stash_index).get("cards", [])
 
 func open_pack_result(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> Dictionary:
-	if state._pack_busy or not feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡尚未解锁"}
+	if state._pack_busy or not feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡还没解锁"}
 	var source = find_pack_source(pack_id, cell, stash_index)
 	if source.is_empty():
 		state.present("notice", {"text": "没有可以打开的卡包"})
@@ -410,7 +433,7 @@ func roll_card_pack(pack_id: String = "pack_1") -> Array:
 func draw_card_pack(pack_id: String = "pack_1") -> Dictionary:
 	if not feature_unlocked(Data.CARD_LEVEL):
 		state.present("notice", {"text": "典藏卡在 %d 级解锁" % Data.CARD_LEVEL})
-		return {"error": "典藏卡尚未解锁"}
+		return {"error": "典藏卡还没解锁"}
 	if CardPacks.definition(pack_id).is_empty(): return {"error": "卡包不存在"}
 	var out = []
 	for i in int(CardPacks.config()["cards_per_pack"]):
@@ -434,7 +457,7 @@ func collect_cards(entries: Array) -> Array:
 	return rewards
 
 func exchange_card_stars(cost: int) -> Dictionary:
-	if not feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡尚未解锁"}
+	if not feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡还没解锁"}
 	var offer := CardPacks.exchange_offer(cost)
 	if offer.is_empty(): return {"error": "兑换档位不存在"}
 	if state.card_stars < cost: return {"error": "星星不足"}

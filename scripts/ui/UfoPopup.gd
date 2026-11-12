@@ -184,5 +184,5 @@ func _buy() -> void:
 	# The items land on the board through the grant's own board_spawn presentations.
 	if result.get("ok", false): close()
 	else:
-		G.main.toast(str(result.get("message", result.get("error", "购买失败"))))
+		G.main.toast(str(result.get("message", result.get("error", "没买成，再试一次"))))
 		_refresh()

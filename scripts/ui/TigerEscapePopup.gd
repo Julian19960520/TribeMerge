@@ -53,7 +53,7 @@ func _ready() -> void:
 	action_button = UI.btn(box, Rect2(150, 1302, 420, 100), "开始逃生", "green", _primary, 40)
 	action_button.name = "tiger_primary"
 	UI.box(box, Rect2(22, 1260, 110, 115), func(ci, sz): TigerArt.draw(ci, sz * 0.5, 82), false)
-	UI.lbl(box, "每完成一张订单 +%d 积分" % int(TigerEscape.config()["points_per_order"]), Rect2(130, 1418, 460, 35), 23, Color("bbceb1"))
+	UI.lbl(box, "每实现一个心愿 +%d 积分" % int(TigerEscape.config()["points_per_order"]), Rect2(130, 1418, 460, 35), 23, Color("bbceb1"))
 	visual_stage = float(TigerEscape.round_state().get("stage", 0))
 	_refresh(true)
 
@@ -110,9 +110,9 @@ func _refresh(first := false) -> void:
 	clock_label.modulate = Color("ff9585") if status == "running" and stage <= int(m.get("destroyed", -1)) + 1 else Color.WHITE
 	var rows: Array = m.get("stages", TigerEscape.config()["stages"])
 	var need := int(rows[mini(stage, count - 1)]["points"])
-	score_label.text = "下一跳  %d / %d" % [int(m.get("points", 0)), need] if status == "running" else "完成订单攒满进度，就能向前跳"
+	score_label.text = "下一跳  %d / %d" % [int(m.get("points", 0)), need] if status == "running" else "帮族人实现心愿攒满进度，就能向前跳"
 	status_label.text = {"idle": "抵达终点，赢取逃生大奖", "running": "别停下，剑齿虎正在靠近！", "won": "成功逃脱！终点大奖已解锁", "lost": "被追上了！已到达的礼包仍可领取", "attacking": "剑齿虎发起攻击！"}.get(status, "")
-	action_button.text = {"idle": "开始逃生", "running": "去完成订单", "won": "领取并再逃一次", "lost": "再逃一次", "attacking": "追击中…"}.get(status, "开始逃生")
+	action_button.text = {"idle": "开始逃生", "running": "去帮族人", "won": "领取并再逃一次", "lost": "再逃一次", "attacking": "追击中…"}.get(status, "开始逃生")
 	if status in ["won", "lost"]:
 		score_label.text = "已通过%d处落脚点，本局补给已保留" % stage
 		action_button.text = "领取并再逃一次" if not TigerEscape.pending_rewards(m).is_empty() else "再逃一次"
@@ -182,7 +182,7 @@ func _instructions() -> void:
 	var p := PopupBase.new()
 	Popups.frame(p, Rect2(68, 400, 584, 610), "逃生法则", Art.OCHRE)
 	var interval := int(TigerEscape.config()["attack_interval_sec"])
-	var text := "完成主棋盘订单获得积分，攒满就向前跳。\n\n剑齿虎每%s摧毁后方一处落脚点。\n你还站在那一处，就会被淘汰。\n\n抵达的礼包随时可领，出局也不丢失。\n离开游戏后，追击仍会继续。\n同场同行者为模拟角色，也会前进与淘汰。" % G.fmt_time(interval)
+	var text := "帮族人实现心愿获得积分，攒满就向前跳。\n\n剑齿虎每%s摧毁后方一处落脚点。\n你还站在那一处，就会被淘汰。\n\n抵达的礼包随时可领，出局也不丢失。\n离开游戏后，追击仍会继续。\n同场同行者为模拟角色，也会前进与淘汰。" % G.fmt_time(interval)
 	var label := UI.lbl(p.box, text, Rect2(108, 508, 504, 390), 26, Art.INK)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	UI.btn(p.box, Rect2(225, 914, 270, 64), "明白了", "green", p.close, 30)

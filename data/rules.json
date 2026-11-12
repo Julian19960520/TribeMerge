@@ -38,6 +38,7 @@
 		]
 	},
 	"merge_bubble": {
+		"min_level": 5,
 		"chance": 0.1,
 		"min_flames": 32,
 		"seconds": 60,

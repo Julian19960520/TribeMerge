@@ -52,6 +52,7 @@ func _run() -> void:
 	check(await g.claim_book("salad") == 1 and await g.claim_book("salad") == 0, "dish discovery reward is claimable only once")
 	g.board = []
 	for i in 63: g.board.append({"id": "", "lock": 0})
+	g.level = maxi(g.level, int(data.bubble_rule().get("min_level", 5)))  # 气泡 5 级才开始出
 	g.board[0]["id"] = "fruit_5"
 	g.board[1]["id"] = "fruit_5"
 	for seed_value in 100:
@@ -117,8 +118,12 @@ func _run() -> void:
 	main.board_screen._on_activate(5)
 	check(g.board[5]["id"] == "pack_1", "locked card pack stays on board")
 	g.stash = ["pack_1"]
-	main.board_screen._on_stash()
-	check(g.stash == ["pack_1"], "locked card pack stays in stash")
+	var chests_before := 0
+	for c in g.board: if str(c["id"]) == "chest_1": chests_before += 1
+	await main.board_screen._on_stash()
+	var chests_after := 0
+	for c in g.board: if str(c["id"]) == "chest_1": chests_after += 1
+	check(g.stash.is_empty() and chests_after == chests_before + 1, "locked card pack in stash comes out as a vine chest before cards unlock")
 	g.level = 8
 	var p = main.open("store")
 	for i in 3: await process_frame
