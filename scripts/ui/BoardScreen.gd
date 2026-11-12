@@ -520,7 +520,8 @@ func _on_activate(i: int) -> void:
 	if Data.type_of(id) == "pack": G.main.open("pack", {"id": id, "cell": i}); return
 	var result: Dictionary = await Replay.perform("tap", {"cell": i})
 	if result.has("error"):
-		if Data.type_of(id) in ["gen", "egen"] and G.energy < G.rules.board.gen_cost(): G.main.open("energy", "exhausted")
+		if Data.type_of(id) in ["gen", "egen"] and G.energy < G.rules.board.gen_cost(): G.main.tips.energy_out()
+		elif str(result["error"]) == "棋盘已满": G.main.tips.board_full(str(result["error"]))
 		else: G.main.toast(str(result["error"]))
 	elif result.get("kind", "") == "produce": board.fly_in(i, int(result["to"]), str(result["id"]))
 	elif result.get("kind", "") == "chest": _present_chest_drop(i, result)

@@ -2,6 +2,8 @@ extends RefCounted
 ## Deterministic gameplay commands shared by the client and validation workers.
 ## This module has no storage, transport, scene or animation responsibilities.
 var runtime: Node
+## 升级时订单宝箱最多送几件订单材料。
+const LEVEL_ORDER_HELP := 3
 ## Only used while recovering the previous local version's verified journal.
 var legacy_album_rewards := false
 var meta: Dictionary:
@@ -78,6 +80,10 @@ func dispatch(name: String, a: Dictionary):
 			return {"used": G.rush_cook(i)}
 		"boost": G.set_boost(bool(a.get("on", false))); return {}
 		"energy":
+			# 第一次补体力免费，之后才花琥珀。
+			if not meta.get("free_energy", false):
+				meta["free_energy"] = true
+				G.rules.progression.add_currency("energy", 100); return {"ok": true, "free": true}
 			if not G.buy_energy(): return {"error": "琥珀不足"}
 			G.rules.progression.add_currency("energy", 100); return {"ok": true}
 		"expand": return {"ok": G.expand_storage()}
@@ -93,7 +99,11 @@ func dispatch(name: String, a: Dictionary):
 			var lv := int(a.get("level", 0))
 			var key := "level:%d" % lv
 			if lv < 2 or lv > G.level or meta.has(key): return {"error": "等级奖励不可领取"}
-			meta[key] = true; var rw := Data.level_rewards(lv); grant(rw); return {"rewards": rw}
+			meta[key] = true; var rw := Data.level_rewards(lv); grant(rw)
+			# 订单宝箱：当前订单还缺的材料直接落到棋盘上，放不下的进暂存区。
+			var help := G.rules.orders.missing_order_items(LEVEL_ORDER_HELP)
+			if not help.is_empty(): grant(Rewards.items(help), {"board_origin": G.board.size() / 2})
+			return {"rewards": rw, "help": help}
 		"pack": return pack(a)
 		"card_star_exchange": return G.rules.progression.exchange_card_stars(int(a.get("cost", 0)))
 		"album_claim": return claim_album(int(a.get("album", -1)))

@@ -334,6 +334,32 @@ func wanted_ids() -> Dictionary:
 			d[id] = true
 	return d
 
+## 升级时的「订单宝箱」：当前订单还缺、棋盘和暂存区里都没有的物品，按订单顺序最多 cap 件。
+## 菜品要靠制作，不直接送；制作单送的是还缺的材料。
+func missing_order_items(cap: int = 3) -> Array:
+	var have = {}
+	for c in state.board:
+		if int(c.get("lock", 2)) == 0 and str(c.get("id", "")) != "":
+			have[str(c["id"])] = int(have.get(str(c["id"]), 0)) + 1
+	for s in state.stash:
+		have[str(s)] = int(have.get(str(s), 0)) + 1
+	var out: Array = []
+	for o in state.orders:
+		var ids: Array = []
+		if str(o.get("kind", "")) == "craft":
+			if str(o.get("phase", "need")) == "need": ids = o.get("mats", [])
+		else:
+			ids = o.get("items", [])
+		for raw in ids:
+			var id = str(raw)
+			if int(have.get(id, 0)) > 0:
+				have[id] = int(have[id]) - 1
+				continue
+			if Data.is_dish(id) or not Data.is_board_item(id) or Data.type_of(id) != "item": continue
+			out.append(id)
+			if out.size() >= cap: return out
+	return out
+
 func order_cell_tone() -> PackedInt32Array:
 	var tone = PackedInt32Array()
 	tone.resize(state.board.size())

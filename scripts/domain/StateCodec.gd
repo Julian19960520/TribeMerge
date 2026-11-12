@@ -22,6 +22,7 @@ static func capture(game: Node, include_local: bool = true) -> Dictionary:
 	if include_local:
 		state["settings"] = game.settings
 		state["tiger_escape_seen"] = game.tiger_escape_seen
+		state["tips_seen"] = game.tips_seen
 		var replay = game.get_node_or_null("/root/Replay")
 		state["replay_local"] = replay.journal() if replay != null and replay.active else game.replay_local
 	return state

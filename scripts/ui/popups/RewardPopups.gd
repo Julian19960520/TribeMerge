@@ -29,6 +29,14 @@ static func levelup() -> PopupBase:
 	if not news.is_empty():
 		UI.lbl(p.box, String.chr(10).join(news.slice(0, 3)), Rect2(60, 820, 600, 44 * mini(news.size(), 3)), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 		hint_y = 836.0 + 44.0 * float(mini(news.size(), 3))
+	# 订单宝箱：领奖时把当前订单还缺的材料直接送到棋盘上
+	var help := G.rules.orders.missing_order_items(3)
+	if not help.is_empty():
+		var hy := hint_y + 10.0
+		UI.lbl(p.box, "订单宝箱：送来订单要的材料", Rect2(0, hy, 720, 44), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
+		for k in help.size():
+			UI.icon(p.box, str(help[k]), Vector2(ItemPopups._spread_x(k, help.size(), 360.0, 120.0), hy + 100.0), 92)
+		hint_y = hy + 170.0
 	var hint := UI.lbl(p.box, "点击任意处领取", Rect2(0, hint_y, 720, 50), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
 	var tw := hint.create_tween().set_loops()
 	tw.tween_property(hint, "modulate:a", 0.3, 0.6)

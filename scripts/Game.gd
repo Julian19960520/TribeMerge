@@ -37,6 +37,8 @@ var duel_race: Dictionary = {}
 var tiger_escape: Dictionary = {}
 var fossil_dig: Dictionary = {}
 var tiger_escape_seen: Dictionary = {}
+## 一次性提示看过的记录（本机展示记录，不进玩法快照）。
+var tips_seen: Dictionary = {}
 var gm_activities := false
 var seven_day: Dictionary = {}
 signal seven_day_changed
@@ -278,6 +280,7 @@ func new_game() -> void:
 	tiger_escape = {}
 	fossil_dig = {}
 	tiger_escape_seen = {}
+	tips_seen = {}
 	gm_activities = false
 	seven_day = {}
 	merge_events = {}
@@ -310,8 +313,8 @@ func new_game() -> void:
 	var cost := rules.progression.build_cost("fire")
 	var first := 25
 	orders = [
-		{"who": 0, "items": ["fruit_2"], "rw": {"shell": first}, "story": true, "tutorial": 1},
-		{"who": 1, "items": ["fruit_8"], "rw": {"shell": maxi(cost - first, 1)}, "story": true, "tutorial": 2},
+		{"who": 0, "items": ["fruit_2"], "rw": {"shell": first, "xp": 1}, "story": true, "tutorial": 1},
+		{"who": 1, "items": ["fruit_8"], "rw": {"shell": maxi(cost - first, 1), "xp": 1}, "story": true, "tutorial": 2},
 	]
 	for order in orders: order_identity(order)
 	dirty()
@@ -336,6 +339,8 @@ func load_game() -> bool:
 		replay_local = data["replay_local"].duplicate(true)
 	if data.get("tiger_escape_seen") is Dictionary:
 		tiger_escape_seen = data["tiger_escape_seen"].duplicate(true)
+	if data.get("tips_seen") is Dictionary:
+		tips_seen = data["tips_seen"].duplicate(true)
 	set_boil(bool(settings["boil"]))
 	return true
 

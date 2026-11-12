@@ -287,10 +287,10 @@ func detect() -> String:
 			return "back"
 		if _has_open("basket_5"):
 			## 草籽单交掉以后，棋盘上的草籽也没了。这时要结束引导，不能回到「掉草籽」再发一张。
-			## 读档后 _gave_seed_order 会丢，用声望判断：教学单都不给声望，只有草籽单给 1 点。
+			## 读档后 _gave_seed_order 会丢，用等级判断：两张教学单和草籽单各给 1 点经验，草籽单交掉正好升到 2 级。
 			if _seed_order_alive():
 				return "submit_seed" if _free("seed_1") else "byprod"
-			if _gave_seed_order or G.xp > 0 or G.level > 1:
+			if _gave_seed_order or G.level > 1:
 				return "done"
 			return "byprod"
 		if _free_count("basket_4") >= 2:

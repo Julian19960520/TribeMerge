@@ -61,6 +61,7 @@ def main() -> None:
                 ("check_resources", ["--replay-worker", "--cloud-off"], "resources-worker"),
                 ("check_export_items", ["--cloud-off"], "source-resources"),
                 ("check_domain_rules", ["--replay-test", "--cloud-off"], "domains"),
+                ("check_onboarding_stages", ["--replay-test", "--cloud-off"], "onboarding-stages"),
                 ("check_storage", ["--replay-test", "--cloud-off"], "storage"),
                 ("check_chest_grades", ["--replay-test", "--cloud-off"], "chest-grades"),
                 ("check_rewards", ["--replay-test", "--cloud-off"], "rewards"),

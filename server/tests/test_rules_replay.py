@@ -56,9 +56,10 @@ def test_spends_and_duplicate_claims():
     d=new_game()
     d.update(level=10,tutorial_on=False,orders=[],amber=80,shells=1000)
     at=d['replay_meta']['at']
-    r=worker(dict(mode='replay',data=d,ops=[op(1,at,'energy'),op(2,at,'level',level=2)]))
-    assert r['data']['amber']==65 and r['data']['energy']>=200
-    assert not run_worker(dict(mode='replay',data=r['data'],ops=[op(3,at,'level',level=2)]))['ok']
+    # 第一次补体力免费，第二次 20 琥珀；2 级奖励 10 琥珀
+    r=worker(dict(mode='replay',data=d,ops=[op(1,at,'energy'),op(2,at,'energy'),op(3,at,'level',level=2)]))
+    assert r['data']['amber']==70 and r['data']['energy']>=300
+    assert not run_worker(dict(mode='replay',data=r['data'],ops=[op(4,at,'level',level=2)]))['ok']
 
 
 def test_real_interface_operations_replay_to_the_same_state(tmp_path):

@@ -15,9 +15,11 @@ static func energy() -> PopupBase:
 	var tag := UI.lbl(p.box, "×100", Rect2(r.position.x + 92, r.position.y + 436, 150, 60), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	tag.rotation = -0.06
 	var price := G.rules.progression.energy_price()
-	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.position.y + 560, 300, 100), str(price), "green", Callable(), 44)
-	b.res = Art.AMBER_ICON
-	UI.lbl(p.box, "今天第 %d 次购买，每次涨价，零点恢复。" % (G.energy_buys + 1), Rect2(r.position.x + 30, r.position.y + 676, r.size.x - 60, 40), 22, Color("8a6a4a"))
+	var free := not bool(Replay.meta.get("free_energy", false))
+	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.position.y + 560, 300, 100), "免费" if free else str(price), "green", Callable(), 44)
+	if not free: b.res = Art.AMBER_ICON
+	var note := "第一次补充体力免费！" if free else "今天第 %d 次购买，每次涨价，零点恢复。" % (G.energy_buys + 1)
+	UI.lbl(p.box, note, Rect2(r.position.x + 30, r.position.y + 676, r.size.x - 60, 40), 22, Color("8a6a4a"))
 	b.pressed.connect(func():
 		if await G.buy_energy():
 			RewardPresenter.present([["fire_2", 100]], func(_k): return Vector2(360, 760))

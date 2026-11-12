@@ -1,9 +1,9 @@
 {
 	"levels": [
-		{"level": 2, "rewards": [["fire_2", 11], ["chest_1", 1], ["basket_1", 1], ["amber_3", 5]]},
-		{"level": 3, "rewards": [["fire_2", 14], ["chest_1", 1], ["basket_1", 1], ["sand_2", 4]]},
-		{"level": 4, "rewards": [["fire_2", 17], ["chest_1", 1], ["amber_3", 5], ["sand_2", 4]]},
-		{"level": 5, "rewards": [["fire_2", 20], ["chest_1", 1], ["sand_2", 4]]},
+		{"level": 2, "rewards": [["fire_2", 10], ["amber_3", 10], ["basket_1", 1]]},
+		{"level": 3, "rewards": [["fire_2", 14], ["basket_1", 1], ["sand_2", 4]]},
+		{"level": 4, "rewards": [["fire_2", 17], ["emberpot_1", 1], ["basket_1", 1], ["sand_2", 4]]},
+		{"level": 5, "rewards": [["fire_2", 20], ["chest_1", 1], ["amber_3", 5], ["sand_2", 4]]},
 		{"level": 6, "rewards": [["fire_2", 23], ["chest_1", 1], ["anvil_4", 1], ["amber_3", 5], ["sand_2", 5]]},
 		{"level": 7, "rewards": [["fire_2", 26], ["chest_1", 1], ["anvil_4", 1], ["sand_2", 5]]},
 		{"level": 8, "rewards": [["fire_2", 29], ["chest_1", 1], ["pack_1", 1], ["loom_4", 1], ["amber_3", 5], ["sand_2", 5]]},

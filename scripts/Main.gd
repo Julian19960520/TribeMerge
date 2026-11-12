@@ -15,6 +15,8 @@ var screen := "home"
 var _curtain: ColorRect
 var _wipe: Control
 var _guide
+## 引导结束后的分阶段一次性提示
+var tips: Tips
 var _fps_lbl: Label
 ## 全屏领奖一次只开一张，后面的排队
 var _rw_q: Array = []
@@ -52,6 +54,8 @@ func _ready() -> void:
 	_wipe = ScreenWipeScript.new()
 	add_child(_wipe)
 	_add_fps()
+	tips = Tips.new()
+	add_child(tips)
 	_guide = GuideScript.new()
 	board_screen.add_child(_guide)
 	var args := OS.get_cmdline_user_args()
