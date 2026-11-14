@@ -104,11 +104,29 @@ static func region_map() -> PopupBase:
 		var tile := UI.btn(p.box, rect, "", "hide", func():
 			p.close()
 			G.main.open("build", id))
+		# 每块地一张卡：开放的是暖色卡 + 建设进度条，没开放的灰卡 + 锁和开放等级
+		var built := int(G.builds.get(id, 0))
+		var stages := maxi(Data.build_stages(d), 1)
+		var done := built >= stages
 		tile.extra = func(ci, sz):
+			var full := Rect2(Vector2.ZERO, sz)
+			Sprites.draw(ci, "pop_card18_base", full)
+			Sprites.draw(ci, "pop_card18_fill", full, (Color("7fb43a") if done else Color("e0a24a")) if open else Color("a39a8c"))
+			var ir := Rect2(7, 7, sz.x - 14, 118)
+			Sprites.draw(ci, "pop_inner14", ir, Art.BONE if open else Color("e4ddd0"))
+			Sprites.at(ci, "pop_spot_shadow", Vector2(sz.x * 0.5, 112), 1.4, 0.0, Color(0, 0, 0, 0.1))
 			var parts := Data.build_parts(d)
-			if not parts.is_empty(): TribeArt.icon(ci, str(parts[0]["id"]), Rect2(66, 4, sz.x - 132, 130), not open)
-		UI.lbl(tile, str(d["name"]), Rect2(4, 124, rect.size.x - 8, 34), 25, Art.INK)
-		UI.lbl(tile, TextCatalog.source("ui.progressionpopups.667da42b1672") % [int(G.builds.get(id, 0)), Data.build_stages(d)] if open else TextCatalog.source("ui.homescreen.1f67da2b53a5") % Data.build_unlock(d), Rect2(4, 162, rect.size.x - 8, 30), 20, Art.CLAY)
+			if not parts.is_empty(): TribeArt.icon(ci, str(parts[0]["id"]), Rect2(64, 10, sz.x - 128, 110), not open)
+			if not open:
+				ci.draw_circle(Vector2(sz.x - 32, 32), 20, Color(0, 0, 0, 0.25))
+				Paint.glyph(ci, "lock", Vector2(sz.x - 32, 30), 0.8)
+			elif done:
+				Paint.check_mark(ci, Vector2(sz.x - 30, 30), 0.8)
+			else:
+				Paint.bar(ci, Rect2(16, 166, sz.x - 32, 22), float(built) / float(stages), Art.MOSS)
+		UI.lbl(tile, str(d["name"]), Rect2(4, 128, rect.size.x - 8, 34), 25, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+		var info := TextCatalog.source("ui.progressionpopups.667da42b1672") % [built, Data.build_stages(d)] if open else TextCatalog.source("ui.homescreen.1f67da2b53a5") % Data.build_unlock(d)
+		UI.lbl(tile, info, Rect2(4, 162, rect.size.x - 8, 30), 18 if open and not done else 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	return p
 
 static func _buy_build(p: PopupBase, id: String, button: TButton) -> void:

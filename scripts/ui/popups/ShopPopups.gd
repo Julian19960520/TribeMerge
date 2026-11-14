@@ -87,9 +87,16 @@ static func howto() -> PopupBase:
 		_arrow(ci, 0)
 		Art.item(ci, "shell_4", Vector2(560, 540), 170)
 		_arrow(ci, 1)
-		Paint._spot_hut(ci, Vector2(220, 900), 4)
-		Paint.hammer(ci, Vector2(290, 736), 0.65)
-		Sprites.draw(ci, "pop_howto_hand", PS.HOWTO_HAND)
+		# 第三步画的就是主页左下角那个「建造」键，引导手指按在上面；第四步才是建好的茅屋
+		var bc := Vector2(214, 836)
+		Paint.button(ci, Rect2(bc - Vector2(66, 66), Vector2(132, 132)), "orange")
+		var hm := Sprites.size_of("paint_hammer")
+		Sprites.at(ci, "paint_hammer", bc + Vector2(0, -4), 88.0 / maxf(hm.y, 1.0))
+		for k in 3:
+			var a := -0.3 - 0.55 * k
+			ci.draw_line(bc + Vector2(cos(a), sin(a)) * 82.0, bc + Vector2(cos(a), sin(a)) * 100.0, Color("ffe7a8"), 5.0, true)
+		var tip_off: Vector2 = PS.GUIDE_TIP + Vector2(8, 8) - (PS.GUIDE_HAND + Vector2(16, 16)) * 0.5
+		Sprites.at(ci, "guide_hand", bc + Vector2(30, 34) - tip_off.rotated(-0.38) * 1.1, 1.1, -0.38)
 		_arrow(ci, 2)
 		Paint._spot_hut(ci, Vector2(560, 1080), 4)
 		Sprites.draw(ci, "pop_howto_bub", PS.HOWTO_BUB)

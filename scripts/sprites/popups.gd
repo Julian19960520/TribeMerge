@@ -146,7 +146,58 @@ static func entries() -> Array:
 	out.append(_region("pop_ad_reward", AD_REWARD, 6, func(ci): live_ad_reward(ci, AD_REWARD.size)))
 	out.append(_region("pop_ad_frame", AD_SCREEN, 14, func(ci): live_ad_frame(ci, AD_SCREEN.size)))
 	out.append(_region("pop_ad_line", AD_SCREEN, 4, func(ci): Art.outline(ci, Art.rrect(Rect2(Vector2(14, 14), AD_SCREEN.size - Vector2(28, 28)), 16, 906, 0.4), 2.5, Art.INK)))
+	# 新手引导的指点手：食指朝上，指尖在 GUIDE_TIP
+	out.append({"key": "guide_hand", "w": int(GUIDE_HAND.x), "h": int(GUIDE_HAND.y), "pad": 8,
+		"draw": func(ci, r): live_guide_hand(ci, r.position)})
 	return out
+
+## 指点手的登记尺寸和指尖位置（相对内容区左上角）。运行时按指尖对准目标。
+const GUIDE_HAND := Vector2(76, 104)
+const GUIDE_TIP := Vector2(28, 4)
+const SKIN := Color("f1c49a")
+
+static func live_guide_hand(ci: CanvasItem, p: Vector2) -> void:
+	var o := p + GUIDE_TIP
+	var finger := Art.capsule(o + Vector2(0, 9), o + Vector2(2, 46), 9.5, 931)
+	var palm := Art.rrect(Rect2(o + Vector2(-13, 36), Vector2(52, 44)), 17, 932, 0.5)
+	var k1 := Art.ell(o + Vector2(19, 41), Vector2(10, 9), 933, 0.03, 12)
+	var k2 := Art.ell(o + Vector2(31, 48), Vector2(9, 8.5), 934, 0.03, 12)
+	var k3 := Art.ell(o + Vector2(36, 60), Vector2(8, 8), 935, 0.03, 12)
+	# 拇指横压在弯起的三根手指前面（👆 的握法），一眼看出是食指在指
+	var thumb := Art.capsule(o + Vector2(-11, 60), o + Vector2(17, 55), 8.0, 936)
+	var cuff := Art.rrect(Rect2(o + Vector2(-14, 76), Vector2(56, 20)), 7, 937, 0.5)
+	# 整只手只有一圈外轮廓：先把所有部件一起外扩成奶白贴纸边和墨线，再平涂肤色，
+	# 部件之间不再各自描边（各描一圈会把手背切成一块块）
+	var skin := [palm, k3, k2, k1, finger, thumb]
+	for part in skin + [cuff]:
+		Art.dilate(ci, part, 9.0, Color(1, 0.98, 0.92, 0.96))
+	for part in skin + [cuff]:
+		Art.dilate(ci, part, 3.0, Art.INK)
+	for part in skin:
+		ci.draw_colored_polygon(part, SKIN)
+	# 手背下半一层浅浅的暗面，拇指下沿一道柔和的影子，让拇指压在前面
+	ci.draw_colored_polygon(Art.ell(o + Vector2(14, 70), Vector2(24, 8), 945, 0.0, 14), Color(0.75, 0.45, 0.3, 0.18))
+	ci.draw_colored_polygon(Art.capsule(o + Vector2(-8, 66), o + Vector2(18, 61), 4.5, 946), Color(0.75, 0.45, 0.3, 0.3))
+	ci.draw_colored_polygon(thumb, SKIN)
+	# 只留两处折痕，用深一点的肤色实线（小图上细墨线会断成虚线）：拇指上沿、弯指之间
+	var crease := Color("b86f45")
+	var arc := PackedVector2Array()
+	for i in 9:
+		var t := float(i) / 8.0
+		arc.append(o + Vector2(lerpf(-11.0, 20.0, t), 53.0 - 5.0 * sin(PI * t * 0.8)))
+	ci.draw_polyline(arc, crease, 2.6, true)
+	ci.draw_polyline(PackedVector2Array([o + Vector2(24, 40), o + Vector2(27, 47)]), crease, 2.4, true)
+	ci.draw_polyline(PackedVector2Array([o + Vector2(33, 51), o + Vector2(35, 57)]), crease, 2.4, true)
+	# 指甲、高光
+	ci.draw_colored_polygon(Art.ell(o + Vector2(0.5, 3.5), Vector2(5.5, 4.5), 938, 0.0, 10, 0.0, 0.2), Color("fde8d4"))
+	ci.draw_colored_polygon(Art.ell(o + Vector2(-3.5, 24), Vector2(2.6, 10), 942, 0.0, 10, 0.0, 0.2), Color(1, 1, 1, 0.45))
+	# 袖口单独描边，压在手腕上
+	Art.dilate(ci, cuff, 2.2, Art.INK)
+	ci.draw_colored_polygon(cuff, Art.LEATHER)
+	# 兽皮袖口：缝线 + 毛边
+	for x in [-6.0, 6.0, 18.0, 30.0]:
+		Art.ln(ci, o + Vector2(x, 82), o + Vector2(x + 3, 90), 1.6, Art.LEATHER_D, 943 + int(x))
+	Art.pl(ci, [o + Vector2(-12, 78), o + Vector2(-4, 81), o + Vector2(4, 78), o + Vector2(12, 81), o + Vector2(20, 78), o + Vector2(28, 81), o + Vector2(38, 78)], 2.0, Color("e0a46a"), 944)
 
 ## 按原坐标画在 area 里的一块：生成时平移到内容区，运行时 Sprites.draw(ci, key, area) 贴回原处
 static func _region(key: String, area: Rect2, pad: int, fn: Callable, extra: Dictionary = {}) -> Dictionary:

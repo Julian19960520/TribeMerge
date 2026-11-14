@@ -371,9 +371,28 @@ static func onboarding_rescue() -> PopupBase:
 	var p := PopupBase.new()
 	p.set_meta("reward_screen", true)
 	var reward: Array = G.rules.onboarding.config()["rescue"]["reward"]
+	# 和其它领奖页同一套：慢转的光芒 + 发光台座，奖励在台座上轻轻浮动，主角在旁边探头
+	var t0 := Time.get_ticks_msec()
+	var stage := UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
+		var t := float(Time.get_ticks_msec() - t0) / 1000.0
+		var c := Vector2(360, 680)
+		for k in 14:
+			var a := t * 0.25 + TAU * float(k) / 14.0
+			ci.draw_polygon(PackedVector2Array([c + Vector2(cos(a), sin(a)) * 40.0,
+				c + Vector2(cos(a - 0.1), sin(a - 0.1)) * 400.0, c + Vector2(cos(a + 0.1), sin(a + 0.1)) * 400.0]),
+				PackedColorArray([Color(1, 0.88, 0.5, 0.24), Color(1, 0.88, 0.5, 0.0), Color(1, 0.88, 0.5, 0.0)]))
+		for j in 4:
+			ci.draw_circle(c, 120.0 * (1.0 - 0.13 * float(j)), Color(1, 0.9, 0.55, 0.06))
+		Sprites.at(ci, "pop_rw_plate", c + Vector2(0, 92), 140.0 / PS.RW_R)
+		Art.item(ci, str(reward[0]), c + Vector2(0, sin(t * 2.4) * 7.0), 180)
+		Paint.bust(ci, Vector2(104, 1046), 100), false)
+	var redraw := Timer.new()
+	redraw.wait_time = 0.033
+	redraw.autostart = true
+	p.add_child(redraw)
+	redraw.timeout.connect(stage.queue_redraw)
 	UI.title(p.box, TextCatalog.source("ui.rewardpopups.2fc1d6a44679"), Rect2(0, 360, 720, 110), 54)
-	UI.icon(p.box, str(reward[0]), Vector2(360, 680), 180)
-	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.51f1d25fd68d") % int(reward[1]), Rect2(0, 800, 720, 64), 38, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
+	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.51f1d25fd68d") % int(reward[1]), Rect2(0, 812, 720, 64), 38, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
 	p.on_tap = func():
 		var result: Dictionary = Replay.perform("onboarding_rescue")
 		if result.has("error"): return

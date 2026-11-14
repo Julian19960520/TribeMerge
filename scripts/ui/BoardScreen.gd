@@ -231,11 +231,24 @@ func _build_orders() -> void:
 	(_cards_root as OrderStrip).refresh()
 	_cards = (_cards_root as OrderStrip).cards_by_index
 	_activity_row.refresh()
-	var hint: Label = _cards_root.get_node_or_null("build_hint")
+	# 等着去建造时，订单位上立一张和订单卡同款的空卡：小锤子 + 茅屋，下面写提示
+	var hint: Control = _cards_root.get_node_or_null("build_hint")
 	if hint == null:
-		hint = UI.lbl(_cards_root, TextCatalog.source("ui.boardscreen.e6a2bcabaa6c"), Rect2(282, 110, 330, 100), 26, Art.INK)
+		hint = UI.box(_cards_root, Rect2(272, 0, 300, 216), func(ci, sz):
+			var r := Rect2(4, 20, sz.x - 8, sz.y - 24)
+			Sprites.draw(ci, "board_card_base", r)
+			Sprites.draw(ci, "board_card_fill", r, Color("fbf0d6"))
+			Sprites.draw(ci, "board_card_dash", r)
+			var hut := Sprites.size_of("paint_spot_hut_3")
+			var k := minf(180.0 / maxf(hut.x, 1.0), 128.0 / maxf(hut.y, 1.0))
+			Sprites.at(ci, "pop_spot_shadow", Vector2(sz.x * 0.5 - 8, 114), 1.7, 0.0, Color(0, 0, 0, 0.12))
+			Sprites.at(ci, "paint_spot_hut_3", Vector2(sz.x * 0.5 - 8, 76), k)
+			var hm := Sprites.size_of("paint_hammer")
+			Sprites.at(ci, "paint_hammer", Vector2(sz.x * 0.5 + 62, 64), 58.0 / maxf(hm.y, 1.0), 0.35), false)
 		hint.name = "build_hint"
-		hint.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+		var text := UI.lbl(hint, TextCatalog.source("ui.boardscreen.e6a2bcabaa6c"), Rect2(20, 128, 260, 70), 22, Color("6b4a2a"))
+		text.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+		text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hint.visible = G.rules.onboarding.waiting_for_build()
 
 func _on_craft(oi: int) -> void:

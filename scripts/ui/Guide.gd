@@ -311,16 +311,54 @@ func _paint_formula(ci: CanvasItem, _sz: Vector2) -> void:
 func _paint_pointer(ci: CanvasItem, _sz: Vector2) -> void:
 	if _holes.is_empty(): return
 	var at := _holes[0].get_center()
+	var press := 0.0
 	if _mode == "merge" and _merge_a >= 0:
 		var a := _cell_rect(_merge_a).get_center()
 		var b := _cell_rect(_merge_b).get_center()
-		var u := clampf(fmod(_t, 1.8) / 1.2, 0, 1)
+		var u := clampf((fmod(_t, 1.8) - 0.25) / 1.1, 0, 1)
+		u = u * u * (3.0 - 2.0 * u)
 		at = a.lerp(b, u)
-		ci.draw_line(a, b, Color(1, 1, 1, 0.7), 4, true)
+		_paint_drag_path(ci, a, b)
+		# 起点按下、终点松开：两头各一圈涟漪
+		_paint_ripple(ci, a, fmod(_t, 1.8) / 0.5)
+		_paint_ripple(ci, b, (fmod(_t, 1.8) - 1.35) / 0.45)
+		press = 1.0 if u > 0.0 and u < 1.0 else 0.0
 	elif _mode in ["dialog", "banner"]: return
-	else: at += Vector2(0, sin(_t * 5) * 6)
-	# Familiar white fingertip, drawn above the exact tap/drag target.
-	ci.draw_circle(at, 17, Color(1, 0.85, 0.3, 0.45 + 0.15 * sin(_t * 5)))
-	ci.draw_line(at + Vector2(23, 52), at + Vector2(4, 9), Art.INK, 24, true)
-	ci.draw_line(at + Vector2(23, 52), at + Vector2(4, 9), Color.WHITE, 17, true)
-	ci.draw_circle(at + Vector2(24, 49), 18, Color.WHITE)
+	else:
+		# 点按：手抬起 → 按下（涟漪）→ 停一下
+		var cyc := fmod(_t, 1.2)
+		press = clampf(1.0 - absf(cyc - 0.35) / 0.25, 0.0, 1.0)
+		_paint_ripple(ci, at, (cyc - 0.35) / 0.6)
+	var lift := (1.0 - press) * 12.0
+	var rot := -0.38
+	var s := 0.92 - press * 0.06
+	var tip_off: Vector2 = (GuideArt.GUIDE_TIP + Vector2(8, 8) - (GuideArt.GUIDE_HAND + Vector2(16, 16)) * 0.5) * s
+	var tip := at + Vector2(10, 14) * (lift / 12.0) + Vector2(2, 4)
+	Sprites.at(ci, "guide_hand", tip - tip_off.rotated(rot), s, rot)
+
+const GuideArt := preload("res://scripts/sprites/popups.gd")
+
+## 点按涟漪：k 从 0 到 1 扩散变淡
+func _paint_ripple(ci: CanvasItem, c: Vector2, k: float) -> void:
+	if k < 0.0 or k > 1.0: return
+	var r := 14.0 + 30.0 * k
+	ci.draw_arc(c, r, 0, TAU, 32, Color(1, 0.93, 0.55, 0.9 * (1.0 - k)), 5.0 * (1.0 - k) + 1.5, true)
+	ci.draw_circle(c, 12.0 * (1.0 - k), Color(1, 1, 0.85, 0.35 * (1.0 - k)))
+
+## 拖动路线：一串往前流动的小圆点，末端一个箭头
+func _paint_drag_path(ci: CanvasItem, a: Vector2, b: Vector2) -> void:
+	var d := b - a
+	var n := maxi(int(d.length() / 18.0), 2)
+	var flow := fmod(_t * 1.6, 1.0)
+	for i in n:
+		var t := (float(i) + flow) / float(n)
+		if t > 0.88: continue
+		var p := a.lerp(b, t)
+		ci.draw_circle(p, 6.0, Art.INK)
+		ci.draw_circle(p, 4.0, Color(1, 0.97, 0.88))
+	var dir := d.normalized()
+	var tipp := b - dir * 20.0
+	var side := dir.orthogonal() * 11.0
+	var head := PackedVector2Array([tipp + dir * 12.0, tipp - dir * 4.0 + side, tipp - dir * 4.0 - side])
+	Art.dilate(ci, head, 2.5, Art.INK)
+	ci.draw_colored_polygon(head, Color(1, 0.97, 0.88))

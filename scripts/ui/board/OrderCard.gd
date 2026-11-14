@@ -99,13 +99,13 @@ func _build_content() -> void:
 	_recipe_button = UI.hit(self, recipe_icon_rect().grow(17), func(): G.main.open("recipe", str(order.get("dish", ""))))
 	_recipe_button.visible = str(order.get("kind", "")) == "craft"
 	_status = UI.lbl(self, "", Rect2(88, 62, size.x - 100, 22), 16, Art.INK)
-	_skip_button = UI.btn(self, Rect2(8, 193, size.x - 16, 46), "", "teal", func(): G.main.board_screen._on_rush(int(order.get("cell", -1))), 22)
-	var mid := _skip_button.size.x * 0.5
-	UI.lbl(_skip_button, TextCatalog.source("ui.ordercard.fc50a99caae0"), Rect2(mid - 52, 0, 56, 46), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
-	UI.icon(_skip_button, "sand_2", Vector2(mid + 24, 20), 38, false)
-	_skip_cost = UI.lbl(_skip_button, "", Rect2(mid + 25, 23, 32, 22), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
+	# 加速键和右下角的交付键同一个体量：骑在卡片下沿正中，文字 + 沙漏 + 份数角标
+	_skip_button = UI.btn(self, Rect2(size.x * 0.5 - 64, size.y - 36, 128, 50), "", "teal", func(): G.main.board_screen._on_rush(int(order.get("cell", -1))), 22)
+	UI.lbl(_skip_button, TextCatalog.source("ui.ordercard.fc50a99caae0"), Rect2(10, 0, 62, 46), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.icon(_skip_button, "sand_2", Vector2(94, 22), 40, false)
+	_skip_cost = UI.lbl(_skip_button, "", Rect2(98, 22, 30, 24), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	_rewards_layer = UI.box(self, Rect2(0, 150, size.x, 40), _paint_rewards, false)
-	_time_bar = UI.box(self, Rect2(14, 153, size.x - 28, 32), _paint_cook_time, false)
+	_time_bar = UI.box(self, Rect2(12, 142, size.x - 24, 34), _paint_cook_time, false)
 	_was_ready = false
 
 func recipe_icon_rect() -> Rect2:
@@ -287,13 +287,32 @@ func cooking_progress() -> float:
 		duration = float(G.board[at]["ck"].get("secs", duration))
 	return clampf(1.0 - float(G.rules.orders.cook_left(at)) / maxf(1.0, duration), 0.0, 1.0)
 
+## 正在做：左边一个小闹钟，右边火色进度条，条上写剩余时间（「6秒」「2分05秒」这种短写法）
 func _paint_cook_time(ci: CanvasItem, sz: Vector2) -> void:
-	Paint.bar(ci, Rect2(Vector2.ZERO, sz), cooking_progress(), Art.MOSS)
-	var text := G.fmt_time(G.rules.orders.cook_left(int(order.get("cell", -1))))
+	var clock := Vector2(16, sz.y * 0.5)
+	var bar := Rect2(clock.x + 8, sz.y * 0.5 - 12, sz.x - clock.x - 8, 24)
+	Paint.bar(ci, bar, cooking_progress(), Color("f08a2c"))
+	_paint_clock(ci, clock, 15.0)
+	var text := TextCatalog.resolve(Board._sec_text(G.rules.orders.cook_left(int(order.get("cell", -1)))))
 	var font: Font = G.font_body
-	var at := Vector2((sz.x - font.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x) * 0.5, sz.y * 0.5 + (font.get_ascent(18) - font.get_descent(18)) * 0.5)
-	ci.draw_string_outline(font, at, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 4, Art.INK)
-	ci.draw_string(font, at, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+	var fs := 18
+	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var at := Vector2(bar.position.x + 10 + (bar.size.x - 10 - tw) * 0.5, sz.y * 0.5 + (font.get_ascent(fs) - font.get_descent(fs)) * 0.5)
+	ci.draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
+	ci.draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+
+## 小闹钟：墨边奶白钟面，分针跟着进度转
+func _paint_clock(ci: CanvasItem, c: Vector2, r: float) -> void:
+	ci.draw_circle(c, r + 2.5, Art.INK)
+	ci.draw_circle(c, r, Color("f08a2c"))
+	ci.draw_circle(c, r - 3.5, Art.BONE)
+	for k in 4:
+		var d := Vector2.UP.rotated(PI * 0.5 * k)
+		ci.draw_line(c + d * (r - 6.5), c + d * (r - 4.5), Art.INK, 2.0, true)
+	var a := TAU * cooking_progress() - PI * 0.5
+	ci.draw_line(c, c + Vector2(cos(a), sin(a)) * (r - 6.0), Art.INK, 2.4, true)
+	ci.draw_line(c, c + Vector2(0, -1).rotated(-0.9) * (r - 8.5), Art.INK, 2.4, true)
+	ci.draw_circle(c, 2.2, Art.INK)
 
 func _paint_formula(ci: CanvasItem, o: Dictionary, width: float) -> void:
 	var spots: Array = _formula_spots(o, width)

@@ -1,5 +1,11 @@
 {
 	"sprites": {
+		"guide_hand": {
+			"frames": 4,
+			"h": 104,
+			"pad": 8,
+			"w": 76
+		},
 		"pop_ad_frame": {
 			"frames": 4,
 			"h": 328,
