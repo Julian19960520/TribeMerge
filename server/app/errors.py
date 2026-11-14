@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from .texts import source as text_source
 
 
 class ApiError(Exception):
@@ -32,7 +33,7 @@ def install(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def _val(_req: Request, e: RequestValidationError):
         detail = [{"loc": list(x.get("loc", [])), "msg": x.get("msg", "")} for x in e.errors()]
-        return JSONResponse(body("invalid_request", "请求参数不合法", detail=detail), status_code=422)
+        return JSONResponse(body("invalid_request", text_source("server_notice.errors.2825c4569d4c"), detail=detail), status_code=422)
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(_req: Request, e: StarletteHTTPException):

@@ -16,6 +16,7 @@ from .errors import ApiError
 from .logs import account_var
 from .models import Account, AuthSession
 from .ratelimit import limiter
+from .texts import source as text_source
 
 
 def hash_token(token: str) -> str:
@@ -52,7 +53,7 @@ def new_session(db: Session, account_id: str, device_id: str, *, exclusive: bool
 def _bearer(request: Request) -> str:
     h = request.headers.get("authorization", "")
     if not h.lower().startswith("bearer "):
-        raise ApiError(401, "unauthorized", "缺少登录凭证")
+        raise ApiError(401, "unauthorized", text_source("server_notice.security.5ad93f3fb15e"))
     return h[7:].strip()
 
 
@@ -71,20 +72,20 @@ def current(request: Request, db: Session = Depends(get_db)) -> Auth:
     token = _bearer(request)
     sess = db.get(AuthSession, hash_token(token))
     if sess is None:
-        raise ApiError(401, "unauthorized", "登录凭证无效")
+        raise ApiError(401, "unauthorized", text_source("server_notice.save_service.70d12aaddeba"))
     if sess.revoked_at is not None:
         if sess.revoke_reason == "replaced":
-            raise ApiError(401, "session_replaced", "账号已在其他设备登录")
-        raise ApiError(401, "session_revoked", "已退出登录")
+            raise ApiError(401, "session_replaced", text_source("server_notice.security.628a80789419"))
+        raise ApiError(401, "session_revoked", text_source("server_notice.security.d0b8f27a7116"))
     exp = sess.expires_at if sess.expires_at.tzinfo else sess.expires_at.replace(tzinfo=timezone.utc)
     if exp <= clock.utcnow():
-        raise ApiError(401, "token_expired", "登录已过期")
+        raise ApiError(401, "token_expired", text_source("server_notice.save_service.1213ea2e1fb5"))
     wait = limiter.hit("acc:" + sess.account_id, get_settings().rate_player_per_min)
     if wait > 0:
-        raise ApiError(429, "rate_limited", "操作太频繁，请稍后再试", retry_after=wait)
+        raise ApiError(429, "rate_limited", text_source("server_notice.api_auth.e0f555394c57"), retry_after=wait)
     acc = db.get(Account, sess.account_id)
     if acc is None or acc.disabled:
-        raise ApiError(403, "account_disabled", "账号不可用")
+        raise ApiError(403, "account_disabled", text_source("server_notice.save_service.3c2e935e260f"))
     account_var.set(acc.id)
     return Auth(acc, sess, token)
 
@@ -93,7 +94,7 @@ def lock_account(db: Session, account_id: str) -> Account:
     """读账号并加行锁（PostgreSQL 上是 SELECT ... FOR UPDATE；SQLite 整库串行写，不需要）。"""
     acc = db.execute(select(Account).where(Account.id == account_id).with_for_update().execution_options(populate_existing=True)).scalar_one_or_none()
     if acc is None:
-        raise ApiError(404, "unknown_account", "账号不存在")
+        raise ApiError(404, "unknown_account", text_source("server_notice.security.af8bb6508823"))
     return acc
 
 

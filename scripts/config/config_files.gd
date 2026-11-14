@@ -2,6 +2,7 @@
 extends RefCounted
 ## Configuration registry. Shared values are recursively read-only; editor reads are owned copies.
 const Schema := preload("res://scripts/config/config_schema.gd")
+const TextCatalog := preload("res://scripts/localization/TextCatalog.gd")
 const LINES := "res://data/lines.json"
 const CHAINS := "res://data/chains.json"
 const REWARD_RESOURCES := "res://data/reward_resources.json"
@@ -20,10 +21,12 @@ const DISHES := "res://data/dishes.json"
 const RANDOM_ORDERS := "res://data/random_orders.json"
 const UNLOCKS := "res://data/unlocks.json"
 const DAILY_DEALS := "res://data/daily_deals.json"
-const FILES := ["lines", "chains", "reward_resources", "people", "story", "albums", "amber_packs", "builds", "levels", "store", "store_shell", "pass", "board", "rules", "dishes", "random_orders", "unlocks", "daily_deals", "choice_chests", "card_packs", "special_chests", "seven_day", "duel_race", "tiger_escape", "fossil_dig", "merge_events", "ufo_offer", "offers", "gift_chain", "race", "replay_economy", "replay_build"]
+const FILES := ["onboarding", "lines", "chains", "reward_resources", "people", "story", "albums", "amber_packs", "builds", "levels", "store", "store_shell", "pass", "board", "rules", "dishes", "random_orders", "unlocks", "daily_deals", "choice_chests", "card_packs", "special_chests", "seven_day", "duel_race", "tiger_escape", "fossil_dig", "merge_events", "ufo_offer", "offers", "gift_chain", "race", "replay_economy", "replay_build"]
 static var revision := 0
 static var last_errors := PackedStringArray()
 static var _cache: Dictionary = {}
+## Runtime payloads are injected by Data; the registry remains independently testable.
+static var runtime_overrides: Dictionary = {}
 
 static func read(path: String) -> Variant:
 	var value: Variant = shared(path)
@@ -38,6 +41,8 @@ static func shared(path: String) -> Variant:
 	return value
 
 static func _parse(path: String) -> Variant:
+	var remote = runtime_overrides.get(path.get_file().get_basename())
+	if remote != null: return ints(TextCatalog.hydrate(remote.duplicate(true)))
 	if not FileAccess.file_exists(path):
 		last_errors = PackedStringArray(["%s: missing configuration" % path])
 		return null
@@ -46,7 +51,7 @@ static func _parse(path: String) -> Variant:
 	if error != OK:
 		last_errors = PackedStringArray(["%s:%d: %s" % [path, parser.get_error_line(), parser.get_error_message()]])
 		return null
-	return ints(parser.data)
+	return ints(TextCatalog.hydrate(parser.data))
 
 static func documents(overrides: Dictionary = {}, fresh := false) -> Dictionary:
 	var docs := {}
@@ -88,7 +93,7 @@ static func write_batch(changes: Dictionary) -> Error:
 	if not validate(changes): return ERR_INVALID_DATA
 	var snapshot := {}
 	for path in changes:
-		snapshot[path] = (JSON.stringify(changes[path], "\t") + "\n").to_utf8_buffer()
+		snapshot[path] = (JSON.stringify(TextCatalog.references(changes[path]), "\t") + "\n").to_utf8_buffer()
 	return OK if restore_files(snapshot) else ERR_FILE_CANT_WRITE
 
 ## Capture exact bytes. A failed capture returns no partial snapshot.

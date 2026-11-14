@@ -78,7 +78,7 @@ func claim(i: int) -> Dictionary:
 
 ## Paid steps go through the server; the grant advances the chain when it is still the head step.
 func buy(index: int) -> Dictionary:
-	if busy: return {"ok": false, "message": "正在处理"}
+	if busy: return {"ok": false, "message": TextCatalog.source("notice.giftchain.3b7e27cb4379")}
 	busy = true
 	var result: Dictionary = await Payments.buy("gift:%d" % index)
 	busy = false

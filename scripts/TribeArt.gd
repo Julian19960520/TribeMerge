@@ -18,7 +18,7 @@ const VS := 0.8
 ## 高的部件尽量放在后排两角，给牌子让出中间。
 const AREAS := {
 	"fire": {"at": Vector2(360, 872), "tag": Vector2(0, 100), "parts": [
-		Vector2(0, 6), Vector2(-104, 34), Vector2(98, 40), Vector2(-118, -34), Vector2(96, -54), Vector2(-14, -66)]},
+		Vector2(0, 6), Vector2(-104, 34), Vector2(98, 40), Vector2(-118, -34), Vector2(96, -54), Vector2(-14, -66), Vector2(-132, 92), Vector2(134, 92)]},
 	"gather": {"at": Vector2(360, 600), "tag": Vector2(0, -124), "parts": [
 		Vector2(0, -46), Vector2(-66, -24), Vector2(-46, 40), Vector2(62, -22), Vector2(6, 8), Vector2(88, 36)]},
 	"stone": {"at": Vector2(124, 600), "tag": Vector2(0, -124), "parts": [

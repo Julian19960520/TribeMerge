@@ -106,7 +106,7 @@ var _storage_busy := false
 var _shell_refresh_busy := false
 ## 通行证价格（元），来自 data/pass.json 的 purchase；服务器按同一份开单。
 var PASS_CNY: Dictionary:
-	get: return {"vip": int(Data.PASS_PURCHASE.get("vip", {}).get("price_cny", 0)), "super": int(Data.PASS_PURCHASE.get("super_vip", {}).get("price_cny", 0))}
+	get: return {"vip": float(Data.PASS_PURCHASE.get("vip", {}).get("price_cny", 0)), "super": float(Data.PASS_PURCHASE.get("super_vip", {}).get("price_cny", 0))}
 ## 今天用琥珀买了几次火种。价格逐次上涨，零点清零。
 var energy_buys := 0
 var deals_bought := {}
@@ -259,7 +259,7 @@ func new_game() -> void:
 	xp = 0
 	energy = 100
 	shells = 0
-	amber = 80
+	amber = int(Data.ConfigFiles.shared("res://data/onboarding.json").get("initial_amber", 30))
 	rush = 0
 	energy_stamp = now()
 	boost = false
@@ -310,13 +310,8 @@ func new_game() -> void:
 	energy_buys = 0
 	deals_day = rules.clock.today()
 	rules.board._init_board()
-	var cost := rules.progression.build_cost("fire")
-	var first := 25
-	orders = [
-		{"who": 0, "items": ["fruit_2"], "rw": {"shell": first, "xp": 1}, "story": true, "tutorial": 1, "say": "樱桃真甜！谢谢你，新伙伴"},
-		{"who": 1, "items": ["fruit_8"], "rw": {"shell": maxi(cost - first, 1), "xp": 1}, "story": true, "tutorial": 2, "say": "这么大的石榴！今晚大家有口福了"},
-	]
-	for order in orders: order_identity(order)
+	orders = []
+	rules.onboarding.start()
 	dirty()
 
 func save_game() -> void:
@@ -454,10 +449,10 @@ func business_snapshot() -> Dictionary:
 
 static func fmt_time(sec: int) -> String:
 	if sec >= 86400:
-		return "%d天%d时" % [sec / 86400, (sec % 86400) / 3600]
+		return TextCatalog.source("notice.game.a65fe21f06e8") % [sec / 86400, (sec % 86400) / 3600]
 	if sec >= 3600:
-		return "%d时%d分" % [sec / 3600, (sec % 3600) / 60]
-	return "%d分%02d秒" % [sec / 60, sec % 60]
+		return TextCatalog.source("notice.game.17575740b271") % [sec / 3600, (sec % 3600) / 60]
+	return TextCatalog.source("notice.game.30c88ef0108b") % [sec / 60, sec % 60]
 
 
 func present(kind: String, payload: Dictionary) -> void:

@@ -18,12 +18,12 @@ static func button(p: PopupBase, initial: int = -1, live: bool = true) -> TButto
 		Paint.button(ci, Rect2(10, 79, sz.x - 20, 36), "wood", 25)
 	var amount := UI.lbl(hit, str(G.card_stars if initial < 0 else initial), Rect2(10, 78, 124, 38), 25, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	amount.name = "balance"
-	UI.lbl(hit, "星星兑换", Rect2(0, 116, 144, 28), 21, Color("fff0be"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
-	if live: Popups.live(p, G.changed, func(): amount.text = str(G.card_stars))
+	UI.lbl(hit, TextCatalog.source("ui.cardstarui.5815cd390d74"), Rect2(0, 116, 144, 28), 21, Color("fff0be"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
+	if live: Popups.live(p, G.changed, func(): amount.text = TextCatalog.resolve(str(G.card_stars)))
 	return hit
 
 static func set_balance(hit: TButton, amount: int) -> void:
-	(hit.get_node("balance") as Label).text = str(amount)
+	(hit.get_node("balance") as Label).text = TextCatalog.resolve(str(amount))
 
 static func pulse(hit: TButton) -> void:
 	var tw := hit.create_tween()
@@ -33,13 +33,13 @@ static func pulse(hit: TButton) -> void:
 static func shop() -> PopupBase:
 	var p := PopupBase.new()
 	p.name = "card_star_shop"
-	Popups.frame(p, Rect2(40, 300, 640, 870), "星星兑换", Color("9f6430"))
+	Popups.frame(p, Rect2(40, 300, 640, 870), TextCatalog.source("ui.cardstarui.5815cd390d74"), Color("9f6430"))
 	UI.box(p.box, Rect2(200, 361, 320, 68), func(ci, sz):
 		Paint.button(ci, Rect2(Vector2.ZERO, sz), "wood", 35)
 		star(ci, Vector2(46, 32), 23), false)
 	var balance := UI.lbl(p.box, str(G.card_stars), Rect2(268, 367, 220, 52), 38, Color("fff1b0"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	balance.name = "star_shop_balance"
-	UI.lbl(p.box, "重复卡按星级变成星星", Rect2(70, 440, 580, 36), 25, Color("805934"))
+	UI.lbl(p.box, TextCatalog.source("ui.cardstarui.b142204c6029"), Rect2(70, 440, 580, 36), 25, Color("805934"))
 	var offers: Array = CardPacks.config()["star_exchange"]
 	var buttons: Array[TButton] = []
 	var deficits: Array[Label] = []
@@ -54,10 +54,10 @@ static func shop() -> PopupBase:
 			Art.dashed(ci, Art.rrect(rect.grow(-7), 16, 53, 0.0), 7, 5, Color("b99765"), 2.0), false)
 		UI.icon(p.box, pack_id, Vector2(146, y + 84), 130)
 		UI.lbl(p.box, Data.name_of(pack_id), Rect2(222, y + 20, 252, 44), 31, Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
-		UI.lbl(p.box, "每包 %d 张" % int(CardPacks.config()["cards_per_pack"]), Rect2(226, y + 68, 210, 34), 23, Color("805934"), HORIZONTAL_ALIGNMENT_LEFT)
+		UI.lbl(p.box, TextCatalog.source("ui.cardstarui.125390dec69a") % int(CardPacks.config()["cards_per_pack"]), Rect2(226, y + 68, 210, 34), 23, Color("805934"), HORIZONTAL_ALIGNMENT_LEFT)
 		var highest: int = CardPacks.definition(pack_id)["weights"].size()
 		while highest > 0 and float(CardPacks.definition(pack_id)["weights"][highest - 1]) == 0.0: highest -= 1
-		UI.lbl(p.box, "最高 %d 星卡" % highest, Rect2(226, y + 108, 210, 34), 24, Color("a05a22"), HORIZONTAL_ALIGNMENT_LEFT)
+		UI.lbl(p.box, TextCatalog.source("ui.cardstarui.121456da6c67") % highest, Rect2(226, y + 108, 210, 34), 24, Color("a05a22"), HORIZONTAL_ALIGNMENT_LEFT)
 		var buy := UI.btn(p.box, Rect2(480, y + 34, 148, 82), str(cost), "green", func():
 			var result: Dictionary = Replay.perform("card_star_exchange", {"cost": cost})
 			if result.has("error"):
@@ -70,12 +70,12 @@ static func shop() -> PopupBase:
 		buttons.append(buy)
 		deficits.append(UI.lbl(p.box, "", Rect2(474, y + 122, 160, 30), 20, Color("9b6944")))
 	var refresh := func():
-		balance.text = str(G.card_stars)
+		balance.text = TextCatalog.resolve(str(G.card_stars))
 		for k in offers.size():
 			var cost := int(offers[k]["cost"])
 			buttons[k].enabled = G.card_stars >= cost
 			buttons[k].queue_redraw()
-			deficits[k].text = "还差 %d 星" % (cost - G.card_stars) if G.card_stars < cost else ""
+			deficits[k].text = TextCatalog.resolve(TextCatalog.source("ui.cardstarui.8e479923b89a") % (cost - G.card_stars) if G.card_stars < cost else "")
 	refresh.call()
 	Popups.live(p, G.changed, refresh)
 	return p

@@ -19,22 +19,22 @@ var board_signature := ""
 
 func _ready() -> void:
 	name = "fossil_dig_popup"
-	Popups.frame(self, Rect2(30, 146, 660, 1240), "恐龙化石", Color("7b6842"))
+	Popups.frame(self, Rect2(30, 146, 660, 1240), TextCatalog.source("ui.fossildigentry.64311488dd2a"), Color("7b6842"))
 	body = Control.new()
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(body)
 	UI.box(body, Rect2(0, 0, 720, 1480), _decoration, false)
 	var info := UI.btn(body, Rect2(58, 186, 46, 46), "?", "teal", _instructions, 26)
 	info.is_round = true
-	progress_label = UI.lbl(body, "挖出化石，领取考古奖励", Rect2(116, 188, 488, 40), 25, Color("674930"))
+	progress_label = UI.lbl(body, TextCatalog.source("ui.fossildigpopup.5dbe7b38e545"), Rect2(116, 188, 488, 40), 25, Color("674930"))
 	progress_art = UI.box(body, Rect2(0, 0, 720, 1480), _progress, false)
 	for i in FossilDig.config()["milestones"].size():
 		var row: Dictionary = FossilDig.config()["milestones"][i]
 		var hit := UI.hit(body, Rect2(_reward_x(i) - 40, 236, 80, 100), _preview.bind(int(row["bones"])))
 		hit.name = "fossil_reward_%d" % int(row["bones"])
-	stage_label = UI.lbl(body, "准备挖掘区…", Rect2(76, 344, 568, 40), 26, Color.WHITE)
+	stage_label = UI.lbl(body, TextCatalog.source("ui.fossildigpopup.5ebddbf31edf"), Rect2(76, 344, 568, 40), 26, Color.WHITE)
 	slots_art = UI.box(body, Rect2(0, 0, 720, 1480), _slots, false)
-	hint = UI.lbl(body, "点击土块开挖，集齐完整骨头", Rect2(64, 552, 592, 40), 23, Color("7b6347"))
+	hint = UI.lbl(body, TextCatalog.source("ui.fossildigpopup.f41f260c32af"), Rect2(64, 552, 592, 40), 23, Color("7b6347"))
 	board_art = UI.box(body, GRID, _board, false)
 	cells = Control.new()
 	cells.position = GRID.position
@@ -44,10 +44,10 @@ func _ready() -> void:
 	UI.box(body, Rect2(96, 1240, 528, 54), func(ci, sz):
 		Paint.pill(ci, Rect2(Vector2.ZERO, sz))
 		FossilArt.shovel(ci, Vector2(44, 24), 60, -0.35)
-		var text := "每挖一格用 %d 把" % int(FossilDig.config()["dig_cost"])
-		ci.draw_string(G.font_body, Vector2(300, 36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("826243")), false)
-	count_label = UI.lbl(body, "铲子  0", Rect2(168, 1240, 220, 54), 30, Color("5d422c"), HORIZONTAL_ALIGNMENT_LEFT)
-	primary = UI.btn(body, Rect2(164, 1304, 392, 72), "准备中…", "green", _primary, 34)
+		var text := TextCatalog.source("ui.fossildigpopup.67ec7d900d6e") % int(FossilDig.config()["dig_cost"])
+		ci.draw_string(G.font_body, Vector2(300, 36), TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("826243")), false)
+	count_label = UI.lbl(body, TextCatalog.source("ui.fossildigpopup.0bcb1019f397"), Rect2(168, 1240, 220, 54), 30, Color("5d422c"), HORIZONTAL_ALIGNMENT_LEFT)
+	primary = UI.btn(body, Rect2(164, 1304, 392, 72), TextCatalog.source("ui.dailyadpopup.871be2654869"), "green", _primary, 34)
 	primary.name = "fossil_primary"
 	primary.enabled = false
 	effects = UI.box(body, Rect2(0, 0, 720, 1480), _effects, false)
@@ -55,8 +55,8 @@ func _ready() -> void:
 	if not is_inside_tree() or _closing: return
 	working = false
 	if result.has("error"):
-		hint.text = str(result["error"])
-		primary.text = "重新连接"
+		hint.text = TextCatalog.resolve(str(result["error"]))
+		primary.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.68891ab35cab"))
 		primary.enabled = true
 	else: _refresh()
 	G.changed.connect(_refresh)
@@ -103,13 +103,13 @@ func _progress(ci: CanvasItem, _sz: Vector2) -> void:
 			ci.draw_circle(Vector2(x, 268), 31, Color(1, 1, 1, 0.45))
 			Paint.check_mark(ci, Vector2(x + 16, 284), 0.7)
 		# 「几块骨头」标签：小骨头 + 数字
-		var text := "领取！" if ready else str(need)
+		var text := TextCatalog.source("ui.fossildigpopup.9ce6b1f80407") if ready else str(need)
 		var fs := 22
-		var tw: float = G.font_title.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var tw: float = G.font_title.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var tx := x - (tw + 22.0) * 0.5
 		Sprites.at(ci, "fos_bone_limb_1x2", Vector2(tx + 8, 320), 0.16, PI * 0.5)
-		ci.draw_string_outline(G.font_title, Vector2(tx + 22, 328), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
-		ci.draw_string(G.font_title, Vector2(tx + 22, 328), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("ffe27a") if ready else Color.WHITE)
+		ci.draw_string_outline(G.font_title, Vector2(tx + 22, 328), TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
+		ci.draw_string(G.font_title, Vector2(tx + 22, 328), TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("ffe27a") if ready else Color.WHITE)
 
 ## 陈列卡的位置：最多一排 6 张，多了排两排
 func _slot_rect(i: int) -> Rect2:
@@ -147,7 +147,7 @@ func _slots(ci: CanvasItem, _sz: Vector2) -> void:
 		FossilArt.piece(ci, art, p, not found)
 		if big:
 			var nm := str(p.get("name", ""))
-			ci.draw_string(G.font_body, Vector2(r.position.x, r.end.y - 12), nm, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 20, Color("6a4a2c") if found else Color("9a805e"))
+			ci.draw_string(G.font_body, Vector2(r.position.x, r.end.y - 12), TextCatalog.resolve(nm), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 20, Color("6a4a2c") if found else Color("9a805e"))
 		if found: Paint.check_mark(ci, r.position + Vector2(r.size.x - 14, 16), 0.5)
 
 func _piece_rect(piece: Dictionary) -> Rect2:
@@ -180,20 +180,20 @@ func _refresh() -> void:
 	if sig == signature: return
 	signature = sig
 	var found: int = b["pieces"].filter(func(p): return bool(p["found"])).size()
-	stage_label.text = "第 %d 关 · 骨头 %d/%d" % [int(s["stage"]), found, b["pieces"].size()]
-	progress_label.text = "收集进度  %d / %d" % [int(s["recovered"]), int(FossilDig.config()["milestones"][-1]["bones"])]
-	count_label.text = "铲子  %d" % int(s["shovels"])
+	stage_label.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.97b088c2cfbd") % [int(s["stage"]), found, b["pieces"].size()])
+	progress_label.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.6a972fc7ba62") % [int(s["recovered"]), int(FossilDig.config()["milestones"][-1]["bones"])])
+	count_label.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.3b29294beeaf") % int(s["shovels"]))
 	primary.enabled = not working and flies.is_empty()
-	primary.text = "去帮族人"
+	primary.text = TextCatalog.resolve(TextCatalog.source("ui.duelpopup.245ede446986"))
 	if FossilDig.cleared():
-		if not flies.is_empty(): primary.text = "化石归位中…"
+		if not flies.is_empty(): primary.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.e9f231df54bc"))
 		elif FossilDig.finished():
-			primary.text = "领取进度奖励" if not FossilDig.ready_rewards().is_empty() else "全部挖掘完成"
+			primary.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.9e8c0224ec4a") if not FossilDig.ready_rewards().is_empty() else TextCatalog.source("ui.fossildigpopup.e4010c8ebd66"))
 			primary.enabled = not working and not FossilDig.ready_rewards().is_empty()
-		else: primary.text = "下一关 · %d×%d" % [int(b["n"]) + 1, int(b["n"]) + 1]
-		hint.text = "本关化石已集齐！" if not FossilDig.finished() else "远古骨骼全部重见天日！"
-	elif int(s["shovels"]) < int(FossilDig.config()["dig_cost"]): hint.text = "每实现一个心愿，获得 %d 把铲子" % int(FossilDig.config()["shovels_per_order"])
-	else: hint.text = "点击土块开挖，集齐完整骨头"
+		else: primary.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.1f2d6ed0765b") % [int(b["n"]) + 1, int(b["n"]) + 1])
+		hint.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.ab372d456390") if not FossilDig.finished() else TextCatalog.source("ui.fossildigpopup.7d857497b7f8"))
+	elif int(s["shovels"]) < int(FossilDig.config()["dig_cost"]): hint.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.c49331d01397") % int(FossilDig.config()["shovels_per_order"]))
+	else: hint.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.f41f260c32af"))
 	primary.queue_redraw()
 	var bsig := str([s["stage"], b["n"]])
 	if bsig != board_signature:
@@ -294,8 +294,8 @@ func _preview(need: int) -> void:
 	if row.is_empty(): return
 	var p := PopupBase.new()
 	p.name = "fossil_reward_preview"
-	Popups.frame(p, Rect2(70, 446, 580, 474), "考古奖励", Color("7b6842"))
-	UI.lbl(p.box, "累计挖出 %d 块完整骨头" % need, Rect2(100, 514, 520, 44), 28, Color("785536"))
+	Popups.frame(p, Rect2(70, 446, 580, 474), TextCatalog.source("ui.fossildigpopup.41da965e32ae"), Color("7b6842"))
+	UI.lbl(p.box, TextCatalog.source("ui.fossildigpopup.bef19248e614") % need, Rect2(100, 514, 520, 44), 28, Color("785536"))
 	var rewards: Array = row["rewards"]
 	for i in rewards.size():
 		var x := 360.0 + (i - (rewards.size() - 1) * 0.5) * 148
@@ -303,7 +303,7 @@ func _preview(need: int) -> void:
 		UI.lbl(p.box, "×%d" % int(rewards[i][1]), Rect2(x - 60, 698, 120, 40), 28, Art.INK)
 	var got: bool = need in FossilDig.state().get("claimed", [])
 	var ready := int(FossilDig.state().get("recovered", 0)) >= need and not got
-	var b := UI.btn(p.box, Rect2(190, 804, 340, 76), "领取" if ready else ("已领取" if got else "进度 %d/%d" % [int(FossilDig.state().get("recovered", 0)), need]), "green" if ready else "grey", Callable(), 32)
+	var b := UI.btn(p.box, Rect2(190, 804, 340, 76), TextCatalog.source("ui.duelpopup.844ab9477225") if ready else (TextCatalog.source("notice.sevenday.426e458a4124") if got else TextCatalog.source("ui.fossildigpopup.e0bfed600a2f") % [int(FossilDig.state().get("recovered", 0)), need]), "green" if ready else "grey", Callable(), 32)
 	b.name = "fossil_claim_%d" % need
 	b.enabled = ready
 	b.pressed.connect(func():
@@ -323,9 +323,9 @@ func _preview(need: int) -> void:
 
 func _instructions() -> void:
 	var p := PopupBase.new()
-	Popups.frame(p, Rect2(66, 392, 588, 680), "挖掘手记", Color("7b6842"))
-	var text := "每实现一个心愿，获得 %d 把铲子。\n\n每点击一格消耗 %d 把铲子，泥土下可能是骨头，也可能是空地。\n\n挖开一块骨头占据的全部格子，骨头就会飞入顶部对应的剪影。\n\n集齐本关骨头即可进入更大的挖掘区。累计收集骨头，点击顶部宝箱领取进度奖励。" % [int(FossilDig.config()["shovels_per_order"]), int(FossilDig.config()["dig_cost"])]
+	Popups.frame(p, Rect2(66, 392, 588, 680), TextCatalog.source("ui.fossildigpopup.d66596337523"), Color("7b6842"))
+	var text := TextCatalog.source("ui.fossildigpopup.f23168670bc9") % [int(FossilDig.config()["shovels_per_order"]), int(FossilDig.config()["dig_cost"])]
 	var label := UI.lbl(p.box, text, Rect2(108, 474, 504, 456), 26, Art.INK)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	UI.btn(p.box, Rect2(208, 964, 304, 74), "开始考古", "green", p.close, 32)
+	UI.btn(p.box, Rect2(208, 964, 304, 74), TextCatalog.source("ui.fossildigpopup.eed702a9c46f"), "green", p.close, 32)
 	G.main._attach_popup(p)

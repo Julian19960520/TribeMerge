@@ -81,11 +81,11 @@ func _ready() -> void:
 	y0 = 0.0
 	y1 = maxf(8.0, _max_in_window(cam, span) * 1.18)
 	_sync_targets()
-	var hint := UI.lbl(self, "纵轴是订单难度，等于这单物品的理论火苗。主产物 1 级 1、2 级 2、3 级 4，之后翻倍。副产物再除以 1 级掉率，例如 5% 时 1 级要 20 火苗。两条线是下限和上限，随机订单落在中间。", Rect2(16, 4, 688, 74), 18, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
+	var hint := UI.lbl(self, TextCatalog.source("ui.ordercurvepad.47391f8b38fc"), Rect2(16, 4, 688, 74), 18, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
 	hint.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 	hint.clip_text = true
 	var by := _button_y()
-	_roll_btn = UI.btn(self, Rect2(180, by, 360, 64), "换一单", "green", _roll, 28)
+	_roll_btn = UI.btn(self, Rect2(180, by, 360, 64), TextCatalog.source("ui.ordercurvepad.157554dca36e"), "green", _roll, 28)
 	_roll_btn.title_font = false
 	_roll()
 	if not G.boil_tick.is_connected(queue_redraw):
@@ -378,7 +378,7 @@ func _diff(ci: int, li: int) -> int:
 	return maxi(1, int(diff[li]))
 
 func _legend_w(i: int) -> float:
-	return 36.0 + _text_w(str(_curves()[i].get("name", "订单")), 20)
+	return 36.0 + _text_w(str(_curves()[i].get("name", TextCatalog.source("ui.ordercurvepad.3d5436ea23d2"))), 20)
 
 func _legend_at(i: int) -> Rect2:
 	var x := 16.0
@@ -786,7 +786,7 @@ func _normalize() -> void:
 		page["curves"] = _collapse(curves)
 		curves = page["curves"]
 		changed = true
-	var names := ["下限", "上限"]
+	var names := [TextCatalog.source("notice.data.2c3f8d6ce49a"), TextCatalog.source("notice.data.8e7ddbeee310")]
 	for i in 2:
 		if str(curves[i].get("name", "")) != names[i]:
 			curves[i]["name"] = names[i]
@@ -821,7 +821,7 @@ func _collapse(curves: Array) -> Array:
 			mx = Roll.default_diff(2, k)
 		low.append(maxi(1, mn))
 		high.append(maxi(int(low[k]), mx))
-	return [{"name": "下限", "diff": low}, {"name": "上限", "diff": high}]
+	return [{"name": TextCatalog.source("notice.data.2c3f8d6ce49a"), "diff": low}, {"name": TextCatalog.source("notice.data.8e7ddbeee310"), "diff": high}]
 
 func _starter() -> Array:
 	var low: Array = []
@@ -829,7 +829,7 @@ func _starter() -> Array:
 	for k in LEVELS:
 		low.append(Roll.default_diff(0, k))
 		high.append(Roll.default_diff(2, k))
-	return [{"name": "下限", "diff": low}, {"name": "上限", "diff": high}]
+	return [{"name": TextCatalog.source("notice.data.2c3f8d6ce49a"), "diff": low}, {"name": TextCatalog.source("notice.data.8e7ddbeee310"), "diff": high}]
 
 func _roll() -> void:
 	var avoid: Array = []
@@ -865,8 +865,8 @@ func _draw_legend() -> void:
 func _draw_grid(plot: Rect2) -> void:
 	draw_line(Vector2(plot.position.x, plot.position.y), Vector2(plot.position.x, plot.end.y), Color("6b4a2a"), 2.0, true)
 	draw_line(Vector2(plot.position.x, plot.end.y), Vector2(plot.end.x, plot.end.y), Color("6b4a2a"), 2.0, true)
-	_text("火苗", Vector2(16, plot.position.y - 8), 16, Color("6b4a2a"))
-	_text("等级", Vector2(16, plot.end.y + 22), 16, Color("6b4a2a"))
+	_text(TextCatalog.source("ui.ordercurvepad.e5ab517e9064"), Vector2(16, plot.position.y - 8), 16, Color("6b4a2a"))
+	_text(TextCatalog.source("ui.ordercurvepad.337717173807"), Vector2(16, plot.end.y + 22), 16, Color("6b4a2a"))
 	var yr := maxf(y1 - y0, 0.001)
 	for t in [0.0, 0.25, 0.5, 0.75, 1.0]:
 		var v := y0 + yr * float(t)
@@ -985,14 +985,14 @@ func _draw_info() -> void:
 		return
 	var y := _info_y()
 	var target := _diff(sel_c, sel_l)
-	var left := "%d 级 · 下限 %d · 上限 %d" % [sel_l + 1, _diff(0, sel_l), _diff(1, sel_l)]
+	var left := TextCatalog.source("ui.ordercurvepad.a5eca7ad059e") % [sel_l + 1, _diff(0, sel_l), _diff(1, sel_l)]
 	_text(left, Vector2(24, y), 22, Art.INK)
 	var items = order.get("items", [])
 	if items is Array and not items.is_empty():
 		var got := Roll.total(items)
 		var err := absf(got - float(target))
 		var col := Color("2f7a32") if err <= maxf(1.0, float(target) * 0.12) else Art.CLAY
-		var tail := "这单 %s 火苗" % Roll.fmt(got)
+		var tail := TextCatalog.source("ui.ordercurvepad.fb2ce164a6de") % Roll.fmt(got)
 		_text(tail, Vector2(36.0 + _text_w(left, 22), y), 22, col)
 
 func _item_spots() -> Array:
@@ -1041,7 +1041,7 @@ func _draw_order() -> void:
 	draw_colored_polygon(body, Color("fbf0d6"))
 	Art.dashed(self, Art.rrect(r.grow(-6), 12, 61, 0.0), 8, 6, Color(0.65, 0.4, 0.2, 0.45), 2.0)
 	if items.is_empty():
-		_text_c("这个等级还没有能出的物品", r.get_center() + Vector2(0, 8), 22, Art.INK)
+		_text_c(TextCatalog.source("ui.ordercurvepad.2e7215aadd48"), r.get_center() + Vector2(0, 8), 22, Art.INK)
 		return
 	var head_c := r.position + Vector2(52, 46)
 	var head := Art.ell(head_c, Vector2(30, 30), 62, 0.02, 20)
@@ -1080,20 +1080,20 @@ func _text_w(text: String, fs: int) -> float:
 	var f: Font = G.font_body
 	if f == null:
 		return float(maxi(text.length(), 1)) * float(fs)
-	return f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 
 func _text(text: String, baseline_left: Vector2, fs: int, col: Color) -> void:
 	var f: Font = G.font_body
 	if f == null:
 		return
-	_ci().draw_string(f, baseline_left, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	_ci().draw_string(f, baseline_left, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 func _text_c(text: String, baseline_center: Vector2, fs: int, col: Color) -> void:
 	var f: Font = G.font_body
 	if f == null:
 		return
-	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	_ci().draw_string(f, Vector2(baseline_center.x - w * 0.5, baseline_center.y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	var w := f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	_ci().draw_string(f, Vector2(baseline_center.x - w * 0.5, baseline_center.y), TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 func _xclip(a: Vector2, b: Vector2, left: float, right: float) -> PackedVector2Array:
 	if a.x > b.x:

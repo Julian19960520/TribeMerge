@@ -10,7 +10,7 @@ static func is_resource(id: String) -> bool:
 	return kind(id) in RESOURCE_TYPES
 
 static func unit(id: String) -> String:
-	return str({"energy": "点体力", "shell": "个不拿拿", "amber": "个琥珀", "sand": "个沙漏"}.get(kind(id), ""))
+	return str({"energy": TextCatalog.source("notice.rewards.1a340e00517e"), "shell": TextCatalog.source("notice.rewards.ae5df98e89cb"), "amber": TextCatalog.source("notice.rewards.8e3d18517a03"), "sand": TextCatalog.source("notice.rewards.cb078d587ded")}.get(kind(id), ""))
 
 ## 卡册 8 级才开：之前任何地方发的卡包（七日、通行证、礼包…）都换成藤编宝箱，暂存区里不会出现点不开的卡包。
 static func before_cards(id: String) -> String:

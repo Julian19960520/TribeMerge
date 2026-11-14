@@ -20,6 +20,7 @@ func run() -> void:
 	g.new_game()
 	g.tutorial_on = false
 	g.seen_tutorial = true
+	g.rules.orders.refill_orders()
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	await process_frame
@@ -46,7 +47,7 @@ func run() -> void:
 	g.changed.emit()
 	await process_frame
 	check(strip.refresh_count == before_currency and strip.created_count == created, "unrelated currency changes update the HUD without rebuilding orders")
-	var result = replay.perform("drop", {"from": 28, "to": 29})
+	var result = replay.perform("drop", {"from": 23, "to": 30})
 	await process_frame
 	await process_frame
 	check(not result.has("error"), "merge command reaches the shared reducer")

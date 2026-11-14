@@ -7,6 +7,10 @@ const ClockService := preload("res://scripts/domain/ClockRules.gd")
 const layout := preload("res://scripts/config/board_layout.gd")
 const roll := preload("res://scripts/OrderRoll.gd")
 const ShopService := preload("res://scripts/domain/ShopRules.gd")
+const OnboardingService := preload("res://scripts/domain/OnboardingRules.gd")
+const StarterService := preload("res://scripts/domain/StarterGeneratorRules.gd")
+var starter: StarterService
+var onboarding: OnboardingService
 var shop: ShopService
 var state: Node
 var board: BoardService
@@ -29,6 +33,8 @@ func _init(game: Node, now_source: Callable, random_source: Callable, clock_read
 	progression = ProgressionService.new(self)
 	clock = ClockService.new(self)
 	shop = ShopService.new(self)
+	onboarding = OnboardingService.new(self)
+	starter = StarterService.new(self)
 
 func now() -> float:
 	return _now.call()

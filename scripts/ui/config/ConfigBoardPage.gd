@@ -20,7 +20,7 @@ func _init(owner_editor) -> void:
 
 func _set_cell(id: String, i: int) -> void:
 	if Data.is_numeric_resource(id):
-		G.main.toast("声望和祭典积分是数值奖励，不能放到棋盘上")
+		G.main.toast(TextCatalog.source("developer.configboardpage.fbbbb8909eee"))
 		return
 	var cells: Array = editor._pages[Files.BOARD]["cells"]
 	while cells.size() <= i:
@@ -125,7 +125,7 @@ func _board() -> float:
 	var cols = span.x
 	var rows = span.y
 	var y = 12.0
-	var modes = [["item", "编辑物品"], ["lock", "编辑解锁"], ["reward", "编辑奖励"]]
+	var modes = [["item", TextCatalog.source("developer.board_editor.7f559289d410")], ["lock", TextCatalog.source("developer.board_editor.d7720405e424")], ["reward", TextCatalog.source("developer.board_editor.ae7643cbbde4")]]
 	var bw = 216.0
 	var bgap = 12.0
 	var bx = (720.0 - bw * 3.0 - bgap * 2.0) * 0.5
@@ -136,15 +136,15 @@ func _board() -> float:
 		b.title_font = false
 	y += 68.0
 	if editor._board_mode == "item":
-		editor._h(editor._root, "点格子换物品，按住拖到另一格交换。锁和奖励留在格子上。", 24, y, 680, 20)
+		editor._h(editor._root, TextCatalog.source("developer.configboardpage.b540c3dc3f19"), 24, y, 680, 20)
 		y += 40.0
 	elif editor._board_mode == "lock":
-		editor._h(editor._root, "点格子切换：开放、藤蔓、巨石。", 24, y, 680, 20)
+		editor._h(editor._root, TextCatalog.source("developer.configboardpage.09ea478f174b"), 24, y, 680, 20)
 		y += 40.0
 	else:
-		editor._h(editor._root, "点底部白框改数量。点气泡换奖励，按住拖到另一格。", 24, y, 680, 20)
+		editor._h(editor._root, TextCatalog.source("developer.configboardpage.050a60a91d2d"), 24, y, 680, 20)
 		y += 32.0
-		editor._h(editor._root, "体力、不拿拿、琥珀飞到顶栏，其他物品飞进暂存。", 24, y, 680, 20)
+		editor._h(editor._root, TextCatalog.source("developer.configboardpage.60c41dcf9a66"), 24, y, 680, 20)
 		y += 40.0
 	var gap = 6.0
 	var cw = minf(92.0, (688.0 - gap * float(cols - 1)) / float(cols))
@@ -506,24 +506,24 @@ class BoardPad extends Control:
 		var fs := int(clampf(round(side * 0.30), 14.0, 22.0))
 		var mark := str(lv)
 		var pos := origin + Vector2(side * 0.06, float(fs) + 2.0)
-		draw_string_outline(f, pos, mark, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(4, fs / 5), Art.INK)
-		draw_string(f, pos, mark, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+		draw_string_outline(f, pos, TextCatalog.resolve(mark), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(4, fs / 5), Art.INK)
+		draw_string(f, pos, TextCatalog.resolve(mark), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
 	func _draw_lock(r: Rect2, n: int, lock: int) -> void:
 		if lock == 0:
-			_mark(r, "开")
+			_mark(r, TextCatalog.source("developer.configboardpage.39eae64cfc41"))
 			return
 		var inset := Rect2(r.position, r.size).grow(-4)
 		var plate := Art.rrect(inset, 10, n, 0.2)
 		if lock == 2:
 			draw_colored_polygon(plate, Color(0.42, 0.39, 0.34, 0.55))
 			Art.outline(self, plate, 3.5, Color("5c564c"))
-			_mark(r, "石")
+			_mark(r, TextCatalog.source("developer.configboardpage.e6df66d46112"))
 		else:
 			draw_colored_polygon(plate, Color(0.25, 0.45, 0.16, 0.34))
 			_vines(r, n)
 			Art.outline(self, plate, 3.5, Art.LEAF_D)
-			_mark(r, "蔓")
+			_mark(r, TextCatalog.source("developer.configboardpage.e216766c3574"))
 
 	func _vines(r: Rect2, i: int) -> void:
 		var s := r.size.x / 96.0
@@ -546,10 +546,10 @@ class BoardPad extends Control:
 		if f == null:
 			return
 		var fs := int(clampf(round(r.size.x * 0.26), 13.0, 20.0))
-		var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var tw := f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var pos := Vector2(r.end.x - tw - r.size.x * 0.08, r.position.y + float(fs) + 2.0 if at_top else r.end.y - 6.0)
-		draw_string_outline(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(3, fs / 5), Art.INK)
-		draw_string(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+		draw_string_outline(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(3, fs / 5), Art.INK)
+		draw_string(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
 	func _draw() -> void:
 		for row in rows:
@@ -577,7 +577,7 @@ class BoardPad extends Control:
 				var rw := edit._board_reward(n)
 				var side0 := minf(r.size.x, r.size.y)
 				if mode == "reward":
-					_mark(r, ["开", "蔓", "石"][edit._board_lock(n)], true)
+					_mark(r, [TextCatalog.source("developer.configboardpage.39eae64cfc41"), TextCatalog.source("developer.configboardpage.e216766c3574"), TextCatalog.source("developer.configboardpage.e6df66d46112")][edit._board_lock(n)], true)
 					var bob := sin(float(Time.get_ticks_msec()) / 280.0 + float(n)) * 2.0
 					if not rw.is_empty() and not (dragging and n == drag_from):
 						Paint.reward_bubble(self, r.position + Vector2(side0 * 0.5, side0 * 0.30), side0 * 0.24, str(rw[0]), 1, n, bob)

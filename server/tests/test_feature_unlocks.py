@@ -64,7 +64,8 @@ def test_random_album_cards_persist(level_one):
     operations = [('gm', {})] + [('gm', {'action':'card','album':0}) for _ in range(10)]
     state = confirm(copy.deepcopy(level_one), operations)
     assert set(state['cards']) == {f'0_{index}' for index in range(9)}
-    assert sum(state['cards'].values()) == 10
+    assert sum(state['cards'].values()) == 9
+    assert state['card_stars'] > 0  # The duplicate tenth draw converts to stars.
     assert not state['replay_meta'].get('album:0')
     assert state['amber'] == level_one['amber']
     assert state['stash'].count('chest_1') == level_one['stash'].count('chest_1')

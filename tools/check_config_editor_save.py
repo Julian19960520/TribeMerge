@@ -17,7 +17,7 @@ def main() -> int:
         for filename in ("project.godot", "main.tscn"):
             shutil.copy2(source / filename, project / filename)
         shutil.copytree(source / "data", project / "data")
-        for folder in ("scripts", "tools", "assets", "shaders"):
+        for folder in ("scripts", "tools", "assets", "shaders", "localization"):
             (project / folder).symlink_to(source / folder, target_is_directory=True)
         cache = project / ".godot"
         cache.mkdir()

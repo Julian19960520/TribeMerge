@@ -5,7 +5,7 @@ extends RefCounted
 static func popup(result: Dictionary) -> PopupBase:
 	var p := PopupBase.new()
 	p.dim_alpha = 0.82
-	UI.title(p.box, "获得卡牌", Rect2(70, 250, 580, 80), 44, Color.WHITE)
+	UI.title(p.box, TextCatalog.source("ui.cardrewardpresentation.0f4ceca75ab3"), Rect2(70, 250, 580, 80), 44, Color.WHITE)
 	fill(p, result.get("card_rewards", []))
 	return p
 
@@ -29,7 +29,7 @@ static func fill(p: PopupBase, rewards: Array) -> void:
 		card.extra = func(ci, sz): Paint.card(ci, Rect2(Vector2(6, 12), sz - Vector2(12, 18)), album, index, true)
 		UI.lbl(card, CardArtwork.card_name(album, index), Rect2(20, 252, 190, 50), 24, Color("5a3a1e"))
 		UI.lbl(p.box, CardArtwork.title(album), Rect2(rect.position.x - 8, 466, 246, 40), 23, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-		var badge := UI.lbl(p.box, "重复卡" if amount > 0 else "新卡！", Rect2(rect.position.x, 870, 230, 48), 30, Color("ffd957") if amount > 0 else Color("b9ef9a"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+		var badge := UI.lbl(p.box, TextCatalog.source("ui.cardrewardpresentation.6f346e51c6f0") if amount > 0 else TextCatalog.source("ui.cardrewardpresentation.59867734cd78"), Rect2(rect.position.x, 870, 230, 48), 30, Color("ffd957") if amount > 0 else Color("b9ef9a"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 		badge.name = "card_badge_%d" % k
 		card.pivot_offset = rect.size * 0.5
 		card.scale = Vector2(0, 1)
@@ -46,10 +46,10 @@ static func fill(p: PopupBase, rewards: Array) -> void:
 			convert.tween_property(card, "scale", Vector2(0, 0.7), 0.17).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 			convert.tween_callback(func():
 				card.hide()
-				badge.text = "+%d 星星" % amount
+				badge.text = TextCatalog.resolve(TextCatalog.source("ui.cardrewardpresentation.bfd2f99c45ec") % amount)
 				_emit_stars(p, rect.get_center(), amount, wallet, display))
 			end_time = maxf(end_time, delay + 1.35 + float(amount - 1) * 0.07)
-	var close := UI.btn(p.box, Rect2(210, 1080, 300, 104), "收下", "green", p.close, 44)
+	var close := UI.btn(p.box, Rect2(210, 1080, 300, 104), TextCatalog.source("ui.cardrewardpresentation.52251aeea31a"), "green", p.close, 44)
 	close.name = "receive_cards"
 	close.enabled = false
 	close.modulate.a = 0.0

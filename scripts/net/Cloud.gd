@@ -108,7 +108,7 @@ func secs_to_midnight() -> int:
 
 func account_info() -> Dictionary:
 	if not can_talk():
-		return {"ok": false, "message": _kick_text(kicked) if kicked != "" else "连不上服务器"}
+		return {"ok": false, "message": _kick_text(kicked) if kicked != "" else TextCatalog.source("notice.cloud.6622f01bc3af")}
 	var r := await _call("GET", "/v1/account", null)
 	return r[1] if int(r[0]) == 200 else _fail(r)
 
@@ -127,7 +127,7 @@ func make_transfer_code() -> String:
 
 func bind_provider(provider: String, credential: String) -> Dictionary:
 	if not can_talk():
-		return {"ok": false, "message": "连不上服务器"}
+		return {"ok": false, "message": TextCatalog.source("notice.cloud.6622f01bc3af")}
 	var r := await _call("POST", "/v1/account/bind", {"provider": provider, "credential": credential, "device_id": device_id})
 	if int(r[0]) == 200:
 		account_changed.emit()
@@ -197,7 +197,7 @@ static func has_progress(s: Dictionary) -> bool:
 
 func _fail(r: Array) -> Dictionary:
 	var d: Dictionary = r[1] if r[1] is Dictionary else {}
-	var msg := str(d.get("message", "连不上服务器，请稍后再试" if int(r[0]) == 0 else "操作失败"))
+	var msg := str(d.get("message", TextCatalog.source("notice.cloud.7428cb59febf") if int(r[0]) == 0 else TextCatalog.source("notice.cloud.0c3b4cf7aa25")))
 	return {"ok": false, "error": str(d.get("error", "offline")), "message": msg}
 
 func _boot() -> void:
@@ -330,9 +330,9 @@ func _on_kicked(why: String) -> void:
 
 func _kick_text(why: String) -> String:
 	match why:
-		"session_replaced": return "账号已在其他设备登录，本机不再同步。可在 设置 → 账号与数据 重新登录"
-		"token_expired": return "登录已过期，请在 设置 → 账号与数据 重新登录"
-	return "已退出登录，请在 设置 → 账号与数据 重新登录"
+		"session_replaced": return TextCatalog.source("notice.cloud.fc7f2c65a0f7")
+		"token_expired": return TextCatalog.source("notice.cloud.470e2d0279c3")
+	return TextCatalog.source("notice.cloud.cb74d2a5bb72")
 
 func _load_state() -> void:
 	if not FileAccess.file_exists(state_path): return

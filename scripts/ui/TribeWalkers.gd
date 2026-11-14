@@ -160,12 +160,12 @@ func _bubble(anchor: Vector2, text: String, a: float) -> void:
 	var f: Font = G.font_body
 	var fs := 18
 	var max_w := 250.0
-	var tw := minf(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, max_w)
-	var lines := f.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs)
+	var tw := minf(f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, max_w)
+	var lines := f.get_multiline_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs)
 	var box := Vector2(tw + 28.0, lines.y + 20.0)
 	var x := clampf(anchor.x - box.x * 0.5, 8.0, 712.0 - box.x)
 	var r := Rect2(Vector2(x, anchor.y - 14.0 - box.y), box)
 	var mod := Color(1, 1, 1, a)
 	Sprites.draw(self, "tribe_bubble", r, mod)
 	Sprites.draw(self, "tribe_bubble_tail", Rect2(anchor + TribeSprites.TAIL_BOX.position, TribeSprites.TAIL_BOX.size), mod)
-	draw_multiline_string(f, r.position + Vector2(14, 10 + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs, -1, Color(Art.INK, a))
+	draw_multiline_string(f, r.position + Vector2(14, 10 + f.get_ascent(fs)), TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs, -1, Color(Art.INK, a))

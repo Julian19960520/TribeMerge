@@ -23,7 +23,7 @@ func _ready() -> void:
 	_btn = UI.hit(self, Rect2(Vector2.ZERO, RECT.size), func(): ChainPopup.pop_open())
 	_btn.name = "gift_card"
 	_btn.extra = _paint
-	UI.lbl(_btn, "部落礼包", Rect2(0, 78, 100, 24), 17, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+	UI.lbl(_btn, TextCatalog.source("notice.data.70541fc12efb"), Rect2(0, 78, 100, 24), 17, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	_state = UI.lbl(_btn, "", Rect2(0, 100, 100, 20), 14, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
 	chain.updated.connect(_refresh)
 	_refresh()
@@ -43,13 +43,13 @@ func _process(_d: float) -> void:
 func _refresh() -> void:
 	var txt := ""
 	if not chain.online() or not chain.ok:
-		txt = "需联网"
+		txt = TextCatalog.source("ui.giftchaincard.a800632836b8")
 	elif chain.done():
-		txt = "已领完"
+		txt = TextCatalog.source("ui.giftchaincard.a03c4008189c")
 	else:
 		var s: Dictionary = chain.step(chain.head())
-		txt = Net.price_text(s) if Net.is_paid(s) else "免费!"
-	_state.text = txt
+		txt = Net.price_text(s) if Net.is_paid(s) else TextCatalog.source("ui.giftchaincard.27d3c5ffb9e8")
+	_state.text = TextCatalog.resolve(txt)
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	# 卡底、礼盒是预生成贴图（scripts/sprites/events.gd）

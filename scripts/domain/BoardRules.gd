@@ -63,14 +63,14 @@ func _tick_bubbles() -> void:
 func buy_bubble(i: int) -> Dictionary:
 	if not is_merge_bubble(i) or bubble_left(i) <= 0:
 		_tick_bubbles()
-		return {"ok": false, "message": "泡泡已经消失了"}
+		return {"ok": false, "message": TextCatalog.source("notice.boardrules.9d09918e4686")}
 	var offer: Dictionary = state.board[i]["bubble"]
 	var uid = str(offer.get("uid", ""))
 	if state._bubble_busy.has(uid):
-		return {"ok": false, "message": "正在购买"}
+		return {"ok": false, "message": TextCatalog.source("notice.boardrules.e456408358ff")}
 	state._bubble_busy[uid] = true
 	var result: Dictionary
-	result = {"ok": context.progression.spend("amber", int(offer.get("price", Data.bubble_price(str(state.board[i]["id"]))))), "message": "琥珀不够了！"}
+	result = {"ok": context.progression.spend("amber", int(offer.get("price", Data.bubble_price(str(state.board[i]["id"]))))), "message": TextCatalog.source("notice.boardrules.b874b509cd26")}
 	state._bubble_busy.erase(uid)
 	if result.get("ok", false):
 		state.board[i]["lock"] = 0
@@ -92,6 +92,9 @@ func stash_push(id: String) -> void:
 	state.changed.emit()
 
 func stash_claim_index() -> int:
+	if context.onboarding.active() and str(context.onboarding.stage().get("key", "")) == "free_energy_gift":
+		var gift: int = state.stash.find(str(context.onboarding.config()["energy_generator"]))
+		if gift >= 0: return gift
 	## 卡册没开时卡包取出来是藤编宝箱（见 Rewards.before_cards），所以不用再跳过
 	return state.stash.size() - 1
 
@@ -273,6 +276,8 @@ func _swap_item_state(a: int, b: int) -> void:
 		if vb != null: state.board[a][key] = vb
 
 func gen_left(i: int) -> int:
+	if context.starter.is_item(str(state.board[i]["id"])): return context.starter.left()
+	if context.onboarding.unlimited_generator(str(state.board[i]["id"])): return -1
 	var id: String = state.board[i]["id"]
 	var st = Data.gen_stats(id)
 	if not st.has("charges"):
@@ -288,6 +293,7 @@ func gen_left(i: int) -> int:
 	return maxi(cap - used, 0)
 
 func gen_wait(i: int) -> int:
+	if context.starter.is_item(str(state.board[i]["id"])): return context.starter.wait()
 	if gen_left(i) != 0:
 		return 0
 	var st = Data.gen_stats(state.board[i]["id"])
@@ -315,6 +321,9 @@ func boost_drop(id: String) -> String:
 	return nxt if nxt != "" else id
 
 func gen_use(i: int) -> void:
+	if context.starter.is_item(str(state.board[i]["id"])):
+		context.starter.use()
+		return
 	var left = gen_left(i)
 	if left < 0:
 		return
@@ -348,26 +357,26 @@ func open_chest(box_id: String = "chest_1") -> Array:
 
 func dispense_chest(i: int) -> Dictionary:
 	if i < 0 or i >= state.board.size() or not is_free(i) or Data.type_of(cell_id(i)) != "chest":
-		return {"error": "宝箱已不在原位置"}
-	if state._chest_busy.has(i): return {"error": "宝箱正在打开"}
+		return {"error": TextCatalog.source("notice.boardrules.d50c3a1211d1")}
+	if state._chest_busy.has(i): return {"error": TextCatalog.source("notice.boardrules.a6c00ba6ccb6")}
 	var id = cell_id(i)
-	if SpecialChests.is_order(id) and SpecialChests.needs(state).is_empty(): return {"error": "族人要的东西都齐了，先送过去再开吧"}
+	if SpecialChests.is_order(id) and SpecialChests.needs(state).is_empty(): return {"error": TextCatalog.source("notice.boardrules.db1525686b9f")}
 	var items: Array = state.board[i].get("chest", [])
 	if items.is_empty():
-		if find_empty_near(i) < 0: return {"error": "棋盘满了，先腾出一个空格"}
+		if find_empty_near(i) < 0: return {"error": TextCatalog.source("notice.boardrules.155bfe259bd0")}
 		state._chest_busy[i] = true
 		items = open_chest(id)
 		state._chest_busy.erase(i)
-		if items.is_empty(): return {"error": "宝箱现在打不开"}
-		if cell_id(i) != id or not is_free(i): return {"error": "宝箱已不在原位置"}
+		if items.is_empty(): return {"error": TextCatalog.source("notice.boardrules.dd21a66d33a8")}
+		if cell_id(i) != id or not is_free(i): return {"error": TextCatalog.source("notice.boardrules.d50c3a1211d1")}
 		state.board[i]["chest"] = items.duplicate()
 		items = state.board[i]["chest"]
-	var to = i if items.size() == 1 else find_empty_near(i)
+	var to = find_empty_near(i)
 	if to < 0:
 		state.dirty()
-		return {"error": "棋盘满了，先腾出一个空格"}
+		return {"error": TextCatalog.source("notice.boardrules.155bfe259bd0")}
 	var out = SpecialChests.order_drop(id, state) if str(items[0]) == SpecialChests.ORDER_SLOT else str(items[0])
-	if out == "": return {"error": "族人要的东西都齐了，先送过去吧"}
+	if out == "": return {"error": TextCatalog.source("notice.boardrules.a0ebff0c83ce")}
 	items.pop_front()
 	if items.is_empty():
 		state.board[i]["id"] = ""
@@ -376,7 +385,7 @@ func dispense_chest(i: int) -> Dictionary:
 	discover(out)
 	state.dirty()
 	state.board_changed.emit()
-	return {"kind": "chest", "id": out, "to": to, "remaining": items.size()}
+	return {"kind": "chest", "id": out, "to": to, "remaining": items.size(), "box_id": id}
 
 func store_cell(i: int) -> bool:
 	if i < 0 or i >= state.board.size() or not is_free(i) or not can_move(i) or context.orders.cooking(i) or state.inv.size() >= state.inv_cap or Data.is_dish(cell_id(i)) or Data.type_of(cell_id(i)) == "egen": return false
@@ -403,10 +412,10 @@ func take_inventory(index: int, to: int) -> bool:
 	return true
 
 func _merge_coin(merged: String, origin: int) -> void:
-	var to = find_empty_near(origin) if not state.tutorial_on else -1
+	var to = find_empty_near(origin)
 	var roll = context.random_for("merge_drops").randf()
 	if to < 0: return
-	var id = Data.resource_drop("main", roll, state.level, merged)
+	var id: String = context.onboarding.merge_fragment(merged, roll) if state.tutorial_on else Data.resource_drop("main", roll, state.level, merged)
 	if id == "": return
 	context.settle([[id, 1, "physical"]], {"board_origin": origin})
 

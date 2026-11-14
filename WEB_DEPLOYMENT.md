@@ -22,3 +22,7 @@ python tools/export_web.py /path/to/godot
 `/simulation.html` 展示自动玩家时间轴。报告由 `tools/sim/run.py --publish-report` 生成后随游戏发布，不读取浏览器玩家存档。模拟器使用相同规则和独立模拟钟，不产生玩家日志。运行与报告格式见 `tools/sim/README.md`。
 
 当前架构见 `docs/ARCHITECTURE.md`；后端运行、协议、事务与进程池配置见 `server/README.md`。
+
+## 服务端经济目录
+
+导出会先从 `server/config/economy.json` 生成地区目录。网页在启动Godot前获取独立的 `economy-cn.json` 或 `economy-us.json`，再将服务端给出的最终价格交给客户端显示。试玩仍保留本地存档；真实购买与支付接口在独立FastAPI后端。见 `docs/ECONOMY.md`。

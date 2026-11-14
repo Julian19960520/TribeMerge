@@ -7,25 +7,49 @@ const Payments := preload("res://scripts/net/Payments.gd")
 static func energy() -> PopupBase:
 	var p := PopupBase.new()
 	var r := Rect2(46, 380, 628, 780)
-	Popups.frame(p, r, "更多体力", Color("4f8fc0"), "fire")
+	Popups.frame(p, r, TextCatalog.source("ui.shoppopups.dbc0003e7778"), Color("4f8fc0"), "fire")
 	var left := G.rules.clock.energy_full_left()
-	var txt := "体力已满，先去合成吧！" if left == 0 else "等待 %s 恢复到 100 点体力。" % G.fmt_time(left)
+	var txt := TextCatalog.source("ui.energyofferpopup.528cc454ebd6") if left == 0 else TextCatalog.source("ui.shoppopups.f821f7e01056") % G.fmt_time(left)
 	UI.lbl(p.box, txt, Rect2(r.position.x + 30, r.position.y + 62, r.size.x - 60, 50), 26, Color("6b4a2a"))
 	UI.box(p.box, Rect2(r.position.x + 44, r.position.y + 120, r.size.x - 88, 400), _energy_art)
-	var tag := UI.lbl(p.box, "×100", Rect2(r.position.x + 92, r.position.y + 436, 150, 60), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+	var tag := UI.lbl(p.box, "×%d" % PriceBook.energy_amount(), Rect2(r.position.x + 92, r.position.y + 436, 150, 60), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	tag.rotation = -0.06
 	var price := G.rules.progression.energy_price()
+	var energy_state := {"price": price, "busy": false}
 	var free := not bool(Replay.meta.get("free_energy", false))
-	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.position.y + 560, 300, 100), "免费" if free else str(price), "green", Callable(), 44)
+	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.position.y + 560, 300, 100), TextCatalog.source("developer.pass_editor.649a0fc7237e") if free else str(price), "green", Callable(), 44)
 	if not free: b.res = Art.AMBER_ICON
-	var note := "第一次补充免费！" if free else "今天第 %d 次购买，价格逐次上涨，每天 0 点恢复" % (G.energy_buys + 1)
+	else: G.main.tips.energy_free.call_deferred(Rect2(b.position, b.size))
+	var note := TextCatalog.source("ui.shoppopups.ad79b6f744cb") if free else TextCatalog.source("ui.shoppopups.70f4525356ca") % [PriceBook.energy_price(2147483647), PriceBook.energy_amount()]
 	UI.lbl(p.box, note, Rect2(r.position.x + 30, r.position.y + 676, r.size.x - 60, 40), 22, Color("8a6a4a"))
+	var refresh_energy := func():
+		energy_state["price"] = G.rules.progression.energy_price()
+		var first := not bool(Replay.meta.get("free_energy", false))
+		b.text = TextCatalog.resolve(TextCatalog.source("developer.pass_editor.649a0fc7237e") if first else str(energy_state["price"]))
+		b.res = "" if first else Art.AMBER_ICON
+		b.enabled = PriceBook.ready() and not bool(energy_state["busy"])
+		b.queue_redraw()
+	Popups.live(b, G.changed, refresh_energy)
+	refresh_energy.call()
 	b.pressed.connect(func():
-		if await G.buy_energy():
-			RewardPresenter.present([["fire_2", 100]], func(_k): return Vector2(360, 760))
+		if bool(energy_state["busy"]): return
+		refresh_energy.call()
+		energy_state["busy"] = true
+		b.enabled = false
+		var success := false
+		if Cloud.enabled and bool(Replay.meta.get("free_energy", false)):
+			var result := await Payments.buy_virtual("energy", int(energy_state["price"]))
+			success = bool(result.get("ok", false))
+		else:
+			success = G.buy_energy()
+		if not is_instance_valid(b): return
+		energy_state["busy"] = false
+		refresh_energy.call()
+		if success:
+			RewardPresenter.present([["fire_2", PriceBook.energy_amount()]], func(_k): return Vector2(360, 760))
 			p.close()
 		else:
-			G.main.toast("琥珀不够了！"))
+			G.main.toast(TextCatalog.source("notice.boardrules.b874b509cd26")))
 	return p
 
 static func _energy_art(ci: CanvasItem, sz: Vector2) -> void:
@@ -54,7 +78,7 @@ static func howto() -> PopupBase:
 	var p := PopupBase.new()
 	p.dim_alpha = 0.85
 	p.set_meta("fullscreen", true)
-	UI.title(p.box, "玩法说明", Rect2(0, 150, 720, 100), 64)
+	UI.title(p.box, TextCatalog.source("ui.shoppopups.b525f5847bf7"), Rect2(0, 150, 720, 100), 64)
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
 		Sprites.draw(ci, "pop_howto_card", PS.HOWTO_CARD)
 		Art.item(ci, "roast_7", Vector2(160, 300), 110)
@@ -63,24 +87,23 @@ static func howto() -> PopupBase:
 		_arrow(ci, 0)
 		Art.item(ci, "shell_4", Vector2(560, 540), 170)
 		_arrow(ci, 1)
-		Art.item(ci, "chest_1", Vector2(220, 830), 200)
-		Art.item(ci, "fruit_2", Vector2(150, 720), 70)
-		Art.item(ci, "amber_4", Vector2(290, 700), 70)
+		Paint._spot_hut(ci, Vector2(220, 900), 4)
+		Paint.hammer(ci, Vector2(290, 736), 0.65)
 		Sprites.draw(ci, "pop_howto_hand", PS.HOWTO_HAND)
 		_arrow(ci, 2)
 		Paint._spot_hut(ci, Vector2(560, 1080), 4)
 		Sprites.draw(ci, "pop_howto_bub", PS.HOWTO_BUB)
-		Paint.hammer(ci, Vector2(620, 918), 0.5))
-	UI.lbl(p.box, "心愿实现啦！", Rect2(40, 440, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
-	UI.lbl(p.box, "赚取不拿拿！", Rect2(410, 630, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
-	UI.lbl(p.box, "开启宝箱！", Rect2(70, 940, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
-	UI.lbl(p.box, "建设部落！", Rect2(410, 1150, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
-	UI.lbl(p.box, "拖动两个相同的物品即可合成更高级的物品", Rect2(0, 250, 720, 40), 24, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	var go := UI.btn(p.box, Rect2(210, 1250, 300, 104), "开始合成", "green", Callable(), 44)
+		Art.item(ci, "fire_2", Vector2(620, 936), 80))
+	UI.lbl(p.box, TextCatalog.source("ui.shoppopups.cd2059f40bad"), Rect2(40, 440, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
+	UI.lbl(p.box, TextCatalog.source("ui.shoppopups.852688ebda32"), Rect2(410, 630, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
+	UI.lbl(p.box, TextCatalog.source("ui.shoppopups.0b1986103a15"), Rect2(70, 940, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
+	UI.lbl(p.box, TextCatalog.source("ui.shoppopups.513c4ba7ebd0"), Rect2(410, 1150, 300, 50), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK)
+	UI.lbl(p.box, TextCatalog.source("ui.shoppopups.6f04a9a90c4b"), Rect2(0, 250, 720, 40), 24, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	var go := UI.btn(p.box, Rect2(210, 1250, 300, 104), TextCatalog.source("ui.tigerescapepopup.e2508646d82f") if G.rules.onboarding.active() else TextCatalog.source("ui.shoppopups.85689f08b0b2"), "green", Callable(), 44)
 	go.pressed.connect(func():
-		Replay.perform("tutorial_finish")
+		if not G.rules.onboarding.active(): Replay.perform("tutorial_finish")
 		p.close()
-		G.main.show_screen("board"))
+		if not G.rules.onboarding.active(): G.main.show_screen("board"))
 	return p
 
 ## 玩法说明里的第 k 支弯箭头（起止点见 PS.HOWTO_ARROWS）
@@ -100,27 +123,27 @@ static func store() -> PopupBase:
 	var fs := Popups.fullscreen(p)
 	var sc: Scroller = fs[0]
 	var root: Control = fs[1]
-	UI.title(root, "交易集市", Rect2(0, 140, 720, 80), 46)
+	UI.title(root, TextCatalog.source("ui.shoppopups.25b1bf6c720e"), Rect2(0, 140, 720, 80), 46)
 	UI.box(root, Rect2(0, 0, 720, 520), _paint_store)
-	UI.title(root, "篝火祭通行证", Rect2(50, 400, 360, 60), 34, Color.WHITE)
+	UI.title(root, TextCatalog.source("ui.shoppopups.f89e9f68862f"), Rect2(50, 400, 360, 60), 34, Color.WHITE)
 	UI.lbl(root, "×10", Rect2(440, 300, 80, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(root, "每个心愿额外 +1 不拿拿", Rect2(500, 304, 200, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(root, "¥ 30", Rect2(470, 344, 160, 44), 28, Color("5a3d24"), HORIZONTAL_ALIGNMENT_CENTER)
-	UI.btn(root, Rect2(430, 396, 240, 80), "激活", "green", func(): G.main.open("pass_buy"), 38)
-	Popups.section(root, "每日特惠", 516, Color("ffd23f"))
+	UI.lbl(root, TextCatalog.source("ui.shoppopups.7b06ab4307f3"), Rect2(500, 304, 200, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(root, PriceBook.product_text("pass:vip"), Rect2(470, 344, 160, 44), 28, Color("5a3d24"), HORIZONTAL_ALIGNMENT_CENTER)
+	UI.btn(root, Rect2(430, 396, 240, 80), TextCatalog.source("ui.shoppopups.dd1286c29e9b"), "green", func(): G.main.open("pass_buy"), 38)
+	Popups.section(root, TextCatalog.source("ui.shoppopups.017438d13b79"), 516, Color("ffd23f"))
 	G.rules.clock._check_day()
-	# 每日特惠一排 5 张（顺序固定：广告 → 不拿拿买体力宝箱 → 贵宾琥珀 → 超级贵宾琥珀 → 免费体力）
+	# 每日特惠一排 5 张（顺序固定：广告 → 不那那买体力宝箱 → 贵宾琥珀 → 超级贵宾琥珀 → 免费体力）
 	var deals := Data.daily_deals(G.level)
 	var dn := maxi(1, deals.size())
 	var dw := (660.0 - (dn - 1) * 10.0) / dn
 	for k in deals.size():
 		_daily_card(root, Rect2(30.0 + k * (dw + 10.0), 566, dw, 236), deals[k], k)
 	var clocks: Array = []
-	clocks.append(_refresh_bar(root, Rect2(30, 818, 660, 66), Color("6c492e"), "明天 0 点上新", func(): return [G.rules.clock.secs_to_midnight(), 86400], "", 0, Callable()))
+	clocks.append(_refresh_bar(root, Rect2(30, 818, 660, 66), Color("6c492e"), TextCatalog.source("ui.shoppopups.b9fe87109e54"), func(): return [G.rules.clock.secs_to_midnight(), 86400], "", 0, Callable()))
 	var y := 904.0
-	# 不拿拿小摊：用不拿拿买低一级的普通货，库存少，每 8 小时按服务器时间补货；花少量琥珀可立即补货
+	# 不那那小摊：用不那那买低一级的普通货，库存少，每 8 小时按服务器时间补货；花少量琥珀可立即补货
 	G.rules.clock.check_shell_period()
-	Popups.section(root, "不拿拿小摊", y, Color("bfe3ff"))
+	Popups.section(root, TextCatalog.source("ui.shoppopups.96b405779fa2"), y, Color("bfe3ff"))
 	var sy := y + 44.0
 	for k in Data.STORE_SHELL.size():
 		var d: Dictionary = Data.STORE_SHELL[k]
@@ -129,7 +152,7 @@ static func store() -> PopupBase:
 	if not Data.STORE_SHELL.is_empty():
 		sy += 264.0
 		var shell_bar: Array = []
-		shell_bar.append(_refresh_bar(root, Rect2(30, sy, 660, 86), Color("405f70"), "小摊补货", func(): return [G.rules.clock.shell_secs_left(), Data.STORE_SHELL_HOURS * 3600], "补货", Data.STORE_SHELL_REFRESH, func():
+		shell_bar.append(_refresh_bar(root, Rect2(30, sy, 660, 86), Color("405f70"), TextCatalog.source("ui.shoppopups.dc7c0fe1c67a"), func(): return [G.rules.clock.shell_secs_left(), Data.STORE_SHELL_HOURS * 3600], TextCatalog.source("ui.shoppopups.b40b8d6870e8"), Data.STORE_SHELL_REFRESH, func():
 			var rb: TButton = shell_bar[0]["btn"]
 			rb.enabled = false
 			var result: Dictionary = await G.refresh_shell()
@@ -137,10 +160,10 @@ static func store() -> PopupBase:
 			rb.enabled = true
 			rb.queue_redraw()
 			if result.get("ok", false): Sfx.play("pop")
-			else: G.main.toast(str(result.get("message", "补货失败")))))
+			else: G.main.toast(str(result.get("message", TextCatalog.source("ui.shoppopups.1f8919285eb9"))))))
 		clocks.append(shell_bar[0])
 		y = sy + 108.0
-	Popups.section(root, "热卖", y, Color("ffd23f"))
+	Popups.section(root, TextCatalog.source("ui.shoppopups.03bb13313881"), y, Color("ffd23f"))
 	var hot_root := Control.new()
 	hot_root.name = "HotGoods"
 	hot_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -162,7 +185,7 @@ static func store() -> PopupBase:
 	draw_hot.call()
 	y = hot_y + ceilf(float(hot_state["count"]) / 3.0) * 270.0 - 6.0
 	var hot_bar: Array = []
-	hot_bar.append(_refresh_bar(root, Rect2(30, y, 660, 86), Color("6c492e"), "热卖刷新", func(): return [G.rules.clock.secs_to_midnight(), 86400], "刷新", 10, func():
+	hot_bar.append(_refresh_bar(root, Rect2(30, y, 660, 86), Color("6c492e"), TextCatalog.source("ui.shoppopups.b9e084087982"), func(): return [G.rules.clock.secs_to_midnight(), 86400], TextCatalog.source("ui.shoppopups.aee887434131"), int(Data.RULES["hot_refresh_price"]), func():
 		var rb: TButton = hot_bar[0]["btn"]
 		rb.enabled = false
 		var result: Dictionary = await G.refresh_hot()
@@ -173,7 +196,7 @@ static func store() -> PopupBase:
 			draw_hot.call()
 			Sfx.play("pop")
 		else:
-			G.main.toast(str(result.get("message", "刷新失败")))))
+			G.main.toast(str(result.get("message", TextCatalog.source("ui.shoppopups.6106f0a12583"))))))
 	clocks.append(hot_bar[0])
 	Popups.live(p, G.changed, func(): draw_hot.call())
 	y += 108.0
@@ -186,7 +209,12 @@ static func store() -> PopupBase:
 		for c in clocks: _tick_bar(c)
 	ticker.timeout.connect(tick)
 	tick.call()
-	Popups.section(root, "琥珀", y, Color("ffd23f"))
+	Popups.section(root, TextCatalog.source("ui.shoppopups.008e83d1af95"), y, Color("bfe3ff"))
+	y += 52.0
+	UI.btn(root, Rect2(30, y, 320, 82), TextCatalog.source("ui.shoppopups.7e186d6733a3"), "green", func(): G.main.open("resource_shop", "shell"), 30)
+	UI.btn(root, Rect2(370, y, 320, 82), TextCatalog.source("ui.shoppopups.94e76fe2cd03"), "teal", func(): G.main.open("resource_shop", "sand"), 30)
+	y += 112.0
+	Popups.section(root, TextCatalog.source("developer.amber_editor.089f621992ac"), y, Color("ffd23f"))
 	y += 48.0
 	for k in Data.AMBER_PACKS.size():
 		var a: Dictionary = Data.AMBER_PACKS[k]
@@ -195,7 +223,7 @@ static func store() -> PopupBase:
 	sc.set_length(y - 128.0)
 	return p
 
-## 每日特惠的一张小卡。边框颜色按类型：广告青、不拿拿蓝、会员紫、免费绿；会员卡顶上挂档位签。
+## 每日特惠的一张小卡。边框颜色按类型：广告青、不那那蓝、会员紫、免费绿；会员卡顶上挂档位签。
 
 static func _daily_card(parent: Control, r: Rect2, d: Dictionary, k: int) -> void:
 	var key := str(d["key"])
@@ -225,9 +253,9 @@ static func _daily_card(parent: Control, r: Rect2, d: Dictionary, k: int) -> voi
 			ci.draw_circle(cc, 23, Art.MOSS)
 			Paint.check_mark(ci, cc, 1.2))
 	if member:
-		UI.lbl(parent, str(d.get("badge", "会员")), Rect2(r.position.x, r.position.y - 13, r.size.x, 28), 17, Color("4a2266") if tier < 2 else Color("5a3300"), HORIZONTAL_ALIGNMENT_CENTER)
+		UI.lbl(parent, str(d.get("badge", TextCatalog.source("ui.shoppopups.0efb3a20951d"))), Rect2(r.position.x, r.position.y - 13, r.size.x, 28), 17, Color("4a2266") if tier < 2 else Color("5a3300"), HORIZONTAL_ALIGNMENT_CENTER)
 	elif ad:
-		UI.lbl(parent, "广告", Rect2(r.position.x, r.position.y - 13, r.size.x, 28), 17, Color.WHITE)
+		UI.lbl(parent, TextCatalog.source("ui.shoppopups.5f9f1409615a"), Rect2(r.position.x, r.position.y - 13, r.size.x, 28), 17, Color.WHITE)
 	UI.hit(parent, Rect2(r.position + Vector2(6, 6), Vector2(r.size.x - 12, 120)), func(): G.main.open("item_info", str(d["id"])))
 	UI.lbl(parent, str(d.get("title", Data.name_of(str(d["id"])))), Rect2(r.position + Vector2(0, 132), Vector2(r.size.x, 32)), 21, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	var b := UI.btn(parent, Rect2(r.position + Vector2(7, 170), Vector2(r.size.x - 14, 58)), "", "green", Callable(), 22)
@@ -237,11 +265,11 @@ static func _daily_card(parent: Control, r: Rect2, d: Dictionary, k: int) -> voi
 		var locked := member and G.pass_tier < tier
 		state["claimed"] = claimed
 		card.queue_redraw()
-		if claimed: b.text = "已领取"
-		elif locked: b.text = "开通"
-		elif ad: b.text = "看广告"
-		elif paid: b.text = str(int(d["price"]))
-		else: b.text = "领取"
+		if claimed: b.text = TextCatalog.resolve(TextCatalog.source("notice.sevenday.426e458a4124"))
+		elif locked: b.text = TextCatalog.resolve(TextCatalog.source("ui.shoppopups.0e9796076182"))
+		elif ad: b.text = TextCatalog.resolve(TextCatalog.source("ui.dailyadpopup.afd2bd434b2d"))
+		elif paid: b.text = TextCatalog.resolve(str(int(d["price"])))
+		else: b.text = TextCatalog.resolve(TextCatalog.source("ui.duelpopup.844ab9477225"))
 		b.res = ("shell_2" if str(d.get("currency", "amber")) == "shell" else Art.AMBER_ICON) if paid and not claimed else ""
 		b.enabled = not claimed
 		b.style = "grey" if claimed else ("orange" if locked else ("teal" if ad else "green"))
@@ -258,7 +286,7 @@ static func _daily_card(parent: Control, r: Rect2, d: Dictionary, k: int) -> voi
 		b.enabled = false
 		var result: Dictionary = await DailyShop.claim(key)
 		if result.get("ok", false): RewardPresenter.present(result.get("rewards", []), func(_k): return b.get_global_rect().get_center() - Vector2(0, 100))
-		if not result.get("ok", false): G.main.toast(str(result.get("message", "没领成，再试一次")))
+		if not result.get("ok", false): G.main.toast(str(result.get("message", TextCatalog.source("ui.racepopup.b0c98a2bf490"))))
 		if is_instance_valid(b): refresh.call())
 
 ## 刷新倒计时条：左边沙漏 + 标题 + 「07:12:33」+ 本轮剩余进度槽；右边可选的琥珀刷新按钮。
@@ -293,7 +321,7 @@ static func _refresh_bar(root: Control, r: Rect2, col: Color, title: String, lef
 static func _tick_bar(c: Dictionary) -> void:
 	var t: Array = (c["fn"] as Callable).call()
 	var left := maxi(0, int(t[0]))
-	(c["time"] as Label).text = "%02d:%02d:%02d" % [left / 3600, (left % 3600) / 60, left % 60]
+	(c["time"] as Label).text = TextCatalog.resolve("%02d:%02d:%02d" % [left / 3600, (left % 3600) / 60, left % 60])
 	c["st"]["t"] = float(left) / maxf(1.0, float(t[1]))
 	(c["bar"] as DrawBox).queue_redraw()
 
@@ -312,7 +340,7 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 			Sprites.at(ci, "pop_seal", Vector2(30, 26)))
 	UI.hit(parent, Rect2(r.position + Vector2(8, 8), Vector2(r.size.x - 16, 114)), func(): G.main.open("item_info", Art.AMBER_ICON))
 	if k >= 4:
-		var hl := UI.lbl(parent, "超值", Rect2(r.position.x - 6, r.position.y + 8, 72, 36), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+		var hl := UI.lbl(parent, TextCatalog.source("ui.passpopup.52f6f555189a"), Rect2(r.position.x - 6, r.position.y + 8, 72, 36), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 		hl.rotation = -0.2
 	UI.lbl(parent, "×%d" % a["n"], Rect2(r.position.x, r.position.y + 128, r.size.x, 40), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 184, r.size.x - 44, 64), a["price"], "orange", Callable(), 30)
@@ -327,7 +355,7 @@ static func _amber_card(parent: Control, r: Rect2, a: Dictionary, k: int) -> voi
 		b.enabled = true
 		b.queue_redraw()
 		if not paid.get("ok", false):
-			G.main.toast(str(paid.get("message", "没买成，再试一次")))
+			G.main.toast(str(paid.get("message", TextCatalog.source("notice.ufooffer.b9eb30abfda8"))))
 			return
 		RewardPresenter.present([[Art.AMBER_ICON, int(paid["amber"])]], func(_k): return b.get_global_rect().get_center() + Vector2(0, -100)))
 
@@ -368,19 +396,22 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 		if hot:
 			Sprites.at(ci, "pop_seal", Vector2(30, 24), 38.0 / 36.0))
 	if hot:
-		var hl := UI.lbl(parent, "免费" if int(d["price"]) == 0 else "HOT", Rect2(r.position.x - 6, r.position.y + 6, 72, 36), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+		var hl := UI.lbl(parent, TextCatalog.source("developer.pass_editor.649a0fc7237e") if int(d["price"]) == 0 else TextCatalog.source("ui.shoppopups.9c9c9149fd63"), Rect2(r.position.x - 6, r.position.y + 6, 72, 36), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 		hl.rotation = -0.2
 	UI.hit(parent, Rect2(r.position + Vector2(8, 8), Vector2(r.size.x - 16, 114)), func(): G.main.open("item_info", str(d["id"])))
+	if not hot:
+		var grade := UI.lbl(parent, TextCatalog.source("developer.chains_editor.b4d436ea2c00") % Data.lv(str(d["id"])), Rect2(r.end.x - 82, r.position.y + 8, 72, 30), 22, Art.INK, HORIZONTAL_ALIGNMENT_CENTER, 4, Art.BONE)
+		grade.set_meta("hot_item_level", Data.lv(str(d["id"])))
 	var left_lbl := UI.lbl(parent, "", Rect2(r.position.x, r.position.y + 128, r.size.x, 34), 22, Color("6b4a2a"))
 	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 178, r.size.x - 44, 64), "", "green", Callable(), 30)
 	var refresh := func():
 		var book_of: Dictionary = G.deals_bought if hot else G.hot_bought
 		var left: int = maxi(0, int(d["stock"]) - int(book_of.get(key, 0)))
-		left_lbl.text = "剩余 %d" % left
-		b.text = ("免费" if int(d["price"]) == 0 else str(d["price"])) if left > 0 else ("已领取" if int(d["price"]) == 0 else "售罄")
+		left_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.shoppopups.c11a6c09ae8a") % left)
+		b.text = TextCatalog.resolve((TextCatalog.source("developer.pass_editor.649a0fc7237e") if int(d["price"]) == 0 else str(d["price"])) if left > 0 else (TextCatalog.source("notice.sevenday.426e458a4124") if int(d["price"]) == 0 else TextCatalog.source("ui.shoppopups.0f3d8755dbc5")))
 		b.res = Art.AMBER_ICON if left > 0 and int(d["price"]) > 0 else ""
-		b.style = "green" if left > 0 else "grey"
-		b.enabled = left > 0
+		b.style = "green" if left > 0 and PriceBook.ready() else "grey"
+		b.enabled = left > 0 and PriceBook.ready()
 		b.queue_redraw()
 	refresh.call()
 	Popups.live(b, G.changed, refresh)
@@ -389,7 +420,7 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 		if await ItemPopups._buy_offer(str(d["id"]), {"price": int(d["price"]), "key": key, "deal": hot}, origin):
 			refresh.call())
 
-## 不拿拿小摊的一格：样子同热卖卡片，换成浅蓝底、价格按钮用不拿拿图标
+## 不那那小摊的一格：样子同热卖卡片，换成浅蓝底、价格按钮用不那那图标
 
 static func _shell_card(parent: Control, r: Rect2, d: Dictionary, key: String) -> void:
 	UI.box(parent, r, func(ci, sz):
@@ -402,11 +433,11 @@ static func _shell_card(parent: Control, r: Rect2, d: Dictionary, key: String) -
 	var refresh := func():
 		G.rules.clock.check_shell_period()
 		var left: int = int(d["stock"]) - int(G.shell_bought.get(key, 0))
-		left_lbl.text = "剩余 %d" % left
-		b.text = str(int(d["price"])) if left > 0 else "售罄"
+		left_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.shoppopups.c11a6c09ae8a") % left)
+		b.text = TextCatalog.resolve(str(int(d["price"])) if left > 0 else TextCatalog.source("ui.shoppopups.0f3d8755dbc5"))
 		b.res = "shell_2" if left > 0 else ""
-		b.style = "green" if left > 0 else "grey"
-		b.enabled = left > 0
+		b.style = "green" if left > 0 and PriceBook.ready() else "grey"
+		b.enabled = left > 0 and PriceBook.ready()
 		b.queue_redraw()
 	refresh.call()
 	Popups.live(b, G.changed, refresh)
@@ -416,3 +447,35 @@ static func _shell_card(parent: Control, r: Rect2, d: Dictionary, key: String) -
 			refresh.call())
 
 # ---------------------------------------------------------------- 设置
+
+## Resource quantities and prices are resolved by the server catalog.
+static func resource_shop(kind: String) -> PopupBase:
+	var p := PopupBase.new()
+	var rows: Array = []
+	for row in PriceBook.catalog.get("resource_products", []):
+		if str(row.get("kind", "")) == kind: rows.append(row)
+	var height := 180.0 + ceilf(rows.size() / 3.0) * 240.0
+	var r := Rect2(38, (1480-height)*0.5, 644, height)
+	Popups.frame(p, r, TextCatalog.source("ui.shoppopups.94e76fe2cd03") if kind == "sand" else TextCatalog.source("ui.shoppopups.7e186d6733a3"), Color("4f8fc0"), "sand" if kind == "sand" else "shell")
+	for k in rows.size():
+		_resource_card(p, Rect2(r.position.x+((r.size.x-192)*0.5 if rows.size()==1 else 20+(k%3)*202), r.position.y+100+(k/3)*240, 192, 220), rows[k])
+	return p
+
+static func _resource_card(p: PopupBase, r: Rect2, row: Dictionary) -> void:
+	UI.box(p.box, r, func(ci, sz):
+		_card20(ci, sz, Color("7fb43a"))
+		Art.item(ci, str(row["id"]), Vector2(sz.x*0.5, 66), 90))
+	var title := G.fmt_time(int(row.get("seconds", 0))) if row["kind"] == "sand" else "×%d" % int(row["amount"])
+	UI.lbl(p.box, title, Rect2(r.position.x, r.position.y+112, r.size.x, 36), 25, Art.INK, HORIZONTAL_ALIGNMENT_CENTER)
+	var b := UI.btn(p.box, Rect2(r.position.x+12, r.end.y-64, r.size.x-24, 56), str(row["price"]), "green", Callable(), 30)
+	b.res = Art.AMBER_ICON
+	b.enabled = PriceBook.ready()
+	b.pressed.connect(func():
+		b.enabled = false
+		var result: Dictionary
+		if Cloud.enabled: result = await Payments.buy_virtual(str(row["product"]), int(row["price"]))
+		else: result = Replay.perform("resource_buy", {"product": str(row["product"])})
+		if not is_instance_valid(b): return
+		b.enabled = true
+		if result.get("ok", false): RewardPresenter.present(row["rewards"], func(_k): return r.get_center())
+		else: G.main.toast(str(result.get("message", result.get("error", TextCatalog.source("ui.shoppopups.0f18b9ba38bf"))))))

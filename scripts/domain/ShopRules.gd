@@ -7,12 +7,14 @@ func signature() -> String:
 
 func cached() -> Dictionary:
 	var saved: Dictionary = context.meta().get("hot", {})
-	return saved if saved.get("signature", "") == signature() else {}
+	if saved.get("signature", "") != signature(): return {}
+	if not Goods.valid_rows(saved.get("list", []), Data.STORE_HOT, state.level): return {}
+	return saved
 
 func today() -> Array:
 	var saved := cached()
 	if not saved.is_empty(): return saved["list"]
-	var rows := Goods.roll(Data.STORE_HOT, _wanted(), context.random_for("shop"))
+	var rows := Goods.roll(Data.STORE_HOT, _wanted(), context.random_for("shop"), state.level)
 	context.meta()["hot"] = {"signature": signature(), "list": rows}
 	return rows
 
@@ -36,18 +38,6 @@ func _wanted() -> Array:
 	return out
 
 func reroll_all(previous: Array) -> Array:
-	var rng = context.random_for("shop")
-	var picks: Array = []
-	for k in Data.STORE_HOT.size():
-		var base: Dictionary = Data.STORE_HOT[k]
-		var id = str(base["id"])
-		var ch = Data.chain(id)
-		var old = str(previous[k]["id"]) if k < previous.size() else id
-		var pool: Array = []
-		for level in range(maxi(1, Data.lv(id) - 1), mini(Data.max_lv(ch), Data.lv(id) + 1) + 1):
-			var candidate = "%s_%d" % [ch, level]
-			if candidate != old: pool.append(candidate)
-		picks.append({"slot": k, "id": pool[rng.randi_range(0, pool.size() - 1)] if not pool.is_empty() else id})
-	var rows = Goods.from_picks(Data.STORE_HOT, picks)
+	var rows := Goods.roll(Data.STORE_HOT, _wanted(), context.random_for("shop"), state.level, previous)
 	context.meta()["hot"] = {"signature": context.clock.today() + ":" + str(state.hot_revision) + ":" + Goods._base_sig(), "list": rows}
 	return rows

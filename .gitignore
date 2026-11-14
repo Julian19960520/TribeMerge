@@ -1,5 +1,6 @@
 .godot/
 shots/
+_shots/**/*.png.import
 *.log
 dist/
 tools/sim/results/

@@ -20,7 +20,7 @@ func run() -> void:
 	g.set_process(false); replay.set_process(false); cloud.set_process(false)
 	g.new_game()
 	g.seen_tutorial = true; g.tutorial_on = false
-	var input_result = replay.perform("drop", {"from": 28, "to": 29})
+	var input_result = replay.perform("drop", {"from": 23, "to": 30})
 	check(not input_result.has("error") and not replay.pending.is_empty(), "test session has committed progress and a pending operation")
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)

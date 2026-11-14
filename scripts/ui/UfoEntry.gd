@@ -21,7 +21,7 @@ func _ready() -> void:
 	hit.name = "ufo_entry"
 	hit.extra = _paint
 	timer = UI.lbl(hit, "", Rect2(31, 86, 88, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 4, Color("1b2a33"))
-	var tag := UI.lbl(hit, "5折", Rect2(98, 0, 58, 32), 19, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+	var tag := UI.lbl(hit, TextCatalog.source("ui.ufoentry.74741873ce39"), Rect2(98, 0, 58, 32), 19, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	tag.rotation = 0.22
 	hit.visible = false
 ## 全部贴预生成的图（scripts/sprites/events.gd），跟着全局沸腾线一起抖；配色压到夜空蓝 + 骨白 + 一点黄绿。
@@ -60,7 +60,7 @@ func _process(delta: float) -> void:
 	UfoOffer.tick()
 	var show_offer := UfoOffer.active() and not G.tutorial_on
 	var left := UfoOffer.remaining()
-	timer.text = "%02d:%02d" % [left / 60, left % 60]
+	timer.text = TextCatalog.resolve("%02d:%02d" % [left / 60, left % 60])
 	if _shown == show_offer: return
 	_shown = show_offer
 	hit.visible = show_offer

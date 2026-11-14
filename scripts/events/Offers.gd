@@ -51,23 +51,10 @@ static func any_left(kind: String) -> bool:
 	return false
 
 static func price_text(kind: String, k: int) -> String:
-	return "¥%d" % int(tier(kind, k).get("price_cny", 0))
+	return PriceBook.product_text("offer:%s:%d" % [kind, k])
 
 static func value(rewards: Array) -> float:
-	var total := 0.0
-	for rw in rewards:
-		var id := str(rw[0])
-		var n := int(rw[1])
-		match Rewards.kind(id):
-			"amber": total += n
-			"energy": total += n * 0.4
-			"shell": total += n * 0.1
-			"sand": total += n * 5.0
-			"chest": total += 15.0 * n
-			"pack": total += 20.0 * n
-			_:
-				if Data.type_of(id) == "gen": total += 10.0 * pow(2.0, Data.lv(id) - 1) * n
-	return total
+	return PriceBook.reward_value(rewards)
 
 # ---------------------------------------------------------------- 开期
 
@@ -89,6 +76,6 @@ static func wants_energy() -> bool:
 
 ## Paid through the server (scripts/net/Payments.gd); the grant records the purchase in the window.
 static func buy(kind: String, k: int) -> Dictionary:
-	if not active(kind): return {"ok": false, "error": "closed", "message": "本期礼包已结束"}
-	if left(kind, k) <= 0: return {"ok": false, "error": "limit_reached", "message": "本期已买完"}
+	if not active(kind): return {"ok": false, "error": "closed", "message": TextCatalog.source("notice.offers.d345eb8ef0a1")}
+	if left(kind, k) <= 0: return {"ok": false, "error": "limit_reached", "message": TextCatalog.source("notice.offers.9f313e10b9ed")}
 	return await Payments.buy("offer:%s:%d" % [kind, k])

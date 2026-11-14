@@ -33,7 +33,7 @@ static func _album(album: int) -> Dictionary:
 	if album < 0 or album >= Data.ALBUMS.size(): return {}
 	if not PRESENTATIONS.has(album): return Data.ALBUMS[album]
 	if not _presentations.has(album):
-		var value: Variant = JSON.parse_string(FileAccess.get_file_as_string(PRESENTATIONS[album]))
+		var value: Variant = TextCatalog.hydrate(JSON.parse_string(FileAccess.get_file_as_string(PRESENTATIONS[album])))
 		var valid := value is Dictionary
 		if valid:
 			valid = value.get("name", "") is String and not str(value.get("name", "")).is_empty()

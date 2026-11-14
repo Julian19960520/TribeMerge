@@ -26,6 +26,8 @@ var _fps_shown := -1
 
 func _ready() -> void:
 	G.main = self
+	if get_tree().get_script() == null and not OS.has_feature("web"):
+		await preload("res://scripts/net/EconomyClient.gd").refresh(self)
 	G.presentation_event.connect(_on_presentation)
 	Cloud.notice.connect(toast)
 	size = Vector2(720, 1480)
@@ -58,7 +60,7 @@ func _ready() -> void:
 	tips = Tips.new()
 	add_child(tips)
 	_guide = GuideScript.new()
-	board_screen.add_child(_guide)
+	add_child(_guide)
 	var args := OS.get_cmdline_user_args()
 	for a in args:
 		if a.begins_with("--shots="):
@@ -74,7 +76,18 @@ func begin_guide() -> void:
 	for c in popup_layer.get_children():
 		c.visible = false
 		c.queue_free()
-	show_screen("board", true)
+	var stage: Dictionary = G.rules.onboarding.stage()
+	var key := str(stage.get("key", ""))
+	var mode := str(stage.get("mode", ""))
+	var outside := key == "welcome" or mode in ["build", "animation", "back", "howto", "build_preview"]
+	show_screen("home" if outside else "board", true)
+	if key in ["level_rule", "level_preview", "level_close"]: open("level")
+	if key in ["recipe_mats", "recipe_time", "recipe_ready", "recipe_close"]:
+		for order in G.orders:
+			if str(order.get("kind", "")) == "craft":
+				open("recipe", str(order["dish"]))
+				break
+	if mode == "build": open("build", G.rules.progression.next_build_id())
 	if not _guide.visible: _guide.present()
 
 func _add_fps() -> void:
@@ -83,7 +96,7 @@ func _add_fps() -> void:
 	host.size = size
 	add_child(host)
 	var box := Rect2(548, 2, 164, 34)
-	_fps_lbl = UI.lbl(host, "-- FPS", Rect2(box.position.x + 3, box.position.y + 3, box.size.x - 6, box.size.y - 6), 20, Color(1, 1, 1, 0.55))
+	_fps_lbl = UI.lbl(host, TextCatalog.source("ui.main.e0d2fb2554ca"), Rect2(box.position.x + 3, box.position.y + 3, box.size.x - 6, box.size.y - 6), 20, Color(1, 1, 1, 0.55))
 
 func _process(_dt: float) -> void:
 	if _fps_lbl == null or not _fps_lbl.visible:
@@ -92,7 +105,7 @@ func _process(_dt: float) -> void:
 	if fps == _fps_shown:
 		return
 	_fps_shown = fps
-	_fps_lbl.text = "%d FPS" % fps
+	_fps_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.main.1353da032c2b") % fps)
 
 func _layer() -> Control:
 	var c := Control.new()
@@ -159,7 +172,7 @@ func reset_session_views() -> void:
 	add_child(board_screen)
 	move_child(board_screen, board_index)
 	_guide = GuideScript.new()
-	board_screen.add_child(_guide)
+	add_child(_guide)
 	_apply_screen()
 
 func open(name: String, arg = null) -> PopupBase:
@@ -237,7 +250,7 @@ func _on_presentation(kind: String, payload: Dictionary) -> void:
 			if count > 0: present_rewards([["pack_1", count]])
 		"overflow":
 			var count := int(payload.get("count", 0))
-			if count > 0: toast("放不下的 %d 个物品进了暂存区" % count)
+			if count > 0: toast(TextCatalog.source("ui.main.d75c2da7d3ed") % count)
 
 ## 升级的订单宝箱（丰收圣筐全屏动画）播完的时刻
 var _chest_until := 0
@@ -260,7 +273,7 @@ func _open_levelup_after_chest() -> void:
 
 func _play_order_chest(items: Array, stashed: int) -> void:
 	if items.is_empty():
-		if stashed > 0: toast("族人要的 %d 件东西放进了暂存区" % stashed)
+		if stashed > 0: toast(TextCatalog.source("ui.main.680c0062f51e") % stashed)
 		return
 	if screen != "board" or not is_instance_valid(board_screen):
 		return
@@ -292,12 +305,13 @@ func fly(id: String, from: Vector2, to: Vector2, cb: Callable = Callable(), s: f
 		d.queue_free())
 
 func toast(text: String) -> void:
+	text = UI.resource_text(text)
 	var t := Control.new()
 	t.mouse_filter = MOUSE_FILTER_IGNORE
 	t.size = Vector2(620, 70)
 	t.position = Vector2(50, 640)
 	fx_layer.add_child(t)
-	var w: float = min(600.0, G.font_body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x + 70.0)
+	var w: float = min(600.0, G.font_body.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x + 70.0)
 	UI.box(t, Rect2((620 - w) * 0.5, 0, w, 70), func(ci, sz): Sprites.draw(ci, "toast", Rect2(Vector2.ZERO, sz)))
 	UI.lbl(t, text, Rect2(0, 0, 620, 70), 26, Color("fff1c4"))
 	t.modulate.a = 0.0

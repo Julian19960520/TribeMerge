@@ -4,13 +4,13 @@ const Layout := preload("res://scripts/config/board_layout.gd")
 const PS := preload("res://scripts/sprites/popups.gd")
 
 static func build(id: String) -> PopupBase:
-	var p := PopupBase.new()
 	var d := Data.build_def(id)
 	if d.is_empty():
 		return null
 	var parts := Data.build_parts(d)
 	var total := parts.size()
 	var st := clampi(int(G.builds.get(id, 0)), 0, total)
+	var p := PopupBase.new()
 	var done := st >= total
 	var open := G.rules.progression.build_open(id)
 	var r := Rect2(40, 390, 640, 780)
@@ -19,7 +19,7 @@ static func build(id: String) -> PopupBase:
 	for l in Data.LINES:
 		if str(l.get("id", "")) == str(d.get("line", "")):
 			line_name = str(l.get("name", ""))
-	var sub := "已建 %d/%d" % [st, total]
+	var sub := TextCatalog.source("ui.progressionpopups.57ac2277a313") % [st, total]
 	if line_name != "":
 		sub = "%s · %s" % [line_name, sub]
 	UI.box(p.box, Rect2(200, r.position.y + 54, 320, 40), func(ci, sz):
@@ -34,7 +34,7 @@ static func build(id: String) -> PopupBase:
 	var y0 := r.position.y + 108
 	var rows := int(ceil(float(total) / float(cols)))
 	if rows > 2:
-		chh = 150.0
+		chh = 120.0
 	for k in total:
 		var part: Dictionary = parts[k] if parts[k] is Dictionary else {}
 		var cr := Rect2(x0 + (k % cols) * (cw + gap), y0 + int(k / cols) * (chh + gap), cw, chh)
@@ -52,44 +52,27 @@ static func build(id: String) -> PopupBase:
 	var rewards := G.rules.progression.build_rewards(id) if open and not done else []
 	var cost := G.rules.progression.build_cost(id)
 	if done:
-		UI.lbl(p.box, "这里已经全部建好啦！", Rect2(box.position.x, box.position.y + 50, box.size.x, 50), 28, Color("6b4a2a"))
+		UI.lbl(p.box, TextCatalog.source("ui.progressionpopups.3ccc5138b117"), Rect2(box.position.x, box.position.y + 50, box.size.x, 50), 28, Color("6b4a2a"))
 	elif not open:
-		UI.lbl(p.box, "主角 %d 级开放「%s」" % [Data.build_unlock(d), str(d.get("name", id))], Rect2(box.position.x, box.position.y + 30, box.size.x, 50), 28, Color("6b4a2a"))
-		UI.lbl(p.box, "开放后这里会送%s类的好东西" % line_name if line_name != "" else "", Rect2(box.position.x, box.position.y + 80, box.size.x, 40), 20, Color("8a6a4a"))
+		UI.lbl(p.box, TextCatalog.source("ui.progressionpopups.b8b2658befb0") % [Data.build_unlock(d), str(d.get("name", id))], Rect2(box.position.x, box.position.y + 30, box.size.x, 50), 28, Color("6b4a2a"))
+		UI.lbl(p.box, TextCatalog.source("ui.progressionpopups.9be6e988d0a4") % line_name if line_name != "" else "", Rect2(box.position.x, box.position.y + 80, box.size.x, 40), 20, Color("8a6a4a"))
 	else:
 		var nxt: Dictionary = parts[st]
-		UI.lbl(p.box, "建好「%s」获得" % str(nxt.get("name", "")), Rect2(box.position.x, box.position.y + 6, box.size.x, 36), 22, Color("7a5a3a"))
+		UI.lbl(p.box, TextCatalog.source("ui.progressionpopups.5c6a82c70419") % str(nxt.get("name", "")), Rect2(box.position.x, box.position.y + 6, box.size.x, 36), 22, Color("7a5a3a"))
 		if rewards.is_empty():
-			UI.lbl(p.box, "这次没有奖励", Rect2(box.position.x, box.position.y + 60, box.size.x, 50), 26, Color("6b4a2a"))
+			UI.lbl(p.box, TextCatalog.source("ui.progressionpopups.b537971039cc"), Rect2(box.position.x, box.position.y + 60, box.size.x, 50), 26, Color("6b4a2a"))
 		var icon_s := 84.0 if rewards.size() <= 3 else 70.0
 		for k in rewards.size():
 			var c := Vector2(ItemPopups._spread_x(k, rewards.size(), box.get_center().x, 140.0), box.position.y + 84)
 			UI.icon(p.box, str(rewards[k][0]), c, icon_s)
 			UI.lbl(p.box, "×%d" % int(rewards[k][1]), Rect2(c.x - 10, c.y + 14, 90, 36), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 6, Art.INK)
-	var label := "已完工" if done else (("Lv.%d 开放" % Data.build_unlock(d)) if not open else str(cost))
+	var label := TextCatalog.source("ui.progressionpopups.c7161add6832") if done else ((TextCatalog.source("ui.homescreen.1f67da2b53a5") % Data.build_unlock(d)) if not open else str(cost))
 	var b := UI.btn(p.box, Rect2(r.get_center().x - 160, box.end.y + 18, 320, 100), label, "green" if open and not done else "grey", Callable(), 44)
 	if open and not done:
 		b.res = "shell_2"
 	b.enabled = open and not done
-	p.set_meta("build_rects", [box, Rect2(b.position, b.size)])
-	b.pressed.connect(func():
-		if G.shells < cost:
-			Sfx.play("deny")
-			G.main.toast("不拿拿还不够，多帮几位族人吧！")
-			return
-		var res: Dictionary = await G.do_build(id)
-		if res.is_empty():
-			return
-		var idx := int(res["idx"])
-		var part: Dictionary = parts[idx] if idx < parts.size() and parts[idx] is Dictionary else {}
-		var got: Array = res["rewards"]
-		p.close()
-		if G.main.screen == "home" and G.main.home != null:
-			G.main.home.play_build(id, idx, str(part.get("id", "")), str(part.get("name", "")), got)
-		elif got.is_empty():
-			G.main.toast("%s 建好了！" % str(part.get("name", "")))
-		else:
-			G.main.present_rewards(got))
+	p.set_meta("build_rects", [Rect2(b.position, b.size)])
+	b.pressed.connect(_buy_build.bind(p, id, b))
 	return p
 
 ## 部件卡片。state：0 已建 1 下一件 2 之后
@@ -108,3 +91,42 @@ static func _build_card(ci: CanvasItem, sz: Vector2, kind: String, state: int, o
 		Paint.glyph(ci, "lock", Vector2(sz.x - 24, 24), 0.8)
 
 # ---------------------------------------------------------------- 图鉴
+
+## Compact region map opened after the first three construction stages.
+static func region_map() -> PopupBase:
+	var p := PopupBase.new()
+	Popups.frame(p, Rect2(40, 260, 640, 1000), TextCatalog.source("ui.progressionpopups.45b03cb6af96"), Art.TEAL)
+	for k in Data.BUILDS.size():
+		var d: Dictionary = Data.BUILDS[k]
+		var id := str(d["id"])
+		var rect := Rect2(64 + (k % 2) * 302, 340 + (k / 2) * 218, 288, 202)
+		var open := G.rules.progression.build_open(id)
+		var tile := UI.btn(p.box, rect, "", "hide", func():
+			p.close()
+			G.main.open("build", id))
+		tile.extra = func(ci, sz):
+			var parts := Data.build_parts(d)
+			if not parts.is_empty(): TribeArt.icon(ci, str(parts[0]["id"]), Rect2(66, 4, sz.x - 132, 130), not open)
+		UI.lbl(tile, str(d["name"]), Rect2(4, 124, rect.size.x - 8, 34), 25, Art.INK)
+		UI.lbl(tile, TextCatalog.source("ui.progressionpopups.667da42b1672") % [int(G.builds.get(id, 0)), Data.build_stages(d)] if open else TextCatalog.source("ui.homescreen.1f67da2b53a5") % Data.build_unlock(d), Rect2(4, 162, rect.size.x - 8, 30), 20, Art.CLAY)
+	return p
+
+static func _buy_build(p: PopupBase, id: String, button: TButton) -> void:
+	if not button.enabled or p._closing or G.main.home.is_building(): return
+	if G.shells < G.rules.progression.build_cost(id):
+		Sfx.play("deny")
+		G.main.toast(TextCatalog.source("ui.progressionpopups.e9d4961d0095"))
+		return
+	button.enabled = false
+	var target := button.get_global_rect().get_center()
+	var result: Dictionary = await G.do_build(id)
+	if result.is_empty():
+		if is_instance_valid(button): button.enabled = true
+		return
+	G.main.fly("shell_2", TopBar.PILLS["shell"].get_center(), target)
+	var parts := Data.build_parts(Data.build_def(id))
+	var index := int(result["idx"])
+	var part: Dictionary = parts[index]
+	p.close()
+	if G.main.screen != "home": G.main.show_screen("home", true)
+	G.main.home.play_build(id, index, str(part["id"]), str(part["name"]), result["rewards"])

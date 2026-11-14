@@ -26,47 +26,47 @@ func refresh() -> void:
 	_list.select_mode = ItemList.SELECT_SINGLE
 	left.add_child(_list)
 	for c in data:
-		_list.add_item("%s  %s" % [c["id"], c["name"]])
+		_list.add_item(TextCatalog.resolve("%s  %s" % [c["id"], c["name"]]))
 	if _index >= 0:
 		_list.select(_index)
 	_list.item_selected.connect(_on_pick)
 	var buttons := Ui.row(left)
-	Ui.btn(buttons, "上移").pressed.connect(_move_chain.bind(-1))
-	Ui.btn(buttons, "下移").pressed.connect(_move_chain.bind(1))
-	Ui.btn(left, "添加链条").pressed.connect(_add_chain)
-	Ui.btn(left, "删除链条").pressed.connect(_remove_chain)
+	Ui.btn(buttons, TextCatalog.source("developer.chains_editor.f853a70b1204")).pressed.connect(_move_chain.bind(-1))
+	Ui.btn(buttons, TextCatalog.source("developer.chains_editor.e75e8b4e5c97")).pressed.connect(_move_chain.bind(1))
+	Ui.btn(left, TextCatalog.source("developer.chains_editor.3f6c0c1baaf8")).pressed.connect(_add_chain)
+	Ui.btn(left, TextCatalog.source("developer.chains_editor.0f3971741071")).pressed.connect(_remove_chain)
 	var right := Ui.scroll(split)
 	if _index < 0:
-		Ui.lbl(right, "没有链条")
+		Ui.lbl(right, TextCatalog.source("developer.chains_editor.af49484e0bdb"))
 		return
 	var chain: Dictionary = data[_index]
 	_fit_value(chain)
-	Ui.lbl(right, "id 是物品 id 的前缀，fruit_3 属于 id 为 fruit 的链。物品从上到下是 1 级到最高级。火种、贝币、琥珀在每级旁边填收取数量。")
+	Ui.lbl(right, TextCatalog.source("developer.chains_editor.b15dab78caf6"))
 	var r := Ui.row(right)
-	Ui.lbl(r, "id", 48)
+	Ui.lbl(r, TextCatalog.source("developer.builds_editor.a56145270ce6"), 48)
 	var id := Ui.line(r, str(chain["id"]), 160)
 	id.text_changed.connect(_set_id.bind(chain))
-	Ui.lbl(r, "名称", 40)
+	Ui.lbl(r, TextCatalog.source("developer.builds_editor.d44e9b3d3b31"), 40)
 	var nm := Ui.line(r, str(chain["name"]))
 	nm.text_changed.connect(_set_name.bind(chain))
 	var r2 := Ui.row(right)
-	Ui.lbl(r2, "产线", 40)
+	Ui.lbl(r2, TextCatalog.source("developer.chains_editor.77ca877fdd41"), 40)
 	var line := Ui.line(r2, str(chain.get("line", "")), 100)
 	line.text_changed.connect(_set_line.bind(chain))
 	chain.erase("kind")
 	var items: Array = chain["items"]
 	for i in items.size():
 		var ir := Ui.row(right)
-		Ui.lbl(ir, "Lv.%d" % (i + 1), 48)
+		Ui.lbl(ir, TextCatalog.source("developer.chains_editor.b4d436ea2c00") % (i + 1), 48)
 		var e := Ui.line(ir, str(items[i]))
 		e.text_changed.connect(_set_text.bind(items, i))
 		if chain.has("value"):
 			var vs := Ui.spin(ir, int(chain["value"][i]), 0, 99999, 80)
 			vs.value_changed.connect(_set_value.bind(chain, i))
-		Ui.btn(ir, "上").pressed.connect(_move_item.bind(chain, i, -1))
-		Ui.btn(ir, "下").pressed.connect(_move_item.bind(chain, i, 1))
-		Ui.btn(ir, "删除").pressed.connect(_remove_item.bind(chain, i))
-	Ui.btn(right, "添加一级").pressed.connect(_add_item.bind(chain))
+		Ui.btn(ir, TextCatalog.source("developer.editor_base.db5ba671d244")).pressed.connect(_move_item.bind(chain, i, -1))
+		Ui.btn(ir, TextCatalog.source("developer.editor_base.13c12b064b63")).pressed.connect(_move_item.bind(chain, i, 1))
+		Ui.btn(ir, TextCatalog.source("developer.editor_base.2f9daa828907")).pressed.connect(_remove_item.bind(chain, i))
+	Ui.btn(right, TextCatalog.source("developer.chains_editor.a8755f6844db")).pressed.connect(_add_item.bind(chain))
 
 func _on_pick(i: int) -> void:
 	if i == _index:
@@ -86,7 +86,7 @@ func _set_name(text: String, chain: Dictionary) -> void:
 
 func _retitle(chain: Dictionary) -> void:
 	if is_instance_valid(_list) and _index >= 0 and _index < _list.item_count:
-		_list.set_item_text(_index, "%s  %s" % [chain["id"], chain["name"]])
+		_list.set_item_text(_index, TextCatalog.resolve("%s  %s" % [chain["id"], chain["name"]]))
 
 func _set_line(text: String, chain: Dictionary) -> void:
 	if text == "":
@@ -113,7 +113,7 @@ func _fit_value(chain: Dictionary) -> void:
 		chain.erase("value")
 
 func _add_item(chain: Dictionary) -> void:
-	chain["items"].append("新物品")
+	chain["items"].append(TextCatalog.source("developer.chains_editor.b66f478587fb"))
 	_fit_value(chain)
 	touch()
 	rebuild()
@@ -144,9 +144,9 @@ func _move_item(chain: Dictionary, i: int, dir: int) -> void:
 func _add_chain() -> void:
 	data.append({
 		"id": "chain_%d" % (data.size() + 1),
-		"name": "新链",
+		"name": TextCatalog.source("developer.chains_editor.24fa72755e59"),
 		"type": "item",
-		"items": ["新物品"],
+		"items": [TextCatalog.source("developer.chains_editor.b66f478587fb")],
 	})
 	_index = data.size() - 1
 	touch()
@@ -177,10 +177,10 @@ func validate() -> String:
 		var id := str(c.get("id", "")).strip_edges()
 		c["id"] = id
 		if id == "":
-			return "有链条缺少 id"
+			return TextCatalog.source("developer.chains_editor.a16a53bf8e06")
 		if seen.has(id):
-			return "链条 id 重复：" + id
+			return TextCatalog.source("developer.chains_editor.4bda17884ac6") + id
 		seen[id] = true
 		if c.get("items", []).is_empty():
-			return "%s 至少要有一个物品" % id
+			return TextCatalog.source("developer.chains_editor.bf3f32f315b4") % id
 	return ""

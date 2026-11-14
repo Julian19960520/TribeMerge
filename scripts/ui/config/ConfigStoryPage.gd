@@ -21,24 +21,24 @@ func _init(owner_editor) -> void:
 func _people() -> float:
 	var y = 12.0
 	var arr: Array = editor._pages[Files.PEOPLE]
-	editor._h(editor._root, "剧情订单用序号指人，0 是第一个。点名字改字。", 24, y, 680, 22)
+	editor._h(editor._root, TextCatalog.source("developer.configstorypage.c3ef3b6baa37"), 24, y, 680, 22)
 	y += 40
 	for i in arr.size():
 		var idx = i
 		editor._line(editor._root, Rect2(24, y, 500, 60), str(arr[i]), func(t):
 			arr[idx] = t
 			editor._touch(Files.PEOPLE))
-		UI.btn(editor._root, Rect2(540, y, 156, 60), "删除", "red", func():
+		UI.btn(editor._root, Rect2(540, y, 156, 60), TextCatalog.source("developer.editor_base.2f9daa828907"), "red", func():
 			if arr.size() <= 1:
-				G.main.toast("至少留一个人物")
+				G.main.toast(TextCatalog.source("developer.configstorypage.9558771b0d05"))
 				return
 			arr.remove_at(idx)
 			editor._touch(Files.PEOPLE)
 			editor._rerender()
 		, 24).title_font = false
 		y += 72
-	UI.btn(editor._root, Rect2(180, y, 360, 72), "添加人物", "green", func():
-		arr.append("新人物")
+	UI.btn(editor._root, Rect2(180, y, 360, 72), TextCatalog.source("developer.configstorypage.92c01d9d80b6"), "green", func():
+		arr.append(TextCatalog.source("developer.configstorypage.716a5651a38e"))
 		editor._touch(Files.PEOPLE)
 		editor._rerender()
 	, 28).title_font = false
@@ -49,7 +49,7 @@ func _unlocks() -> float:
 	var n = int(book["levels"])
 	var rows: Array = book["rows"]
 	var y = 12.0
-	var hint = editor._h(editor._root, "左侧是每条产线的主产物和副产物。点格子切换，绿色是这个等级的订单可以要它，灰色不行。超过最后一列的等级沿用最后一列。", 16, y, 688, 20)
+	var hint = editor._h(editor._root, TextCatalog.source("developer.configstorypage.8e449ba77943"), 16, y, 688, 20)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.size.y = 64
 	y += 72.0
@@ -179,9 +179,9 @@ func _open_story_item(level: int, cb: Callable, current = null) -> void:
 		if _editor_product_open(level, Data.chain(str(e.get("id", "")))):
 			entries.append(e)
 	if entries.is_empty():
-		G.main.toast("%d 级还没有能进订单的产物" % level)
+		G.main.toast(TextCatalog.source("developer.configstorypage.c5b2065f7fd9") % level)
 		return
-	editor._chooser.open("选择物品", entries, func(id):
+	editor._chooser.open(TextCatalog.source("developer.cfgedit.662f204e9e87"), entries, func(id):
 		if cb.is_valid():
 			cb.call(id)
 		editor._rerender(), current)
@@ -190,7 +190,7 @@ func _assign_story_item(id: String, arr: Array, i: int, level: int) -> void:
 	if id == "":
 		return
 	if not _editor_product_open(level, Data.chain(id)):
-		G.main.toast("%d 级还不能要%s" % [level, Data.name_of(id)])
+		G.main.toast(TextCatalog.source("developer.configstorypage.05cc9fc8982b") % [level, Data.name_of(id)])
 		return
 	if i >= 0 and i < arr.size():
 		arr[i] = id
@@ -212,17 +212,17 @@ func _story_default_item(level: int) -> String:
 
 func _story() -> float:
 	var y = 12.0
-	editor._h(editor._root, "点头像换人，点物品更换，点数字修改。", 24, y, 680, 20)
+	editor._h(editor._root, TextCatalog.source("developer.configstorypage.c6be927ed422"), 24, y, 680, 20)
 	y += 36
 	var levels: Array = editor._pages[Files.STORY].get("levels", [])
 	for li in levels.size():
 		var lv: Dictionary = levels[li]
 		var lix = li
-		editor._h(editor._root, "主角等级", 24, y, 140, 24)
+		editor._h(editor._root, TextCatalog.source("developer.story_editor.34243df4d613"), 24, y, 140, 24)
 		editor._stepper(editor._root, 180, y, "", int(lv["level"]), 1, 99, func(n):
 			lv["level"] = n
 			editor._touch(Files.STORY))
-		UI.btn(editor._root, Rect2(520, y, 176, 52), "删除等级", "red", func():
+		UI.btn(editor._root, Rect2(520, y, 176, 52), TextCatalog.source("developer.configstorypage.71128bd3f56f"), "red", func():
 			levels.remove_at(lix)
 			editor._touch(Files.STORY)
 			editor._rerender()
@@ -233,13 +233,13 @@ func _story() -> float:
 		var orders: Array = lv["orders"]
 		for oi in orders.size():
 			y = _story_card(y, orders, oi, int(lv["level"]))
-		UI.btn(editor._root, Rect2(180, y, 360, 64), "添加订单", "teal", func():
+		UI.btn(editor._root, Rect2(180, y, 360, 64), TextCatalog.source("developer.story_editor.1efd44d36eda"), "teal", func():
 			orders.append({"who": 0, "items": [_story_default_item(int(lv["level"]))], "xp": 1, "shell": 1, "rewards": []})
 			editor._touch(Files.STORY)
 			editor._rerender()
 		, 24).title_font = false
 		y += 88
-	UI.btn(editor._root, Rect2(180, y, 360, 76), "添加等级", "green", func():
+	UI.btn(editor._root, Rect2(180, y, 360, 76), TextCatalog.source("developer.levels_editor.ef75ff3c4186"), "green", func():
 		var n = 1
 		for lv in levels:
 			n = maxi(n, int(lv["level"]) + 1)
@@ -360,7 +360,7 @@ func _item_rect(layout: Dictionary, index: int) -> Rect2:
 func _text_px(text: String, fs: int) -> float:
 	if G.font_body == null:
 		return float(maxi(text.length(), 1)) * float(fs) * 0.62
-	return G.font_body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return G.font_body.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 
 ## 胶囊按图标和数字收紧。没有图标的是加号，收成一颗圆。
 
@@ -568,7 +568,7 @@ func _who_name(i: int) -> String:
 	var people: Array = editor._pages[Files.PEOPLE]
 	if i >= 0 and i < people.size():
 		return str(people[i])
-	return "人物 %d" % i
+	return TextCatalog.source("developer.configstorypage.3b2f95b369dc") % i
 
 func _who_short(i: int) -> String:
 	var name = _who_name(i)

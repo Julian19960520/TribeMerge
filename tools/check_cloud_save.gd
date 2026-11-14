@@ -37,7 +37,7 @@ func pack(state: Dictionary, base: int) -> Dictionary:
 
 func merge_once() -> bool:
 	# Ping-pong a mergeable pair on the tutorial board; each move is one command.
-	return g.try_drop(28, 29) != "" or g.try_drop(29, 28) != ""
+	return g.try_drop(23, 30) != "" or g.try_drop(30, 23) != ""
 
 func run() -> void:
 	g = root.get_node("G"); replay = root.get_node("Replay"); cloud = root.get_node("Cloud")

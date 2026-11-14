@@ -18,6 +18,7 @@ from .ratelimit import limiter
 from .schemas import AccountResp, GuestReq, ProviderReq, Resp, SessionResp, TransferCodeResp, TransferLoginReq
 from .security import Auth, current, hash_secret, lock_account, new_session, same_secret
 from .services import stamp, summary
+from .texts import source as text_source
 
 router = APIRouter(prefix="/v1", tags=["账号"])
 logger = logging.getLogger("tribe.auth")
@@ -37,7 +38,7 @@ def _ip(request: Request) -> str:
 def _guard(request: Request, what: str, per_min: int) -> None:
     wait = limiter.hit("%s:%s" % (what, _ip(request)), per_min)
     if wait > 0:
-        raise ApiError(429, "rate_limited", "操作太频繁，请稍后再试", retry_after=wait)
+        raise ApiError(429, "rate_limited", text_source("server_notice.api_auth.e0f555394c57"), retry_after=wait)
 
 
 def _new_id(db: Session) -> str:
@@ -45,7 +46,7 @@ def _new_id(db: Session) -> str:
         pid = "TRB%08d" % secrets.randbelow(10 ** 8)
         if db.get(Account, pid) is None:
             return pid
-    raise ApiError(503, "id_exhausted", "暂时无法创建账号")
+    raise ApiError(503, "id_exhausted", text_source("server_notice.api_auth.a9d2cfaa7d6c"))
 
 
 def _cloud(db: Session, acc: Account) -> dict:
@@ -97,11 +98,11 @@ def transfer_login(req: TransferLoginReq, request: Request, db: Session = Depend
     _guard(request, "transfer", 10)
     acc = db.execute(select(Account).where(Account.id == req.account_id).with_for_update()).scalar_one_or_none()
     if acc is None or not acc.transfer_hash:
-        raise ApiError(401, "bad_transfer_code", "账号或转移码不对")
+        raise ApiError(401, "bad_transfer_code", text_source("server_notice.api_auth.baee0d24a848"))
     now = clock.utcnow()
     lu = acc.transfer_locked_until
     if lu is not None and (lu if lu.tzinfo else lu.replace(tzinfo=timezone.utc)) > now:
-        raise ApiError(429, "transfer_locked", "输错次数太多，请稍后再试",
+        raise ApiError(429, "transfer_locked", text_source("server_notice.api_auth.646d535ec0d4"),
                        retry_after=((lu if lu.tzinfo else lu.replace(tzinfo=timezone.utc)) - now).total_seconds())
     code = req.code.strip().upper().replace("-", "")
     if not same_secret(hash_secret(code, acc.id), acc.transfer_hash):
@@ -111,7 +112,7 @@ def transfer_login(req: TransferLoginReq, request: Request, db: Session = Depend
             acc.transfer_locked_until = now + timedelta(minutes=s.transfer_lock_minutes)
         db.commit()
         log(logger, logging.WARNING, "transfer code mismatch", account_id=acc.id)
-        raise ApiError(401, "bad_transfer_code", "账号或转移码不对")
+        raise ApiError(401, "bad_transfer_code", text_source("server_notice.api_auth.baee0d24a848"))
     acc.transfer_fails = 0
     acc.transfer_locked_until = None
     sess = new_session(db, acc.id, req.device_id)
@@ -127,7 +128,7 @@ def provider_login(req: ProviderReq, request: Request, db: Session = Depends(get
     subject = providers.get(req.provider).verify(req.credential)
     ident = db.get(Identity, (req.provider, subject))
     if ident is None:
-        raise ApiError(404, "not_bound", "这个账号还没有绑定游戏进度")
+        raise ApiError(404, "not_bound", text_source("server_notice.api_auth.1e4dc2aba5b4"))
     acc = db.get(Account, ident.account_id)
     sess = new_session(db, acc.id, req.device_id)
     db.commit()
@@ -163,7 +164,7 @@ def bind(req: ProviderReq, auth: Auth = Depends(current), db: Session = Depends(
     subject = providers.get(req.provider).verify(req.credential)
     ident = db.get(Identity, (req.provider, subject))
     if ident is not None and ident.account_id != auth.id:
-        raise ApiError(409, "bound_elsewhere", "这个账号已经绑定了别的游戏进度")
+        raise ApiError(409, "bound_elsewhere", text_source("server_notice.api_auth.f59ebf643037"))
     if ident is None:
         db.add(Identity(provider=req.provider, subject=subject, account_id=auth.id, created_at=clock.utcnow()))
         db.commit()

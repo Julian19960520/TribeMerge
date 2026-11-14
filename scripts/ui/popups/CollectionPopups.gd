@@ -11,9 +11,9 @@ static func event() -> PopupBase:
 	var sc: Scroller = fs[0]
 	var root: Control = fs[1]
 	UI.box(root, Rect2(0, 0, 720, 720), _paint_event)
-	UI.title(root, "丰收祭", Rect2(0, 250, 720, 100), 72)
+	UI.title(root, TextCatalog.source("ui.collectionpopups.8e0dcdd2a1f3"), Rect2(0, 250, 720, 100), 72)
 	UI.lbl(root, G.fmt_time(G.rules.clock.event_left()), Rect2(300, 350, 160, 44), 22, Art.INK)
-	var info := UI.hit(root, Rect2(474, 342, 60, 60), func(): G.main.toast("开启兽皮卡包收集岩画卡牌，集齐卡册赢取大奖！"))
+	var info := UI.hit(root, Rect2(474, 342, 60, 60), func(): G.main.toast(TextCatalog.source("ui.collectionpopups.cd6cc913547e")))
 	info.extra = func(ci, sz): Paint.glyph(ci, "info", sz * 0.5, 1.2)
 	var rw := [["fire_4", 800], ["amber_4", 250], ["chest_1", 1]]
 	for k in 3:
@@ -21,10 +21,10 @@ static func event() -> PopupBase:
 		UI.icon(root, rw[k][0], Vector2(x, 450), 90)
 		UI.lbl(root, "×%d" % rw[k][1], Rect2(x - 70, 488, 140, 40), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	var total := UI.lbl(root, "%d/%d" % [G.rules.progression.cards_total(), Data.ALBUMS.size() * 9], Rect2(200, 548, 380, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	Popups.live(p, G.changed, func(): total.text = "%d/%d" % [G.rules.progression.cards_total(), Data.ALBUMS.size() * 9])
+	Popups.live(p, G.changed, func(): total.text = TextCatalog.resolve("%d/%d" % [G.rules.progression.cards_total(), Data.ALBUMS.size() * 9]))
 	var got := G.tokens - G.token_claimed
-	UI.lbl(root, "祭典鼓 %d/%d" % [got, G.TOKEN_STEP], Rect2(170, 616, 420, 36), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(root, "帮族人实现心愿收集祭典鼓，攒满换兽皮卡包", Rect2(60, 656, 600, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
+	UI.lbl(root, TextCatalog.source("ui.collectionpopups.5bb518d753d0") % [got, G.TOKEN_STEP], Rect2(170, 616, 420, 36), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(root, TextCatalog.source("ui.collectionpopups.bf1541cebfc0"), Rect2(60, 656, 600, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	for a in Data.ALBUMS.size():
 		var cx := 128.0 + (a % 3) * 232.0
 		var cy := 840.0 + (a / 3) * 330.0
@@ -39,12 +39,12 @@ static func event() -> PopupBase:
 			Paint.bar(ci, Rect2(20, 240, sz.x - 40, 32), float(G.rules.progression.album_count(a)) / 9.0, Art.MOSS)
 		UI.lbl(hit, CardArtwork.title(a), Rect2(0, 168, 220, 56), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 		var count := UI.lbl(hit, _collection_progress(a), Rect2(0, 240, 220, 32), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-		Popups.live(p, G.changed, func(): count.text = _collection_progress(a))
+		Popups.live(p, G.changed, func(): count.text = TextCatalog.resolve(_collection_progress(a)))
 	sc.set_length(840.0 + 3 * 330.0 + 330.0 - 128.0)
 	var shop := UI.hit(p.box, Rect2(414, 1340, 120, 130), func(): G.main.open("pack"))
 	shop.extra = func(ci, sz):
 		Art.item(ci, "pack_1", Vector2(sz.x * 0.5, 56), 100)
-	UI.lbl(shop, "打开卡包", Rect2(0, 96, 120, 34), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(shop, TextCatalog.source("ui.collectionpopups.b5f53138ef3f"), Rect2(0, 96, 120, 34), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	CardStarUI.button(p)
 	_gm_button(p.box, Rect2(24, 1352, 218, 60))
 	return p
@@ -93,7 +93,7 @@ static func album(a: int) -> PopupBase:
 	progress.name = "album_progress"
 	var count := UI.lbl(p.box, "", Rect2(254, r.position.y + 170, 244, 32), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	count.name = "album_progress_count"
-	var claim := UI.btn(p.box, Rect2(514, r.position.y + 162, 136, 48), "未集齐", "grey", Callable(), 28)
+	var claim := UI.btn(p.box, Rect2(514, r.position.y + 162, 136, 48), TextCatalog.source("ui.collectionpopups.db1e7af988f3"), "grey", Callable(), 28)
 	claim.name = "album_claim"
 	claim.pressed.connect(func():
 		var result: Dictionary = Replay.perform("album_claim", {"album": a})
@@ -106,9 +106,9 @@ static func album(a: int) -> PopupBase:
 		var collected := G.rules.progression.album_count(a)
 		var claimed := bool(Replay.meta.get("album:%d" % a, false))
 		var ready := collected == 9 and not claimed
-		count.text = ("已集齐 %d/9" if collected == 9 else "已收集 %d/9") % collected
-		reward_state.text = "奖励已领取" if claimed else "集齐奖励"
-		claim.text = "已领取" if claimed else ("领取" if ready else "未集齐")
+		count.text = TextCatalog.resolve((TextCatalog.source("ui.collectionpopups.8d9ddf754607") if collected == 9 else TextCatalog.source("ui.collectionpopups.c6e157de7d16")) % collected)
+		reward_state.text = TextCatalog.resolve(TextCatalog.source("notice.reducer.583d60e4570b") if claimed else TextCatalog.source("ui.collectionpopups.a0bec1ceacfd"))
+		claim.text = TextCatalog.resolve(TextCatalog.source("notice.sevenday.426e458a4124") if claimed else (TextCatalog.source("ui.duelpopup.844ab9477225") if ready else TextCatalog.source("ui.collectionpopups.db1e7af988f3")))
 		claim.enabled = ready
 		claim.style = "green" if ready else "grey"
 		claim.queue_redraw()
@@ -129,7 +129,7 @@ static func album(a: int) -> PopupBase:
 
 static func _collection_progress(a: int) -> String:
 	var count := G.rules.progression.album_count(a)
-	if count == 9 and not bool(Replay.meta.get("album:%d" % a, false)): return "9/9 · 可领取"
+	if count == 9 and not bool(Replay.meta.get("album:%d" % a, false)): return TextCatalog.source("ui.collectionpopups.a133fe51fb2e")
 	return "%d/9" % count
 
 static func _album_cards(holder: Control, a: int, r: Rect2) -> void:
@@ -141,10 +141,10 @@ static func _album_cards(holder: Control, a: int, r: Rect2) -> void:
 		var owned := G.cards.has(key)
 		var tile := UI.hit(holder, Rect2(cx - 90, cy, 180, 250), func():
 			if G.cards.has(key): G.main.open("card", {"album": a, "index": k})
-			else: G.main.toast("收集后可查看"))
+			else: G.main.toast(TextCatalog.source("ui.collectionpopups.f9996dd792c0")))
 		tile.name = "card_%d_%d" % [a, k]
 		tile.extra = func(ci, sz): Paint.card(ci, Rect2(Vector2(4, 8), sz - Vector2(8, 10)), a, k, owned)
-		UI.lbl(tile, CardArtwork.card_name(a, k) if owned else "？？？", Rect2(14, 190, 152, 46), 21, Color("5a3a1e") if owned else Color("a08868"), HORIZONTAL_ALIGNMENT_CENTER)
+		UI.lbl(tile, CardArtwork.card_name(a, k) if owned else TextCatalog.source("ui.collectionpopups.3fe3a9d5ff50"), Rect2(14, 190, 152, 46), 21, Color("5a3a1e") if owned else Color("a08868"), HORIZONTAL_ALIGNMENT_CENTER)
 		if owned and int(G.cards[key]) > 1:
 			UI.lbl(tile, "×%d" % int(G.cards[key]), Rect2(118, 150, 56, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.CLAY)
 
@@ -187,7 +187,7 @@ static func card(album: int, index: int) -> PopupBase:
 
 static func _gm_button(parent: Control, rect: Rect2, album: int = -1) -> void:
 	if not bool(Replay.meta.get("allow_gm", false)): return
-	var button := UI.btn(parent, rect, "GM 随机获取", "teal", func():
+	var button := UI.btn(parent, rect, TextCatalog.source("ui.collectionpopups.5c8ecdbc66b9"), "teal", func():
 		var result: Dictionary = Replay.perform("gm", {"action": "card", "album": album})
 		if result.has("error"):
 			G.main.toast(str(result["error"]))
@@ -207,7 +207,7 @@ static func pack(request: Dictionary = {}) -> PopupBase:
 	var source := G.rules.progression.find_pack_source(str(request.get("id", "")), int(request.get("cell", -1)), int(request.get("stash", -1)))
 	var pack_id := str(source.get("id", "pack_1"))
 	var title := UI.title(p.box, Data.name_of(pack_id), Rect2(70, 250, 580, 80), 40, Color.WHITE)
-	var chance := UI.lbl(p.box, "卡片星级概率\n" + CardPacks.probability_text(pack_id), Rect2(80, 880, 560, 170), 24, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
+	var chance := UI.lbl(p.box, TextCatalog.source("ui.collectionpopups.1d28d438704d") + CardPacks.probability_text(pack_id), Rect2(80, 880, 560, 170), 24, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	chance.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var state := {"open": false, "t": 0.0}
 	var pack_box := UI.box(p.box, Rect2(160, 360, 400, 500), func(ci, sz):
@@ -220,7 +220,7 @@ static func pack(request: Dictionary = {}) -> PopupBase:
 			ci.draw_colored_polygon(PackedVector2Array([c, c + Vector2(cos(a - 0.1), sin(a - 0.1)) * 300.0, c + Vector2(cos(a + 0.1), sin(a + 0.1)) * 300.0]), Color(1, 0.85, 0.4, 0.14))
 		var wob := sin(float(Time.get_ticks_msec()) / 120.0) * 0.06
 		Art.item(ci, pack_id, c, 300, true, wob))
-	var hint := UI.lbl(p.box, "点击打开", Rect2(0, 1080, 720, 60), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+	var hint := UI.lbl(p.box, TextCatalog.source("ui.collectionpopups.d402456868d5"), Rect2(0, 1080, 720, 60), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	var timer := Timer.new()
 	timer.wait_time = 0.033
 	timer.autostart = true
@@ -240,7 +240,7 @@ static func pack(request: Dictionary = {}) -> PopupBase:
 			return
 		timer.stop()
 		pack_box.hide()
-		title.text = "获得卡牌"
+		title.text = TextCatalog.resolve(TextCatalog.source("ui.cardrewardpresentation.0f4ceca75ab3"))
 		CardRewardPresentation.fill(p, result.get("card_rewards", []))
 	return p
 

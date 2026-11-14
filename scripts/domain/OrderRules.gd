@@ -34,7 +34,9 @@ func _drop_unsourced_crafts() -> void:
 
 ## 新手引导用固定的教学单；引导结束后不再发手配剧情单，全部按当前等级和产线随机出单（含制作单）。
 func refill_orders() -> void:
-	if state.tutorial_on: return
+	if state.tutorial_on:
+		context.onboarding.refill()
+		return
 	_trim_orders()
 	_drop_unsourced_crafts()
 	_ensure_craft_order(false)
@@ -43,15 +45,29 @@ func refill_orders() -> void:
 	state.dirty()
 	state.orders_changed.emit()
 
-## 经验只放在「还差几点升级」那么多张订单上（每张 ★1，按订单栏从左到右），其余订单只给不拿拿。
-## 订单变了、经验变了都重新分：升级后这一级要的经验变多，原来没星的订单就会带上星。
+## 经验只放在「还差几点升级」那么多张订单上（每张 ★1，按订单栏从左到右），其余订单只给不那那。
+## 已展示订单在同一级固定经验；新订单只填剩余额度，升级后才重分。
 ## 引导期间的教学单经验是固定的，不参与分配。
 func assign_xp() -> void:
 	if state.tutorial_on: return
-	var need: int = maxi(0, context.progression.xp_need() - state.xp)
+	# A checkpoint from the previous XP table can already be full; keep one
+	# starred order so its next delivery settles the carried experience.
+	var need: int = maxi(1, context.progression.xp_need() - state.xp)
+	var reset: bool = int(context.meta().get("order_xp_level", state.level)) != state.level
+	context.meta()["order_xp_level"] = state.level
+	for o in state.orders:
+		if not (o is Dictionary) or int(o.get("tutorial", 0)) > 0: continue
+		if reset:
+			o["rw"].erase("xp")
+			o["xp_level"] = 0
+		elif not o.has("xp_level"):
+			# Existing saves retain the experience already shown on their cards.
+			o["xp_level"] = state.level
+		if int(o["xp_level"]) == state.level: need -= int(o["rw"].get("xp", 0))
 	for o in state.orders:
 		if not (o is Dictionary) or int(o.get("tutorial", 0)) > 0:
 			continue
+		if int(o.get("xp_level", 0)) == state.level: continue
 		var rw: Dictionary = o.get("rw", {})
 		if need > 0:
 			rw["xp"] = 1
@@ -59,6 +75,7 @@ func assign_xp() -> void:
 		else:
 			rw.erase("xp")
 		o["rw"] = rw
+		o["xp_level"] = state.level
 
 func _is_random_order(o: Dictionary) -> bool:
 	return not bool(o.get("story", false)) and str(o.get("kind", "")) != "craft"
@@ -118,6 +135,7 @@ func _add_random_batch(at: int = -1) -> void:
 		slot += 1
 
 func _insert_random(made: Dictionary, at: int) -> void:
+	made["xp_level"] = 0
 	state.order_identity(made)
 	if at >= 0 and at <= state.orders.size():
 		state.orders.insert(at, made)
@@ -147,10 +165,30 @@ func _make_order(target: int = -1, avoid: Array = []) -> Dictionary:
 	var t = target
 	if t < 1:
 		t = bounds.x if bounds.x >= bounds.y else context.random_for("orders").randi_range(bounds.x, bounds.y)
-	var made: Dictionary = context.roll.make(state.level, float(t), context.random_for("orders"), avoid, {} if state.gm_activities else sourced_chains())
+	var plan := vine_plan()
+	var made: Dictionary = context.roll.make(state.level, float(t), context.random_for("orders"), avoid, {} if state.gm_activities else sourced_chains(), plan["keys"], plan["outputs"])
 	if made.is_empty():
 		made = _make_order_free()
+	made["xp_level"] = 0
 	return _spice(made)
+
+func vine_plan() -> Dictionary:
+	var keys := {}
+	for cell in state.board:
+		var id := str(cell.get("id", ""))
+		if int(cell.get("lock", 2)) == 1 and Data.type_of(id) == "item" and Data.next_id(id) != "": keys[id] = true
+	var outputs := {}
+	for id in keys:
+		var out := str(id)
+		while keys.has(out) and Data.next_id(out) != "": out = Data.next_id(out)
+		outputs[out] = true
+	return {"keys": keys, "outputs": outputs}
+
+func vine_output(id: String) -> String:
+	var keys: Dictionary = vine_plan()["keys"]
+	var out := id
+	while keys.has(out) and Data.next_id(out) != "": out = Data.next_id(out)
+	return out
 
 func _spice(made: Dictionary) -> Dictionary:
 	if made.is_empty() or not (made.get("rw") is Dictionary):
@@ -184,7 +222,13 @@ func _make_order_free() -> Dictionary:
 		items.append("%s_%d" % [ch, l])
 		shell += 3 * int(pow(2, l - 1)) + context.random_for("orders").randi_range(0, 4)
 	var rw = {"shell": shell}
-	return {"who": context.random_for("orders").randi() % Data.PEOPLE.size(), "items": items, "rw": rw, "story": false}
+	var plan := vine_plan()
+	for id in items:
+		if plan["keys"].has(str(id)):
+			var safe: Dictionary = context.roll.make(state.level, context.roll.total(items), context.random_for("orders"), items, allowed, plan["keys"], plan["outputs"])
+			if not safe.is_empty(): return safe
+			break
+	return {"who": context.random_for("orders").randi() % Data.PEOPLE.size(), "items": items, "rw": rw, "story": false, "xp_level": 0}
 
 func _craft_count() -> int:
 	var n = 0
@@ -217,6 +261,7 @@ func _pick_dish(avoid: Array = []) -> Dictionary:
 	var pool: Array = []
 	var allowed: Dictionary = {} if state.gm_activities else sourced_chains()
 	for d in (Data.DISHES.values() if state.gm_activities else Data.dishes_for(state.level)):
+		if not state.gm_activities and int(d.get("order_max_level", 0)) > 0 and state.level > int(d["order_max_level"]): continue
 		if str(d["id"]) in avoid:
 			continue
 		var ok := true
@@ -248,6 +293,7 @@ func _craft_order(d: Dictionary) -> Dictionary:
 	return {
 		"who": context.random_for("orders").randi() % Data.PEOPLE.size(),
 		"kind": "craft",
+		"xp_level": 0,
 		"dish": str(d["id"]),
 		"mats": mats,
 		"items": mats.duplicate(),
@@ -319,7 +365,7 @@ func _add_story_orders(skip: Array = [], after: int = -1) -> void:
 			for _i in int(s["pack"]):
 				packs.append("pack_1")
 			rw["rewards"] = packs
-		var row = {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true, "si": si, "story_level": state.level}
+		var row = {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true, "si": si, "story_level": state.level, "xp_level": 0}
 		state.order_identity(row)
 		if str(s.get("say", "")) != "":
 			row["say"] = str(s["say"])
@@ -523,6 +569,7 @@ func _gather_anchor(cells: Array) -> int:
 	return best
 
 func begin_craft(oi: int) -> Array:
+	_sync_craft_times()
 	if oi < 0 or oi >= state.orders.size():
 		return []
 	var o: Dictionary = state.orders[oi]
@@ -557,7 +604,36 @@ func begin_craft(oi: int) -> Array:
 	state.orders_changed.emit()
 	return flights
 
+func _sync_craft_times() -> void:
+	var changed := false
+	for collection in [state.orders, state.pending_orders]:
+		for o in collection:
+			if not o is Dictionary or str(o.get("kind", "")) != "craft": continue
+			var id := str(o.get("dish", "")).trim_prefix("dish_")
+			if not Data.DISHES.has(id): continue
+			var target := int(Data.DISHES[id]["secs"])
+			var phase := str(o.get("phase", "need"))
+			if phase == "need":
+				if not o.has("secs") or int(o["secs"]) > target:
+					o["secs"] = target
+					changed = true
+			elif phase == "cook":
+				var cell := int(o.get("cell", -1))
+				if cell < 0 or cell >= state.board.size(): continue
+				var ck: Variant = state.board[cell].get("ck")
+				if not ck is Dictionary or str(ck.get("uid", "")) != str(o.get("uid", "")) or bool(ck.get("finished", false)): continue
+				# Preserve the original start and any acceleration already applied.
+				target = mini(target, mini(int(o.get("secs", target)), int(ck.get("secs", target))))
+				if int(o.get("secs", target)) > target or int(ck.get("secs", target)) > target:
+					o["secs"] = target
+					ck["secs"] = target
+					changed = true
+	if changed:
+		state.dirty()
+		state.orders_changed.emit()
+
 func _tick_cooks() -> void:
+	_sync_craft_times()
 	if state.board.is_empty():
 		return
 	var done: Array = []
@@ -573,6 +649,15 @@ func _tick_cooks() -> void:
 	for slot in done:
 		var at = int(slot)
 		var ck: Dictionary = state.board[at]["ck"]
+		if bool(ck.get("finished", false)): continue
+		var manual := false
+		for o in state.orders:
+			if str(o.get("uid", "")) == str(ck.get("uid", "")) and bool(o.get("manual_collect", false)):
+				o["phase"] = "finished"
+				manual = true
+		if manual:
+			ck["finished"] = true
+			continue
 		var dish = str(ck["dish"])
 		var uid = str(ck.get("uid", ""))
 		state.board[at]["id"] = dish
@@ -588,7 +673,7 @@ func _tick_cooks() -> void:
 	state.orders_changed.emit()
 	state.present("craft_complete", {"cells": done.duplicate()})
 
-func complete_order(oi: int) -> Array:
+func complete_order(oi: int, refill_after: bool = true) -> Array:
 	var o: Dictionary = state.orders[oi]
 	var craft = str(o.get("kind", "")) == "craft"
 	if craft and str(o.get("phase", "")) != "ready":
@@ -605,9 +690,11 @@ func complete_order(oi: int) -> Array:
 		state.board[k].erase("ck")
 	if o.get("story",false) and o.has("si"):
 		state.story_done["%d:%d" % [int(o.get("story_level",state.level)),int(o["si"])]] = true
-	context.on_order(o)
+	context.onboarding.delivered(o)
 	state.orders.remove_at(oi)
-	if not state.tutorial_on: refill_orders()
+	# The delivered card must not take a slot in the new level's XP allocation.
+	context.on_order(o)
+	if not state.tutorial_on and refill_after: refill_orders()
 	context.clock.check_pass_season()
 	state.pass_pts += 2 if state.pass_tier >= 2 else 1
 	state.dirty()
@@ -616,3 +703,17 @@ func complete_order(oi: int) -> Array:
 	state.changed.emit()
 	return cells
 
+
+## Completed tutorial dishes stay on their equipment until the player takes them.
+func collect_craft(i: int) -> Dictionary:
+	if not cooking(i) or cook_left(i) > 0: return {"error": TextCatalog.source("notice.orderrules.301a6df8b1ab")}
+	var ck: Dictionary = state.board[i]["ck"]
+	var dish := str(ck["dish"])
+	for o in state.orders:
+		if str(o.get("uid", "")) == str(ck.get("uid", "")): o["phase"] = "ready"
+	state.board[i]["id"] = dish
+	state.board[i].erase("ck")
+	context.board.discover(dish)
+	state.board_changed.emit()
+	state.orders_changed.emit()
+	return {"kind": "dish", "id": dish, "to": i}

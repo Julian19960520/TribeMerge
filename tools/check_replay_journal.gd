@@ -55,7 +55,7 @@ func run() -> void:
 	var events := {"board": 0, "orders": 0}
 	game.board_changed.connect(func(): events["board"] += 1)
 	game.orders_changed.connect(func(): events["orders"] += 1)
-	var operation: Dictionary = replay.perform("drop", {"from": 28, "to": 29}, replay.clock)
+	var operation: Dictionary = replay.perform("drop", {"from": 23, "to": 30}, replay.clock)
 	check(operation.get("kind", "") == "merge", "merge executes through current reducer")
 	check(events["board"] == 1 and events["orders"] == 0, "one board notification and no unchanged order notification")
 	var expected: String = replay.digest()
@@ -87,15 +87,15 @@ func run() -> void:
 	var before_failure: String = replay.digest()
 	var previous_path: String = game.save_path
 	game.save_path = "/dev/null/unwritable.json"
-	var rejected: Dictionary = replay.perform("drop", {"from": 28, "to": 29}, replay.clock)
+	var rejected: Dictionary = replay.perform("drop", {"from": 23, "to": 30}, replay.clock)
 	game.save_path = previous_path
 	check(rejected.has("error") and replay.digest() == before_failure, "journal write failure rolls back business changes")
 
 	reset_fixture()
-	replay.perform("drop", {"from": 28, "to": 29}, replay.clock)
+	replay.perform("drop", {"from": 23, "to": 30}, replay.clock)
 	replay.inflight = {"batch": "ab".repeat(16), "ops": [replay.pending[0].duplicate(true)]}
 	replay.checkpoint()
-	replay.perform("drop", {"from": 29, "to": 28}, replay.clock)
+	replay.perform("drop", {"from": 30, "to": 23}, replay.clock)
 	var later_hash: String = replay.digest()
 	recover_checkpoint()
 	check(replay.digest() == later_hash and replay.pending.size() == 2 and replay.inflight["batch"] == "ab".repeat(16), "in-flight batch and later offline inputs both survive restart")
@@ -103,7 +103,7 @@ func run() -> void:
 	var timings := []
 	for count in [0, 1000, 10000]:
 		replay.pending = []
-		for index in count: replay.pending.append({"seq": index, "at": 1794240000, "name": "drop", "args": {"from": 28, "to": 29}, "hash": "a".repeat(64)})
+		for index in count: replay.pending.append({"seq": index, "at": 1794240000, "name": "drop", "args": {"from": 23, "to": 30}, "hash": "a".repeat(64)})
 		var started := Time.get_ticks_usec()
 		for iteration in 20: replay.snapshot()
 		timings.append({"pending": count, "snapshot_mean_usec": (Time.get_ticks_usec() - started) / 20.0})

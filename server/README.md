@@ -79,3 +79,7 @@ godot --headless --path . --script res://tools/check_payments.gd -- --replay-tes
 ```
 
 `test_save.py` 覆盖上传、冲突、丢失回复、旧设备被顶下线、完整性错误、备份和合理性标记。`test_rules_replay.py`、`test_reducer_domains.py` 等直接调用 `scripts/replay/worker.gd` 检查共享玩法规则，需要设置 `TRIBE_GODOT`，未设置时跳过。`check_cloud_save.gd` 用真实客户端连临时服务器做端到端检查。`test_payments.py` 覆盖下单 → 支付 → 发放 → 确认、幂等下单、支付回复丢失、凭证校验和复用、`ack` 丢失、进度丢失后重发、限购和付费琥珀账本；`check_payments.gd` 用真实客户端买琥珀，确认支付回复丢失、重启和重复下发时都只到账一次。
+
+## 统一价值与区域定价
+
+商业策略统一在 `server/config/economy.json`。`GET /v1/economy/catalog` 下发分数、最终价格、区域币种和奖励配置；`POST /v1/economy/purchases` 处理服务端核价的体力、沙漏、不那那与热卖购买。市场由 `TRIBE_PRICING_MARKET=CN|US` 选择。完整说明见 `docs/ECONOMY.md`。

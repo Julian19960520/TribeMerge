@@ -27,7 +27,7 @@ static func read(path: String, generation: String, after_seq: int) -> Dictionary
 	if not FileAccess.file_exists(path): return result
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		result["error"] = "无法读取本地操作日志"
+		result["error"] = TextCatalog.source("notice.journal.0c742f4cd585")
 		return result
 	var expected := after_seq + 1
 	while file.get_position() < file.get_length():
@@ -36,21 +36,21 @@ static func read(path: String, generation: String, after_seq: int) -> Dictionary
 		var payload := str(envelope.get("payload", "")) if envelope is Dictionary else ""
 		if payload == "" or str(envelope.get("checksum", "")) != payload.sha256_text():
 			if file.get_position() >= file.get_length(): result["truncated_tail"] = true
-			else: result["error"] = "本地操作日志校验失败，已保留最后完整操作"
+			else: result["error"] = TextCatalog.source("notice.journal.83ff16b6cd57")
 			break
 		var record = _parse(payload)
 		if not record is Dictionary or not record.get("op") is Dictionary:
-			result["error"] = "本地操作日志格式错误"
+			result["error"] = TextCatalog.source("notice.journal.61f03f265ffc")
 			break
 		if str(record.get("generation", "")) != generation: continue
 		var operation: Dictionary = record["op"]
 		var sequence := int(operation.get("seq", -1))
 		if sequence <= after_seq: continue
 		if sequence != expected:
-			result["error"] = "本地操作日志序号不连续"
+			result["error"] = TextCatalog.source("notice.journal.3472be2cbd8f")
 			break
 		if not operation.has_all(["at", "name", "args", "hash"]) or not operation["args"] is Dictionary:
-			result["error"] = "本地操作日志缺少字段"
+			result["error"] = TextCatalog.source("notice.journal.eb73d90858d7")
 			break
 		result["ops"].append(operation)
 		expected += 1

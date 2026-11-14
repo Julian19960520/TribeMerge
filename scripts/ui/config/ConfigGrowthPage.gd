@@ -20,7 +20,7 @@ func _init(owner_editor) -> void:
 
 func _albums() -> float:
 	var y = 12.0
-	editor._h(editor._root, "每本正好 9 张。三列排开，名字写在卡片下面。", 24, y, 680, 22)
+	editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.5b79a35aed28"), 24, y, 680, 22)
 	y += 40
 	var arr: Array = editor._pages[Files.ALBUMS]
 	var cols = 3
@@ -36,7 +36,7 @@ func _albums() -> float:
 		editor._line(editor._root, Rect2(24, y, 500, 56), str(a.get("name", "")), func(t):
 			a["name"] = t
 			editor._touch(Files.ALBUMS))
-		UI.btn(editor._root, Rect2(540, y, 156, 56), "删除", "red", func():
+		UI.btn(editor._root, Rect2(540, y, 156, 56), TextCatalog.source("developer.editor_base.2f9daa828907"), "red", func():
 			arr.remove_at(idx)
 			editor._touch(Files.ALBUMS)
 			editor._rerender()
@@ -56,7 +56,7 @@ func _albums() -> float:
 				cards[kk] = t
 				editor._touch(Files.ALBUMS))
 			name_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
-			name_edit.placeholder_text = "名字"
+			name_edit.placeholder_text = TextCatalog.resolve(TextCatalog.source("developer.configchainspage.6773310492a9"))
 			var rm = UI.btn(editor._root, Rect2(x + cw - 40.0, cy + 4.0, 36, 36), "×", "red", func():
 				cards.remove_at(kk)
 				editor._touch(Files.ALBUMS)
@@ -66,14 +66,14 @@ func _albums() -> float:
 			rm.is_round = true
 		var rows = int(ceil(float(maxi(cards.size(), 1)) / float(cols))) if not cards.is_empty() else 0
 		y += float(rows) * row_h
-		UI.btn(editor._root, Rect2(180, y, 360, 56), "加一张", "teal", func():
+		UI.btn(editor._root, Rect2(180, y, 360, 56), TextCatalog.source("developer.configgrowthpage.514258711aab"), "teal", func():
 			cards.append("")
 			editor._touch(Files.ALBUMS)
 			editor._rerender()
 		, 22).title_font = false
 		y += 76
-	UI.btn(editor._root, Rect2(180, y, 360, 72), "添加卡册", "green", func():
-		arr.append({"name": "新卡册", "cards": ["", "", "", "", "", "", "", "", ""]})
+	UI.btn(editor._root, Rect2(180, y, 360, 72), TextCatalog.source("developer.albums_editor.2e5e95464724"), "green", func():
+		arr.append({"name": TextCatalog.source("developer.albums_editor.f79b3be245ae"), "cards": ["", "", "", "", "", "", "", "", ""]})
 		editor._touch(Files.ALBUMS)
 		editor._rerender()
 	, 28).title_font = false
@@ -108,21 +108,21 @@ func _amber() -> float:
 		var pile: Array = piles[mini(idx, piles.size() - 1)]
 		editor._panel(editor._root, Rect2(16, y, 688, 116))
 		_amber_pile(editor._root, Rect2(28, y + 12, 92, 92), str(pile[0]), int(pile[1]))
-		editor._h(editor._root, "数量", 136, y + 8, 220, 20)
+		editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.5e29d121dda0"), 136, y + 8, 220, 20)
 		editor._num_field(editor._root, Rect2(136, y + 48, 200, 52), int(a.get("n", 0)), 0, 999999, func(n):
 			a["n"] = n
 			editor._touch(Files.AMBER))
-		editor._h(editor._root, "价格", 356, y + 8, 160, 20)
+		editor._h(editor._root, TextCatalog.source("developer.amber_editor.0f4371a7a9cf"), 356, y + 8, 160, 20)
 		editor._line(editor._root, Rect2(356, y + 48, 160, 52), str(a.get("price", "")), func(t):
 			a["price"] = t
 			editor._touch(Files.AMBER))
-		UI.btn(editor._root, Rect2(536, y + 48, 148, 52), "删除", "red", func():
+		UI.btn(editor._root, Rect2(536, y + 48, 148, 52), TextCatalog.source("developer.editor_base.2f9daa828907"), "red", func():
 			arr.remove_at(idx)
 			editor._touch(Files.AMBER)
 			editor._rerender()
 		, 22).title_font = false
 		y += 128
-	UI.btn(editor._root, Rect2(180, y, 360, 72), "添加一档", "green", func():
+	UI.btn(editor._root, Rect2(180, y, 360, 72), TextCatalog.source("developer.amber_editor.5e0169c84b8a"), "green", func():
 		arr.append({"n": 100, "price": "¥6"})
 		editor._touch(Files.AMBER)
 		editor._rerender()
@@ -143,9 +143,9 @@ func _amber_pile(parent: Node, r: Rect2, id: String, n: int) -> void:
 
 func _builds() -> float:
 	var y = 12.0
-	editor._h(editor._root, "每个区域一串部件，按顺序建。产线填产线 id，随产线开放。", 24, y, 680, 20)
+	editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.b40389f785be"), 24, y, 680, 20)
 	y += 36
-	editor._h(editor._root, "部件 id 决定画法（TribeArt.gd）。篝火广场第 1 件开局已建。", 24, y, 680, 20)
+	editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.02f160c82069"), 24, y, 680, 20)
 	y += 44
 	var arr: Array = editor._pages[Files.BUILDS]
 	for i in arr.size():
@@ -163,16 +163,16 @@ func _builds() -> float:
 		editor._line(editor._root, Rect2(220, y + 16, 300, 52), str(b["name"]), func(t):
 			b["name"] = t
 			editor._touch(Files.BUILDS))
-		UI.btn(editor._root, Rect2(540, y + 16, 148, 52), "删除", "red", func():
+		UI.btn(editor._root, Rect2(540, y + 16, 148, 52), TextCatalog.source("developer.editor_base.2f9daa828907"), "red", func():
 			arr.remove_at(idx)
 			editor._touch(Files.BUILDS)
 			editor._rerender()
 		, 22).title_font = false
-		editor._h(editor._root, "产线", 28, y + 84, 80, 22)
+		editor._h(editor._root, TextCatalog.source("developer.chains_editor.77ca877fdd41"), 28, y + 84, 80, 22)
 		editor._line(editor._root, Rect2(100, y + 80, 160, 48), str(b.get("line", "")), func(t):
 			b["line"] = t.strip_edges()
 			editor._touch(Files.BUILDS))
-		editor._h(editor._root, "开放等级 %d（随产线）" % Data.build_unlock(b), 280, y + 84, 400, 20)
+		editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.e62b941b58da") % Data.build_unlock(b), 280, y + 84, 400, 20)
 		var sy = y + 148.0
 		for k in parts.size():
 			var part: Dictionary = parts[k]
@@ -183,26 +183,26 @@ func _builds() -> float:
 			editor._line(editor._root, Rect2(214, sy, 200, 48), str(part["name"]), func(t):
 				part["name"] = t
 				editor._touch(Files.BUILDS))
-			editor._h(editor._root, "不拿拿", 424, sy + 10, 60, 20)
+			editor._h(editor._root, TextCatalog.source("ui.choicechestpopup.2580a668b381"), 424, sy + 10, 60, 20)
 			editor._line(editor._root, Rect2(480, sy, 110, 48), str(int(part["cost"])), func(t):
 				if t.strip_edges().is_valid_int():
 					part["cost"] = maxi(0, int(t))
 					editor._touch(Files.BUILDS))
-			UI.btn(editor._root, Rect2(604, sy, 84, 48), "删除", "grey", func():
+			UI.btn(editor._root, Rect2(604, sy, 84, 48), TextCatalog.source("developer.editor_base.2f9daa828907"), "grey", func():
 				parts.remove_at(pk)
 				editor._touch(Files.BUILDS)
 				editor._rerender()
 			, 20).title_font = false
 			sy += 60.0
 			sy = _reward_board(36.0, sy, part["rewards"], Files.BUILDS) + 12.0
-		UI.btn(editor._root, Rect2(200, sy + 4, 320, 56), "添加部件", "green", func():
-			parts.append({"id": "part_%d" % (parts.size() + 1), "name": "新部件", "cost": 100 + parts.size() * 50, "rewards": [["fire_2", 15]]})
+		UI.btn(editor._root, Rect2(200, sy + 4, 320, 56), TextCatalog.source("developer.configgrowthpage.515a8a81a377"), "green", func():
+			parts.append({"id": "part_%d" % (parts.size() + 1), "name": TextCatalog.source("developer.configgrowthpage.e0a3277ef454"), "cost": 100 + parts.size() * 50, "rewards": [["fire_2", 15]]})
 			editor._touch(Files.BUILDS)
 			editor._rerender()
 		, 22).title_font = false
 		y += h + 16.0
-	UI.btn(editor._root, Rect2(180, y, 360, 72), "添加区域", "green", func():
-		var b = {"id": "area_%d" % (arr.size() + 1), "name": "新区域", "line": "", "parts": []}
+	UI.btn(editor._root, Rect2(180, y, 360, 72), TextCatalog.source("developer.configgrowthpage.8583a47f79de"), "green", func():
+		var b = {"id": "area_%d" % (arr.size() + 1), "name": TextCatalog.source("developer.configgrowthpage.e6ce204bcfad"), "line": "", "parts": []}
 		_fit_parts(b)
 		arr.append(b)
 		editor._touch(Files.BUILDS)
@@ -219,7 +219,7 @@ func _fit_parts(b: Dictionary) -> void:
 		b.erase("rewards")
 	var parts: Array = b["parts"]
 	if parts.is_empty():
-		parts.append({"id": "part_1", "name": "新部件", "cost": 100, "rewards": [["fire_2", 15]]})
+		parts.append({"id": "part_1", "name": TextCatalog.source("developer.configgrowthpage.e0a3277ef454"), "cost": 100, "rewards": [["fire_2", 15]]})
 	for k in parts.size():
 		if parts[k] is not Dictionary:
 			parts[k] = {}
@@ -240,7 +240,7 @@ func _reward_board(x: float, y: float, items: Array, path: String) -> float:
 
 func _levels() -> float:
 	var y = 12.0
-	editor._h(editor._root, "升到这一级时发放。没单独写的更高等级，仍按原来的公式。", 24, y, 680, 22)
+	editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.633fc53e6dee"), 24, y, 680, 22)
 	y += 40
 	var page: Dictionary = editor._pages[Files.LEVELS]
 	if not page.has("levels") or not (page["levels"] is Array):
@@ -254,17 +254,17 @@ func _levels() -> float:
 		var rewards: Array = row["rewards"]
 		var h = 112.0 + float(_reward_rows(rewards, REWARD_COLS)) * REWARD_PITCH_Y
 		editor._panel(editor._root, Rect2(16, y, 688, h))
-		editor._stepper(editor._root, 28, y + 16, "升到", int(row.get("level", 2)), 1, 99, func(n):
+		editor._stepper(editor._root, 28, y + 16, TextCatalog.source("developer.levels_editor.d5a43ddba325"), int(row.get("level", 2)), 1, 99, func(n):
 			row["level"] = n
 			editor._touch(Files.LEVELS))
-		UI.btn(editor._root, Rect2(540, y + 16, 148, 52), "删除", "red", func():
+		UI.btn(editor._root, Rect2(540, y + 16, 148, 52), TextCatalog.source("developer.editor_base.2f9daa828907"), "red", func():
 			levels.remove_at(idx)
 			editor._touch(Files.LEVELS)
 			editor._rerender()
 		, 22).title_font = false
 		_reward_board(36.0, y + 84.0, rewards, Files.LEVELS)
 		y += h + 16.0
-	UI.btn(editor._root, Rect2(180, y, 360, 72), "添加等级", "green", func():
+	UI.btn(editor._root, Rect2(180, y, 360, 72), TextCatalog.source("developer.levels_editor.ef75ff3c4186"), "green", func():
 		var n = 2
 		for row in levels:
 			n = maxi(n, int(row.get("level", 1)) + 1)
@@ -276,25 +276,25 @@ func _levels() -> float:
 
 func _pass() -> float:
 	var y = 12.0
-	editor._h(editor._root, "每一档单独填积分，后面要比前面多。", 24, y, 680, 22)
+	editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.5293e592ed96"), 24, y, 680, 22)
 	y += 44
 	var levels: Array = editor._pages[Files.PASS].get("levels", [])
 	for i in levels.size():
 		var lv: Dictionary = levels[i]
 		var idx = i
 		var row = lv
-		editor._h(editor._root, "第 %d 档" % (i + 1), 24, y + 4, 150, 26)
-		editor._stepper(editor._root, 180, y, "积分", int(row.get("need", 8)), 1, 9999, func(n):
+		editor._h(editor._root, TextCatalog.source("developer.pass_editor.1445f628f6cc") % (i + 1), 24, y + 4, 150, 26)
+		editor._stepper(editor._root, 180, y, TextCatalog.source("developer.pass_editor.10939f548645"), int(row.get("need", 8)), 1, 9999, func(n):
 			row["need"] = n
 			editor._touch(Files.PASS))
-		UI.btn(editor._root, Rect2(540, y, 156, 48), "删除", "red", func():
+		UI.btn(editor._root, Rect2(540, y, 156, 48), TextCatalog.source("developer.editor_base.2f9daa828907"), "red", func():
 			levels.remove_at(idx)
 			editor._touch(Files.PASS)
 			editor._rerender()
 		, 22).title_font = false
 		y += 60
 		y = _pass_sides(y, lv)
-	UI.btn(editor._root, Rect2(180, y, 360, 72), "添加一档", "green", func():
+	UI.btn(editor._root, Rect2(180, y, 360, 72), TextCatalog.source("developer.amber_editor.5e0169c84b8a"), "green", func():
 		levels.append({"need": _next_pass_need(levels), "free": [], "prem": [], "super": []})
 		editor._touch(Files.PASS)
 		editor._rerender()
@@ -310,7 +310,7 @@ func _next_pass_need(levels: Array) -> int:
 
 func _pass_sides(y: float, lv: Dictionary) -> float:
 	var keys = ["free", "prem", "super"]
-	var names = ["免费", "贵宾", "超级贵宾"]
+	var names = [TextCatalog.source("developer.pass_editor.649a0fc7237e"), TextCatalog.source("ui.passpopup.3c95d9cf581a"), TextCatalog.source("ui.passpopup.d5f15b62c0dd")]
 	var fills = [Color("e4d0aa"), Art.BONE, Color("f6d48a")]
 	for key in keys:
 		if not lv.has(key) or not (lv[key] is Array):
@@ -369,7 +369,7 @@ func _reward_add(x: float, y: float, sq: float, items: Array, path: String) -> v
 		editor.chains_page._draw_sq(ci, sz, "", false)
 	var plus = UI.lbl(editor._root, "+", Rect2(x, y, sq, sq), 48, Art.INK, HORIZONTAL_ALIGNMENT_CENTER, 0, Art.INK, true)
 	plus.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var cap = UI.lbl(editor._root, "添加", Rect2(x, y + sq + 8, sq, 46), 18, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_CENTER)
+	var cap = UI.lbl(editor._root, TextCatalog.source("developer.editor_base.7a8a11ead507"), Rect2(x, y + sq + 8, sq, 46), 18, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_CENTER)
 	cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _paint_reward_x(ci: CanvasItem, sz: Vector2) -> void:
@@ -380,10 +380,10 @@ func _paint_reward_x(ci: CanvasItem, sz: Vector2) -> void:
 	var f: Font = G.font_title
 	var fs = 18
 	var text = "×"
-	var tw = f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var tw = f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pos = Vector2(c.x - tw * 0.5, c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
-	ci.draw_string_outline(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Art.INK)
-	ci.draw_string(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	ci.draw_string_outline(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Art.INK)
+	ci.draw_string(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
 func _pick_reward(items: Array, i: int, path: String) -> void:
 	if i < 0 or i >= items.size():
@@ -425,28 +425,25 @@ func _random_orders() -> float:
 func _rules() -> float:
 	var d: Dictionary = editor._pages[Files.RULES]
 	var y = 12.0
-	editor._h(editor._root, "列和行用奇数，中心格才唯一。改大小后保存，棋盘会按新尺寸裁好。", 24, y, 680, 22)
+	editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.e6c4d34dd32c"), 24, y, 680, 22)
 	y += 48
-	y = _rule(d, y, "cols", "列数", 1, 15)
-	y = _rule(d, y, "rows", "行数", 1, 20)
-	y = _rule(d, y, "max_energy", "体力上限", 1, 9999)
-	y = _rule(d, y, "regen_sec", "恢复秒数", 1, 9999)
+	y = _rule(d, y, "cols", TextCatalog.source("developer.rules_editor.2810f4da3323"), 1, 15)
+	y = _rule(d, y, "rows", TextCatalog.source("developer.rules_editor.b64884b06989"), 1, 20)
+	y = _rule(d, y, "max_energy", TextCatalog.source("developer.configgrowthpage.b87155b2304f"), 1, 9999)
+	y = _rule(d, y, "regen_sec", TextCatalog.source("developer.configgrowthpage.f0937deaff57"), 1, 9999)
 	y = _order_capacity_rules(d, y)
-	y = _rule(d, y, "craft_level", "制作单开放等级", 1, 40)
-	y = _rule(d, y, "xp_base", "升级声望起点", 1, 99)
-	y = _rule(d, y, "xp_div", "每几级声望+1", 1, 20)
-	y = _rule(d, y, "energy_price", "体力首次价格", 1, 999)
-	y = _rule(d, y, "energy_price_step", "体力每次涨价", 0, 999)
-	y = _rule(d, y, "energy_price_max", "体力最高价格", 1, 999)
-	y = _rule(d, y, "token_step", "鼓换卡包", 1, 999)
-	y = _rule(d, y, "storage_expand_price", "储物首次价格", 1, 999)
-	y = _rule(d, y, "storage_expand_step", "储物每排涨价", 1, 999)
+	y = _rule(d, y, "craft_level", TextCatalog.source("developer.configgrowthpage.664a1ee4caca"), 1, 40)
+	y = _rule(d, y, "xp_base", TextCatalog.source("developer.configgrowthpage.1a13f03ca88b"), 1, 99)
+	y = _rule(d, y, "xp_div", TextCatalog.source("developer.configgrowthpage.3668bc148933"), 1, 20)
+	editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.d2088214e436"), 24, y, 680, 22)
+	y += 48
+	y = _rule(d, y, "token_step", TextCatalog.source("developer.configgrowthpage.c48fb18621e6"), 1, 999)
 	return y + 20
 
 func _order_capacity_rules(d: Dictionary, y: float) -> float:
 	if not d.get("order_cap_at") is Array: d["order_cap_at"] = [1, 1, 4, 10, 20]
 	var caps: Array = d["order_cap_at"]
-	editor._h(editor._root, "最大订单数", 24, y, 280, 22)
+	editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.3a2955eb728d"), 24, y, 280, 22)
 	editor._num_field(editor._root, Rect2(320, y, 150, 48), caps.size(), 1, 12, func(n):
 		while caps.size() < n: caps.append(1 if caps.is_empty() else mini(99, int(caps.back()) + 5))
 		caps.resize(n)
@@ -455,7 +452,7 @@ func _order_capacity_rules(d: Dictionary, y: float) -> float:
 	y += 68
 	for i in caps.size():
 		var index = i
-		editor._h(editor._root, "第 %d 单开放等级" % (i + 1), 24, y, 280, 22)
+		editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.b950275c180b") % (i + 1), 24, y, 280, 22)
 		editor._num_field(editor._root, Rect2(320, y, 150, 48), int(caps[i]), 1, 99, func(n):
 			caps[index] = n
 			editor._touch(Files.RULES))

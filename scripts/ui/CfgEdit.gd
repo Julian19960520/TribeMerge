@@ -54,10 +54,10 @@ func _ready() -> void:
 		ci.draw_rect(Rect2(Vector2.ZERO, sz), Color("f6e7c8"))
 		ci.draw_rect(Rect2(0, 0, sz.x, 140), Color("3b2314"))
 	, false)
-	var back = UI.btn(self, Rect2(16, 34, 120, 72), "返回", "hide", _on_back, 28)
+	var back = UI.btn(self, Rect2(16, 34, 120, 72), TextCatalog.source("developer.cfgedit.572cf45ba436"), "hide", _on_back, 28)
 	back.title_font = false
-	_title = UI.lbl(self, "配置", Rect2(148, 34, 326, 72), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 8, Art.INK, true)
-	_save_btn = UI.btn(self, Rect2(482, 34, 222, 72), "保存并重开测试局", "green", _save, 21)
+	_title = UI.lbl(self, TextCatalog.source("developer.plugin.148d195e21b0"), Rect2(148, 34, 326, 72), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 8, Art.INK, true)
+	_save_btn = UI.btn(self, Rect2(482, 34, 222, 72), TextCatalog.source("developer.cfgedit.4aed33021440"), "green", _save, 21)
 	_save_btn.title_font = false
 	_sc = Scroller.new()
 	_sc.position = Vector2(0, 140)
@@ -83,18 +83,18 @@ func _load_pages() -> void:
 
 func _catalog() -> Array:
 	return [
-		{"id": "chains", "title": "物品链", "icon": "chains", "path": Files.CHAINS},
-		{"id": "board", "title": "初始棋盘", "icon": "board", "path": Files.BOARD},
-		{"id": "story", "title": "剧情订单", "icon": "story", "path": Files.STORY},
-		{"id": "unlock", "title": "产物解锁", "icon": "unlock", "path": Files.UNLOCKS},
-		{"id": "rand", "title": "随机订单", "icon": "rand", "path": Files.RANDOM_ORDERS},
-		{"id": "pass", "title": "通行证", "icon": "pass", "path": Files.PASS},
-		{"id": "albums", "title": "卡册", "icon": "albums", "path": Files.ALBUMS},
-		{"id": "people", "title": "人物", "icon": "people", "path": Files.PEOPLE},
-		{"id": "builds", "title": "建筑", "icon": "builds", "path": Files.BUILDS},
-		{"id": "levels", "title": "主角等级", "icon": "level", "path": Files.LEVELS},
-		{"id": "amber", "title": "琥珀充值", "icon": "amber", "path": Files.AMBER},
-		{"id": "rules", "title": "规则", "icon": "rules", "path": Files.RULES},
+		{"id": "chains", "title": TextCatalog.source("developer.host.4ab3d0c189e3"), "icon": "chains", "path": Files.CHAINS},
+		{"id": "board", "title": TextCatalog.source("developer.host.4a5eab404c52"), "icon": "board", "path": Files.BOARD},
+		{"id": "story", "title": TextCatalog.source("developer.host.d2e3cba99db0"), "icon": "story", "path": Files.STORY},
+		{"id": "unlock", "title": TextCatalog.source("developer.cfgedit.bc583958e994"), "icon": "unlock", "path": Files.UNLOCKS},
+		{"id": "rand", "title": TextCatalog.source("developer.cfgedit.62f048b243ad"), "icon": "rand", "path": Files.RANDOM_ORDERS},
+		{"id": "pass", "title": TextCatalog.source("developer.host.2f0a2b5a01ff"), "icon": "pass", "path": Files.PASS},
+		{"id": "albums", "title": TextCatalog.source("developer.host.600fd878d296"), "icon": "albums", "path": Files.ALBUMS},
+		{"id": "people", "title": TextCatalog.source("developer.people_editor.8d7aff5a595f"), "icon": "people", "path": Files.PEOPLE},
+		{"id": "builds", "title": TextCatalog.source("developer.host.5b46860a8e8b"), "icon": "builds", "path": Files.BUILDS},
+		{"id": "levels", "title": TextCatalog.source("developer.story_editor.34243df4d613"), "icon": "level", "path": Files.LEVELS},
+		{"id": "amber", "title": TextCatalog.source("developer.host.12ee32b40734"), "icon": "amber", "path": Files.AMBER},
+		{"id": "rules", "title": TextCatalog.source("developer.host.1123245d1bed"), "icon": "rules", "path": Files.RULES},
 	]
 
 func _on_back() -> void:
@@ -141,7 +141,7 @@ func _page_path(page: String) -> String:
 func _refresh_save() -> void:
 	var path = _page_path(str(_cur()["page"]))
 	_save_btn.visible = path != ""
-	_save_btn.text = "保存并重开测试局*" if path != "" and _dirty.has(path) else "保存并重开测试局"
+	_save_btn.text = TextCatalog.resolve(TextCatalog.source("developer.cfgedit.3a7f151ae221") if path != "" and _dirty.has(path) else TextCatalog.source("developer.cfgedit.4aed33021440"))
 	_save_btn.enabled = not Cloud.enabled
 	_save_btn.queue_redraw()
 
@@ -153,7 +153,7 @@ func _render() -> void:
 	_keep_scroll = false
 	_wipe(_root)
 	var page = str(_cur()["page"])
-	_title.text = _page_title(page)
+	_title.text = TextCatalog.resolve(_page_title(page))
 	var bottom = 40.0
 	match page:
 		"hub": bottom = _hub()
@@ -185,18 +185,18 @@ func _page_title(page: String) -> String:
 	for c in _catalog():
 		if c["id"] == page:
 			return c["title"]
-	return "配置"
+	return TextCatalog.source("developer.plugin.148d195e21b0")
 
 func _open_pick(kind: String, cb: Callable, allow_empty: bool, current = null) -> void:
 	var entries = chains_page._pick_entries(kind)
 	if allow_empty:
-		entries.insert(0, {"id": "", "name": "空", "icon": "", "pin": true})
-	var title = "选择物品"
-	if kind == "reward": title = "选择奖励"
+		entries.insert(0, {"id": "", "name": TextCatalog.source("developer.board_editor.2f8267a89ad5"), "icon": "", "pin": true})
+	var title = TextCatalog.source("developer.cfgedit.662f204e9e87")
+	if kind == "reward": title = TextCatalog.source("developer.cfgedit.027ad7e2373e")
 	if kind == "chain":
-		title = "选择物品链"
+		title = TextCatalog.source("developer.cfgedit.8d33135fd964")
 	elif kind == "pline":
-		title = "选择产线"
+		title = TextCatalog.source("developer.cfgedit.f24c4a4eb4ce")
 	_chooser.open(title, entries, func(id):
 		if cb.is_valid():
 			cb.call(id)
@@ -214,9 +214,9 @@ func _assign_at(id: String, arr: Array, i: int, path: String) -> void:
 	_touch(path)
 
 func _hub() -> float:
-	_h(_root, "点开一张表，改完在该页保存，只写入这一个文件。", 24, 12, 680, 24)
+	_h(_root, TextCatalog.source("developer.cfgedit.50aa0b7f55db"), 24, 12, 680, 24)
 	if not _dirty.is_empty():
-		var revert = UI.btn(_root, Rect2(24, 52, 200, 56), "放弃修改", "grey", _revert, 22)
+		var revert = UI.btn(_root, Rect2(24, 52, 200, 56), TextCatalog.source("developer.cfgedit.9b7824cefa1e"), "grey", _revert, 22)
 		revert.title_font = false
 	var y = 124.0
 	var cats = _catalog()
@@ -234,7 +234,7 @@ func _revert() -> void:
 	_stack = [{"page": "hub", "i": -1}]
 	_keep_scroll = false
 	call_deferred("_render")
-	G.main.toast("已从文件重新读取")
+	G.main.toast(TextCatalog.source("developer.host.b2cb418c8466"))
 
 func _build_sheet() -> void:
 	_sheet = Control.new()
@@ -360,7 +360,7 @@ func _fill_sheet() -> void:
 
 func _shot_pick() -> void:
 	_open_item(0, 2)
-	_chooser.open("选择产物", chains_page._item_choices(), func(_id): pass)
+	_chooser.open(TextCatalog.source("developer.cfgedit.05f20bc18bba"), chains_page._item_choices(), func(_id): pass)
 
 func _refresh_on_blur(e: LineEdit) -> void:
 	e.focus_exited.connect(func():
@@ -467,7 +467,7 @@ func _stepper(parent: Node, x: float, y: float, label: String, value: int, lo: i
 
 func _ink_label(parent: Node, text: String, r: Rect2, fs: int, col: Color, ocol: Color, align: HorizontalAlignment) -> Label:
 	var l = Label.new()
-	l.text = text
+	l.text = TextCatalog.resolve(text)
 	l.position = r.position
 	l.size = r.size
 	l.horizontal_alignment = align
@@ -519,14 +519,14 @@ func _bare_num(parent: Node, r: Rect2, value: int, lo: int, hi: int, fs: int, co
 	var edit: LineEdit
 	edit = _bare_line(parent, r, shown, fs, HORIZONTAL_ALIGNMENT_CENTER, func(_t):
 		_apply_num(edit, edit.text, lo, hi, apply)
-		lab.text = edit.text)
+		lab.text = TextCatalog.resolve(edit.text))
 	edit.focus_exited.connect(func():
 		var n = lo
 		if edit.text.is_valid_int():
 			n = clampi(int(edit.text), lo, hi)
 		if edit.text != str(n):
 			edit.text = str(n)
-		lab.text = str(n)
+		lab.text = TextCatalog.resolve(str(n))
 		apply.call(n)
 		if fit_to != "" and str(n) != fit_to:
 			_rerender())
@@ -611,7 +611,7 @@ func _swap(arr: Array, i: int, dir: int) -> void:
 
 func _save() -> void:
 	if Cloud.enabled:
-		G.main.toast("联网模式不能修改测试配置")
+		G.main.toast(TextCatalog.source("developer.cfgedit.9beb80ac95f9"))
 		return
 	var path := _page_path(str(_cur()["page"]))
 	if path == "": return
@@ -628,14 +628,14 @@ func _save() -> void:
 	for candidate in paths:
 		if _dirty.has(candidate): changes[str(candidate)] = _pages[candidate]
 	if changes.is_empty():
-		G.main.toast("没有要保存的修改")
+		G.main.toast(TextCatalog.source("developer.cfgedit.47b1d5cdfa25"))
 		return
 	if not Files.validate(changes):
 		G.main.toast(str(Files.last_errors[0]))
 		return
 	var originals := Files.capture_files(changes.keys())
 	if originals.size() != changes.size():
-		G.main.toast("无法备份配置，未保存修改")
+		G.main.toast(TextCatalog.source("developer.cfgedit.9efd0e06b0e1"))
 		return
 	G.main.prepare_session_restart()
 	var error := Files.write_batch(changes)
@@ -646,9 +646,9 @@ func _save() -> void:
 		var usable := restored and Replay.restore_rules_edit_authorization()
 		if not usable: Replay.authorized = false
 		G.main.reset_session_views()
-		G.main.toast("保存失败，已恢复原配置" if usable else "配置恢复失败，请重新打开工程")
+		G.main.toast(TextCatalog.source("developer.cfgedit.4bd6f7ff1495") if usable else TextCatalog.source("developer.cfgedit.1ed234f83b2b"))
 		return
 	for candidate in changes: _dirty.erase(candidate)
 	G.main.reset_session_views()
 	_refresh_save()
-	G.main.toast("配置已保存，测试局已重新开始")
+	G.main.toast(TextCatalog.source("developer.cfgedit.d4af07bd826f"))

@@ -35,10 +35,10 @@ func string_rows(parent: Node, items: Array, title: String) -> void:
 		Ui.lbl(r, str(i + 1), 28)
 		var e := Ui.line(r, str(items[i]))
 		e.text_changed.connect(_set_text.bind(items, i))
-		Ui.btn(r, "上").pressed.connect(_move_at.bind(items, i, -1))
-		Ui.btn(r, "下").pressed.connect(_move_at.bind(items, i, 1))
-		Ui.btn(r, "删除").pressed.connect(_remove_at.bind(items, i))
-	Ui.btn(parent, "添加" + title).pressed.connect(_add_to.bind(items, ""))
+		Ui.btn(r, TextCatalog.source("developer.editor_base.db5ba671d244")).pressed.connect(_move_at.bind(items, i, -1))
+		Ui.btn(r, TextCatalog.source("developer.editor_base.13c12b064b63")).pressed.connect(_move_at.bind(items, i, 1))
+		Ui.btn(r, TextCatalog.source("developer.editor_base.2f9daa828907")).pressed.connect(_remove_at.bind(items, i))
+	Ui.btn(parent, TextCatalog.source("developer.editor_base.7a8a11ead507") + title).pressed.connect(_add_to.bind(items, ""))
 
 func int_spins(parent: Node, items: Array, title: String, lo: int, hi: int) -> void:
 	var r := Ui.row(parent)
@@ -98,8 +98,8 @@ func reward_list(parent: Node, items: Array) -> void:
 		id.text_changed.connect(_set_pair_id.bind(rw))
 		var n := Ui.spin(r, int(rw[1]), 1, 9999, 80)
 		n.value_changed.connect(_set_pair_n.bind(rw))
-		Ui.btn(r, "删除").pressed.connect(_remove_at.bind(items, i))
-	Ui.btn(parent, "添加奖励").pressed.connect(_add_pair.bind(items))
+		Ui.btn(r, TextCatalog.source("developer.editor_base.2f9daa828907")).pressed.connect(_remove_at.bind(items, i))
+	Ui.btn(parent, TextCatalog.source("developer.editor_base.5834bd13575f")).pressed.connect(_add_pair.bind(items))
 
 func _set_pair_id(text: String, rw: Array) -> void:
 	rw[0] = text.strip_edges()

@@ -62,7 +62,7 @@ func _sync_camera() -> void:
 	_camera_tween.tween_method(func(v): camera = v; queue_redraw(), camera, to, 0.8).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	_camera_tween.tween_callback(func():
 		animating = false
-		_fx("text", Vector2(size.x / 2, cell * 0.9), {"text": "更深的遗迹露出来了", "color": Color("bff3f0"), "size": 30}))
+		_fx("text", Vector2(size.x / 2, cell * 0.9), {"text": TextCatalog.source("ui.mergeeventboard.519c2ec5a775"), "color": Color("bff3f0"), "size": 30}))
 	Sfx.play("whoosh")
 
 func _process(delta: float) -> void:
@@ -93,7 +93,7 @@ func _landed(m: Dictionary) -> void:
 	if str(r.get("kind", "")) == "merge":
 		if bool(r.get("unlocked", false)):
 			_fx("leaves", at_px, {"color": _color("vine", "7fae5a")})
-			_fx("text", at_px + Vector2(0, -cell * 0.45), {"text": "解锁！", "color": Color("fff3a6"), "size": 30})
+			_fx("text", at_px + Vector2(0, -cell * 0.45), {"text": TextCatalog.source("ui.mergeeventboard.0ee51c1f367c"), "color": Color("fff3a6"), "size": 30})
 			Sfx.play("crumble")
 		_fx("spark", at_px, {})
 		for k in r.get("revealed", []):

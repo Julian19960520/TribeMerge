@@ -97,7 +97,7 @@ func _reset_for(id: String) -> void:
 	_save()
 
 func default_nick() -> String:
-	return "原始人" + G.player_id.right(4)
+	return TextCatalog.source("notice.rank.c7a185402db9") + G.player_id.right(4)
 
 func set_nick(s: String) -> void:
 	s = s.strip_edges().replace("\n", " ")

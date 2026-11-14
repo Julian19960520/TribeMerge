@@ -9,17 +9,17 @@ var stage: DrawBox
 var _t := 0.0
 
 func _ready() -> void:
-	Popups.frame(self, R, "看广告领体力", Art.TEAL)
+	Popups.frame(self, R, TextCatalog.source("ui.dailyadpopup.8b0a0f551e1d"), Art.TEAL)
 	stage = UI.box(box, Rect2(R.position.x + 40, R.position.y + 56, R.size.x - 80, 330), _paint_stage, false)
-	UI.lbl(box, "免费补给", Rect2(R.position.x + 40, R.position.y + 402, R.size.x - 80, 40), 28, Color("7a5a3a"))
-	UI.lbl(box, "看一段短广告，部落送你 %d 点体力" % REWARD, Rect2(R.position.x + 40, R.position.y + 444, R.size.x - 80, 36), 23, Color("8a6a48"))
-	label = UI.lbl(box, "准备中…", Rect2(R.position.x + 40, R.position.y + 494, R.size.x - 80, 32), 21, Color("b0603a"))
-	claim_btn = UI.btn(box, Rect2(190, R.position.y + 548, 340, 88), "看广告", "green", _claim, 36)
+	UI.lbl(box, TextCatalog.source("ui.dailyadpopup.7ec1e88023c9"), Rect2(R.position.x + 40, R.position.y + 402, R.size.x - 80, 40), 28, Color("7a5a3a"))
+	UI.lbl(box, TextCatalog.source("ui.dailyadpopup.19966a9e49e8") % REWARD, Rect2(R.position.x + 40, R.position.y + 444, R.size.x - 80, 36), 23, Color("8a6a48"))
+	label = UI.lbl(box, TextCatalog.source("ui.dailyadpopup.871be2654869"), Rect2(R.position.x + 40, R.position.y + 494, R.size.x - 80, 32), 21, Color("b0603a"))
+	claim_btn = UI.btn(box, Rect2(190, R.position.y + 548, 340, 88), TextCatalog.source("ui.dailyadpopup.afd2bd434b2d"), "green", _claim, 36)
 	claim_btn.name = "ad_claim"
 	claim_btn.extra = _paint_play
 	claim_btn.enabled = false
-	claim_btn.text = "暂不可用"
-	label.text = "广告暂不可用，请稍后再试"
+	claim_btn.text = TextCatalog.resolve(TextCatalog.source("ui.dailyadpopup.f36cac96220b"))
+	label.text = TextCatalog.resolve(TextCatalog.source("ui.dailyadpopup.f4d7524d454d"))
 
 ## 光芒 + 浮动的体力堆 + 大号「+30」
 func _paint_stage(ci: CanvasItem, sz: Vector2) -> void:
@@ -45,11 +45,11 @@ func _paint_stage(ci: CanvasItem, sz: Vector2) -> void:
 	var text := "+%d" % REWARD
 	var f: Font = G.font_title
 	var fs := 64
-	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var tw := f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var at := Vector2(sz.x * 0.5 - tw * 0.5 + 40, sz.y - 30)
 	Sprites.at(ci, "board_bolt", at + Vector2(-34, -22), 2.4)
-	ci.draw_string_outline(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 12, Art.INK)
-	ci.draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("ffe27a"))
+	ci.draw_string_outline(f, at, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 12, Art.INK)
+	ci.draw_string(f, at, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("ffe27a"))
 	var edge := plate.duplicate()
 	edge.append(plate[0])
 	ci.draw_polyline(edge, Art.INK, 4.0, true)
@@ -66,4 +66,4 @@ func _process(delta: float) -> void:
 	if stage != null: stage.queue_redraw()
 
 func _claim() -> void:
-	G.main.toast("广告暂不可用，请稍后再试")
+	G.main.toast(TextCatalog.source("ui.dailyadpopup.f4d7524d454d"))

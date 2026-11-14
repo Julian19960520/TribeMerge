@@ -20,7 +20,7 @@ func _init(owner_editor) -> void:
 
 func _chains() -> float:
 	var y = 8.0
-	editor._h(editor._root, "一条产业链分三列。从左到右是从低级到高级，点方格改这一级。", 24, y, 680, 22)
+	editor._h(editor._root, TextCatalog.source("developer.configchainspage.06f7557156d7"), 24, y, 680, 22)
 	y += 40
 	var sq = 124.0
 	var lines: Array = editor._pages[Files.LINES]
@@ -28,9 +28,9 @@ func _chains() -> float:
 	for line in lines:
 		y = _chain_head(y, str(line.get("name", "")))
 		var roles = [
-			["生产器队列", str(line.get("gen", ""))],
-			["主产物队列", str(line.get("main", ""))],
-			["副产物队列", str(line.get("sub", ""))],
+			[TextCatalog.source("developer.configchainspage.48278c8bb296"), str(line.get("gen", ""))],
+			[TextCatalog.source("developer.configchainspage.4ccf6e6cdcc6"), str(line.get("main", ""))],
+			[TextCatalog.source("developer.configchainspage.47a0b44b8447"), str(line.get("sub", ""))],
 		]
 		var qh = 46.0 + sq + 52.0
 		var box_h = 12.0 + roles.size() * qh
@@ -50,14 +50,14 @@ func _chains() -> float:
 		if not used.has(cid):
 			rest.append(i)
 	if not rest.is_empty():
-		y = _chain_head(y, "其他")
+		y = _chain_head(y, TextCatalog.source("ui.picksheet.d2909f1647e7"))
 		for ci in rest:
 			var c: Dictionary = arr[ci]
 			_queue(y, str(c.get("name", c.get("id", ""))), int(ci), sq)
 			y += 46.0 + sq + 52.0
 		y += 8.0
-	UI.btn(editor._root, Rect2(180, y, 360, 76), "添加物品链", "green", func():
-		arr.append({"id": "chain_%d" % (arr.size() + 1), "name": "新链", "type": "item", "items": ["新物品"]})
+	UI.btn(editor._root, Rect2(180, y, 360, 76), TextCatalog.source("developer.configchainspage.723d7e8e21ca"), "green", func():
+		arr.append({"id": "chain_%d" % (arr.size() + 1), "name": TextCatalog.source("developer.chains_editor.24fa72755e59"), "type": "item", "items": [TextCatalog.source("developer.chains_editor.b66f478587fb")]})
 		editor._touch(Files.CHAINS)
 		editor._open_chain(arr.size() - 1)
 	, 28).title_font = false
@@ -86,13 +86,13 @@ func _queue(y: float, label: String, ci: int, sq: float) -> void:
 		var cname = str(editor._pages[Files.CHAINS][ci].get("name", ""))
 		if cname != "" and cname != label:
 			title = "%s · %s" % [label, cname]
-		var edit = UI.btn(editor._root, Rect2(576, y, 116, 40), "编辑", "teal", func():
+		var edit = UI.btn(editor._root, Rect2(576, y, 116, 40), TextCatalog.source("developer.configchainspage.051836569928"), "teal", func():
 			editor._open_chain(ci)
 		, 20)
 		edit.title_font = false
 		_icon_row(y + 44.0, ci, sq)
 	else:
-		UI.lbl(editor._root, "还没接上", Rect2(560, y, 140, 40), 18, Color("8a5a30"), HORIZONTAL_ALIGNMENT_RIGHT)
+		UI.lbl(editor._root, TextCatalog.source("developer.configchainspage.0a326f23ba34"), Rect2(560, y, 140, 40), 18, Color("8a5a30"), HORIZONTAL_ALIGNMENT_RIGHT)
 	var lab = UI.lbl(editor._root, title, Rect2(28, y, 530, 40), 22, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
 	lab.clip_text = true
 
@@ -128,8 +128,8 @@ func _sq(parent: Node, x: float, y: float, sq: float, id: String, caption: Strin
 		if mark != "":
 			var f: Font = G.font_title
 			var pos = Vector2(14, 34)
-			ci.draw_string_outline(f, pos, mark, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 6, Art.INK)
-			ci.draw_string(f, pos, mark, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+			ci.draw_string_outline(f, pos, TextCatalog.resolve(mark), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 6, Art.INK)
+			ci.draw_string(f, pos, TextCatalog.resolve(mark), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
 	var cap = UI.lbl(parent, caption, Rect2(x, y + sq - 2, sq, 32), 16, Color("6b4a2a"))
 	cap.clip_text = true
 
@@ -139,7 +139,7 @@ func _sq_add(parent: Node, x: float, y: float, sq: float, cb: Callable) -> void:
 		_draw_sq(ci, sz, "", false)
 	var plus = UI.lbl(parent, "+", Rect2(x, y, sq, sq), 48, Art.INK, HORIZONTAL_ALIGNMENT_CENTER, 0, Art.INK, true)
 	plus.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var cap = UI.lbl(parent, "添加", Rect2(x, y + sq - 2, sq, 32), 16, Color("6b4a2a"))
+	var cap = UI.lbl(parent, TextCatalog.source("developer.editor_base.7a8a11ead507"), Rect2(x, y + sq - 2, sq, 32), 16, Color("6b4a2a"))
 	cap.clip_text = true
 
 func _draw_sq(ci: CanvasItem, sz: Vector2, id: String, on: bool) -> void:
@@ -185,23 +185,23 @@ func _fill_item() -> void:
 	if str(chain.get("type", "")) == "gen":
 		_fill_gen(chain, ii)
 		return
-	editor._sheet_title.text = str(items[ii])
+	editor._sheet_title.text = TextCatalog.resolve(str(items[ii]))
 	var y = 8.0
 	var icon = "%s_%d" % [str(chain.get("id", "")), ii + 1]
 	y = _level_icon(y, icon, chain, items, ii)
-	var name_edit = editor._row_edit(editor._sheet_root, y, "名字", str(items[ii]), func(t):
+	var name_edit = editor._row_edit(editor._sheet_root, y, TextCatalog.source("developer.configchainspage.6773310492a9"), str(items[ii]), func(t):
 		items[ii] = t
-		editor._sheet_title.text = t if t != "" else "未命名"
+		editor._sheet_title.text = TextCatalog.resolve(t if t != "" else TextCatalog.source("developer.configchainspage.67bee6acfc3c"))
 		editor._touch(Files.CHAINS))
 	editor._refresh_on_blur(name_edit)
 	y += 72
 	if str(chain.get("type", "")) in VALUED:
-		editor._row_step(editor._sheet_root, y, "收取", int(chain["value"][ii]), 0, 99999, func(n):
+		editor._row_step(editor._sheet_root, y, TextCatalog.source("developer.configchainspage.168fe36e36bd"), int(chain["value"][ii]), 0, 99999, func(n):
 			chain["value"][ii] = n
 			editor._touch(Files.CHAINS))
 		y += 72
 	elif str(chain.get("type", "")) == "item":
-		editor._row_step(editor._sheet_root, y, "价值", int(chain["value"][ii]), 0, 99999, func(n):
+		editor._row_step(editor._sheet_root, y, TextCatalog.source("developer.configchainspage.93b7b18837aa"), int(chain["value"][ii]), 0, 99999, func(n):
 			chain["value"][ii] = n
 			editor._touch(Files.CHAINS))
 		y += 72
@@ -210,18 +210,18 @@ func _fill_item() -> void:
 func _fill_gen(chain: Dictionary, ii: int) -> void:
 	var items: Array = chain["items"]
 	var level = ii + 1
-	editor._sheet_title.text = str(items[ii])
+	editor._sheet_title.text = TextCatalog.resolve(str(items[ii]))
 	var y = 8.0
 	var icon = "%s_%d" % [str(chain.get("id", "")), level]
 	y = _level_icon(y, icon, chain, items, ii)
-	var name_edit = editor._row_edit(editor._sheet_root, y, "名字", str(items[ii]), func(t):
+	var name_edit = editor._row_edit(editor._sheet_root, y, TextCatalog.source("developer.configchainspage.6773310492a9"), str(items[ii]), func(t):
 		items[ii] = t
-		editor._sheet_title.text = t if t != "" else "未命名"
+		editor._sheet_title.text = TextCatalog.resolve(t if t != "" else TextCatalog.source("developer.configchainspage.67bee6acfc3c"))
 		editor._touch(Files.CHAINS))
 	editor._refresh_on_blur(name_edit)
 	y += 72
 	_fit_prod(chain)
-	var prod_title = UI.lbl(editor._sheet_root, "产物", Rect2(24, y, 680, 40), 26, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
+	var prod_title = UI.lbl(editor._sheet_root, TextCatalog.source("developer.configchainspage.faa3e87e26be"), Rect2(24, y, 680, 40), 26, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
 	prod_title.clip_text = true
 	y += 44
 	y = _drop_row(y, chain, ii)
@@ -229,11 +229,11 @@ func _fill_gen(chain: Dictionary, ii: int) -> void:
 	var slot = chain["prod"][ii]
 	if line.get("cooldown", false) and slot is Dictionary:
 		y += 12
-		editor._row_step(editor._sheet_root, y, "储量", int(slot.get("charges", 8)), 1, 99, func(n):
+		editor._row_step(editor._sheet_root, y, TextCatalog.source("developer.configchainspage.d37b9fd34de5"), int(slot.get("charges", 8)), 1, 99, func(n):
 			slot["charges"] = n
 			editor._touch(Files.CHAINS))
 		y += 72
-		editor._row_step(editor._sheet_root, y, "回满分", int(slot.get("refill_min", 12)), 1, 999, func(n):
+		editor._row_step(editor._sheet_root, y, TextCatalog.source("developer.configchainspage.64a3b71749a4"), int(slot.get("refill_min", 12)), 1, 999, func(n):
 			slot["refill_min"] = n
 			editor._touch(Files.CHAINS))
 		y += 72
@@ -252,7 +252,7 @@ func _drop_row(y: float, chain: Dictionary, ii: int) -> float:
 	for i in drops.size():
 		_drop_cell(sc.content, float(i) * pitch, sq, drops[i], chain, ii, i)
 	_sq_add(sc.content, drops.size() * pitch, 0, sq, func():
-		editor._chooser.open("选择产物", _item_choices(), func(id):
+		editor._chooser.open(TextCatalog.source("developer.cfgedit.05f20bc18bba"), _item_choices(), func(id):
 			_add_drop(chain, ii, id)))
 	sc.set_length(float(drops.size() + 1) * pitch + 8.0)
 	return y + sq + 76.0
@@ -271,7 +271,7 @@ func _drop_cell(parent: Node, x: float, sq: float, drop: Dictionary, chain: Dict
 
 func _add_drop(chain: Dictionary, ii: int, id: String) -> void:
 	if Data.is_numeric_resource(id):
-		G.main.toast("数值资源不能作为生产器产物")
+		G.main.toast(TextCatalog.source("developer.configchainspage.2fd28fd48853"))
 		return
 	if id == "":
 		return
@@ -284,7 +284,7 @@ func _add_drop(chain: Dictionary, ii: int, id: String) -> void:
 		slot["drops"] = []
 	for d in slot["drops"]:
 		if str(d.get("id", "")) == id:
-			G.main.toast("已经加过了")
+			G.main.toast(TextCatalog.source("developer.configchainspage.f6819ec2d08e"))
 			return
 	slot["drops"].append({"id": id, "p": 1})
 	editor._touch(Files.CHAINS)
@@ -337,7 +337,7 @@ func _chain_choices() -> Array:
 			"id": cid,
 			"name": str(c.get("name", cid)),
 			"icon": _chain_icon(cid),
-			"tab": str(line_name.get(cid, "其他")),
+			"tab": str(line_name.get(cid, TextCatalog.source("ui.picksheet.d2909f1647e7"))),
 		})
 	return out
 
@@ -367,7 +367,7 @@ func _item_choices() -> Array:
 			continue
 		var items: Array = c.get("items", [])
 		var group = str(c.get("name", cid))
-		var tab = str(line_name.get(cid, "其他"))
+		var tab = str(line_name.get(cid, TextCatalog.source("ui.picksheet.d2909f1647e7")))
 		for i in items.size():
 			var id = "%s_%d" % [cid, i + 1]
 			out.append({"id": id, "name": str(items[i]), "icon": id, "group": group, "tab": tab})
@@ -376,7 +376,7 @@ func _item_choices() -> Array:
 func _reward_choices() -> Array:
 	var out = _item_choices()
 	for id in Data.REWARD_RESOURCES:
-		out.append({"id": str(id), "name": Data.name_of(str(id)), "icon": str(id), "group": "数值资源", "tab": "数值资源"})
+		out.append({"id": str(id), "name": Data.name_of(str(id)), "icon": str(id), "group": TextCatalog.source("developer.configchainspage.6e7544db8807"), "tab": TextCatalog.source("developer.configchainspage.6e7544db8807")})
 	return out
 
 func _level_icon(y: float, id: String, chain: Dictionary, items: Array, ii: int) -> float:
@@ -434,27 +434,27 @@ func _fill_chain() -> void:
 		chain["items"] = []
 	_fit_value(chain)
 	_fit_prod(chain)
-	editor._sheet_title.text = str(chain.get("name", ""))
+	editor._sheet_title.text = TextCatalog.resolve(str(chain.get("name", "")))
 	var y = 12.0
 	var id_edit = editor._row_edit(editor._sheet_root, y, "id", str(chain.get("id", "")), func(t):
 		chain["id"] = t.strip_edges()
 		editor._touch(Files.CHAINS))
 	editor._refresh_on_blur(id_edit)
 	y += 72
-	var name_edit = editor._row_edit(editor._sheet_root, y, "名字", str(chain.get("name", "")), func(t):
+	var name_edit = editor._row_edit(editor._sheet_root, y, TextCatalog.source("developer.configchainspage.6773310492a9"), str(chain.get("name", "")), func(t):
 		chain["name"] = t
-		editor._sheet_title.text = t if t != "" else "未命名"
+		editor._sheet_title.text = TextCatalog.resolve(t if t != "" else TextCatalog.source("developer.configchainspage.67bee6acfc3c"))
 		editor._touch(Files.CHAINS))
 	editor._refresh_on_blur(name_edit)
 	y += 72
-	var line_edit = editor._row_edit(editor._sheet_root, y, "产线", str(chain.get("line", "")), func(t):
+	var line_edit = editor._row_edit(editor._sheet_root, y, TextCatalog.source("developer.chains_editor.77ca877fdd41"), str(chain.get("line", "")), func(t):
 		_set_opt(chain, "line", t)
 		editor._touch(Files.CHAINS))
 	editor._refresh_on_blur(line_edit)
 	y += 80
-	UI.btn(editor._sheet_root, Rect2(24, y, 160, 56), "上移", "grey", _shift_chain.bind(-1), 22).title_font = false
-	UI.btn(editor._sheet_root, Rect2(200, y, 160, 56), "下移", "grey", _shift_chain.bind(1), 22).title_font = false
-	UI.btn(editor._sheet_root, Rect2(460, y, 236, 56), "删除这条链", "red", func():
+	UI.btn(editor._sheet_root, Rect2(24, y, 160, 56), TextCatalog.source("developer.chains_editor.f853a70b1204"), "grey", _shift_chain.bind(-1), 22).title_font = false
+	UI.btn(editor._sheet_root, Rect2(200, y, 160, 56), TextCatalog.source("developer.chains_editor.e75e8b4e5c97"), "grey", _shift_chain.bind(1), 22).title_font = false
+	UI.btn(editor._sheet_root, Rect2(460, y, 236, 56), TextCatalog.source("developer.configchainspage.484c09665ca0"), "red", func():
 		arr.remove_at(editor._sheet_ci)
 		editor._touch(Files.CHAINS)
 		editor._close_sheet()

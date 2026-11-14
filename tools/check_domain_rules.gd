@@ -24,7 +24,7 @@ func run() -> void:
 	g.simulation_time = 1794240000.0
 	g.rng.seed = 42
 	g.new_game()
-	check(g.orders[0]["uid"] != g.orders[1]["uid"], "initial orders have distinct stable identities")
+	check(g.orders.is_empty() and g.tutorial_on, "new opening defers orders until the producer lesson")
 	var twin_a: Dictionary = g.order_identity({"items": ["fruit_2"]})
 	var twin_b: Dictionary = g.order_identity({"items": ["fruit_2"]})
 	check(twin_a["uid"] != twin_b["uid"], "identical new orders retain distinct identities without UI mutation")

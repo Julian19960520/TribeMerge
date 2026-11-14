@@ -20,7 +20,7 @@ static func row(parent: Node) -> HBoxContainer:
 
 static func lbl(parent: Node, text: String, w: float = 0.0) -> Label:
 	var l := Label.new()
-	l.text = text
+	l.text = TextCatalog.resolve(text)
 	if w > 0.0:
 		l.custom_minimum_size.x = w
 	parent.add_child(l)
@@ -51,21 +51,21 @@ static func spin(parent: Node, value: int, lo: int, hi: int, w: float = 80.0) ->
 
 static func check(parent: Node, on: bool, text: String) -> CheckBox:
 	var c := CheckBox.new()
-	c.text = text
+	c.text = TextCatalog.resolve(text)
 	c.button_pressed = on
 	parent.add_child(c)
 	return c
 
 static func btn(parent: Node, text: String) -> Button:
 	var b := Button.new()
-	b.text = text
+	b.text = TextCatalog.resolve(text)
 	parent.add_child(b)
 	return b
 
 static func option(parent: Node, labels: PackedStringArray, index: int, w: float = 140.0) -> OptionButton:
 	var o := OptionButton.new()
 	for t in labels:
-		o.add_item(t)
+		o.add_item(TextCatalog.resolve(t))
 	o.select(maxi(0, index))
 	o.custom_minimum_size.x = w
 	parent.add_child(o)

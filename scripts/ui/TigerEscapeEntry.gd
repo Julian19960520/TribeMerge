@@ -16,12 +16,12 @@ func _process(delta: float) -> void:
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	var m := TigerEscape.round_state()
-	var text := "出发"
+	var text := TextCatalog.source("ui.tigerescapeentry.efdc22fca1c6")
 	var style := "go"
 	if not m.is_empty():
 		if m["status"] == "running":
 			text = "%d / %d" % [int(m["stage"]), m["stages"].size()]
 			style = "time"
-		else: text = "结算"
+		else: text = TextCatalog.source("ui.raceentry.0e4062a72843")
 	# 和其他活动入口同一套：贴纸主题图 + 状态小牌 + 名字（scripts/sprites/events.gd 的 _en_tiger）
-	EventEntryArt.paint(ci, sz, "tiger", "剑齿虎逃生", {"text": text, "style": style}, false, not TigerEscape.pending_rewards(m).is_empty())
+	EventEntryArt.paint(ci, sz, "tiger", TextCatalog.source("ui.tigerescapeentry.5e7c1a9e58e6"), {"text": text, "style": style}, false, not TigerEscape.pending_rewards(m).is_empty())

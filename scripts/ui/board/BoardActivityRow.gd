@@ -39,7 +39,7 @@ func refresh(animate := true) -> void:
 	var targets := []
 	var x := BASE_RECT.position.x if open else STASH_RECT.position.x
 	for entry in entries:
-		var show: bool = entry["visible"].call()
+		var show: bool = not G.tutorial_on and entry["visible"].call()
 		shown.append(show)
 		var view: Control = entry["view"]
 		view.visible = show

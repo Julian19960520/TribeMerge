@@ -90,19 +90,19 @@ static func on_order(_order: Dictionary) -> void:
 	G.dirty()
 
 static func local_action(action: String, value := -1) -> Dictionary:
-	if not unlocked(): return {"error": "%d级解锁恐龙化石" % int(config()["unlock_level"])}
-	if not action in ["refresh", "dig", "next", "claim"]: return {"error": "未知操作"}
+	if not unlocked(): return {"error": TextCatalog.source("notice.fossildig.6d29b18fcbfb") % int(config()["unlock_level"])}
+	if not action in ["refresh", "dig", "next", "claim"]: return {"error": TextCatalog.source("notice.duelrace.f242d2db4cea")}
 	initialize()
 	var s := state()
 	var b := board()
 	if action == "refresh": return {}
 	if action == "dig":
 		var n := int(b["n"])
-		if value < 0 or value >= n * n: return {"error": "请选择挖掘区内的格子"}
-		if value in b["dug"]: return {"error": "这里已经挖开了"}
-		if cleared(b): return {"error": "本关已完成"}
+		if value < 0 or value >= n * n: return {"error": TextCatalog.source("notice.fossildig.d0fd179930fa")}
+		if value in b["dug"]: return {"error": TextCatalog.source("notice.fossildig.fb7957f24f39")}
+		if cleared(b): return {"error": TextCatalog.source("notice.fossildig.1693f11d622f")}
 		var cost := int(config()["dig_cost"])
-		if int(s["shovels"]) < cost: return {"error": "铲子不够了！帮族人实现心愿就能拿到铲子"}
+		if int(s["shovels"]) < cost: return {"error": TextCatalog.source("notice.fossildig.cd924a4e3ad4")}
 		s["shovels"] = int(s["shovels"]) - cost
 		s["spent"] = int(s["spent"]) + cost
 		b["dug"].append(value)
@@ -115,20 +115,20 @@ static func local_action(action: String, value := -1) -> Dictionary:
 				found.append(piece.duplicate(true))
 		return {"cell": value, "found": found, "complete": cleared(b)}
 	if action == "next":
-		if not cleared(b): return {"error": "挖出本关全部骨头后解锁下一关"}
-		if finished(): return {"error": "全部挖掘已完成"}
+		if not cleared(b): return {"error": TextCatalog.source("notice.fossildig.018bf89d23d1")}
+		if finished(): return {"error": TextCatalog.source("notice.fossildig.714189768f1e")}
 		var next_stage := int(s["stage"]) + 1
 		var next_board := make_board(str(s["seed"]), next_stage)
-		if next_board.is_empty(): return {"error": "挖掘区生成失败"}
+		if next_board.is_empty(): return {"error": TextCatalog.source("notice.fossildig.ce4e2ebd4743")}
 		s["stage"] = next_stage
 		s["board"] = next_board
 		return {}
 	for row in config()["milestones"]:
 		if int(row["bones"]) != value: continue
-		if value > int(s["recovered"]) or value in s["claimed"]: return {"error": "奖励尚未解锁或已经领取"}
+		if value > int(s["recovered"]) or value in s["claimed"]: return {"error": TextCatalog.source("notice.fossildig.1ee561b6fe28")}
 		s["claimed"].append(value)
 		return {"rewards": row["rewards"].duplicate(true)}
-	return {"error": "奖励不存在"}
+	return {"error": TextCatalog.source("notice.fossildig.d8ca1484750d")}
 
 static func act(action: String, value := -1) -> Dictionary:
 	if G.replay_input(): return Replay.perform("fossil", {"action": action, "value": value})

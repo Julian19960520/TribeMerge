@@ -20,13 +20,15 @@ from .errors import ApiError
 from .models import Grant, PaymentOrder, Save
 from .save_service import _account, _write_start
 from .services import audit, idem_get, idem_put, request_fingerprint, stamp
+from .texts import source as text_source
 
 ORDER_ENDPOINT = "payments.order"
 
 
 def _order_view(order: PaymentOrder) -> dict:
     return {"id": order.id, "product": order.product, "price_fen": order.price_fen, "status": order.status,
-            "grant_id": order.grant_id or ""}
+            "grant_id": order.grant_id or "", "currency": order.content.get("_pricing", {}).get("currency", "CNY"),
+            "market": order.content.get("_pricing", {}).get("market", "CN")}
 
 
 def _grant_view(grant: Grant) -> dict:
@@ -42,7 +44,7 @@ def _begin(db, auth):
 def _order(db, account_id: str, order_id: str) -> PaymentOrder:
     order = db.get(PaymentOrder, order_id, populate_existing=True)
     if order is None or order.account_id != account_id:
-        raise ApiError(404, "unknown_order", "订单不存在")
+        raise ApiError(404, "unknown_order", text_source("server_notice.payments.6898ca864456"))
     return order
 
 
@@ -50,7 +52,7 @@ def _order(db, account_id: str, order_id: str) -> PaymentOrder:
 
 def create_order(db, auth, product: str, detail: dict, key: str) -> dict:
     if not key:
-        raise ApiError(400, "idempotency_key_required", "下单需要 Idempotency-Key")
+        raise ApiError(400, "idempotency_key_required", text_source("server_notice.payments.527d2a1ddee2"))
     fingerprint = request_fingerprint({"product": product, "detail": detail})
     account, _session = _begin(db, auth)
     replay = idem_get(db, account.id, key, ORDER_ENDPOINT, fingerprint)
@@ -85,25 +87,25 @@ def verify_receipt(provider: str, order: PaymentOrder, receipt: str) -> str:
     """Return the provider's transaction id when the receipt proves this order was paid in full."""
     if provider == "mock":
         if not get_settings().enable_mock_payments:
-            raise ApiError(400, "provider_unavailable", "该支付渠道不可用")
+            raise ApiError(400, "provider_unavailable", text_source("server_notice.payments.093da914ff9a"))
         parts = receipt.split(".")
         if len(parts) != 3 or parts[0] != order.id or not hmac.compare_digest(parts[2], _mock_signature(order, parts[1])):
-            raise ApiError(422, "invalid_receipt", "支付凭证无效")
+            raise ApiError(422, "invalid_receipt", text_source("server_notice.payments.4c1a561acab0"))
         return parts[1]
     # App Store / Google Play / WeChat verifiers plug in here.
-    raise ApiError(400, "provider_unavailable", "该支付渠道不可用")
+    raise ApiError(400, "provider_unavailable", text_source("server_notice.payments.093da914ff9a"))
 
 
 def _fulfil(db, account, order: PaymentOrder, provider: str, ref: str) -> dict:
     if order.status == "paid":
         if order.provider == provider and order.provider_ref == ref:
             return _paid_view(db, order)
-        raise ApiError(409, "order_already_paid", "订单已支付")
+        raise ApiError(409, "order_already_paid", text_source("server_notice.payments.6cbfd7f67f68"))
     if order.status != "created":
-        raise ApiError(409, "order_closed", "订单已关闭")
+        raise ApiError(409, "order_closed", text_source("server_notice.payments.ff4fc4a36c34"))
     other = db.execute(select(PaymentOrder.id).where(PaymentOrder.provider == provider, PaymentOrder.provider_ref == ref)).first()
     if other is not None:
-        raise ApiError(409, "receipt_reused", "支付凭证已使用")
+        raise ApiError(409, "receipt_reused", text_source("server_notice.payments.1152c7c1c53d"))
     now = clock.utcnow()
     order.provider, order.provider_ref, order.paid_at = provider, ref, now
     if order.once_key and db.execute(select(PaymentOrder.id).where(
@@ -113,7 +115,7 @@ def _fulfil(db, account, order: PaymentOrder, provider: str, ref: str) -> dict:
         order.status = "refund"
         audit(db, account.id, "payment_refund", f"{order.id} {order.product} {provider}:{ref} duplicates {order.once_key}")
         db.commit()
-        raise ApiError(409, "already_owned", "已经买过了，这笔付款会退回")
+        raise ApiError(409, "already_owned", text_source("server_notice.payments.0ff9b82279ec"))
     grant = Grant(id="gr_" + secrets.token_hex(12), account_id=account.id, order_id=order.id,
                   content=order.content, amber=catalog.amber_in(order.content), created_at=now)
     db.add(grant)
@@ -140,7 +142,7 @@ def confirm(db, auth, order_id: str, provider: str, receipt: str) -> dict:
 def mock_pay(db, auth, order_id: str) -> dict:
     """Development stand-in for a store purchase: pays the order and confirms its receipt."""
     if not get_settings().enable_mock_payments:
-        raise ApiError(404, "not_found", "Not Found")
+        raise ApiError(404, "not_found", text_source("server_notice.payments.0019dfc4b32d"))
     account, _session = _begin(db, auth)
     order = _order(db, account.id, order_id)
     if order.status == "paid":

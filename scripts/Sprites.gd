@@ -124,7 +124,7 @@ func frame_texture(key: String, frame: int) -> Texture2D:
 		texture = _cache.fetch("%s/png/%s_%d.png" % [DIR, key, posmod(frame, count)])
 	if texture == null and not _missing.has(key):
 		_missing[key] = true
-		push_warning("界面图 %s 还没生成，请运行「生成物品图.bat」。" % key)
+		push_warning(TextCatalog.source("notice.sprites.371a27c749c2") % key)
 	return texture
 
 func cache_stats() -> Dictionary:

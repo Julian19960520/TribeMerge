@@ -1,6 +1,6 @@
 {
 	"choice_1": {
-		"title": "1级自选宝箱",
+		"title": "§names.chains.55e5f3c68649§",
 		"_说明": "三选一，所选物品替换宝箱所在格。等级越高，三个选项的内容越好。",
 		"choices": [
 			"fire_5",
@@ -10,7 +10,7 @@
 		"icon": "res://assets/ui/items/choice_1.svg"
 	},
 	"choice_2": {
-		"title": "2级自选宝箱",
+		"title": "§names.chains.370d1f8c27f8§",
 		"choices": [
 			"fire_6",
 			"amber_5",
@@ -19,7 +19,7 @@
 		"icon": "res://assets/ui/items/choice_2.svg"
 	},
 	"choice_3": {
-		"title": "3级自选宝箱",
+		"title": "§names.chains.0feeec8b2b62§",
 		"choices": [
 			"energybox_2",
 			"amber_6",
@@ -28,7 +28,7 @@
 		"icon": "res://assets/ui/items/choice_3.svg"
 	},
 	"choice_4": {
-		"title": "4级自选宝箱",
+		"title": "§names.chains.26447da44480§",
 		"choices": [
 			"energybox_3",
 			"premiumbox_3",
@@ -37,7 +37,7 @@
 		"icon": "res://assets/ui/items/choice_4.svg"
 	},
 	"choice_5": {
-		"title": "5级自选宝箱",
+		"title": "§names.chains.2a6feb83d7fe§",
 		"choices": [
 			"energybox_4",
 			"premiumbox_4",

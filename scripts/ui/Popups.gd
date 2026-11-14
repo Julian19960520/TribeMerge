@@ -18,7 +18,7 @@ static func section(parent: Control, text: String, y: float, col: Color = Color(
 	var fs := 26
 	var tw := float(text.length()) * float(fs)
 	if G.font_body:
-		tw = G.font_body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		tw = G.font_body.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var half := tw * 0.5 + 14.0
 	var edge := 26.0
 	UI.lbl(parent, text, Rect2(cx - 240, y, 480, 40), fs, col)

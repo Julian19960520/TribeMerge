@@ -2,6 +2,20 @@ class_name UI
 extends RefCounted
 ## 布局工厂：所有坐标都在 720×1480 的设计空间里。
 
+static func resource_text(text: String) -> String:
+	# Resource names read as nouns even when they sit inside spoken sentences.
+	text = TextCatalog.resolve(text)
+	var noun := TextCatalog.text("ui.choicechestpopup.2580a668b381")
+	var quoted := "「" + noun + "」"
+	return text.replace(quoted, noun).replace(noun, quoted)
+
+static func canonical_resource_text(text: String) -> String:
+	return text.replace(TextCatalog.source("ui.ui.1de156797f67"), TextCatalog.source("ui.choicechestpopup.2580a668b381")).replace(TextCatalog.source("ui.choicechestpopup.2580a668b381"), TextCatalog.source("ui.ui.1de156797f67"))
+
+static func resource_rich(text: String) -> String:
+	var quoted := "「" + TextCatalog.text("ui.choicechestpopup.2580a668b381") + "」"
+	return resource_text(text).replace(quoted, "[color=#a35d16]" + quoted + "[/color]")
+
 static func box(parent: Node, r: Rect2, painter: Callable, boil: bool = true) -> DrawBox:
 	var d := DrawBox.new()
 	d.boil = boil
@@ -15,7 +29,7 @@ static func box(parent: Node, r: Rect2, painter: Callable, boil: bool = true) ->
 static func lbl(parent: Node, text: String, r: Rect2, fs: int = 26, col: Color = Art.INK, align: int = HORIZONTAL_ALIGNMENT_CENTER,
 		outline: int = 0, ocol: Color = Art.INK, title: bool = false) -> Label:
 	var l := Label.new()
-	l.text = text
+	l.text = resource_text(text)
 	l.position = r.position
 	l.size = r.size
 	l.horizontal_alignment = align
@@ -43,7 +57,7 @@ static func btn(parent: Node, r: Rect2, text: String, style: String, cb: Callabl
 	var b := TButton.new()
 	b.position = r.position
 	b.size = r.size
-	b.text = text
+	b.text = TextCatalog.resolve(text)
 	b.style = style
 	b.font_size = fs
 	if cb.is_valid():

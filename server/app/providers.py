@@ -10,6 +10,7 @@
 
 from .config import get_settings
 from .errors import ApiError
+from .texts import source as text_source
 
 
 class LoginProvider:
@@ -26,7 +27,7 @@ class MockProvider(LoginProvider):
 
     def verify(self, credential: str) -> str:
         if not credential.startswith("mock:") or not 1 <= len(credential) - 5 <= 64:
-            raise ApiError(401, "bad_credential", "mock 凭证格式是 mock:<用户名>")
+            raise ApiError(401, "bad_credential", text_source("server_notice.providers.b1b3de21df2d"))
         return credential[5:]
 
 
@@ -35,7 +36,7 @@ class NotConfigured(LoginProvider):
         self.name = name
 
     def verify(self, credential: str) -> str:
-        raise ApiError(501, "provider_not_configured", "%s 登录还没有接入" % self.name)
+        raise ApiError(501, "provider_not_configured", text_source("server_notice.providers.d2cf5a6ca95c") % self.name)
 
 
 PROVIDERS: dict[str, LoginProvider] = {
@@ -50,7 +51,7 @@ PROVIDERS: dict[str, LoginProvider] = {
 def get(name: str) -> LoginProvider:
     p = PROVIDERS.get(name)
     if p is None:
-        raise ApiError(400, "unknown_provider", "没有这个登录渠道")
+        raise ApiError(400, "unknown_provider", text_source("server_notice.providers.d08e12f20717"))
     if name == "mock" and not get_settings().enable_mock_provider:
-        raise ApiError(403, "provider_disabled", "mock 登录只在开发环境可用")
+        raise ApiError(403, "provider_disabled", text_source("server_notice.providers.91061061efef"))
     return p

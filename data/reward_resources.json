@@ -1,4 +1,4 @@
 {
-	"xp_1": {"type": "xp", "name": "声望", "description": "帮族人实现心愿获得，攒够了主角就升级，不占棋盘格。"},
-	"token_1": {"type": "token", "name": "祭典积分", "description": "帮族人实现心愿获得，攒满换兽皮卡包，不占棋盘格。"}
+	"xp_1": {"type": "xp", "name": "§developer.story_editor.22cc9072ab1e§", "description": "§names.reward_resources.aa02b60c56f4§"},
+	"token_1": {"type": "token", "name": "§names.reward_resources.12be9da6454b§", "description": "§names.reward_resources.b345af041a3f§"}
 }

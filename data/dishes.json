@@ -1,28 +1,279 @@
 [
-	{"id": "salad", "name": "水果沙拉", "mats": ["fruit_2", "fruit_3", "seed_1"], "secs": 60, "unlock": 3},
-	{"id": "berrybowl", "name": "野果籽碗", "mats": ["fruit_2", "fruit_4", "seed_2"], "secs": 120, "unlock": 4},
-	{"id": "nutmix", "name": "坚果干粮", "mats": ["seed_1", "seed_3", "fruit_3"], "secs": 180, "unlock": 5},
-	{"id": "cutfruit", "name": "石刀果盘", "mats": ["tool_3", "fruit_4"], "secs": 240, "unlock": 6},
-	{"id": "flintkit", "name": "燧石火镰", "mats": ["gem_1", "tool_4"], "secs": 300, "unlock": 8},
-	{"id": "fruitbasket", "name": "草编果篮", "mats": ["cloth_3", "fruit_4"], "secs": 360, "unlock": 9},
-	{"id": "ochrebeads", "name": "赭石项链", "mats": ["gem_2", "cloth_2", "seed_2"], "secs": 480, "unlock": 10},
-	{"id": "trailpack", "name": "远行干粮包", "mats": ["cloth_4", "seed_3", "fruit_5"], "secs": 600, "unlock": 11},
-	{"id": "toolbelt", "name": "工具腰带", "mats": ["cloth_4", "tool_4"], "secs": 720, "unlock": 12},
-	{"id": "bracer", "name": "贝饰草裙", "mats": ["armor_1", "cloth_3", "tool_3"], "secs": 900, "unlock": 13},
-	{"id": "talisman", "name": "宝石护符", "mats": ["gem_3", "cloth_3", "seed_2"], "secs": 1080, "unlock": 14},
-	{"id": "warpaint", "name": "祭典彩妆", "mats": ["gem_2", "fruit_5", "seed_3"], "secs": 1200, "unlock": 15},
-	{"id": "hunterkit", "name": "猎人行囊", "mats": ["beast_1", "tool_4", "cloth_3"], "secs": 1500, "unlock": 16},
-	{"id": "furwrap", "name": "兔毛项圈", "mats": ["beast_2", "armor_2"], "secs": 1800, "unlock": 17},
-	{"id": "featherhat", "name": "羽毛头冠", "mats": ["bird_1", "cloth_4", "gem_2"], "secs": 2100, "unlock": 18},
-	{"id": "platter", "name": "果蔬烤盘", "mats": ["fruit_4", "veg_3", "beast_1"], "secs": 2700, "unlock": 24},
-	{"id": "grill", "name": "海陆双拼烤肉", "mats": ["beast_2", "veg_2", "bird_1"], "secs": 3000, "unlock": 24},
-	{"id": "skewer", "name": "烤肉串拼盘", "mats": ["roast_3", "veg_4", "seed_2"], "secs": 3600, "unlock": 24},
-	{"id": "feast", "name": "部落大拼盘", "mats": ["beast_2", "bird_1", "veg_4", "fruit_5"], "secs": 4500, "unlock": 25},
-	{"id": "fruitboard", "name": "木托果盘", "mats": ["furn_3", "fruit_6"], "secs": 4800, "unlock": 26},
-	{"id": "mask", "name": "祭典面具", "mats": ["craft_2", "cloth_5", "gem_3"], "secs": 6000, "unlock": 28},
-	{"id": "chiefseat", "name": "酋长坐席", "mats": ["furn_5", "armor_3", "cloth_5"], "secs": 7200, "unlock": 30},
-	{"id": "potstew", "name": "陶罐炖肉", "mats": ["pot_3", "roast_3", "veg_4"], "secs": 9000, "unlock": 31},
-	{"id": "drumset", "name": "祭典乐器", "mats": ["ware_2", "craft_3", "furn_4"], "secs": 10800, "unlock": 33},
-	{"id": "grandfeast", "name": "篝火盛宴", "mats": ["pot_5", "roast_3", "veg_5", "bird_1"], "secs": 12600, "unlock": 36},
-	{"id": "chiefgift", "name": "酋长献礼", "mats": ["craft_3", "ware_3", "armor_3", "cloth_6"], "secs": 14400, "unlock": 39}
+	{
+		"id": "salad",
+		"name": "§names.dishes.71cd6529592f§",
+		"mats": [
+			"fruit_5"
+		],
+		"secs": 5,
+		"unlock": 3,
+		"order_max_level": 4
+	},
+	{
+		"id": "berrybowl",
+		"name": "§names.dishes.7a066ee538a8§",
+		"mats": [
+			"fruit_3"
+		],
+		"secs": 5,
+		"unlock": 3,
+		"order_max_level": 4
+	},
+	{
+		"id": "nutmix",
+		"name": "§names.dishes.2a307433f555§",
+		"mats": [
+			"fruit_4"
+		],
+		"secs": 8,
+		"unlock": 3,
+		"order_max_level": 4
+	},
+	{
+		"id": "cutfruit",
+		"name": "§names.dishes.a3979e73ec08§",
+		"mats": [
+			"fruit_8"
+		],
+		"secs": 10,
+		"unlock": 5
+	},
+	{
+		"id": "flintkit",
+		"name": "§names.dishes.79ba687e34b0§",
+		"mats": [
+			"gem_1",
+			"tool_4"
+		],
+		"secs": 30,
+		"unlock": 8
+	},
+	{
+		"id": "fruitbasket",
+		"name": "§names.dishes.c8170620dea1§",
+		"mats": [
+			"fruit_7"
+		],
+		"secs": 10,
+		"unlock": 4
+	},
+	{
+		"id": "ochrebeads",
+		"name": "§names.dishes.71f3ed999302§",
+		"mats": [
+			"gem_2",
+			"cloth_2",
+			"seed_2"
+		],
+		"secs": 60,
+		"unlock": 10
+	},
+	{
+		"id": "trailpack",
+		"name": "§names.dishes.f73d4a391564§",
+		"mats": [
+			"seed_4",
+			"fruit_5"
+		],
+		"secs": 10,
+		"unlock": 4
+	},
+	{
+		"id": "toolbelt",
+		"name": "§names.dishes.4e79252ed0ae§",
+		"mats": [
+			"cloth_4",
+			"tool_4"
+		],
+		"secs": 90,
+		"unlock": 12
+	},
+	{
+		"id": "bracer",
+		"name": "§names.dishes.232b1a93d50a§",
+		"mats": [
+			"armor_1",
+			"cloth_3",
+			"tool_3"
+		],
+		"secs": 120,
+		"unlock": 13
+	},
+	{
+		"id": "talisman",
+		"name": "§names.dishes.fafa724db359§",
+		"mats": [
+			"gem_3",
+			"cloth_3",
+			"seed_2"
+		],
+		"secs": 180,
+		"unlock": 14
+	},
+	{
+		"id": "warpaint",
+		"name": "§names.dishes.aa6f34bc0102§",
+		"mats": [
+			"gem_2",
+			"fruit_5",
+			"seed_3"
+		],
+		"secs": 240,
+		"unlock": 15
+	},
+	{
+		"id": "hunterkit",
+		"name": "§names.dishes.ba6df5f0c7c9§",
+		"mats": [
+			"beast_1",
+			"tool_4",
+			"cloth_3"
+		],
+		"secs": 300,
+		"unlock": 16
+	},
+	{
+		"id": "furwrap",
+		"name": "§names.dishes.5253d8db38a9§",
+		"mats": [
+			"beast_2",
+			"armor_2"
+		],
+		"secs": 360,
+		"unlock": 17
+	},
+	{
+		"id": "featherhat",
+		"name": "§names.dishes.3a6907c07b69§",
+		"mats": [
+			"bird_1",
+			"cloth_4",
+			"gem_2"
+		],
+		"secs": 420,
+		"unlock": 18
+	},
+	{
+		"id": "platter",
+		"name": "§names.dishes.2d057d3dbb6f§",
+		"mats": [
+			"fruit_4",
+			"veg_3",
+			"beast_1"
+		],
+		"secs": 480,
+		"unlock": 24
+	},
+	{
+		"id": "grill",
+		"name": "§names.dishes.b3898a570823§",
+		"mats": [
+			"beast_2",
+			"veg_2",
+			"bird_1"
+		],
+		"secs": 540,
+		"unlock": 24
+	},
+	{
+		"id": "skewer",
+		"name": "§names.dishes.fd5740dcfa93§",
+		"mats": [
+			"roast_3",
+			"veg_4",
+			"seed_2"
+		],
+		"secs": 600,
+		"unlock": 24
+	},
+	{
+		"id": "feast",
+		"name": "§names.dishes.5ac94e1760ff§",
+		"mats": [
+			"beast_2",
+			"bird_1",
+			"veg_4",
+			"fruit_5"
+		],
+		"secs": 600,
+		"unlock": 25
+	},
+	{
+		"id": "fruitboard",
+		"name": "§names.dishes.be292e7b623c§",
+		"mats": [
+			"furn_3",
+			"fruit_6"
+		],
+		"secs": 600,
+		"unlock": 26
+	},
+	{
+		"id": "mask",
+		"name": "§names.dishes.201f47073c89§",
+		"mats": [
+			"craft_2",
+			"cloth_5",
+			"gem_3"
+		],
+		"secs": 600,
+		"unlock": 28
+	},
+	{
+		"id": "chiefseat",
+		"name": "§names.dishes.50e500fd9887§",
+		"mats": [
+			"furn_5",
+			"armor_3",
+			"cloth_5"
+		],
+		"secs": 720,
+		"unlock": 30
+	},
+	{
+		"id": "potstew",
+		"name": "§names.dishes.2ef4f7ac026c§",
+		"mats": [
+			"pot_3",
+			"roast_3",
+			"veg_4"
+		],
+		"secs": 900,
+		"unlock": 31
+	},
+	{
+		"id": "drumset",
+		"name": "§names.dishes.ef808d656eca§",
+		"mats": [
+			"ware_2",
+			"craft_3",
+			"furn_4"
+		],
+		"secs": 1200,
+		"unlock": 33
+	},
+	{
+		"id": "grandfeast",
+		"name": "§names.dishes.9981c2759fb1§",
+		"mats": [
+			"pot_5",
+			"roast_3",
+			"veg_5",
+			"bird_1"
+		],
+		"secs": 1800,
+		"unlock": 36
+	},
+	{
+		"id": "chiefgift",
+		"name": "§names.dishes.638b523b3525§",
+		"mats": [
+			"craft_3",
+			"ware_3",
+			"armor_3",
+			"cloth_6"
+		],
+		"secs": 2400,
+		"unlock": 39
+	}
 ]

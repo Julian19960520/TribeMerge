@@ -21,7 +21,7 @@ func _make_visible(visible: bool) -> void:
 		host.visible = visible
 
 func _get_plugin_name() -> String:
-	return "配置"
+	return TextCatalog.source("developer.plugin.148d195e21b0")
 
 func _get_plugin_icon() -> Texture2D:
 	var theme := EditorInterface.get_editor_theme()

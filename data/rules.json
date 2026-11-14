@@ -14,9 +14,9 @@
 	"token_step": 10,
 	"xp_base": 3,
 	"xp_div": 4,
-	"energy_price": 20,
-	"energy_price_step": 10,
-	"energy_price_max": 60,
+	"energy_price": 10,
+	"energy_price_step": 0,
+	"energy_price_max": 10,
 	"craft_level": 3,
 	"rank_server": "http://127.0.0.1:8765",
 	"rank_top": 50,
@@ -53,9 +53,9 @@
 	"storage_expand_step": 10,
 	"craft_cap_at": [
 		3,
-		16
+		3
 	],
-	"rush_sec": 60,
+	"rush_sec": 6,
 	"craft_sand": [
 		[
 			0,
@@ -95,8 +95,8 @@
 	"merge_resource_drops": {
 		"main": [
 			{
-				"item": "shell_1",
-				"chance": 0.01
+				"item": "shell_2",
+				"chance": 0.05
 			},
 			{
 				"item": "sand_1",
@@ -128,5 +128,19 @@
 		"fire",
 		"wood",
 		"pot"
-	]
+	],
+	"xp_by_level": [
+		2,
+		5,
+		3,
+		5,
+		5
+	],
+	"starter_generator": {
+		"item": "emberpot_1",
+		"reward_level": 4,
+		"lifetime_sec": 604800
+	},
+	"hot_level_step": 8,
+	"hot_level_max_bonus": 2
 }

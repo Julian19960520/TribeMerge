@@ -1,5 +1,5 @@
 extends SceneTree
-## 参考竞品的分阶段新手流程：教学单给经验、首次补体力免费、升级送订单材料、4 级送火种罐、提示只出一次。
+## 参考竞品的分阶段新手流程：练习单不带经验、首次补体力免费、升级送订单材料、4 级送火种罐、提示只出一次。
 ## godot --headless --path . --script tools/check_onboarding_stages.gd -- --replay-test --cloud-off
 var failures := 0
 func _initialize() -> void: run.call_deferred()
@@ -10,7 +10,7 @@ func check(ok: bool, label: String) -> void:
 func _fresh(replay, game, level: int) -> void:
 	replay.executing = true
 	replay.seq = 0; replay.base = 0; replay.pending = []; replay.inflight = {}
-	replay.clock = 1794240000; replay.meta = {}
+	replay.clock = 1794240000; replay.meta = {}; game.simulation_time = replay.clock
 	game.random_seed = "onboarding-stages"; game.random_streams = {}
 	game.new_game()
 	if level > 0:
@@ -28,8 +28,53 @@ func run() -> void:
 	_fresh(replay, game, 0)
 	var xp := 0
 	for o in game.orders: xp += int(o.get("rw", {}).get("xp", 0))
-	check(xp == 2, "两张教学订单各给 1 点经验")
-	check(Data.xp_need(1) == 3, "1 级升级需要 3 点：引导结束时 2/3，再交一单就升到 2 级")
+	check(xp == 0 and game.orders.is_empty(), "开场没有订单，练习单不提前发经验")
+	check([Data.xp_need(1), Data.xp_need(2), Data.xp_need(3), Data.xp_need(4), Data.xp_need(5)] == [2, 5, 3, 5, 5], "前五级经验严格对应表格：2、5、3、5、5")
+
+	# #79: a saved, claimable clear-land reward, never a hidden automatic refill.
+	game.level = 2; game.energy = 0
+	replay.meta["free_energy"] = true
+	for i in range(14, 30): game.board[i] = {"id": "", "lock": 0}
+	replay.perform("tick", {}, replay.clock)
+	check(game.rules.onboarding.progress().get("rescue_pending", false), "再次耗尽且清出空地时准备15体力奖励")
+	var rescue: Dictionary = replay.perform("onboarding_rescue", {}, replay.clock)
+	check(not rescue.has("error") and game.energy == 15, "点击领取后才获得15体力")
+	var rescue_state: Dictionary = replay.snapshot()
+	replay.restore(rescue_state)
+	check(replay.perform("onboarding_rescue", {}, replay.clock).has("error") and game.energy == 15, "恢复后清地奖励不能重复领取")
+	_fresh(replay, game, 0)
+	game.level = 4; game.energy = 0
+	for i in game.board.size(): game.board[i] = {"id": "", "lock": 2}
+	game.board[28] = {"id": "emberpot_1", "lock": 0}
+	game.board[29] = {"id": "", "lock": 0}
+	replay.meta["onboarding"]["step"] = game.rules.onboarding.stage_index("free_energy_gift")
+	replay.perform("tick", {}, replay.clock)
+	check(str(game.rules.onboarding.stage()["key"]) == "energy_gift", "有一个空位即可引导免费生产")
+	var gift: Dictionary = replay.perform("tap", {"cell": 28}, replay.clock)
+	check(gift.get("kind") == "produce" and game.energy == 0 and game.board[28]["id"] == "emberpot_1" and game.rules.board.gen_left(28) == 7, "引导与常规逻辑一致：保留火种罐，产出一件2～4级体力物品")
+	var produced := str(gift.get("id", ""))
+	replay.perform("tap", {"cell": 29}, replay.clock)
+	check(game.energy == Data.value_of(produced) and str(game.rules.onboarding.stage()["key"]) == "free_level4", "点击实际产物获得体力，引导无需强制合成100体力")
+
+	_fresh(replay, game, 1)
+	game.xp = 2
+	game.rules.orders.refill_orders()
+	check(int(game.orders[0]["rw"].get("xp", 0)) == 1, "旧版2/3经验存档仍有带星心愿，不会因新经验表卡级")
+	for i in game.board.size(): game.board[i] = {"id": "", "lock": 0}
+	for i in game.orders[0]["items"].size(): game.board[i]["id"] = game.orders[0]["items"][i]
+	replay.perform("order", {"cell": 0}, replay.clock)
+	check(game.level == 2 and game.xp == 1, "旧版累计声望在下一单结算，保留溢出的1点经验")
+	_fresh(replay, game, 3)
+	for i in game.board.size(): game.board[i] = {"id": "", "lock": 0}
+	game.board[0]["id"] = "fruit_5"
+	game.orders = [game.order_identity(game.rules.orders._craft_order(Data.DISHES["salad"]))]
+	replay.perform("craft", {"cell": 0}, replay.clock)
+	# The player can skip once the material flight has landed.
+	game.simulation_time = replay.clock + 1
+	replay.perform("tick", {}, int(game.simulation_time))
+	game.rush = 120
+	var skipped: Dictionary = replay.perform("rush", {"cell": 0}, int(game.simulation_time))
+	check(int(skipped.get("used", 0)) == 1 and game.rush == 119 and not game.rules.orders.cooking(0), "制作跳过按6秒一沙漏收费，空设备格也能正确加速")
 
 	_fresh(replay, game, 3)
 	game.energy = 0
@@ -38,7 +83,7 @@ func run() -> void:
 	check(not r.has("error") and bool(r.get("free", false)) and game.energy == 100 and game.amber == amber, "第一次补体力免费，补满 100")
 	game.energy = 0
 	r = replay.perform("energy", {}, replay.clock)
-	check(not r.has("error") and not r.has("free") and game.amber == amber - game.rules.progression.energy_price() + 10 and game.energy == 100, "第二次补体力按原价花琥珀")
+	check(not r.has("error") and not r.has("free") and game.amber == amber - 10 and game.energy == 100, "第二次补体力按原价花琥珀")
 
 	_fresh(replay, game, 1)
 	for i in game.board.size():

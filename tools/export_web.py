@@ -45,6 +45,8 @@ def run_checked(command, label):
         if line.startswith("PASS"):
             print(line, flush=True)
 
+subprocess.run([sys.executable, str(root / "tools/compile_economy.py")], check=True)
+subprocess.run([sys.executable, str(root / "tools/text_catalog.py"), "--check"], check=True)
 subprocess.run([sys.executable, str(root / "tools/stamp_replay.py")], check=True)
 subprocess.run([sys.executable, str(root / "tools/bake_character_sprites.py"), "--check"], check=True)
 dist = root / "dist"
@@ -85,16 +87,28 @@ wasm.unlink()
 page = dist / "index.html"
 html = page.read_text()
 html = html.replace('"args":[]', '"args":["--","--cloud-off"]')
+text_catalog = json.loads((root / "localization/texts.json").read_text())
+
+def web_text(key):
+    entry = text_catalog["entries"][key]
+    return entry["zh_CN"] or entry["source"]
+
 bootstrap = """<script>
 // Keep the engine download below the hosting per-file limit.
 const originalFetch = window.fetch.bind(window);
+// The game waits for the server-generated catalog before any price is displayed.
+const requestedMarket = new URLSearchParams(location.search).get('market');
+const economyMarket = requestedMarket === 'US' ? 'US' : 'CN';
+const catalogReady = originalFetch(new URL('economy-' + economyMarket.toLowerCase() + '.json', location.href), {cache:'no-cache'})
+  .then(response => { if (!response.ok) throw new Error(__ASSET_LOAD_ERROR__); return response.json(); })
+  .then(catalog => { if (catalog.schema !== 1 || !catalog.version || !catalog.items) throw new Error(__ASSET_LOAD_ERROR__); window.tribeEconomyCatalog = catalog; });
 const packChunks = __PACK_CHUNKS__;
 window.fetch = async function(resource, options) {
   const url = typeof resource === 'string' ? resource : resource.url;
   if (new URL(url, location.href).pathname.endsWith('/index.pck')) {
     const chunks = await Promise.all(packChunks.map(async name => {
       const response = await originalFetch(new URL(name, location.href), options);
-      if (!response.ok) throw new Error('物品资源下载失败，请刷新重试');
+      if (!response.ok) throw new Error(__ASSET_LOAD_ERROR__);
       return response.arrayBuffer();
     }));
     return new Response(new Blob(chunks), {
@@ -103,7 +117,7 @@ window.fetch = async function(resource, options) {
   }
   if (new URL(url, location.href).pathname.endsWith('/index.wasm')) {
     const response = await originalFetch(new URL('index.wasm.gz', location.href), options);
-    if (!response.ok) throw new Error('游戏引擎下载失败，请刷新重试');
+    if (!response.ok) throw new Error(__ENGINE_LOAD_ERROR__);
     return new Response(response.body.pipeThrough(new DecompressionStream('gzip')), {
       headers: { 'Content-Type': 'application/wasm' }
     });
@@ -112,14 +126,20 @@ window.fetch = async function(resource, options) {
 };
 </script>
 """
+bootstrap = bootstrap.replace('__ASSET_LOAD_ERROR__', json.dumps(web_text("ui.web.844f400632a8"), ensure_ascii=False))
+bootstrap = bootstrap.replace('__ENGINE_LOAD_ERROR__', json.dumps(web_text("ui.web.1b90e8ee8b0b"), ensure_ascii=False))
 bootstrap = bootstrap.replace('__PACK_CHUNKS__', json.dumps(pack_chunks))
-html = html.replace('<script src="index.js"></script>', bootstrap + '<script src="index.js"></script>')
+patch_start = '<script>const originalStartGame = Engine.prototype.startGame; Engine.prototype.startGame = function(...args) { return catalogReady.then(() => originalStartGame.apply(this, args)); };</script>'
+html = html.replace('<script src="index.js"></script>', bootstrap + '<script src="index.js"></script>' + patch_start)
 assert bootstrap in html, "Godot HTML shell changed"
 page.write_text(html)
 (dist / "build.json").write_text(json.dumps({"godot": version, "runtime_source": "official Godot 4.6.3 export template", "rules_build": json.loads((root / "data/replay_build.json").read_text()), "pack_sha256": pack_sha256, "pack_bytes": len(pack_bytes), "wasm_sha256": wasm_sha256, "pack_chunks": pack_chunks}, indent=2) + "\n")
 print("Web export ready:", dist, flush=True)
 # The simulator report is a separate lightweight page; it does not load the game engine.
 import shutil
+shutil.copyfile(root / "localization/texts.json", dist / "texts.json")
+for market in ("CN", "US"):
+    shutil.copyfile(root / f"server/public/catalog_{market}.json", dist / f"economy-{market.lower()}.json")
 for name in ("simulation.html", "simulation-events.js", "simulation-report.json.gz"):
     source = root / "web" / name
     if source.exists():

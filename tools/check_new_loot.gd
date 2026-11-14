@@ -45,7 +45,7 @@ func run() -> void:
 	var next: Dictionary = await g.dispense_chest(0)
 	g.orders = [{"items": ["fruit_3"], "who": 0, "rw": {"shell": 1}}]
 	var last: Dictionary = await g.dispense_chest(0)
-	check(next.get("id") == "seed_3" and last.get("id") == "fruit_3" and g.rules.board.cell_id(0) == "fruit_3", "next chest click adapts to changed orders and uses the last slot")
+	check(next.get("id") == "seed_3" and last.get("id") == "fruit_3" and int(last["to"]) != 0 and g.rules.board.cell_id(0) == "", "last chest item uses another cell before the empty box disappears")
 	clear_board(); g.orders = [{"items": ["fruit_6"], "who": 0, "rw": {"shell": 1}}]
 	g.board[0]["id"] = "orderbox_5"
 	await g.dispense_chest(0)
@@ -58,7 +58,7 @@ func run() -> void:
 	clear_board(); g.board[0]["id"] = "premiumbox_1"
 	var wallet := [g.energy, g.amber]
 	for i in 8: await g.dispense_chest(0)
-	check(g.rules.board.empty_count() == 55 and wallet == [g.energy, g.amber] and Data.type_of(g.rules.board.cell_id(0)) in ["energy", "amber"], "premium chest emits one object per click and does not redeem resources automatically")
+	check(g.rules.board.empty_count() == 55 and wallet == [g.energy, g.amber] and g.rules.board.cell_id(0) == "", "premium chest emits all eight physical drops outside its own cell")
 	for target in ["fruit_4", "basket_4", "pack_4", "orderbox_4", "fire_5"]:
 		clear_board(); g.board[0]["id"] = "upgrade_1"; g.board[1]["id"] = target
 		var higher := Data.next_id(target)

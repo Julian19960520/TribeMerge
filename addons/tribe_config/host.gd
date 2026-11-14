@@ -21,16 +21,16 @@ func _ready() -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	catalog = [
-		{"title": "物品链", "path": Files.CHAINS, "script": "res://addons/tribe_config/editors/chains_editor.gd"},
-		{"title": "人物", "path": Files.PEOPLE, "script": "res://addons/tribe_config/editors/people_editor.gd"},
-		{"title": "剧情订单", "path": Files.STORY, "script": "res://addons/tribe_config/editors/story_editor.gd"},
-		{"title": "卡册", "path": Files.ALBUMS, "script": "res://addons/tribe_config/editors/albums_editor.gd"},
-		{"title": "琥珀充值", "path": Files.AMBER, "script": "res://addons/tribe_config/editors/amber_editor.gd"},
-		{"title": "建筑", "path": Files.BUILDS, "script": "res://addons/tribe_config/editors/builds_editor.gd"},
-		{"title": "主角等级", "path": Files.LEVELS, "script": "res://addons/tribe_config/editors/levels_editor.gd"},
-		{"title": "通行证", "path": Files.PASS, "script": "res://addons/tribe_config/editors/pass_editor.gd"},
-		{"title": "初始棋盘", "path": Files.BOARD, "script": "res://addons/tribe_config/editors/board_editor.gd"},
-		{"title": "规则", "path": Files.RULES, "script": "res://addons/tribe_config/editors/rules_editor.gd"},
+		{"title": TextCatalog.source("developer.host.4ab3d0c189e3"), "path": Files.CHAINS, "script": "res://addons/tribe_config/editors/chains_editor.gd"},
+		{"title": TextCatalog.source("developer.people_editor.8d7aff5a595f"), "path": Files.PEOPLE, "script": "res://addons/tribe_config/editors/people_editor.gd"},
+		{"title": TextCatalog.source("developer.host.d2e3cba99db0"), "path": Files.STORY, "script": "res://addons/tribe_config/editors/story_editor.gd"},
+		{"title": TextCatalog.source("developer.host.600fd878d296"), "path": Files.ALBUMS, "script": "res://addons/tribe_config/editors/albums_editor.gd"},
+		{"title": TextCatalog.source("developer.host.12ee32b40734"), "path": Files.AMBER, "script": "res://addons/tribe_config/editors/amber_editor.gd"},
+		{"title": TextCatalog.source("developer.host.5b46860a8e8b"), "path": Files.BUILDS, "script": "res://addons/tribe_config/editors/builds_editor.gd"},
+		{"title": TextCatalog.source("developer.story_editor.34243df4d613"), "path": Files.LEVELS, "script": "res://addons/tribe_config/editors/levels_editor.gd"},
+		{"title": TextCatalog.source("developer.host.2f0a2b5a01ff"), "path": Files.PASS, "script": "res://addons/tribe_config/editors/pass_editor.gd"},
+		{"title": TextCatalog.source("developer.host.4a5eab404c52"), "path": Files.BOARD, "script": "res://addons/tribe_config/editors/board_editor.gd"},
+		{"title": TextCatalog.source("developer.host.1123245d1bed"), "path": Files.RULES, "script": "res://addons/tribe_config/editors/rules_editor.gd"},
 	]
 	for info in catalog:
 		var loaded = Files.read(info["path"])
@@ -49,11 +49,11 @@ func _ready() -> void:
 	path_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bar.add_child(path_lbl)
 	var reload_btn := Button.new()
-	reload_btn.text = "重新读取"
+	reload_btn.text = TextCatalog.resolve(TextCatalog.source("developer.host.df7392cc96be"))
 	reload_btn.pressed.connect(_reload_pressed)
 	bar.add_child(reload_btn)
 	var save_btn := Button.new()
-	save_btn.text = "保存到文件"
+	save_btn.text = TextCatalog.resolve(TextCatalog.source("developer.host.59ce804379ac"))
 	save_btn.pressed.connect(_save)
 	bar.add_child(save_btn)
 	status = Label.new()
@@ -66,11 +66,11 @@ func _ready() -> void:
 	file_list.custom_minimum_size = Vector2(140, 0)
 	file_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for info in catalog:
-		file_list.add_item(info["title"])
+		file_list.add_item(TextCatalog.resolve(info["title"]))
 	file_list.item_selected.connect(_on_file)
 	split.add_child(file_list)
 	confirm = ConfirmationDialog.new()
-	confirm.dialog_text = "放弃未保存的修改，从文件重新读取？"
+	confirm.dialog_text = TextCatalog.source("developer.host.4b3e0f9e16aa")
 	confirm.confirmed.connect(_reload_now)
 	add_child(confirm)
 	_open(0)
@@ -96,23 +96,23 @@ func _open(i: int) -> void:
 	editor.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	split.add_child(editor)
 	editor.edit(pages[info["path"]], self)
-	title.text = info["title"]
-	path_lbl.text = info["path"]
+	title.text = TextCatalog.resolve(info["title"])
+	path_lbl.text = TextCatalog.resolve(info["path"])
 	_refresh_status()
 
 func touch() -> void:
 	dirty[catalog[current]["path"]] = true
-	set_status("有未保存的修改")
+	set_status(TextCatalog.source("developer.host.c2277872cdce"))
 
 func set_status(text: String, bad: bool = false) -> void:
-	status.text = ("还不能保存：" + text) if bad else text
+	status.text = TextCatalog.resolve((TextCatalog.source("developer.host.159b970778f6") + text) if bad else text)
 
 func _refresh_status() -> void:
 	var path: String = catalog[current]["path"]
 	if dirty.get(path, false):
-		set_status("有未保存的修改")
+		set_status(TextCatalog.source("developer.host.c2277872cdce"))
 	else:
-		set_status("改完点「保存到文件」。重新运行游戏后生效。")
+		set_status(TextCatalog.source("developer.host.80a507984a56"))
 
 func _save() -> void:
 	if editor and editor.has_method("validate"):
@@ -125,13 +125,13 @@ func _save() -> void:
 	var path: String = catalog[current]["path"]
 	var err := Files.write(path, pages[path])
 	if err != OK:
-		set_status("保存失败（%s）" % error_string(err), true)
+		set_status(TextCatalog.source("developer.host.1f7c56ff5cdb") % error_string(err), true)
 		return
 	var fs := EditorInterface.get_resource_filesystem()
 	if fs:
 		fs.update_file(path)
 	dirty.erase(path)
-	set_status("已写入 %s 。重新运行游戏后生效。" % path)
+	set_status(TextCatalog.source("developer.host.da351f64b0f5") % path)
 
 func _reload_pressed() -> void:
 	var path: String = catalog[current]["path"]
@@ -144,9 +144,9 @@ func _reload_now() -> void:
 	var path: String = catalog[current]["path"]
 	var loaded = Files.read(path)
 	if loaded == null:
-		set_status("读取失败 " + path, true)
+		set_status(TextCatalog.source("developer.host.a92695a59f47") + path, true)
 		return
 	pages[path] = loaded
 	dirty.erase(path)
 	_open(current)
-	set_status("已从文件重新读取")
+	set_status(TextCatalog.source("developer.host.b2cb418c8466"))

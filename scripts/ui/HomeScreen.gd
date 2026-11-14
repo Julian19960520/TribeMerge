@@ -9,6 +9,8 @@ var _spots_root: Control
 var _event_lbl: Label
 var go: TButton
 var _cards_btn: TButton
+var _book_btn: TButton
+var _map_btn: TButton
 ## 按等级开放的左上卡片和排行按钮：[节点, 功能 id]
 var _gated: Array = []
 var _go_ix := -1
@@ -47,7 +49,7 @@ func _ready() -> void:
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * PASS_K)
 		_paint_pass(ci, sz / PASS_K)
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	UI.lbl(ev, "通行证", Rect2(0, 74, 100, 24), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+	UI.lbl(ev, TextCatalog.source("developer.host.2f0a2b5a01ff"), Rect2(0, 74, 100, 24), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	_event_lbl = UI.lbl(ev, "", Rect2(24, 98, 72, 20), 13, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
 	_gated.append([ev, "pass"])
 
@@ -66,25 +68,27 @@ func _ready() -> void:
 	var rank := UI.btn(self, Rect2(626, 246, 80, 80), "", "teal", func(): RankPopupScript.open())
 	rank.is_round = true
 	rank.extra = func(ci, sz): Sprites.draw(ci, "tribe_trophy", Rect2(sz * 0.5 + TribeSprites.TROPHY_BOX.position, TribeSprites.TROPHY_BOX.size))
-	var rank_lbl := UI.lbl(self, "排行", Rect2(616, 322, 100, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+	var rank_lbl := UI.lbl(self, TextCatalog.source("ui.homescreen.f70136801523"), Rect2(616, 322, 100, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 	_gated.append([rank, "rank"])
 	_gated.append([rank_lbl, "rank"])
 
+	_map_btn = UI.btn(self, Rect2(626, 350, 80, 80), TextCatalog.source("ui.homescreen.41ab2e0ecbec"), "teal", func(): G.main.open("map"), 25)
 	var build := UI.btn(self, Rect2(16, 1316, 124, 128), "", "wood", _open_next_build)
 	build.extra = func(ci, sz): Paint.hammer(ci, sz * 0.5 + Vector2(0, -6), 1.1)
-	UI.lbl(build, "建造", Rect2(0, 86, 124, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(build, TextCatalog.source("ui.homescreen.cefdf764cd74"), Rect2(0, 86, 124, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	var bk := UI.btn(self, Rect2(150, 1330, 110, 112), "", "hide", func(): G.main.open("book"))
 	bk.extra = func(ci, sz):
 		Paint.book(ci, sz * 0.5 + Vector2(0, -10), 0.9)
 		if G.rules.board.book_prize_count() > 0:
 			Paint.badge_num(ci, Vector2(sz.x - 18, 16), 4)
-	UI.lbl(bk, "图鉴", Rect2(0, 72, 110, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(bk, TextCatalog.source("ui.homescreen.06169ded8b7b"), Rect2(0, 72, 110, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	_book_btn = bk
 	var cd := UI.btn(self, Rect2(270, 1330, 110, 112), "", "hide", func(): G.main.open("event"))
 	cd.extra = func(ci, sz): Paint.cards_icon(ci, sz * 0.5 + Vector2(0, -10), 0.85)
-	UI.lbl(cd, "卡册", Rect2(0, 72, 110, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(cd, TextCatalog.source("developer.host.600fd878d296"), Rect2(0, 72, 110, 34), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	cd.visible = G.rules.progression.feature_unlocked(Data.CARD_LEVEL)
 	_cards_btn = cd
-	go = UI.btn(self, Rect2(398, 1310, 306, 136), "去合成", "green", func(): G.main.show_screen("board"), 54)
+	go = UI.btn(self, Rect2(398, 1310, 306, 136), TextCatalog.source("ui.homescreen.a2bebd02a1d3"), "green", func(): G.main.show_screen("board"), 54)
 	_go_ix = go.get_index()
 	go.extra = func(ci, sz):
 		Art.item(ci, "fruit_2", Vector2(sz.x - 34, 20), 56)
@@ -103,10 +107,10 @@ func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
 	var f := G.font_title
 	var lv := str(maxi(G.rules.progression.pass_reached(), 0) + 1)
 	var fs := 24 if lv.length() < 2 else 20
-	var tw := f.get_string_size(lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var tw := f.get_string_size(TextCatalog.resolve(lv), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var tp := Vector2(mc.x - tw * 0.5, mc.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
-	ci.draw_string_outline(f, tp, lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
-	ci.draw_string(f, tp, lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	ci.draw_string_outline(f, tp, TextCatalog.resolve(lv), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
+	ci.draw_string(f, tp, TextCatalog.resolve(lv), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 	# 到下一级的进度
 	var bar := Rect2(card.position.x + 12, card.end.y - 20, card.size.x - 24, 11)
 	var fr := G.rules.progression.pass_frac()
@@ -133,14 +137,16 @@ func _process(delta: float) -> void:
 	_clock_elapsed += delta
 	if _event_lbl and _clock_elapsed >= 1.0:
 		_clock_elapsed = fmod(_clock_elapsed, 1.0)
-		_event_lbl.text = G.fmt_time(G.rules.clock.pass_secs_left())
+		_event_lbl.text = TextCatalog.resolve(G.fmt_time(G.rules.clock.pass_secs_left()))
 
 func _build_spots() -> void:
 	_spots_dirty = true
+	if _map_btn != null: _map_btn.visible = G.level >= 5 and int(G.builds.get("fire", 0)) >= 4
+	if _book_btn != null: _book_btn.visible = not G.tutorial_on or G.level >= 5 and int(G.builds.get("fire", 0)) >= 4
 	if _cards_btn != null:
 		_cards_btn.visible = G.rules.progression.feature_unlocked(Data.CARD_LEVEL)
 	for pair in _gated:
-		if is_instance_valid(pair[0]): pair[0].visible = G.rules.progression.feature_unlocked(Data.feature_level(str(pair[1])))
+		if is_instance_valid(pair[0]): pair[0].visible = not G.tutorial_on and G.rules.progression.feature_unlocked(Data.feature_level(str(pair[1])))
 	if not is_visible_in_tree(): return
 	_spots_dirty = false
 	var wanted := {}
@@ -180,17 +186,17 @@ func _paint_tag(ci: CanvasItem, sz: Vector2, id: String) -> void:
 	var fs := 20
 	var name := str(b.get("name", id))
 	var tp := Vector2(48, 26)
-	ci.draw_string_outline(f, tp, name, HORIZONTAL_ALIGNMENT_LEFT, sz.x - 56, fs, 5, Art.INK)
-	ci.draw_string(f, tp, name, HORIZONTAL_ALIGNMENT_LEFT, sz.x - 56, fs, Color.WHITE)
+	ci.draw_string_outline(f, tp, TextCatalog.resolve(name), HORIZONTAL_ALIGNMENT_LEFT, sz.x - 56, fs, 5, Art.INK)
+	ci.draw_string(f, tp, TextCatalog.resolve(name), HORIZONTAL_ALIGNMENT_LEFT, sz.x - 56, fs, Color.WHITE)
 	if open:
 		var bar := Rect2(48, 33, sz.x - 62, 9)
 		if st > 0:
 			var fill := Rect2(bar.position, Vector2(maxf(9.0, bar.size.x * float(st) / float(maxi(total, 1))), bar.size.y))
 			Sprites.draw(ci, "tribe_tag_fill", fill, Art.MOSS if not done else Art.OCHRE)
 	else:
-		var t := "Lv.%d 开放" % Data.build_unlock(b)
-		ci.draw_string_outline(G.font_body, Vector2(48, 44), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Art.INK)
-		ci.draw_string(G.font_body, Vector2(48, 44), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("ffe7a8"))
+		var t := TextCatalog.source("ui.homescreen.1f67da2b53a5") % Data.build_unlock(b)
+		ci.draw_string_outline(G.font_body, Vector2(48, 44), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Art.INK)
+		ci.draw_string(G.font_body, Vector2(48, 44), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("ffe7a8"))
 	if open and not done and G.shells >= G.rules.progression.build_cost(id):
 		var c := Vector2(sz.x - 8, 6)
 		Paint.badge_num(ci, c, seed + 4)
@@ -214,7 +220,7 @@ func _open_next_build() -> void:
 		for b in Data.BUILDS:
 			if int(G.builds.get(str(b["id"]), 0)) < Data.build_stages(b):
 				all_done = false
-		G.main.toast("部落已经全部建好啦！" if all_done else "主角升级后会开放新的建造区域")
+		G.main.toast(TextCatalog.source("ui.homescreen.c91ca0a16fee") if all_done else TextCatalog.source("ui.homescreen.da3219beab24"))
 		return
 	G.main.open("build", id)
 
@@ -239,7 +245,7 @@ func play_build(area: String, idx: int, kind: String, part_name: String, rewards
 	var st := {"t": 0.0, "hits": 0, "popped": false}
 	var dur := 2.3
 	var box := UI.box(fx, Rect2(Vector2.ZERO, size), func(ci, _sz): _paint_build(ci, at, kind, h, float(st["t"])), false)
-	var lbl := UI.lbl(fx, "%s 建成！" % part_name, Rect2(at.x - 200, at.y - h - 70, 400, 50), 32, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+	var lbl := UI.lbl(fx, TextCatalog.source("ui.homescreen.28c5830c2172") % part_name, Rect2(at.x - 200, at.y - h - 70, 400, 50), 32, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	lbl.position.x = clampf(lbl.position.x, -60.0, size.x - 340.0)
 	lbl.modulate.a = 0.0
 	lbl.pivot_offset = lbl.size * 0.5

@@ -28,7 +28,7 @@ func run() -> void:
 	g.new_game(); g.level = 20; g.tutorial_on = false; g.seen_tutorial = true
 	g.random_seed = "graded-chests"; g.random_streams = {}
 	replay.advance(); replay.executing = false
-	check(Data.name_of("shell_2") == "不拿拿" and Data.CHAINS["shell"]["name"] == "不拿拿", "currency and physical rewards use the current banana name")
+	check(Data.name_of("shell_2") == "不那那" and Data.CHAINS["shell"]["name"] == "不那那", "currency and physical rewards use the current banana name")
 	for chain in ["energybox", "premiumbox", "chest", "choice"]:
 		check(Data.max_lv(chain) == 5, "%s has five grades" % chain)
 		for grade in range(1, 6):

@@ -64,7 +64,7 @@ func _ready() -> void:
 	_search = LineEdit.new()
 	_search.position = Vector2(24, 96)
 	_search.size = Vector2(592, 56)
-	_search.placeholder_text = "搜索名字或 id"
+	_search.placeholder_text = TextCatalog.resolve(TextCatalog.source("ui.picksheet.40939996ded3"))
 	_search.caret_blink = true
 	var fs := 26
 	_search.add_theme_font_size_override("font_size", fs)
@@ -99,7 +99,7 @@ func open(title: String, entries: Array, cb: Callable, current = null) -> void:
 	_current = str(current) if _mark else ""
 	_pending_jump = _mark
 	_tab = _tab_of(_current) if _mark else ""
-	_title.text = title
+	_title.text = UI.resource_text(title)
 	_search.set_block_signals(true)
 	_search.text = ""
 	_search.set_block_signals(false)
@@ -150,7 +150,7 @@ func _tab_names() -> Array:
 			continue
 		var t := str(e.get("tab", ""))
 		if t == "":
-			t = "其他"
+			t = TextCatalog.source("ui.picksheet.d2909f1647e7")
 		if seen.has(t):
 			continue
 		seen[t] = true
@@ -173,7 +173,7 @@ func _tab_of(id: String) -> String:
 		if bool(e.get("pin", false)) or not e.has("tab"):
 			return ""
 		var t := str(e.get("tab", ""))
-		return "其他" if t == "" else t
+		return TextCatalog.source("ui.picksheet.d2909f1647e7") if t == "" else t
 	return ""
 
 func _pick_tab(name: String) -> void:
@@ -207,7 +207,7 @@ func _tab_chip(x: float, text: String, on: bool) -> float:
 	var f: Font = G.font_body
 	var w := 96.0
 	if f != null:
-		w = maxf(96.0, f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x + 40.0)
+		w = maxf(96.0, f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x + 40.0)
 	var b := UI.btn(_tabs.content, Rect2(x, 6, w, 52), text, "teal" if on else "grey", func():
 		_pick_tab(text)
 	, 22)
@@ -245,7 +245,7 @@ func _fill() -> void:
 		if has_tabs:
 			var tab := str(e.get("tab", ""))
 			if tab == "":
-				tab = "其他"
+				tab = TextCatalog.source("ui.picksheet.d2909f1647e7")
 			if tab != _tab:
 				continue
 		var g := str(e.get("group", ""))
@@ -262,7 +262,7 @@ func _fill() -> void:
 	var y := 8.0
 	var jump_y := -1.0
 	if order.is_empty():
-		UI.lbl(_root, "没有这个物品", Rect2(24, y, 592, 40), 24, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
+		UI.lbl(_root, TextCatalog.source("ui.picksheet.8c65969eb993"), Rect2(24, y, 592, 40), 24, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
 		_sc.set_length(80)
 		_settle_jump(-1.0, 0.0)
 		return

@@ -21,8 +21,10 @@ static func levelup() -> PopupBase:
 		ci.draw_circle(c, 150, Color(1, 0.85, 0.4, 0.2))
 		Paint.level_badge(ci, c, 220)
 		Paint.heroine(ci, Vector2(250, 1260), 160))
-	UI.title(p.box, "主角升级！", Rect2(0, 210, 720, 110), 76)
+	UI.title(p.box, TextCatalog.source("ui.rewardpopups.e04dae39a573"), Rect2(0, 210, 720, 110), 70)
+	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.25ac13ec6cf7") % G.level, Rect2(40, 326, 640, 48), 26, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	UI.lbl(p.box, str(G.level), Rect2(260, 400, 200, 140), 96, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 16, Art.INK, true)
+	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.2717a59d0d73"), Rect2(40, 580, 640, 48), 25, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	for k in rewards.size():
 		UI.icon(p.box, rewards[k][0], spots[k], 120)
 		UI.lbl(p.box, "×%d" % rewards[k][1], Rect2(spots[k].x - 70, spots[k].y + 58, 140, 50), 34, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
@@ -31,7 +33,7 @@ static func levelup() -> PopupBase:
 	if not news.is_empty():
 		UI.lbl(p.box, String.chr(10).join(news.slice(0, 3)), Rect2(60, 820, 600, 44 * mini(news.size(), 3)), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 		hint_y = 836.0 + 44.0 * float(mini(news.size(), 3))
-	var hint := UI.lbl(p.box, "点击任意处领取", Rect2(0, hint_y, 720, 50), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
+	var hint := UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.7e7a9e76293a"), Rect2(0, hint_y, 720, 50), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
 	var tw := hint.create_tween().set_loops()
 	tw.tween_property(hint, "modulate:a", 0.3, 0.6)
 	tw.tween_property(hint, "modulate:a", 1.0, 0.6)
@@ -49,6 +51,8 @@ static func levelup() -> PopupBase:
 		if not (got as Array).is_empty():
 			RewardPresenter.present(got, func(k): return spots[k] if k < spots.size() else Vector2(360, 700))
 		p.on_tap = Callable()
+		if G.rules.onboarding.active():
+			p.tree_exited.connect(func(): G.main.open("orders_start"))
 		p.close()
 	var redraw := Timer.new()
 	redraw.wait_time = 0.033
@@ -91,17 +95,17 @@ static func new_generator(id: String) -> PopupBase:
 		Art.item(ci, id, c + Vector2(0, bob), 250)
 		var row := Rect2(110, 840, 500, 170)
 		ShopPopups._slot(ci, row, Color(0.25, 0.16, 0.1, 0.55), Color(1, 0.85, 0.5, 0.35)))
-	UI.title(p.box, "宝物升级啦！" if upgrade else "新宝物！", Rect2(0, 200, 720, 110), 76)
+	UI.title(p.box, TextCatalog.source("ui.rewardpopups.93d69ced0cd2") if upgrade else TextCatalog.source("ui.rewardpopups.776c5ea3af57"), Rect2(0, 200, 720, 110), 76)
 	UI.lbl(p.box, Data.name_of(id), Rect2(0, 690, 720, 56), 40, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	if upgrade:
-		UI.lbl(p.box, "能变出更好的东西啦！", Rect2(0, 748, 720, 48), 32, Color("9be36a"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
-	UI.lbl(p.box, "—— 能变出 ——", Rect2(0, 800, 720, 40), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
+		UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.0bc76974ecbc"), Rect2(0, 748, 720, 48), 32, Color("9be36a"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.55b69bcac3cf"), Rect2(0, 800, 720, 40), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
 	for k in drops.size():
 		var cx := ItemPopups._spread_x(k, drops.size(), 360.0, 104.0)
 		UI.icon(p.box, str(drops[k]), Vector2(cx, 930), 92)
 		if fresh.has(drops[k]):
-			UI.lbl(p.box, "NEW", Rect2(cx - 10, 866, 60, 30), 20, Color("ff5a4a"), HORIZONTAL_ALIGNMENT_CENTER, 6, Color.WHITE, true)
-	var hint := UI.lbl(p.box, "点击继续", Rect2(0, 1060, 720, 50), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
+			UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.a253ff09c5a8"), Rect2(cx - 10, 866, 60, 30), 20, Color("ff5a4a"), HORIZONTAL_ALIGNMENT_CENTER, 6, Color.WHITE, true)
+	var hint := UI.lbl(p.box, TextCatalog.source("ui.guide.b0daab78b94a"), Rect2(0, 1060, 720, 50), 28, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
 	var tw := hint.create_tween().set_loops()
 	tw.tween_property(hint, "modulate:a", 0.3, 0.6)
 	tw.tween_property(hint, "modulate:a", 1.0, 0.6)
@@ -204,7 +208,7 @@ static func board_reward(entries: Array) -> PopupBase:
 			if sr > 2.4:
 				Sprites.at(ci, "pop_sparkle", sp, sr / PS.SPARK_R, 0.0, Color(1, 0.95, 0.75, 0.6 * tw))
 		Paint.banner(ci, br, Color("c4532e")))
-	UI.title(p.box, "获得奖励", Rect2(br.position.x + 40, br.position.y + 4, br.size.x - 80, br.size.y - 10), 46, Color("fff1c4"))
+	UI.title(p.box, TextCatalog.source("ui.rewardpopups.f4d84602920a"), Rect2(br.position.x + 40, br.position.y + 4, br.size.x - 80, br.size.y - 10), 46, Color("fff1c4"))
 	# 奖励：依次弹出，落地后轻轻浮动
 	for k in n:
 		var id := str(entries[k]["id"])
@@ -222,7 +226,7 @@ static func board_reward(entries: Array) -> PopupBase:
 		var text := "×%d" % count
 		var tw_px := float(text.length()) * bfs * 0.62
 		if G.font_title:
-			tw_px = G.font_title.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x
+			tw_px = G.font_title.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x
 		var bw := tw_px + 26.0
 		var bh := bfs + 16.0
 		var badge := Rect2(slot * 0.5 + slot * 0.16, slot * 0.66 - bh * 0.5, bw, bh)
@@ -253,9 +257,9 @@ static func board_reward(entries: Array) -> PopupBase:
 			bob.tween_property(icon, "position:y", base_y + 2.0, period).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT))
 	# 底部：收下按钮 + 提示
 	var by := clampf(grid_bottom + 30.0, 1190.0, 1250.0)
-	var take := UI.btn(p.box, Rect2(220, by, 280, 96), "收下", "green", Callable(), 44)
+	var take := UI.btn(p.box, Rect2(220, by, 280, 96), TextCatalog.source("ui.cardrewardpresentation.52251aeea31a"), "green", Callable(), 44)
 	take.modulate.a = 0.0
-	var hint := UI.lbl(p.box, "点击任意处领取", Rect2(0, by + 104, 720, 40), 22, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	var hint := UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.4296c369fe48"), Rect2(0, by + 104, 720, 40), 22, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	hint.modulate.a = 0.0
 	var fade := take.create_tween()
 	fade.tween_interval(0.3 + 0.09 * float(n))
@@ -328,13 +332,17 @@ static func level_info() -> PopupBase:
 		Paint.level_badge(ci, Vector2(bar.end.x + 70, bar.get_center().y), 92)
 		Sprites.draw(ci, "pop_li_arrow", PS.LI_ARROW)
 		ShopPopups._slot(ci, Rect2(r.position.x + 40, r.position.y + 680, r.size.x - 80, 280), Color("ecd9b3"), Color(0.6, 0.4, 0.2, 0.4), true))
-	UI.title(p.box, "主角等级", Rect2(r.get_center().x - 200, r.position.y + 50, 400, 60), 38, Color.WHITE)
+	UI.title(p.box, TextCatalog.source("developer.story_editor.34243df4d613"), Rect2(r.get_center().x - 200, r.position.y + 50, 400, 60), 38, Color.WHITE)
 	UI.lbl(p.box, str(G.level), Rect2(r.get_center().x - 60, r.position.y - 44, 120, 80), 50, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
-	var tip := UI.lbl(p.box, "实现带 ★ 的心愿，提升主角等级并领取奖励！", Rect2(r.position.x + 40, r.position.y + 446, r.size.x - 80, 90), 25, Color("6b4a2a"))
+	var tip := UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.64ccff6c3eaf"), Rect2(r.position.x + 40, r.position.y + 446, r.size.x - 80, 90), 25, Color("6b4a2a"))
 	tip.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 	UI.lbl(p.box, "%d/%d" % [G.xp, G.rules.progression.xp_need()], Rect2(r.position.x + 70, r.position.y + 560, 400, 44), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	UI.lbl(p.box, str(G.level + 1), Rect2(r.position.x + 480, r.position.y + 548, 80, 60), 34, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
-	Popups.section(p.box, "下一级奖励", r.position.y + 640, Color("8a5a30"))
+	p.set_meta("level_progress", Rect2(80, 790, 560, 100))
+	p.set_meta("level_rewards", Rect2(80, 920, 560, 280))
+	p.set_meta("onboarding_close", Rect2(r.end.x - 52, r.position.y - 24, 70, 70))
+	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.28e000ab7489"), Rect2(80, 1160, 560, 38), 21, Color("7a5a3a"))
+	Popups.section(p.box, TextCatalog.source("ui.rewardpopups.8cd9b0c554cc"), r.position.y + 640, Color("8a5a30"))
 	var rw := Data.level_rewards(G.level + 1)
 	for k in rw.size():
 		var cx := ItemPopups._spread_x(k, rw.size(), r.get_center().x, 136.0)
@@ -349,3 +357,28 @@ static func level_info() -> PopupBase:
 	return p
 
 # ---------------------------------------------------------------- 丰收祭活动
+
+static func orders_start() -> PopupBase:
+	var p := PopupBase.new()
+	p.set_meta("reward_screen", true)
+	UI.title(p.box, TextCatalog.source("ui.rewardpopups.14435c01c92c"), Rect2(0, 500, 720, 110), 62)
+	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.5e2f87cb6eff") % [G.level, G.xp, G.rules.progression.xp_need()], Rect2(0, 650, 720, 60), 32, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(p.box, TextCatalog.source("ui.guide.b0daab78b94a"), Rect2(0, 800, 720, 50), 28, Color("ffe7a8"))
+	p.on_tap = p.close
+	return p
+
+static func onboarding_rescue() -> PopupBase:
+	var p := PopupBase.new()
+	p.set_meta("reward_screen", true)
+	var reward: Array = G.rules.onboarding.config()["rescue"]["reward"]
+	UI.title(p.box, TextCatalog.source("ui.rewardpopups.2fc1d6a44679"), Rect2(0, 360, 720, 110), 54)
+	UI.icon(p.box, str(reward[0]), Vector2(360, 680), 180)
+	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.51f1d25fd68d") % int(reward[1]), Rect2(0, 800, 720, 64), 38, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
+	p.on_tap = func():
+		var result: Dictionary = Replay.perform("onboarding_rescue")
+		if result.has("error"): return
+		RewardPresenter.present(result["rewards"], func(_k): return Vector2(360, 680))
+		p.on_tap = Callable()
+		p.close()
+	UI.btn(p.box, Rect2(210, 1030, 300, 100), TextCatalog.source("ui.rewardpopups.1a9195bf2ec1"), "green", func(): if p.on_tap.is_valid(): p.on_tap.call(), 38)
+	return p

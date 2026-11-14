@@ -16,7 +16,7 @@ var _busy := false
 
 func _ready() -> void:
 	var t := Offers.tier(KIND, TIER)
-	Popups.frame(self, R, str(Offers.cfg(KIND).get("title", "赶大集")), Art.CLAY)
+	Popups.frame(self, R, str(Offers.cfg(KIND).get("title", TextCatalog.source("ui.spreecard.ebf9369c2f5f"))), Art.CLAY)
 	UI.box(box, ART, _paint_market)
 	# 倒计时
 	UI.box(box, Rect2(R.get_center().x - 96, R.position.y + 48, 192, 50), func(ci, sz):
@@ -29,7 +29,7 @@ func _ready() -> void:
 	buy_btn.name = "spree_buy"
 	buy_btn.title_font = false
 	_burst(int(t.get("value_pct", 100)) - 100)
-	UI.lbl(box, "支付暂未开放", Rect2(R.position.x, 1188, R.size.x, 30), 19, Color("9a8468"))
+	UI.lbl(box, TextCatalog.source("ui.spreepopup.1af375cba403"), Rect2(R.position.x, 1188, R.size.x, 30), 19, Color("9a8468"))
 	_refresh()
 
 ## 集市：暖色天空、兽皮棚子、一串彩旗、两边货架，阿焰站中间拎着两只鼓鼓的草编袋
@@ -100,7 +100,7 @@ func _burst(extra: int) -> void:
 	st.rotation = 0.2
 	st.pivot_offset = st.size * 0.5
 	st.name = "spree_burst"
-	UI.lbl(st, "多送", Rect2(0, 30, 150, 34), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Color("7a1c12"), true)
+	UI.lbl(st, TextCatalog.source("ui.spreepopup.4bb4ab8fa6ba"), Rect2(0, 30, 150, 34), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Color("7a1c12"), true)
 	UI.lbl(st, "%d%%" % extra, Rect2(0, 62, 150, 44), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Color("7a1c12"), true)
 
 func _process(delta: float) -> void:
@@ -116,10 +116,10 @@ static func clock_text(sec: int) -> String:
 func _refresh() -> void:
 	var live := Offers.active(KIND)
 	var n := Offers.left(KIND, TIER)
-	clock.text = clock_text(Offers.remaining(KIND)) if live else "已结束"
-	left_lbl.text = "剩余可买：%d" % n
+	clock.text = TextCatalog.resolve(clock_text(Offers.remaining(KIND)) if live else TextCatalog.source("ui.energyofferpopup.d79b1d0e5c61"))
+	left_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.spreepopup.5580ae282554") % n)
 	buy_btn.enabled = live and n > 0 and not _busy
-	buy_btn.text = Offers.price_text(KIND, TIER) if live and n > 0 else ("已买完" if n <= 0 else "下次再来")
+	buy_btn.text = TextCatalog.resolve(Offers.price_text(KIND, TIER) if live and n > 0 else (TextCatalog.source("ui.spreepopup.468e8fb0701e") if n <= 0 else TextCatalog.source("ui.spreepopup.35dabb9b716f")))
 	buy_btn.queue_redraw()
 
 func _buy() -> void:

@@ -57,7 +57,7 @@ func _new_panel(next: String) -> void:
 	matching_art=null
 	for child in box.get_children(): box.remove_child(child); child.queue_free()
 	var rect: Rect2={"start":Rect2(60,262,600,828),"matching":Rect2(60,372,600,540),"progress":Rect2(60,236,600,964),"result":Rect2(60,320,600,750)}[phase]
-	var title: String={"start":"双人竞速","matching":"匹配对手","progress":"双人竞速","result":"比赛结算"}[phase]
+	var title: String={"start":TextCatalog.source("notice.data.33c9c97e48ba"),"matching":TextCatalog.source("ui.duelpopup.b26b89e40dd3"),"progress":TextCatalog.source("notice.data.33c9c97e48ba"),"result":TextCatalog.source("ui.duelpopup.fbc89fd9caf1")}[phase]
 	Popups.frame(self,rect,title,Art.CLAY)
 	body=Control.new()
 	body.mouse_filter=Control.MOUSE_FILTER_IGNORE
@@ -86,7 +86,7 @@ func _refresh() -> void:
 func _start_panel(s: Dictionary) -> void:
 	var again:=int(s.get("rounds",0))>0
 	var target:=int(DuelRace.config()["target"])
-	UI.title(body,"再来一局！" if again else "比谁先收满香蕉！",Rect2(90,322,540,56),38,Art.FIRE2)
+	UI.title(body,TextCatalog.source("ui.duelpopup.3aa4e43552f6") if again else TextCatalog.source("ui.duelpopup.b39a809b3c20"),Rect2(90,322,540,56),38,Art.FIRE2)
 	# 对阵擂台：你 VS 未知对手
 	UI.box(body,Rect2(90,388,540,196),func(ci,sz):
 		_card(ci,Rect2(Vector2.ZERO,sz),Color("f3dfb4"),951)
@@ -100,14 +100,14 @@ func _start_panel(s: Dictionary) -> void:
 			if side==1: ci.draw_circle(c,59,Color(0.36,0.3,0.24,0.75))
 		_vs(ci,Vector2(sz.x*0.5,82),38))
 	UI.title(body,"?",Rect2(470,430,100,100),60,Art.BONE)
-	_plate(Rect2(140,540,120,36),"你",Art.MOSS_D)
-	_plate(Rect2(460,540,120,36),"对手",Art.STONE_D)
-	UI.lbl(body,"帮族人实现心愿收集香蕉，先到 %d 根获胜"%target,Rect2(80,594,560,36),23,Color("7a5a3a"))
-	_reward_card(Rect2(90,640,266,124),"胜利奖励",DuelRace.config()["win_rewards"],Art.MOSS_D,Color("eef5d6"))
-	_reward_card(Rect2(364,640,266,124),"参与奖励",DuelRace.config()["lose_rewards"],Art.LEATHER,Color("f6e7c8"))
-	var button:=UI.btn(body,Rect2(200,782,320,84),"开始匹配","green",func(): _action("join"),38)
+	_plate(Rect2(140,540,120,36),TextCatalog.source("ui.duelpopup.a0c7716669b5"),Art.MOSS_D)
+	_plate(Rect2(460,540,120,36),TextCatalog.source("ui.duelpopup.4ea064c4d27d"),Art.STONE_D)
+	UI.lbl(body,TextCatalog.source("ui.duelpopup.6059f40f9a5e")%target,Rect2(80,594,560,36),23,Color("7a5a3a"))
+	_reward_card(Rect2(90,640,266,124),TextCatalog.source("ui.duelpopup.ec0dd761c15d"),DuelRace.config()["win_rewards"],Art.MOSS_D,Color("eef5d6"))
+	_reward_card(Rect2(364,640,266,124),TextCatalog.source("ui.duelpopup.2f701b057a0d"),DuelRace.config()["lose_rewards"],Art.LEATHER,Color("f6e7c8"))
+	var button:=UI.btn(body,Rect2(200,782,320,84),TextCatalog.source("ui.duelpopup.02ca74ca5ea7"),"green",func(): _action("join"),38)
 	button.name="duel_action"
-	Popups.section(body,"累计胜利  %d 次"%int(s["wins"]),884,Color("8a5a30"),360)
+	Popups.section(body,TextCatalog.source("ui.duelpopup.a4f3802656e2")%int(s["wins"]),884,Color("8a5a30"),360)
 	var last:=_last_milestone()
 	var wins_now:=int(s["wins"])
 	UI.box(body,WIN_BAR,func(ci,sz):
@@ -141,12 +141,12 @@ func _start_panel(s: Dictionary) -> void:
 				ci.draw_circle(Vector2(58,50),13,Art.INK)
 				ci.draw_circle(Vector2(58,50),11,Art.MOSS_D)
 				ci.draw_polyline(PackedVector2Array([Vector2(52,50),Vector2(57,55),Vector2(65,45)]),Color.WHITE,3,true)
-		UI.lbl(body,"%d 胜"%wins,Rect2(x-44,1000,88,34),22,Color.WHITE if ready else Art.INK,HORIZONTAL_ALIGNMENT_CENTER,6 if ready else 0,Art.MOSS_D)
+		UI.lbl(body,TextCatalog.source("ui.duelpopup.742bc958e1a4")%wins,Rect2(x-44,1000,88,34),22,Color.WHITE if ready else Art.INK,HORIZONTAL_ALIGNMENT_CENTER,6 if ready else 0,Art.MOSS_D)
 	_render_reward_bubble()
 
 
 func _matching_panel() -> void:
-	UI.title(body,"正在寻找对手",Rect2(90,452,540,52),38,Art.FIRE2)
+	UI.title(body,TextCatalog.source("ui.duelpopup.92f01d009648"),Rect2(90,452,540,52),38,Art.FIRE2)
 	matching_art=UI.box(body,Rect2(90,515,540,300),func(ci,sz):
 		var t:=Time.get_ticks_msec()/1000.0
 		var elapsed:=clampf(1.0-float(matching_until-Time.get_ticks_msec())/MATCH_MS,0,1)
@@ -168,15 +168,15 @@ func _matching_panel() -> void:
 		Art.fill(ci,Art.rrect(bar,10,962,0),Color("6b4a2e"),2)
 		ci.draw_colored_polygon(Art.rrect(Rect2(bar.position+Vector2(3,3),Vector2(maxf(12,(bar.size.x-6)*elapsed),bar.size.y-6)),7,963,0),Art.FIRE2),false)
 	matching_art.name="duel_matching_portraits"
-	_plate(Rect2(150,724,120,36),"你",Art.MOSS_D)
-	_plate(Rect2(450,724,120,36),"对手",Art.CLAY)
-	UI.lbl(body,"匹配完成后自动开赛",Rect2(90,836,540,40),24,Color("8a7560"))
+	_plate(Rect2(150,724,120,36),TextCatalog.source("ui.duelpopup.a0c7716669b5"),Art.MOSS_D)
+	_plate(Rect2(450,724,120,36),TextCatalog.source("ui.duelpopup.4ea064c4d27d"),Art.CLAY)
+	UI.lbl(body,TextCatalog.source("ui.duelpopup.6b9ffc07fdf9"),Rect2(90,836,540,40),24,Color("8a7560"))
 
 func _progress_panel(m: Dictionary) -> void:
 	var target:=maxi(1,int(m.get("target",DuelRace.config()["target"])))
 	var scores:=[clampi(int(m.get("me",0)),0,target),clampi(int(m.get("opponent",0)),0,target)]
 	var lead:=0 if scores[0]>scores[1] else (1 if scores[1]>scores[0] else -1)
-	UI.title(body,"先堆满 %d 根香蕉！"%target,Rect2(90,288,540,54),36,Art.FIRE2)
+	UI.title(body,TextCatalog.source("ui.duelpopup.473d07deecf7")%target,Rect2(90,288,540,54),36,Art.FIRE2)
 	# 顶部对阵条：头像 VS 头像，比分在头像下
 	UI.box(body,Rect2(90,352,540,190),func(ci,sz):
 		_card(ci,Rect2(Vector2.ZERO,sz),Color("f3dfb4"),970)
@@ -192,11 +192,11 @@ func _progress_panel(m: Dictionary) -> void:
 			if lead==side: _crown(ci,Vector2(sz.x*0.5,-4),34),false)
 		portrait.name="duel_character_%d"%side
 		UI.box(body,Rect2(x-70,490,140,42),func(ci,sz): _card(ci,Rect2(Vector2.ZERO,sz),tint,980+side),false)
-		UI.lbl(body,"%s  %d"%["你" if side==0 else "对手",scores[side]],Rect2(x-70,490,140,42),24,Color.WHITE,HORIZONTAL_ALIGNMENT_CENTER,6,tint_d)
+		UI.lbl(body,"%s  %d"%[TextCatalog.source("ui.duelpopup.a0c7716669b5") if side==0 else TextCatalog.source("ui.duelpopup.4ea064c4d27d"),scores[side]],Rect2(x-70,490,140,42),24,Color.WHITE,HORIZONTAL_ALIGNMENT_CENTER,6,tint_d)
 	# 奖励归属：按当前比分，领先方拿胜利奖励，落后方拿参与奖励
-	var owner_text:="平局中，先到 %d 根的拿胜利奖励"%target
-	if lead==0: owner_text="照现在的比分，胜利奖励归你！"
-	elif lead==1: owner_text="对手领先，追上去抢回胜利奖励！"
+	var owner_text:=TextCatalog.source("ui.duelpopup.86a967cd95bb")%target
+	if lead==0: owner_text=TextCatalog.source("ui.duelpopup.01bfa7b9283c")
+	elif lead==1: owner_text=TextCatalog.source("ui.duelpopup.46204d7af127")
 	UI.lbl(body,owner_text,Rect2(90,548,540,34),22,Art.MOSS_D if lead==0 else (Color("9b3518") if lead==1 else Color("7a5a3a")))
 	for side in 2:
 		var x:=200.0 if side==0 else 520.0
@@ -205,7 +205,7 @@ func _progress_panel(m: Dictionary) -> void:
 		UI.box(body,Rect2(x-128,586,256,64),func(ci,sz):
 			_card(ci,Rect2(Vector2.ZERO,sz),Color("fff1b8") if win else Color("efe4cc"),990+side)
 			if win: Art.outline(ci,Art.rrect(Rect2(4,4,sz.x-8,sz.y-8),12,992+side,0),3,Art.FIRE2),false)
-		UI.lbl(body,"胜利" if (win or lead<0) else "参与",Rect2(x-124,586,50,64),19,Art.MOSS_D if win else Color("8a7560"))
+		UI.lbl(body,TextCatalog.source("ui.duelpopup.943874ecb6bd") if (win or lead<0) else TextCatalog.source("ui.duelpopup.61ba7ff0b23e"),Rect2(x-124,586,50,64),19,Art.MOSS_D if win else Color("8a7560"))
 		for i in rw.size():
 			var ix:=x-48+i*62.0
 			UI.icon(body,str(rw[i][0]),Vector2(ix,610),36)
@@ -242,7 +242,7 @@ func _progress_panel(m: Dictionary) -> void:
 			,false)
 		pile.name="duel_banana_pile_%d"%side
 		UI.lbl(body,"%d / %d"%[points,target],Rect2(x-80,1004,160,34),24,Color.WHITE,HORIZONTAL_ALIGNMENT_CENTER,6,Art.INK)
-	var button:=UI.btn(body,Rect2(200,1084,320,80),"去帮族人","green",close,34)
+	var button:=UI.btn(body,Rect2(200,1084,320,80),TextCatalog.source("ui.duelpopup.245ede446986"),"green",close,34)
 	button.name="duel_action"
 
 func _result_panel(m: Dictionary) -> void:
@@ -255,19 +255,19 @@ func _result_panel(m: Dictionary) -> void:
 		_ring(ci,c,80,Art.FIRE2 if won else Art.STONE)
 		Meme.portrait(ci,Meme.HERO,c,140)
 		if won: _crown(ci,c+Vector2(0,-112),44),false)
-	UI.title(body,"你赢了！" if won else "这次慢了一步",Rect2(90,648,540,62),46,Art.FIRE2 if won else Color("e8d5ac"))
+	UI.title(body,TextCatalog.source("ui.duelpopup.1fc51be05b4f") if won else TextCatalog.source("ui.duelpopup.f213703bdd00"),Rect2(90,648,540,62),46,Art.FIRE2 if won else Color("e8d5ac"))
 	UI.box(body,Rect2(190,718,340,62),func(ci,sz): _card(ci,Rect2(Vector2.ZERO,sz),Color("6b4a2e"),990),false)
-	UI.lbl(body,"你",Rect2(204,718,60,62),24,Color("e8d5ac"))
+	UI.lbl(body,TextCatalog.source("ui.duelpopup.a0c7716669b5"),Rect2(204,718,60,62),24,Color("e8d5ac"))
 	UI.lbl(body,"%d  :  %d"%[int(m.get("me",0)),int(m.get("opponent",0))],Rect2(250,718,220,62),36,Color.WHITE,HORIZONTAL_ALIGNMENT_CENTER,6,Art.INK)
-	UI.lbl(body,"对手",Rect2(452,718,70,62),24,Color("e8d5ac"))
+	UI.lbl(body,TextCatalog.source("ui.duelpopup.4ea064c4d27d"),Rect2(452,718,70,62),24,Color("e8d5ac"))
 	var prizes: Array=DuelRace.config()["win_rewards" if won else "lose_rewards"]
-	Popups.section(body,"胜利奖励" if won else "参与奖励",796,Art.MOSS_D if won else Art.LEATHER)
+	Popups.section(body,TextCatalog.source("ui.duelpopup.ec0dd761c15d") if won else TextCatalog.source("ui.duelpopup.2f701b057a0d"),796,Art.MOSS_D if won else Art.LEATHER)
 	for i in prizes.size():
 		var x:=360+(float(i)-(prizes.size()-1)*0.5)*136
 		UI.box(body,Rect2(x-58,844,116,104),func(ci,sz): _card(ci,Rect2(Vector2.ZERO,sz),Art.BONE,995+i),false)
 		UI.icon(body,str(prizes[i][0]),Vector2(x,884),66)
 		UI.lbl(body,"×%d"%int(prizes[i][1]),Rect2(x-55,910,110,34),25,Color.WHITE,HORIZONTAL_ALIGNMENT_CENTER,6,Art.INK)
-	var button:=UI.btn(body,Rect2(200,972,320,80),"领取奖励","green",func(): _action("claim"),36)
+	var button:=UI.btn(body,Rect2(200,972,320,80),TextCatalog.source("ui.duelpopup.ea96728e2f6e"),"green",func(): _action("claim"),36)
 	button.name="duel_action"
 
 func _last_milestone() -> int:
@@ -304,7 +304,7 @@ func _render_reward_bubble() -> void:
 		var pointer:=PackedVector2Array([Vector2(tip-15,sz.y-5),Vector2(tip,sz.y+15),Vector2(tip+15,sz.y-5)])
 		Art.fill(ci,pointer,Art.BONE,2)
 		Art.fill(ci,Art.rrect(Rect2(Vector2.ZERO,sz),18,940,0),Art.BONE,2)
-	UI.lbl(bubble,"%d 胜奖励"%bubble_wins,Rect2(10,8,290,32),24,Art.INK)
+	UI.lbl(bubble,TextCatalog.source("ui.duelpopup.ad94a5088af9")%bubble_wins,Rect2(10,8,290,32),24,Art.INK)
 	var prizes: Array=selected["rewards"]
 	for j in prizes.size():
 		var cx:=155+(float(j)-(prizes.size()-1)*0.5)*86
@@ -312,10 +312,10 @@ func _render_reward_bubble() -> void:
 		UI.lbl(bubble,"×%d"%int(prizes[j][1]),Rect2(cx-42,99,84,28),22,Color.WHITE,HORIZONTAL_ALIGNMENT_CENTER,5,Art.INK)
 	if ready:
 		var wins:=bubble_wins
-		var claim:=UI.btn(bubble,Rect2(72,135,166,42),"领取","green",func(): _action("milestone",wins),25)
+		var claim:=UI.btn(bubble,Rect2(72,135,166,42),TextCatalog.source("ui.duelpopup.844ab9477225"),"green",func(): _action("milestone",wins),25)
 		claim.name="duel_claim_milestone"
 	else:
-		UI.lbl(bubble,"已领取" if got else "再赢 %d 场"%(bubble_wins-int(s["wins"])),Rect2(15,139,280,32),24,Art.MOSS_D if got else Art.INK)
+		UI.lbl(bubble,TextCatalog.source("notice.sevenday.426e458a4124") if got else TextCatalog.source("ui.duelpopup.f31108c6c814")%(bubble_wins-int(s["wins"])),Rect2(15,139,280,32),24,Art.MOSS_D if got else Art.INK)
 
 func _reward_card(r: Rect2, label: String, rw: Array, tint: Color, bg: Color) -> void:
 	UI.box(body,r,func(ci,sz):
@@ -351,10 +351,10 @@ func _vs(ci: CanvasItem, c: Vector2, r: float) -> void:
 	Sprites.at(ci,"ev_duel_vs",c+Vector2(0,2)*k,k)
 	var f: Font=G.font_title if G.font_title else ThemeDB.fallback_font
 	var fs:=int(r*0.85)
-	var tw:=f.get_string_size("VS",HORIZONTAL_ALIGNMENT_LEFT,-1,fs).x
+	var tw:=f.get_string_size(TextCatalog.resolve(TextCatalog.source("ui.duelpopup.8db1a2e199a2")),HORIZONTAL_ALIGNMENT_LEFT,-1,fs).x
 	var p:=c+Vector2(-tw*0.5,fs*0.36)
-	ci.draw_string_outline(f,p,"VS",HORIZONTAL_ALIGNMENT_LEFT,-1,fs,8,Art.INK)
-	ci.draw_string(f,p,"VS",HORIZONTAL_ALIGNMENT_LEFT,-1,fs,Color.WHITE)
+	ci.draw_string_outline(f,p,TextCatalog.resolve(TextCatalog.source("ui.duelpopup.8db1a2e199a2")),HORIZONTAL_ALIGNMENT_LEFT,-1,fs,8,Art.INK)
+	ci.draw_string(f,p,TextCatalog.resolve(TextCatalog.source("ui.duelpopup.8db1a2e199a2")),HORIZONTAL_ALIGNMENT_LEFT,-1,fs,Color.WHITE)
 
 func _crown(ci: CanvasItem, c: Vector2, w: float) -> void:
 	var h:=w*0.62

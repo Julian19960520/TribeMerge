@@ -7,7 +7,7 @@
     seven_day_stage: ['七日阶段奖励', '#e3a6d5'], pass: ['通行证奖励', '#9aabe9'],
     land: ['开地奖励', '#cbb67b'], chest: ['普通宝箱', '#d4a875'],
     choice_chest: ['自选宝箱', '#e7c57c'], cards: ['典藏卡包', '#db9dcd'],
-    resource_energy: ['收取体力', '#e7aa71'], resource_shell: ['收取不拿拿', '#c6bf87'],
+    resource_energy: ['收取体力', '#e7aa71'], resource_shell: ['收取不那那', '#c6bf87'],
     resource_amber: ['收取琥珀', '#e7c258'], resource_sand: ['收取沙漏', '#bcb19e'],
     stash: ['暂存区领奖', '#c0a6cf'], duel_match: ['双人赛结算', '#7bccb1'],
     duel_milestone: ['双人赛胜场奖', '#a1d485'], banana: ['香蕉赛奖励', '#d4d878'],

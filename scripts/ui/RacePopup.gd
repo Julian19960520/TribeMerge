@@ -29,14 +29,14 @@ static func start(again := false) -> PopupBase:
 	var p := PopupBase.new()
 	p.name = "race_start"
 	var r := Rect2(60, 260, 600, 940)
-	Popups.frame(p, r, "香蕉竞速", Art.CLAY, "fire")
+	Popups.frame(p, r, TextCatalog.source("ui.raceentry.fb8cff7697b3"), Art.CLAY, "fire")
 	var x0 := r.position.x + 30
 	var w := r.size.x - 60
 	var rl: Dictionary = race.rules()
 	var tg := int(rl.get("target", 300))
 	var podium := int(rl.get("podium", 3))
 	var tt: Dictionary = rl.get("title", {}) if rl.get("title") is Dictionary else {}
-	UI.title(p.box, "再来一局？" if again else "比赛收香蕉！", Rect2(x0, r.position.y + 50, w, 70), 48, Color("ffd23f"))
+	UI.title(p.box, TextCatalog.source("ui.racepopup.12ec690331aa") if again else TextCatalog.source("ui.racepopup.1a03153ce189"), Rect2(x0, r.position.y + 50, w, 70), 48, Color("ffd23f"))
 	# 香蕉堆装饰
 	UI.box(p.box, Rect2(x0, r.position.y + 122, w, 110), func(ci, sz):
 		for i in 9:
@@ -44,13 +44,13 @@ static func start(again := false) -> PopupBase:
 			var col := i if i < 5 else i - 5
 			var n := 5 if row == 0 else 4
 			Banana.draw(ci, Vector2(sz.x * 0.5 + (col - (n - 1) * 0.5) * 50, 78 - row * 30), 58, (col - 2) * 0.12), false)
-	var txt := "· 和 4 位族人比谁先收满 %d 根香蕉。\n· 每实现一个心愿就有香蕉飞进竞速入口，心愿越难香蕉越多。\n· 前 %d 名都收满就结束；只有前 %d 名有奖励，名次越靠前越丰富，第 1 名还拿「%s」称号。\n· 随时可以开一局，比完再来下一局。" % [
-		tg, podium, mini(3, podium), str(tt.get("name", "篝火王"))]
+	var txt := TextCatalog.source("ui.racepopup.9aa7e45dd8f2") % [
+		tg, podium, mini(3, podium), str(tt.get("name", TextCatalog.source("ui.racepopup.74d4ca0865ff")))]
 	var l := UI.lbl(p.box, txt, Rect2(x0 + 4, r.position.y + 246, w - 8, 220), 22, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
 	l.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 	l.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	# 奖励
-	Popups.section(p.box, "奖励", r.position.y + 474, Color("8a5a30"), r.get_center().x)
+	Popups.section(p.box, TextCatalog.source("developer.story_editor.a21911780672"), r.position.y + 474, Color("8a5a30"), r.get_center().x)
 	var rws: Array = rl.get("rewards", []) if rl.get("rewards") is Array else []
 	for i in 3:
 		var y := r.position.y + 516 + i * 62
@@ -61,7 +61,7 @@ static func start(again := false) -> PopupBase:
 		for k in rw.size():
 			UI.lbl(p.box, "×%d" % int(rw[k][1]), Rect2(x0 + 104 + k * 108, y + 10, 64, 40), 22, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
 	var busy := {"on": false}
-	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.end.y - 130, 300, 104), "匹配", "green", Callable(), 42)
+	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.end.y - 130, 300, 104), TextCatalog.source("ui.racepopup.fd047ccb2020"), "green", Callable(), 42)
 	b.name = "race_match"
 	b.pressed.connect(func():
 		if busy["on"]:
@@ -77,7 +77,7 @@ static func start(again := false) -> PopupBase:
 		else:
 			busy["on"] = false
 			b.enabled = true
-			G.main.toast(str(res.get("message", "连不上服务器，请稍后再试"))))
+			G.main.toast(str(res.get("message", TextCatalog.source("notice.cloud.7428cb59febf")))))
 	G.main._attach_popup(p)
 	return p
 
@@ -93,13 +93,13 @@ static func matching_panel() -> PopupBase:
 	var p := PopupBase.new()
 	p.name = "race_matching"
 	var r := Rect2(52, 380, 616, 660)
-	Popups.frame(p, r, "匹配族人", Art.CLAY, "fire")
+	Popups.frame(p, r, TextCatalog.source("ui.racepopup.9ff202a1c7d5"), Art.CLAY, "fire")
 	var t0 := Time.get_ticks_msec()
 	var lo := (maxi(G.level, 1) - 1) / 5 * 5 + 1
-	UI.lbl(p.box, "同等级段 Lv.%d～%d 的族人" % [lo, lo + 4], Rect2(r.position.x + 30, r.position.y + 52, r.size.x - 60, 36), 22, Color("8a5a30"))
+	UI.lbl(p.box, TextCatalog.source("ui.racepopup.2c69297b660d") % [lo, lo + 4], Rect2(r.position.x + 30, r.position.y + 52, r.size.x - 60, 36), 22, Color("8a5a30"))
 	var art := UI.box(p.box, Rect2(r.position.x + 20, r.position.y + 100, r.size.x - 40, 440), func(ci, sz):
 		_paint_matching(ci, sz, race, float(Time.get_ticks_msec() - t0) / 1000.0), false)
-	UI.lbl(p.box, "匹配完成后自动开赛", Rect2(r.position.x + 30, r.end.y - 82, r.size.x - 60, 36), 22, Color("a08a70"))
+	UI.lbl(p.box, TextCatalog.source("ui.duelpopup.6b9ffc07fdf9"), Rect2(r.position.x + 30, r.end.y - 82, r.size.x - 60, 36), 22, Color("a08a70"))
 	race.watch(p)
 	var timer := Timer.new()
 	timer.wait_time = 0.033
@@ -140,11 +140,11 @@ static func _paint_matching(ci: CanvasItem, sz: Vector2, race: Node, el: float) 
 		var seat := Rect2(c + Vector2(-70, -62), Vector2(140, 140))
 		Sprites.draw(ci, "ev_race_seat_" + ("me" if i == 0 else ("on" if locked else "off")), seat)
 		var role := Meme.HERO if i == 0 else int(el * 9.0 + i * 3) % 8
-		var name := "我"
+		var name := TextCatalog.source("notice.localrace.b70bb4acc048")
 		if i > 0 and locked:
 			var m: Dictionary = _other(ms, i)
 			role = int(m.get("avatar", i))
-			name = str(m.get("name", "族人"))
+			name = str(m.get("name", TextCatalog.source("ui.characterportraits.bbb9058f0671")))
 		var pop := 1.0 + 0.18 * maxf(0.0, 1.0 - (el - lock_at) / 0.25) if locked and i > 0 else 1.0
 		Meme.portrait(ci, role, c, 116.0 * pop)
 		if not locked:
@@ -152,7 +152,7 @@ static func _paint_matching(ci: CanvasItem, sz: Vector2, race: Node, el: float) 
 			_txt(ci, "?", c + Vector2(0, 6), 56, Color.WHITE, 7)
 		_txt(ci, name if locked else "…", c + Vector2(0, 96), 22, Art.CLAY if i == 0 else Art.INK)
 	var dots := ".".repeat(1 + int(el * 3.0) % 3)
-	_txt(ci, ("对手到齐，准备开赛！" if found >= 5 else "正在寻找对手%s  %d/5" % [dots, found]), Vector2(sz.x * 0.5, sz.y - 12), 28, Art.INK)
+	_txt(ci, (TextCatalog.source("ui.racepopup.04191f26c46d") if found >= 5 else TextCatalog.source("ui.racepopup.48e40f998490") % [dots, found]), Vector2(sz.x * 0.5, sz.y - 12), 28, Art.INK)
 
 static func _other(ms: Array, k: int) -> Dictionary:
 	var i := 0
@@ -170,7 +170,7 @@ static func race_panel() -> PopupBase:
 	var p := PopupBase.new()
 	p.name = "race_progress"
 	var r := Rect2(36, 196, 648, 1110)
-	Popups.frame(p, r, "香蕉竞速", Art.CLAY, "fire")
+	Popups.frame(p, r, TextCatalog.source("ui.raceentry.fb8cff7697b3"), Art.CLAY, "fire")
 	var area := Rect2(r.position.x + 24, r.position.y + 48, r.size.x - 48, r.size.y - 174)
 	var box := UI.box(p.box, area, func(ci, sz): _paint_race(ci, sz, race), false)
 	# 竹筒顶上的金银铜宝箱：点一下弹气泡看这一名的奖励，点空白收起
@@ -186,7 +186,7 @@ static func race_panel() -> PopupBase:
 		hit.name = "race_chest_col_%d" % i
 	p.box.add_child(bubble)
 	p.on_tap = func(): _toggle_rank_bubble(p, bubble, race, 0, 0, 0)
-	var orders := UI.btn(p.box, Rect2(190, r.end.y - 100, 340, 80), "去帮族人", "green", func():
+	var orders := UI.btn(p.box, Rect2(190, r.end.y - 100, 340, 80), TextCatalog.source("ui.duelpopup.245ede446986"), "green", func():
 		G.main.show_screen("board", true)
 		p.close(), 34)
 	orders.name = "race_go_orders"
@@ -253,7 +253,7 @@ static func _toggle_rank_bubble(p: PopupBase, layer: Control, race: Node, rank: 
 		Art.fill(ci, ptr, Art.BONE, 2.4)
 		Sprites.draw(ci, "ev_race_bubble", Rect2(Vector2.ZERO, sz))
 		ci.draw_colored_polygon(ptr, Art.BONE)
-		_txt(ci, "第 %d 名奖励" % rank, Vector2(sz.x * 0.5, 24), 22, Color("8a5a30"))
+		_txt(ci, TextCatalog.source("ui.racepopup.a81a1c21dad6") % rank, Vector2(sz.x * 0.5, 24), 22, Color("8a5a30"))
 		for j in rw.size():
 			var cx: float = sz.x * 0.5 + (j - (rw.size() - 1) / 2.0) * 82.0
 			Art.item(ci, str(rw[j][0]), Vector2(cx, 78), 56)
@@ -264,7 +264,7 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 	var tg: float = race.target()
 	var t := float(Time.get_ticks_msec()) / 1000.0
 	# 顶部：剩余时间 + 前三名奖励
-	_pill(ci, Rect2(sz.x * 0.5 - 120, 2, 240, 40), "还剩 %s" % G.fmt_time(race.secs_left()), "time", Color.WHITE)
+	_pill(ci, Rect2(sz.x * 0.5 - 120, 2, 240, 40), TextCatalog.source("ui.racepopup.9aa88b327a67") % G.fmt_time(race.secs_left()), "time", Color.WHITE)
 	# 自己放最左边，其他按位置
 	var ms := _sorted_members(race)
 	var cw := sz.x / 5.0
@@ -272,7 +272,7 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 	# 终点线 + 小旗
 	var fy := TUBE_TOP + 10.0
 	ci.draw_dashed_line(Vector2(6, fy), Vector2(sz.x - 6, fy), Color("e0a030"), 3.0, 10.0)
-	_txt(ci, "终点 %d 根 · 前三名开宝箱" % int(tg), Vector2(sz.x * 0.5, 66), 20, Color("8a5a30"))
+	_txt(ci, TextCatalog.source("ui.racepopup.fee006b4759e") % int(tg), Vector2(sz.x * 0.5, 66), 20, Color("8a5a30"))
 	# 竹筒顶上按当前名次摆金银铜宝箱
 	for i in mini(5, ms.size()):
 		var rk0: int = race.place_of(ms[i]) - 1
@@ -319,8 +319,8 @@ static func _paint_race(ci: CanvasItem, sz: Vector2, race: Node) -> void:
 		var mc := hc + Vector2(36, 30)
 		_medal(ci, mc, 17.0, rk)
 		_txt(ci, str(rk), mc, 19, Color.WHITE, 4)
-		_txt(ci, "我" if mine else str(m.get("name", "")), Vector2(cx, sz.y - 46), 21, Art.CLAY if mine else Color("6b4a2a"))
-	_txt(ci, "帮族人实现心愿收香蕉，先收满的赢！", Vector2(sz.x * 0.5, sz.y - 14), 20, Color("a08a70"))
+		_txt(ci, TextCatalog.source("notice.localrace.b70bb4acc048") if mine else str(m.get("name", "")), Vector2(cx, sz.y - 46), 21, Art.CLAY if mine else Color("6b4a2a"))
+	_txt(ci, TextCatalog.source("ui.racepopup.181f606eed77"), Vector2(sz.x * 0.5, sz.y - 14), 20, Color("a08a70"))
 
 ## style：time 倒计时 / me 自己的香蕉数 / other 别人的
 static func _pill(ci: CanvasItem, r: Rect2, s: String, style: String, fg: Color) -> void:
@@ -335,11 +335,11 @@ static func _txt(ci: CanvasItem, s: String, c: Vector2, fs: int, col: Color, ol:
 	var f: Font = G.font_body
 	if f == null:
 		return
-	var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var w := f.get_string_size(TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pos := Vector2(c.x - w * 0.5, c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
 	if ol > 0:
-		ci.draw_string_outline(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ol, Art.INK)
-	ci.draw_string(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		ci.draw_string_outline(f, pos, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ol, Art.INK)
+	ci.draw_string(f, pos, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 # ================================================================ 3. 结算面板
 
@@ -350,12 +350,12 @@ static func result(res: Dictionary) -> PopupBase:
 	var g: Dictionary = res.get("group", {})
 	var me: Dictionary = res.get("me", {})
 	var place := int(me.get("place", 0))
-	Popups.frame(p, r, "比赛结果", Art.CLAY, "fire" if place == 1 else "")
+	Popups.frame(p, r, TextCatalog.source("ui.racepopup.839a470fd373"), Art.CLAY, "fire" if place == 1 else "")
 	var x0 := r.position.x + 30
 	var w := r.size.x - 60
-	var head := "你赢了！" if place == 1 else ("第 %d 名！" % place if place <= 3 else "第 %d 名" % place)
+	var head := TextCatalog.source("ui.duelpopup.1fc51be05b4f") if place == 1 else (TextCatalog.source("ui.racepopup.256d24819203") % place if place <= 3 else TextCatalog.source("ui.racepopup.8ce8b0318f5b") % place)
 	UI.title(p.box, head, Rect2(x0, r.position.y + 50, w, 80), 60, Color("ffd23f") if place <= 3 else Color.WHITE)
-	var sub := "最先收满 %d 根香蕉，拿下「篝火王」称号" % int(g.get("target", 300)) if place == 1 else ("进了前三，有奖励！" if place <= 3 else "下一局再来！")
+	var sub := TextCatalog.source("ui.racepopup.531cba90fc39") % int(g.get("target", 300)) if place == 1 else (TextCatalog.source("ui.racepopup.7a740c19d1b6") if place <= 3 else TextCatalog.source("ui.racepopup.598d52c255b1"))
 	UI.lbl(p.box, sub, Rect2(x0, r.position.y + 128, w, 40), 24, Color("8a5a30"))
 	var ms: Array = g.get("members", []) if g.get("members") is Array else []
 	ms = ms.duplicate()
@@ -369,15 +369,15 @@ static func result(res: Dictionary) -> PopupBase:
 	if int(me.get("place", 0)) > 3: rw = []
 	var ry := r.position.y + 180 + 5 * 84 + 14
 	if not rw.is_empty():
-		Popups.section(p.box, "奖励", ry, Color("8a5a30"), r.get_center().x)
+		Popups.section(p.box, TextCatalog.source("developer.story_editor.a21911780672"), ry, Color("8a5a30"), r.get_center().x)
 		var n := rw.size()
 		for k in n:
 			var cx := r.get_center().x + (float(k) - float(n - 1) * 0.5) * 130.0
 			UI.icon(p.box, str(rw[k][0]), Vector2(cx, ry + 96), 84)
 			UI.lbl(p.box, "×%d" % int(rw[k][1]), Rect2(cx - 50, ry + 136, 100, 36), 26, Art.INK, HORIZONTAL_ALIGNMENT_CENTER, 0, Art.INK, true)
-	if rw.is_empty(): UI.lbl(p.box, "仅前三名获得奖励", Rect2(x0, ry + 60, w, 44), 26, Art.INK)
+	if rw.is_empty(): UI.lbl(p.box, TextCatalog.source("ui.racepopup.e5b33ffe5a8f"), Rect2(x0, ry + 60, w, 44), 26, Art.INK)
 	var busy := {"on": false}
-	var b := UI.btn(p.box, Rect2(r.get_center().x - 140, r.end.y - 120, 280, 96), "领取" if not rw.is_empty() else "知道了", "green", Callable(), 38)
+	var b := UI.btn(p.box, Rect2(r.get_center().x - 140, r.end.y - 120, 280, 96), TextCatalog.source("ui.duelpopup.844ab9477225") if not rw.is_empty() else TextCatalog.source("ui.mergeeventpopup.de32e20193ad"), "green", Callable(), 38)
 	b.name = "race_claim"
 	b.pressed.connect(func():
 		if busy["on"]:
@@ -394,14 +394,14 @@ static func result(res: Dictionary) -> PopupBase:
 			if not got.is_empty():
 				G.main.present_rewards(got)
 			if out.get("title") is Dictionary:
-				G.main.toast("获得称号「%s」" % str(out["title"].get("name", "")))
+				G.main.toast(TextCatalog.source("ui.racepopup.4ac98dcabbb7") % str(out["title"].get("name", "")))
 		elif str(out.get("error", "")) == "already_claimed":
 			p.close()
 			start(true)
 		else:
 			busy["on"] = false
 			b.enabled = true
-			G.main.toast(str(out.get("message", "没领成，再试一次"))))
+			G.main.toast(str(out.get("message", TextCatalog.source("ui.racepopup.b0c98a2bf490")))))
 	G.main._attach_popup(p)
 	return p
 
@@ -415,9 +415,9 @@ static func _result_row(ci: CanvasItem, sz: Vector2, m: Dictionary, tg: float) -
 	Meme.portrait(ci, Meme.HERO if mine else int(m.get("avatar", 0)), Vector2(100, sz.y * 0.5 + 6), 62.0)
 	var f: Font = G.font_body
 	if f:
-		ci.draw_string(f, Vector2(142, sz.y * 0.5 + 9), str(m.get("name", "")) + ("（我）" if mine else ""), HORIZONTAL_ALIGNMENT_LEFT, 230, 24, Art.INK)
+		ci.draw_string(f, Vector2(142, sz.y * 0.5 + 9), TextCatalog.resolve(str(m.get("name", "")) + (TextCatalog.source("ui.racepopup.dd4526102304") if mine else "")), HORIZONTAL_ALIGNMENT_LEFT, 230, 24, Art.INK)
 	var s := float(m.get("score", 0))
-	_txt(ci, ("%d 收满" % int(tg)) if m.get("finished_at") != null else "%d 根" % int(s), Vector2(sz.x - 80, sz.y * 0.5), 24,
+	_txt(ci, (TextCatalog.source("ui.racepopup.ced11673a660") % int(tg)) if m.get("finished_at") != null else TextCatalog.source("ui.racepopup.d90032737d84") % int(s), Vector2(sz.x - 80, sz.y * 0.5), 24,
 		Art.CLAY if mine else Color("6b4a2a"))
 	if rk == 1:
 		Art.item(ci, "fire_2", Vector2(sz.x - 160, sz.y * 0.5), 34)

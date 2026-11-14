@@ -1,6 +1,6 @@
 {
  "id": "seven_day_v2",
- "title": "七日任务",
+ "title": "§notice.data.f205a3d7f611§",
  "days": [
   {
    "day": 1,
@@ -9,7 +9,7 @@
      "id": "d1_1",
      "metric": "login_days",
      "target": 1,
-     "title": "累计登录1天",
+     "title": "§content.seven_day.fb55cbd368e1§",
      "points": 10,
      "rewards": [
       [
@@ -22,7 +22,7 @@
      "id": "d1_2",
      "metric": "orders",
      "target": 8,
-     "title": "实现8个心愿",
+     "title": "§content.seven_day.c03674e89b80§",
      "points": 10,
      "rewards": [
       [
@@ -35,7 +35,7 @@
      "id": "d1_3",
      "metric": "merges",
      "target": 150,
-     "title": "合成150次",
+     "title": "§content.seven_day.e7e0e0839b0a§",
      "points": 10,
      "rewards": [
       [
@@ -48,7 +48,7 @@
      "id": "d1_4",
      "metric": "xp",
      "target": 8,
-     "title": "累计获得8经验",
+     "title": "§content.seven_day.9414053dac2d§",
      "points": 10,
      "rewards": [
       [
@@ -61,7 +61,7 @@
      "id": "d1_5",
      "metric": "shell",
      "target": 600,
-     "title": "累计收集600不拿拿",
+     "title": "§content.seven_day.0c34d0a94408§",
      "points": 10,
      "rewards": [
       [
@@ -79,7 +79,7 @@
      "id": "d2_1",
      "metric": "login_days",
      "target": 2,
-     "title": "累计登录2天",
+     "title": "§content.seven_day.f7440382cdbf§",
      "points": 10,
      "rewards": [
       [
@@ -92,7 +92,7 @@
      "id": "d2_2",
      "metric": "orders",
      "target": 20,
-     "title": "实现20个心愿",
+     "title": "§content.seven_day.5e5421b79778§",
      "points": 15,
      "rewards": [
       [
@@ -109,7 +109,7 @@
      "id": "d2_3",
      "metric": "merges",
      "target": 600,
-     "title": "合成600次",
+     "title": "§content.seven_day.ba24e117035a§",
      "points": 15,
      "rewards": [
       [
@@ -126,7 +126,7 @@
      "id": "d2_4",
      "metric": "xp",
      "target": 20,
-     "title": "累计获得20经验",
+     "title": "§content.seven_day.be707af4a014§",
      "points": 15,
      "rewards": [
       [
@@ -139,7 +139,7 @@
      "id": "d2_5",
      "metric": "amber",
      "target": 10,
-     "title": "累计收集10琥珀",
+     "title": "§content.seven_day.73ff3c758350§",
      "points": 15,
      "rewards": [
       [
@@ -157,7 +157,7 @@
      "id": "d3_1",
      "metric": "login_days",
      "target": 3,
-     "title": "累计登录3天",
+     "title": "§content.seven_day.0188132de840§",
      "points": 10,
      "rewards": [
       [
@@ -170,7 +170,7 @@
      "id": "d3_2",
      "metric": "orders",
      "target": 35,
-     "title": "实现35个心愿",
+     "title": "§content.seven_day.2120031e3cde§",
      "points": 20,
      "rewards": [
       [
@@ -187,7 +187,7 @@
      "id": "d3_3",
      "metric": "shell",
      "target": 4500,
-     "title": "累计收集4500不拿拿",
+     "title": "§content.seven_day.b434f406404f§",
      "points": 20,
      "rewards": [
       [
@@ -200,7 +200,7 @@
      "id": "d3_4",
      "metric": "amber_spent",
      "target": 30,
-     "title": "累计花费30琥珀",
+     "title": "§content.seven_day.47444ceb6c26§",
      "points": 20,
      "rewards": [
       [
@@ -217,7 +217,7 @@
      "id": "d3_5",
      "metric": "paid_cents",
      "target": 600,
-     "title": "累计充值6元",
+     "title": "§content.seven_day.8721bab66da3§",
      "points": 20,
      "rewards": [
       [
@@ -239,7 +239,7 @@
      "id": "d4_1",
      "metric": "login_days",
      "target": 4,
-     "title": "累计登录4天",
+     "title": "§content.seven_day.99fa36525e0d§",
      "points": 10,
      "rewards": [
       [
@@ -256,7 +256,7 @@
      "id": "d4_2",
      "metric": "merges",
      "target": 1500,
-     "title": "合成1500次",
+     "title": "§content.seven_day.482546c83fa9§",
      "points": 20,
      "rewards": [
       [
@@ -273,7 +273,7 @@
      "id": "d4_3",
      "metric": "xp",
      "target": 42,
-     "title": "累计获得42经验",
+     "title": "§content.seven_day.202346951c3a§",
      "points": 20,
      "rewards": [
       [
@@ -290,7 +290,7 @@
      "id": "d4_4",
      "metric": "cards",
      "target": 6,
-     "title": "开卡包得6张卡",
+     "title": "§content.seven_day.b965942723e2§",
      "points": 20,
      "rewards": [
       [
@@ -303,7 +303,7 @@
      "id": "d4_5",
      "metric": "amber",
      "target": 25,
-     "title": "累计收集25琥珀",
+     "title": "§content.seven_day.8dbcf42b4248§",
      "points": 20,
      "rewards": [
       [
@@ -321,7 +321,7 @@
      "id": "d5_1",
      "metric": "login_days",
      "target": 5,
-     "title": "累计登录5天",
+     "title": "§content.seven_day.b15b83ce3346§",
      "points": 10,
      "rewards": [
       [
@@ -334,7 +334,7 @@
      "id": "d5_2",
      "metric": "orders",
      "target": 55,
-     "title": "实现55个心愿",
+     "title": "§content.seven_day.26faa1aef32d§",
      "points": 25,
      "rewards": [
       [
@@ -351,7 +351,7 @@
      "id": "d5_3",
      "metric": "shell",
      "target": 8000,
-     "title": "累计收集8000不拿拿",
+     "title": "§content.seven_day.cef592af32e7§",
      "points": 25,
      "rewards": [
       [
@@ -364,7 +364,7 @@
      "id": "d5_4",
      "metric": "cards",
      "target": 12,
-     "title": "开卡包得12张卡",
+     "title": "§content.seven_day.12e69bb0ede9§",
      "points": 25,
      "rewards": [
       [
@@ -377,7 +377,7 @@
      "id": "d5_5",
      "metric": "amber_spent",
      "target": 80,
-     "title": "累计花费80琥珀",
+     "title": "§content.seven_day.88a739497cf3§",
      "points": 25,
      "rewards": [
       [
@@ -399,7 +399,7 @@
      "id": "d6_1",
      "metric": "login_days",
      "target": 6,
-     "title": "累计登录6天",
+     "title": "§content.seven_day.d87c5306a80c§",
      "points": 10,
      "rewards": [
       [
@@ -416,7 +416,7 @@
      "id": "d6_2",
      "metric": "merges",
      "target": 2400,
-     "title": "合成2400次",
+     "title": "§content.seven_day.8d5dc15b6ff2§",
      "points": 25,
      "rewards": [
       [
@@ -433,7 +433,7 @@
      "id": "d6_3",
      "metric": "xp",
      "target": 60,
-     "title": "累计获得60经验",
+     "title": "§content.seven_day.8645cb89f80d§",
      "points": 25,
      "rewards": [
       [
@@ -450,7 +450,7 @@
      "id": "d6_4",
      "metric": "amber",
      "target": 45,
-     "title": "累计收集45琥珀",
+     "title": "§content.seven_day.fd266a8d9dc4§",
      "points": 25,
      "rewards": [
       [
@@ -463,7 +463,7 @@
      "id": "d6_5",
      "metric": "paid_cents",
      "target": 3000,
-     "title": "累计充值30元",
+     "title": "§content.seven_day.42f1dcab2ff1§",
      "points": 25,
      "rewards": [
       [
@@ -485,7 +485,7 @@
      "id": "d7_1",
      "metric": "login_days",
      "target": 7,
-     "title": "累计登录7天",
+     "title": "§content.seven_day.8f3d364862fd§",
      "points": 10,
      "rewards": [
       [
@@ -502,7 +502,7 @@
      "id": "d7_2",
      "metric": "orders",
      "target": 75,
-     "title": "实现75个心愿",
+     "title": "§content.seven_day.008d99387e89§",
      "points": 30,
      "rewards": [
       [
@@ -519,7 +519,7 @@
      "id": "d7_3",
      "metric": "merges",
      "target": 3000,
-     "title": "合成3000次",
+     "title": "§content.seven_day.c60aa0d033df§",
      "points": 30,
      "rewards": [
       [
@@ -536,7 +536,7 @@
      "id": "d7_4",
      "metric": "cards",
      "target": 20,
-     "title": "开卡包得20张卡",
+     "title": "§content.seven_day.21665227ad08§",
      "points": 30,
      "rewards": [
       [
@@ -553,7 +553,7 @@
      "id": "d7_5",
      "metric": "shell",
      "target": 12000,
-     "title": "累计收集12000不拿拿",
+     "title": "§content.seven_day.4eed11a42478§",
      "points": 30,
      "rewards": [
       [
@@ -569,7 +569,7 @@
   {
    "id": "p50",
    "points": 50,
-   "title": "初来乍到",
+   "title": "§content.seven_day.87c9408b79bf§",
    "rewards": [
     [
      "fire_4",
@@ -584,7 +584,7 @@
   {
    "id": "p120",
    "points": 120,
-   "title": "站稳脚跟",
+   "title": "§content.seven_day.c3fe4e6b415f§",
    "rewards": [
     [
      "amber_3",
@@ -599,7 +599,7 @@
   {
    "id": "p180",
    "points": 180,
-   "title": "小有名气",
+   "title": "§content.seven_day.0d192a6dddb9§",
    "rewards": [
     [
      "pack_1",
@@ -614,7 +614,7 @@
   {
    "id": "p280",
    "points": 280,
-   "title": "部落能手",
+   "title": "§content.seven_day.23582e63304c§",
    "rewards": [
     [
      "fire_5",
@@ -629,7 +629,7 @@
   {
    "id": "p380",
    "points": 380,
-   "title": "远近闻名",
+   "title": "§content.seven_day.cee245967320§",
    "rewards": [
     [
      "amber_4",
@@ -644,7 +644,7 @@
   {
    "id": "p460",
    "points": 460,
-   "title": "猎场霸主",
+   "title": "§content.seven_day.580383acd2b2§",
    "rewards": [
     [
      "choice_1",
@@ -659,7 +659,7 @@
   {
    "id": "p560",
    "points": 560,
-   "title": "部落英雄",
+   "title": "§content.seven_day.4de70712e803§",
    "rewards": [
     [
      "amber_5",

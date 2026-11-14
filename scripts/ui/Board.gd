@@ -43,6 +43,7 @@ var drag_vis := Vector2.ZERO
 var pops := {}
 var hid := {}
 var flights: Array = []
+var chest_shells: Dictionary = {}
 var moves: Array = []
 var bursts: Array = []
 var crumbles: Array = []
@@ -151,8 +152,7 @@ func _process(delta: float) -> void:
 	for f in flights.duplicate():
 		if f["t"] >= 1.0:
 			flights.erase(f)
-			_unhide(f["to"])
-			pop(f["to"])
+			_finish_flight(f)
 	for b in bursts:
 		b["t"] += delta
 	bursts = bursts.filter(func(b): return b["t"] < 0.6)
@@ -193,6 +193,7 @@ func set_active(active: bool) -> void:
 		hid.clear()
 		moves.clear()
 		flights.clear()
+		chest_shells.clear()
 		gathers.clear()
 		crumbles.clear() # Unclaimed stone rewards remain in business state.
 		pops.clear()
@@ -347,6 +348,21 @@ func fly_in(from_i: int, to_i: int, id: String) -> void:
 	hid[to_i] = int(hid.get(to_i, 0)) + 1
 	flights.append({"from": cell_center(from_i), "to": to_i, "id": id, "t": 0.0})
 
+func fly_chest(from_i: int, to_i: int, id: String, box_id: String, last: bool) -> void:
+	fly_in(from_i, to_i, id)
+	if last:
+		chest_shells[from_i] = box_id
+		flights.back()["chest_from"] = from_i
+	queue_redraw()
+
+func _finish_flight(f: Dictionary) -> void:
+	_unhide(int(f["to"]))
+	pop(int(f["to"]))
+	if f.has("chest_from"):
+		var source := int(f["chest_from"])
+		chest_shells.erase(source)
+		burst(source)
+
 func play_gather(parts: Array) -> void:
 	for p in parts:
 		gathers.append({
@@ -378,7 +394,8 @@ func select(i: int) -> void:
 ## 物品从 from（本地坐标）滑到格子 to，带 back 缓动；滑动期间该格不绘制。cook 非空时滑的是制作中的锅。
 func slide(id: String, from: Vector2, to: int, under: String = "", done: String = "pop", dur: float = MOVE_DUR, cook: Dictionary = {}) -> void:
 	hid[to] = int(hid.get(to, 0)) + 1
-	moves.append({"id": id, "from": from, "to": to, "under": under, "done": done, "t": 0.0, "dur": dur, "cook": cook})
+	var visual := Art.chest_visual(id, str(G.board[to]["id"]) == id and G.board[to].has("chest"))
+	moves.append({"id": visual, "from": from, "to": to, "under": under, "done": done, "t": 0.0, "dur": dur, "cook": cook})
 
 func cancel_slides(i: int) -> void:
 	for m in moves.duplicate():
@@ -391,6 +408,7 @@ func cancel_slides(i: int) -> void:
 func _settle(i: int) -> bool:
 	if i < 0:
 		return false
+	if chest_shells.has(i): return false
 	var kept: Array = []
 	for c in crumbles:
 		if int(c["i"]) == i:
@@ -405,8 +423,7 @@ func _settle(i: int) -> bool:
 	for f in flights.duplicate():
 		if f["to"] == i:
 			flights.erase(f)
-			_unhide(i)
-			pop(i)
+			_finish_flight(f)
 	queue_redraw()
 	return not hid.has(i)
 
@@ -517,9 +534,12 @@ func _tap(i: int) -> void:
 	_settle(i)
 	var c: Dictionary = G.board[i]
 	if G.rules.orders.cooking(i):
+		if G.rules.orders.cook_left(i) == 0:
+			activated.emit(i)
+			return
 		if selected == i:
 			if G.main:
-				G.main.toast("还在制作，还要 %s" % _sec_text(G.rules.orders.cook_left(i)))
+				G.main.toast(TextCatalog.source("ui.board.1302b10947e7") % _sec_text(G.rules.orders.cook_left(i)))
 			shake(i)
 			Sfx.play("deny")
 			return
@@ -535,7 +555,7 @@ func _tap(i: int) -> void:
 		shake(i)
 		select(i)
 		return
-	if (selected == i or Data.type_of(str(c["id"])) in ["choice", "chest"]) and c["lock"] == 0:
+	if (selected == i or Data.type_of(str(c["id"])) == "choice") and c["lock"] == 0:
 		pop(i)
 		activated.emit(i)
 	else:
@@ -663,6 +683,8 @@ func _draw() -> void:
 		var pulse := 1.0 + 0.04 * sin(_t * 6.0)
 		var sz := Vector2(CELL, CELL) * pulse
 		Paint.cell_bracket(self, Rect2(sel_c - sz * 0.5, sz).grow(-4))
+	for source in chest_shells:
+		Art.item(self, Art.chest_visual(str(chest_shells[source]), true), cell_center(int(source)), ITEM)
 	for f in flights:
 		if float(f.get("delay", 0.0)) > 0.0:
 			continue
@@ -699,7 +721,7 @@ func _draw() -> void:
 				_draw_merge_bubble(drag_from, at, 1.15)
 			else:
 				var tilt := clampf((drag_pos.x - drag_vis.x) * 0.004, -0.25, 0.25)
-				Art.item(self, G.board[drag_from]["id"], at, ITEM * 1.15, true, tilt)
+				Art.item(self, Art.chest_visual(str(G.board[drag_from]["id"]), G.board[drag_from].has("chest")), at, ITEM * 1.15, true, tilt)
 
 func _draw_cell(i: int, ci: CanvasItem = null) -> void:
 	if ci == null: ci = self
@@ -756,7 +778,7 @@ func _draw_cell(i: int, ci: CanvasItem = null) -> void:
 		_draw_vine(r, i, true, ci) # 后面那根：先画，被物品挡住中段
 		if breath != 1.0 or nudge != Vector2.ZERO:
 			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	Art.item(ci, c["id"], ctr + nudge, ITEM * sc)
+	Art.item(ci, Art.chest_visual(str(c["id"]), c.has("chest")), ctr + nudge, ITEM * sc)
 	if c["lock"] == 1:
 		if breath != 1.0 or nudge != Vector2.ZERO:
 			ci.draw_set_transform(ctr * (1.0 - breath) + nudge, 0.0, Vector2(breath, breath))
@@ -782,7 +804,7 @@ func _draw_cell(i: int, ci: CanvasItem = null) -> void:
 				# 双倍火种模式：右下角换成紫火
 				Sprites.at(ci, "board_bolt_boost" if G.rules.board.boost_on() else "board_bolt", r.position + Vector2(80, 78))
 
-## 不拿拿、琥珀、沙漏、火种合到最高级后不能再合，右下角显示皇冠标志
+## 不那那、琥珀、沙漏、火种合到最高级后不能再合，右下角显示皇冠标志
 const MAX_BADGE_CHAINS := ["shell", "amber", "sand", "fire"]
 
 static func _is_max_currency(id: String) -> bool:
@@ -801,14 +823,18 @@ func _draw_max_badge(r: Rect2, ci: CanvasItem = null) -> void:
 static func _sec_text(sec: int) -> String:
 	sec = maxi(sec, 0)
 	if sec >= 3600:
-		return "%d时%02d分" % [sec / 3600, sec % 3600 / 60]
+		return TextCatalog.source("ui.board.e9e4f4da0297") % [sec / 3600, sec % 3600 / 60]
 	if sec >= 60:
-		return "%d分%02d秒" % [sec / 60, sec % 60]
-	return "%d秒" % sec
+		return TextCatalog.source("notice.game.30c88ef0108b") % [sec / 60, sec % 60]
+	return TextCatalog.source("ui.board.9ccc04915f66") % sec
 
 ## 材料聚在这一格：陶锅搅拌，底下是制作进度
 func _draw_cook(i: int, r: Rect2, ck: Dictionary, ci: CanvasItem = null) -> void:
 	if ci == null: ci = self
+	if bool(ck.get("finished", false)):
+		Art.item(ci, str(ck["dish"]), r.get_center(), ITEM)
+		_draw_egen_pill(r, i, TextCatalog.source("ui.board.a16245306e4e"), Art.MOSS, ci)
+		return
 	var seed: int = i
 	if str(ck.get("uid", "")) != "":
 		seed = absi(str(ck["uid"]).hash()) % 4096
@@ -848,12 +874,12 @@ func _draw_egen_pill(r: Rect2, i: int, label: String, col: Color, ci: CanvasItem
 	if ci == null: ci = self
 	var fs := 20
 	var f: Font = G.font_title
-	var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var tw := f.get_string_size(TextCatalog.resolve(label), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pill := Rect2(r.get_center().x - tw * 0.5 - 8, r.end.y - 18, tw + 16, 26)
 	Sprites.draw(ci, "board_epill_ink", pill)
 	Sprites.draw(ci, "board_epill_fill", pill, col)
 	var base := pill.position.y + 13.0 + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	ci.draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	ci.draw_string(f, Vector2(pill.position.x + 7, base), TextCatalog.resolve(label), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
 func _draw_rest(c: Vector2, t: float, ci: CanvasItem = null) -> void:
 	if ci == null: ci = self
@@ -961,7 +987,7 @@ func _hint_context() -> bool:
 	return true
 
 func _guide_playing() -> bool:
-	return G.main != null and G.main._guide != null and G.main._guide.visible and not G.main._guide._done
+	return G.main != null and G.main._guide != null and G.main._guide.visible and G.main._guide._strong()
 
 func _tick_hint(delta: float) -> void:
 	if not _hint_context():
@@ -1152,9 +1178,9 @@ func _draw_merge_bubble(i: int, ctr: Vector2, sc: float, ci: CanvasItem = null) 
 	var label := "%d:%02d" % [seconds / 60, seconds % 60]
 	var fs := 16
 	var f: Font = G.font_title
-	var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var tw := f.get_string_size(TextCatalog.resolve(label), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pill := Rect2(ctr.x - tw * 0.5 - 7, ctr.y + 19, tw + 14, 21)
 	Sprites.draw(ci, "board_bpill_ink", pill)
 	Sprites.draw(ci, "board_bpill_fill", pill, Art.CLAY if urgent else Color("2f6d93"))
 	var base := pill.position.y + 10.5 + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	ci.draw_string(f, Vector2(pill.position.x + 7, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	ci.draw_string(f, Vector2(pill.position.x + 7, base), TextCatalog.resolve(label), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)

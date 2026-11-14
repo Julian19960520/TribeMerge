@@ -19,7 +19,7 @@ var _busy := false
 func _ready() -> void:
 	dim_alpha = 0.78
 	UI.box(box, Rect2(0, 50, 720, 1480), _paint_head)
-	var t := UI.title(box, str(Offers.cfg(KIND).get("title", "体力大礼包")), Rect2(60, 142, 600, 110), 76, Color("ffd23f"))
+	var t := UI.title(box, str(Offers.cfg(KIND).get("title", TextCatalog.source("ui.energyofferpopup.62452819676a"))), Rect2(60, 142, 600, 110), 76, Color("ffd23f"))
 	t.rotation = -0.02
 	var x := UI.hit(box, Rect2(630, 140, 70, 70), close)
 	x.name = "energy_offer_close"
@@ -32,7 +32,7 @@ func _ready() -> void:
 	for k in Offers.tiers(KIND).size():
 		_card(k)
 	wait_lbl = UI.lbl(box, "", Rect2(20, 1246, 680, 50), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
-	var amber := UI.btn(box, Rect2(250, 1306, 220, 64), "琥珀买体力", "hide", func():
+	var amber := UI.btn(box, Rect2(250, 1306, 220, 64), TextCatalog.source("ui.energyofferpopup.aa7c6bfb8c7c"), "hide", func():
 		close()
 		G.main.open("energy_amber"), 24)
 	amber.name = "energy_offer_amber"
@@ -67,7 +67,7 @@ func _card(k: int) -> void:
 	var r := Rect2(float(CARD_X[k]), CARD_Y, CARD_W, CARD_H)
 	# 卡身（条纹、叶子小花、内衬）是预生成贴图，配色见 scripts/sprites/events.gd 的 EN_HEAD / EN_BODY
 	UI.box(box, r, func(ci, sz): Sprites.draw(ci, "ev_energy_card_%d" % k, Rect2(Vector2.ZERO, sz)))
-	UI.lbl(box, "超值 %d%%!" % int(t.get("value_pct", 100)), Rect2(r.position.x, r.position.y + 34, r.size.x, 50), 30, Color("ffe14a"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	UI.lbl(box, TextCatalog.source("ui.energyofferpopup.781168738ca7") % int(t.get("value_pct", 100)), Rect2(r.position.x, r.position.y + 34, r.size.x, 50), 30, Color("ffe14a"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	var rw: Array = t.get("rewards", [])
 	for j in mini(rw.size(), 3):
 		var row: Array = rw[j]
@@ -84,7 +84,7 @@ func _card(k: int) -> void:
 			Sprites.draw(ci, "ev_energy_best", Rect2(Vector2.ZERO, sz)))
 		rib.name = "energy_best"
 		rib.rotation = -0.03
-		UI.lbl(rib, "最划算", Rect2(0, 0, rib.size.x, rib.size.y), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Color("8a1d3a"), true)
+		UI.lbl(rib, TextCatalog.source("ui.energyofferpopup.19969604da50"), Rect2(0, 0, rib.size.x, rib.size.y), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Color("8a1d3a"), true)
 	var b := UI.btn(box, Rect2(r.position.x + 16, r.end.y - 92, r.size.x - 32, 78), Offers.price_text(KIND, k), "green", func(): _buy(k), 36)
 	b.name = "energy_buy_%d" % k
 	b.title_font = false
@@ -100,17 +100,17 @@ func _process(delta: float) -> void:
 
 func _refresh() -> void:
 	var live := Offers.active(KIND)
-	clock.text = SpreePopupScript.clock_text(Offers.remaining(KIND)) if live else "已结束"
+	clock.text = TextCatalog.resolve(SpreePopupScript.clock_text(Offers.remaining(KIND)) if live else TextCatalog.source("ui.energyofferpopup.d79b1d0e5c61"))
 	for k in btns.size():
 		var n := Offers.left(KIND, k)
 		btns[k].enabled = live and n > 0 and not _busy
-		btns[k].text = Offers.price_text(KIND, k) if n > 0 else "已购买"
-		if not live and n > 0: btns[k].text = "已结束"
+		btns[k].text = TextCatalog.resolve(Offers.price_text(KIND, k) if n > 0 else TextCatalog.source("ui.energyofferpopup.9d17144725bc"))
+		if not live and n > 0: btns[k].text = TextCatalog.resolve(TextCatalog.source("ui.energyofferpopup.d79b1d0e5c61"))
 		btns[k].queue_redraw()
 	var left := G.rules.clock.energy_full_left()
 	var s := left
 	var hms := "%02d:%02d:%02d" % [s / 3600, (s % 3600) / 60, s % 60]
-	wait_lbl.text = "体力已满，先去合成吧！" if left == 0 else "或者等待 %s 体力恢复到 %d" % [hms, G.MAX_ENERGY]
+	wait_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.energyofferpopup.528cc454ebd6") if left == 0 else TextCatalog.source("ui.energyofferpopup.3658f40ca5a1") % [hms, G.MAX_ENERGY])
 
 func _buy(k: int) -> void:
 	if _busy: return

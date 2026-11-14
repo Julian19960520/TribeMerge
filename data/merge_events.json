@@ -3,8 +3,8 @@
 	"seasons": [
 		{
 			"id": "moon_relics",
-			"title": "月石遗迹",
-			"entry_title": "月石遗迹",
+			"title": "§ui.mergeevententry.973c334a813e§",
+			"entry_title": "§ui.mergeevententry.973c334a813e§",
 			"enabled": true,
 			"unlock_level": 10,
 			"start_utc": "2026-11-02T00:00:00",
@@ -104,42 +104,42 @@
 			"chain": [
 				{
 					"id": "moon_1",
-					"name": "月石碎片",
+					"name": "§content.merge_events.9c00f18709ca§",
 					"icon": "res://assets/events/moon/relic_1.svg"
 				},
 				{
 					"id": "moon_2",
-					"name": "月石吊坠",
+					"name": "§content.merge_events.500f0b7d4b22§",
 					"icon": "res://assets/events/moon/relic_2.svg"
 				},
 				{
 					"id": "moon_3",
-					"name": "青铜月盘",
+					"name": "§content.merge_events.b2577769b2e7§",
 					"icon": "res://assets/events/moon/relic_3.svg"
 				},
 				{
 					"id": "moon_4",
-					"name": "月纹玉环",
+					"name": "§content.merge_events.2c27a3478b1c§",
 					"icon": "res://assets/events/moon/relic_4.svg"
 				},
 				{
 					"id": "moon_5",
-					"name": "月辉王冠",
+					"name": "§content.merge_events.2a3f5b7a2af6§",
 					"icon": "res://assets/events/moon/relic_5.svg"
 				},
 				{
 					"id": "moon_6",
-					"name": "月光权杖",
+					"name": "§content.merge_events.ecbe4d702426§",
 					"icon": "res://assets/events/moon/relic_6.svg"
 				},
 				{
 					"id": "moon_7",
-					"name": "月神雕像",
+					"name": "§content.merge_events.10f4685310c3§",
 					"icon": "res://assets/events/moon/relic_7.svg"
 				},
 				{
 					"id": "moon_8",
-					"name": "月神祭坛",
+					"name": "§content.merge_events.55004e2c8fa4§",
 					"icon": "res://assets/events/moon/relic_8.svg"
 				}
 			],

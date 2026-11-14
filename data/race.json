@@ -23,7 +23,7 @@
 		[["amber_3", 10], ["fire_1", 10]],
 		[["amber_3", 5], ["fire_1", 10]]
 	],
-	"title": {"id": "race_champ", "name": "篝火王", "hours": 24},
+	"title": {"id": "race_champ", "name": "§ui.racepopup.74d4ca0865ff§", "hours": 24},
 	"shadow": {
 		"_说明": "影子对手：优先回放同等级段真人最近 history_days 天的曲线；没有就按等级生成。按 nominal_sec（4 小时）的节奏生成：开局先交一波（满体力），之后按每小时 pace 分。12 级一半左右的影子 2.5 小时内收满 150，两成多收不满。",
 		"history_days": 14,
@@ -37,6 +37,6 @@
 		"order_base": 8,
 		"order_per_level": 2.2
 	},
-	"names": ["石头哥", "大毛", "阿呱", "火苗妹", "小牙", "长矛", "野果", "烤肉王", "树皮", "泥巴", "骨头", "大嗓门", "飞石", "阿土", "捞鱼仔", "摘星", "红泥", "鹿角"],
+	"names": ["§content.race.2188fa28f5bb§", "§content.race.d885df471bc3§", "§content.race.6b4bfcf5e83d§", "§content.race.1f1fe58c8399§", "§cards.albums.cace8a6d3337§", "§content.race.dc7ff4a08894§", "§content.race.de80a1f3341f§", "§content.race.83f207b32f10§", "§content.race.156ad159b29b§", "§content.race.14315a71fa22§", "§content.race.3ca3c3637d89§", "§content.race.67f2e2d839ea§", "§content.race.f9619616b713§", "§content.race.4e8feb814dd5§", "§content.race.b0189e1afdeb§", "§content.race.561629c06d09§", "§content.race.6b15304793a8§", "§cards.albums.bf7d9a7a9a7d§"],
 	"avatars": 8
 }

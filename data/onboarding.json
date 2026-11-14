@@ -1,0 +1,1237 @@
+{
+	"version": 6,
+	"initial_amber": 30,
+	"build_area": "fire",
+	"generator": "basket_4",
+	"upgraded_generator": "basket_5",
+	"bonus_component_cell": 18,
+	"bonus_component": "basket_3",
+	"energy_generator": "emberpot_1",
+	"stages": [
+		{
+			"key": "welcome",
+			"mode": "enter_board",
+			"text": "§content.onboarding.dbaa88f6efb8§"
+		},
+		{
+			"key": "motive",
+			"mode": "dialog",
+			"text": "§content.onboarding.80387acbfb2e§"
+		},
+		{
+			"key": "merge1",
+			"mode": "merge",
+			"text": "§content.onboarding.de776321a475§",
+			"wait": {
+				"has": "basket_2"
+			},
+			"pair": [
+				"basket_1",
+				"basket_1"
+			],
+			"formula": [
+				"basket_1",
+				"basket_1",
+				"basket_2"
+			],
+			"cells": [
+				23,
+				30
+			]
+		},
+		{
+			"key": "merge2",
+			"mode": "merge",
+			"text": "§content.onboarding.d033162defac§",
+			"wait": {
+				"has": "basket_3"
+			},
+			"pair": [
+				"basket_2",
+				"basket_2"
+			],
+			"formula": [
+				"basket_2",
+				"basket_2",
+				"basket_3"
+			],
+			"cells": [
+				30,
+				31
+			]
+		},
+		{
+			"key": "merge3",
+			"mode": "merge",
+			"text": "§content.onboarding.4715d9f20048§",
+			"wait": {
+				"has": "basket_4"
+			},
+			"pair": [
+				"basket_3",
+				"basket_3"
+			],
+			"cells": [
+				31,
+				32
+			]
+		},
+		{
+			"key": "first_order",
+			"mode": "dialog",
+			"text": "§content.onboarding.def61b3d3698§",
+			"target": "order"
+		},
+		{
+			"key": "produce",
+			"mode": "produce",
+			"text": "§content.onboarding.e5b9069402a5§",
+			"wait": {
+				"count": [
+					"fruit_1",
+					2
+				]
+			},
+			"target": "basket_4"
+		},
+		{
+			"key": "make_fruit2",
+			"mode": "merge",
+			"text": "§content.onboarding.d04bf074e3a3§",
+			"wait": {
+				"has": "fruit_2"
+			},
+			"pair": [
+				"fruit_1",
+				"fruit_1"
+			],
+			"formula": [
+				"fruit_1",
+				"fruit_1",
+				"fruit_2"
+			]
+		},
+		{
+			"key": "first_ready",
+			"mode": "dialog",
+			"text": "§content.onboarding.8dd0a0fc2c53§",
+			"target": "order"
+		},
+		{
+			"key": "submit1",
+			"mode": "submit",
+			"text": "§content.onboarding.8f7accd90e81§",
+			"wait": {
+				"delivered": "practice1"
+			}
+		},
+		{
+			"key": "produce_more",
+			"mode": "produce",
+			"text": "§content.onboarding.ffcc6c315990§",
+			"wait": {
+				"produced_since": 3
+			},
+			"target": "basket_4"
+		},
+		{
+			"key": "free_high",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"ready": "practice2"
+			}
+		},
+		{
+			"key": "submit2",
+			"mode": "submit",
+			"text": "§content.onboarding.aafee5764f47§",
+			"wait": {
+				"delivered": "practice2"
+			}
+		},
+		{
+			"key": "upgrade",
+			"mode": "open_build",
+			"text": "§content.onboarding.e23e9216930f§"
+		},
+		{
+			"key": "build1",
+			"mode": "build",
+			"text": "§content.onboarding.79cb031d4a69§",
+			"wait": {
+				"build": 2
+			}
+		},
+		{
+			"key": "build1_wait",
+			"mode": "animation",
+			"text": "",
+			"wait": {
+				"presentation": true
+			}
+		},
+		{
+			"key": "back1",
+			"mode": "back",
+			"text": "§content.onboarding.2afb427118e7§"
+		},
+		{
+			"key": "coin",
+			"mode": "free",
+			"text": ""
+		},
+		{
+			"key": "free_third",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"ready": "practice3"
+			}
+		},
+		{
+			"key": "submit3",
+			"mode": "submit",
+			"text": "§content.onboarding.f680cede9c2d§",
+			"wait": {
+				"delivered": "practice3"
+			}
+		},
+		{
+			"key": "orders_start",
+			"mode": "banner",
+			"text": "§content.onboarding.971334504817§"
+		},
+		{
+			"key": "reputation",
+			"mode": "dialog",
+			"text": "§content.onboarding.428861c1f227§"
+		},
+		{
+			"key": "xp_rule",
+			"mode": "dialog",
+			"text": "§content.onboarding.0fee45da387e§",
+			"formula": [
+				"xp_1",
+				"xp_1",
+				"xp_1"
+			]
+		},
+		{
+			"key": "xp_bar",
+			"mode": "dialog",
+			"text": "§content.onboarding.5faaaea489d7§",
+			"target": "xp"
+		},
+		{
+			"key": "level_open",
+			"mode": "level_open",
+			"text": "§content.onboarding.2b8f8909cc80§"
+		},
+		{
+			"key": "level_rule",
+			"mode": "dialog",
+			"text": "§content.onboarding.3f3ce2607372§",
+			"target": "level_progress"
+		},
+		{
+			"key": "level_preview",
+			"mode": "dialog",
+			"text": "§content.onboarding.20dc00e68821§",
+			"target": "level_rewards"
+		},
+		{
+			"key": "level_close",
+			"mode": "level_close",
+			"text": "§content.onboarding.685105470f82§"
+		},
+		{
+			"key": "free_level1",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"delivered": "level2_first"
+			}
+		},
+		{
+			"key": "build2_wait",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"build": 3
+			}
+		},
+		{
+			"key": "build2_animation",
+			"mode": "animation",
+			"text": "",
+			"wait": {
+				"presentation": true
+			}
+		},
+		{
+			"key": "build_preview",
+			"mode": "build_preview",
+			"text": ""
+		},
+		{
+			"key": "howto",
+			"mode": "howto",
+			"text": ""
+		},
+		{
+			"key": "back2",
+			"mode": "back",
+			"text": "§content.onboarding.9dd338989101§"
+		},
+		{
+			"key": "stash",
+			"mode": "stash",
+			"text": "§content.onboarding.e58b1ec5a017§",
+			"wait": {
+				"has": "basket_3"
+			}
+		},
+		{
+			"key": "gen_merge3",
+			"mode": "merge",
+			"text": "§content.onboarding.9142c1f3427d§",
+			"wait": {
+				"count": [
+					"basket_4",
+					2
+				]
+			},
+			"pair": [
+				"basket_3",
+				"basket_3"
+			]
+		},
+		{
+			"key": "gen_merge5",
+			"mode": "merge",
+			"text": "§content.onboarding.1fe8b58dec78§",
+			"wait": {
+				"has": "basket_5"
+			},
+			"pair": [
+				"basket_4",
+				"basket_4"
+			]
+		},
+		{
+			"key": "gen_tap",
+			"mode": "produce",
+			"text": "§content.onboarding.027ca3cc6eac§",
+			"wait": {
+				"produced_since": 1
+			},
+			"target": "basket_5"
+		},
+		{
+			"key": "free_level2",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"level": 3
+			}
+		},
+		{
+			"key": "recipe_open",
+			"mode": "recipe_open",
+			"text": "§content.onboarding.bc3c3dc77033§"
+		},
+		{
+			"key": "recipe_mats",
+			"mode": "dialog",
+			"text": "§content.onboarding.d2317d78a95c§",
+			"target": "recipe_mats"
+		},
+		{
+			"key": "recipe_time",
+			"mode": "dialog",
+			"text": "§content.onboarding.4378c9d8e06b§",
+			"target": "recipe_time"
+		},
+		{
+			"key": "recipe_ready",
+			"mode": "dialog",
+			"text": "§content.onboarding.23809f2ac16f§",
+			"target": "recipe"
+		},
+		{
+			"key": "recipe_close",
+			"mode": "recipe_close",
+			"text": "§content.onboarding.d79e2b1ba7dc§"
+		},
+		{
+			"key": "free_prepare",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"craft_ready": "craft1"
+			}
+		},
+		{
+			"key": "first_cook",
+			"mode": "cook",
+			"text": "§content.onboarding.40965751f9cc§",
+			"wait": {
+				"phase": [
+					"craft1",
+					"cook"
+				]
+			}
+		},
+		{
+			"key": "cook_wait",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"phase": [
+					"craft1",
+					"finished"
+				]
+			}
+		},
+		{
+			"key": "take_dish",
+			"mode": "take_dish",
+			"text": "§content.onboarding.385da3f80faa§",
+			"wait": {
+				"phase": [
+					"craft1",
+					"ready"
+				]
+			}
+		},
+		{
+			"key": "deliver_dish",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"delivered": "craft1"
+			}
+		},
+		{
+			"key": "free_level3",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"level": 4
+			}
+		},
+		{
+			"key": "free_energy_gift",
+			"mode": "free",
+			"text": "§dialogue.hero_voice.6ad4231372ef§",
+			"wait": {
+				"energy_gift_ready": true
+			}
+		},
+		{
+			"key": "energy_gift",
+			"mode": "energy_gen",
+			"text": "§dialogue.hero_voice.365775cd0600§",
+			"wait": {
+				"energy_gift": true
+			}
+		},
+		{
+			"key": "free_level4",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"level": 5
+			}
+		},
+		{
+			"key": "free_level5",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"delivered": "level5_last"
+			}
+		},
+		{
+			"key": "build3_wait",
+			"mode": "free",
+			"text": "",
+			"wait": {
+				"build": 4
+			}
+		},
+		{
+			"key": "build3_animation",
+			"mode": "animation",
+			"text": "",
+			"wait": {
+				"presentation": true
+			}
+		},
+		{
+			"key": "complete",
+			"mode": "complete",
+			"text": ""
+		}
+	],
+	"orders": [
+		{
+			"tag": "practice1",
+			"items": [
+				"fruit_2"
+			],
+			"coin": 4,
+			"xp": 0,
+			"build": 1,
+			"level": 1,
+			"gate": "first_order"
+		},
+		{
+			"tag": "practice2",
+			"items": [
+				"fruit_8"
+			],
+			"coin": 42,
+			"xp": 0,
+			"build": 1,
+			"level": 1,
+			"after": "practice1",
+			"prefer_vine_output": true
+		},
+		{
+			"tag": "practice3",
+			"items": [
+				"fruit_5"
+			],
+			"coin": 12,
+			"xp": 0,
+			"build": 1,
+			"level": 1,
+			"after": "practice2",
+			"prefer_vine_output": true
+		},
+		{
+			"tag": "formal1",
+			"items": [
+				"fruit_4"
+			],
+			"coin": 8,
+			"xp": 1,
+			"build": 1,
+			"level": 1,
+			"after": "practice3",
+			"gate": "orders_start",
+			"prefer_vine_output": true
+		},
+		{
+			"tag": "formal2",
+			"items": [
+				"fruit_6"
+			],
+			"coin": 19,
+			"xp": 1,
+			"build": 1,
+			"level": 1,
+			"after": "formal1",
+			"prefer_vine_output": true
+		},
+		{
+			"tag": "level2_first",
+			"items": [
+				"fruit_7"
+			],
+			"coin": 28,
+			"xp": 1,
+			"build": 1,
+			"level": 1,
+			"after": "formal2",
+			"prefer_vine_output": true
+		},
+		{
+			"tag": "seed_first",
+			"items": [
+				"fruit_6"
+			],
+			"coin": 19,
+			"xp": 1,
+			"build": 3,
+			"level": 2,
+			"gate": "gen_tap",
+			"prefer_vine_output": true,
+			"max_item_level": 6
+		},
+		{
+			"tag": "seed_second",
+			"items": [
+				"seed_4"
+			],
+			"coin": 29,
+			"xp": 1,
+			"build": 3,
+			"level": 2,
+			"gate": "gen_tap",
+			"prefer_vine_output": true
+		},
+		{
+			"tag": "fruit_again",
+			"items": [
+				"fruit_6"
+			],
+			"coin": 19,
+			"xp": 1,
+			"build": 3,
+			"level": 2,
+			"after": "seed_first",
+			"prefer_vine_output": true,
+			"max_item_level": 6
+		},
+		{
+			"tag": "seed_last",
+			"items": [
+				"fruit_5"
+			],
+			"coin": 12,
+			"xp": 1,
+			"build": 3,
+			"level": 2,
+			"after": "seed_second",
+			"prefer_vine_output": true,
+			"max_item_level": 6
+		},
+		{
+			"tag": "craft1",
+			"items": [
+				"salad"
+			],
+			"coin": 20,
+			"xp": 1,
+			"build": 3,
+			"level": 3,
+			"after": "seed_last",
+			"dish": "salad"
+		},
+		{
+			"tag": "craft2",
+			"items": [
+				"fruit_6"
+			],
+			"coin": 19,
+			"xp": 1,
+			"build": 3,
+			"level": 3,
+			"after": "seed_last",
+			"prefer_vine_output": true
+		},
+		{
+			"tag": "craft3",
+			"items": [
+				"fruit_7"
+			],
+			"coin": 28,
+			"xp": 1,
+			"build": 3,
+			"level": 3,
+			"after": "craft1",
+			"prefer_vine_output": true
+		},
+		{
+			"tag": "craft6",
+			"items": [
+				"fruitbasket"
+			],
+			"coin": 35,
+			"xp": 2,
+			"build": 3,
+			"level": 4,
+			"after": "craft3",
+			"dish": "fruitbasket"
+		},
+		{
+			"tag": "level4_last",
+			"items": [
+				"fruit_6"
+			],
+			"coin": 19,
+			"xp": 1,
+			"build": 3,
+			"level": 4,
+			"after": "craft3",
+			"prefer_vine_output": true
+		},
+		{
+			"tag": "craft7",
+			"items": [
+				"trailpack"
+			],
+			"coin": 13,
+			"xp": 2,
+			"build": 3,
+			"level": 4,
+			"after": "craft3",
+			"dish": "trailpack",
+			"gate": "free_level4"
+		},
+		{
+			"tag": "level5_last",
+			"items": [
+				"fruit_8",
+				"fruit_7"
+			],
+			"coin": 65,
+			"xp": 1,
+			"build": 3,
+			"level": 5,
+			"after": "level4_last",
+			"prefer_vine_output": true
+		}
+	],
+	"reference": [
+		{
+			"frame": 1,
+			"stage": "welcome"
+		},
+		{
+			"frame": 2,
+			"stage": "motive"
+		},
+		{
+			"frame": 3,
+			"stage": "merge1"
+		},
+		{
+			"frame": 4,
+			"stage": "merge2"
+		},
+		{
+			"frame": 5,
+			"stage": "merge3"
+		},
+		{
+			"frame": 6,
+			"stage": "new_generator"
+		},
+		{
+			"frame": 7,
+			"stage": "first_order"
+		},
+		{
+			"frame": 8,
+			"stage": "produce"
+		},
+		{
+			"frame": 9,
+			"stage": "make_fruit2"
+		},
+		{
+			"frame": 10,
+			"stage": "first_ready"
+		},
+		{
+			"frame": 11,
+			"stage": "submit1"
+		},
+		{
+			"frame": 12,
+			"stage": "produce_more"
+		},
+		{
+			"frame": 13,
+			"stage": "free_high"
+		},
+		{
+			"frame": 14,
+			"stage": "free_high"
+		},
+		{
+			"frame": 15,
+			"stage": "free_high"
+		},
+		{
+			"frame": 16,
+			"stage": "free_high"
+		},
+		{
+			"frame": 17,
+			"stage": "free_high"
+		},
+		{
+			"frame": 18,
+			"stage": "free_high"
+		},
+		{
+			"frame": 19,
+			"stage": "submit2"
+		},
+		{
+			"frame": 20,
+			"stage": "upgrade"
+		},
+		{
+			"frame": 21,
+			"stage": "build1"
+		},
+		{
+			"frame": 22,
+			"stage": "build1_wait"
+		},
+		{
+			"frame": 23,
+			"stage": "build1_wait"
+		},
+		{
+			"frame": 24,
+			"stage": "build1_wait"
+		},
+		{
+			"frame": 25,
+			"stage": "back1"
+		},
+		{
+			"frame": 26,
+			"stage": "coin"
+		},
+		{
+			"frame": 27,
+			"stage": "coin"
+		},
+		{
+			"frame": 28,
+			"stage": "free_third"
+		},
+		{
+			"frame": 29,
+			"stage": "submit3"
+		},
+		{
+			"frame": 30,
+			"stage": "orders_start"
+		},
+		{
+			"frame": 31,
+			"stage": "reputation"
+		},
+		{
+			"frame": 32,
+			"stage": "xp_rule"
+		},
+		{
+			"frame": 33,
+			"stage": "xp_bar"
+		},
+		{
+			"frame": 34,
+			"stage": "level_open"
+		},
+		{
+			"frame": 35,
+			"stage": "level_rule"
+		},
+		{
+			"frame": 36,
+			"stage": "level_preview"
+		},
+		{
+			"frame": 37,
+			"stage": "free_level1"
+		},
+		{
+			"frame": 38,
+			"stage": "free_level1"
+		},
+		{
+			"frame": 39,
+			"stage": "free_level1"
+		},
+		{
+			"frame": 40,
+			"stage": "free_level1"
+		},
+		{
+			"frame": 41,
+			"stage": "free_level1"
+		},
+		{
+			"frame": 42,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 43,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 44,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 45,
+			"stage": "orders_start"
+		},
+		{
+			"frame": 46,
+			"stage": "free_level1"
+		},
+		{
+			"frame": 47,
+			"stage": "free_level1"
+		},
+		{
+			"frame": 48,
+			"stage": "free_level1"
+		},
+		{
+			"frame": 49,
+			"stage": "free_level1"
+		},
+		{
+			"frame": 50,
+			"stage": "energy_out"
+		},
+		{
+			"frame": 51,
+			"stage": "energy_out"
+		},
+		{
+			"frame": 52,
+			"stage": "build2_wait"
+		},
+		{
+			"frame": 53,
+			"stage": "build2_wait"
+		},
+		{
+			"frame": 54,
+			"stage": "build2_wait"
+		},
+		{
+			"frame": 55,
+			"stage": "build2_wait"
+		},
+		{
+			"frame": 56,
+			"stage": "build2_animation"
+		},
+		{
+			"frame": 57,
+			"stage": "build2_animation"
+		},
+		{
+			"frame": 58,
+			"stage": "build2_animation"
+		},
+		{
+			"frame": 59,
+			"stage": "build_preview"
+		},
+		{
+			"frame": 60,
+			"stage": "howto"
+		},
+		{
+			"frame": 61,
+			"stage": "back2"
+		},
+		{
+			"frame": 62,
+			"stage": "stash"
+		},
+		{
+			"frame": 63,
+			"stage": "gen_merge3"
+		},
+		{
+			"frame": 64,
+			"stage": "gen_merge5"
+		},
+		{
+			"frame": 65,
+			"stage": "new_generator"
+		},
+		{
+			"frame": 66,
+			"stage": "gen_tap"
+		},
+		{
+			"frame": 67,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 68,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 69,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 70,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 71,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 72,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 73,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 74,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 75,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 76,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 77,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 78,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 79,
+			"stage": "board_reward"
+		},
+		{
+			"frame": 80,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 81,
+			"stage": "free_level2"
+		},
+		{
+			"frame": 82,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 83,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 84,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 85,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 86,
+			"stage": "recipe_open"
+		},
+		{
+			"frame": 87,
+			"stage": "recipe_open"
+		},
+		{
+			"frame": 88,
+			"stage": "recipe_mats"
+		},
+		{
+			"frame": 89,
+			"stage": "recipe_time"
+		},
+		{
+			"frame": 90,
+			"stage": "recipe_ready"
+		},
+		{
+			"frame": 91,
+			"stage": "free_prepare"
+		},
+		{
+			"frame": 92,
+			"stage": "free_prepare"
+		},
+		{
+			"frame": 93,
+			"stage": "free_prepare"
+		},
+		{
+			"frame": 94,
+			"stage": "first_cook"
+		},
+		{
+			"frame": 95,
+			"stage": "take_dish"
+		},
+		{
+			"frame": 96,
+			"stage": "deliver_dish"
+		},
+		{
+			"frame": 97,
+			"stage": "free_level3"
+		},
+		{
+			"frame": 98,
+			"stage": "free_level3"
+		},
+		{
+			"frame": 99,
+			"stage": "free_level3"
+		},
+		{
+			"frame": 100,
+			"stage": "free_level3"
+		},
+		{
+			"frame": 101,
+			"stage": "free_level3"
+		},
+		{
+			"frame": 102,
+			"stage": "free_level3"
+		},
+		{
+			"frame": 103,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 104,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 105,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 106,
+			"stage": "orders_start"
+		},
+		{
+			"frame": 107,
+			"stage": "free_energy_gift"
+		},
+		{
+			"frame": 108,
+			"stage": "free_energy_gift"
+		},
+		{
+			"frame": 109,
+			"stage": "free_energy_gift"
+		},
+		{
+			"frame": 110,
+			"stage": "energy_gift"
+		},
+		{
+			"frame": 111,
+			"stage": "energy_gift"
+		},
+		{
+			"frame": 112,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 113,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 114,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 115,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 116,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 117,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 118,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 119,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 120,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 121,
+			"stage": "free_level4"
+		},
+		{
+			"frame": 122,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 123,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 124,
+			"stage": "level_reward"
+		},
+		{
+			"frame": 125,
+			"stage": "free_level5"
+		},
+		{
+			"frame": 126,
+			"stage": "free_level5"
+		},
+		{
+			"frame": 127,
+			"stage": "build3_wait"
+		},
+		{
+			"frame": 128,
+			"stage": "build3_wait"
+		},
+		{
+			"frame": 129,
+			"stage": "build3_wait"
+		},
+		{
+			"frame": 130,
+			"stage": "build3_animation"
+		},
+		{
+			"frame": 131,
+			"stage": "build3_animation"
+		}
+	],
+	"sell_energy": {
+		"6": 1,
+		"7": 1,
+		"8": 2
+	},
+	"upgrade_first_drop": "seed_1",
+	"rescue": {
+		"min_level": 2,
+		"max_level": 2,
+		"cleared_cells": 14,
+		"reward": [
+			"fire_2",
+			15
+		]
+	},
+	"coin_tutorial": {
+		"drop": "shell_2",
+		"start_stage": "free_high"
+	},
+	"energy_gift_after": [
+		"craft6"
+	]
+}

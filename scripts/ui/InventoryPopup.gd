@@ -21,7 +21,7 @@ var _busy := false
 
 func _ready() -> void:
 	UI.box(box, Rect2(0, 0, 720, 1480), _paint_frame)
-	UI.title(box, "储物洞", Rect2(230, 322, 260, 64), 42, Color.WHITE)
+	UI.title(box, TextCatalog.source("ui.inventorypopup.817cda7be380"), Rect2(230, 322, 260, 64), 42, Color.WHITE)
 	var close_btn := UI.hit(box, Rect2(FR.end.x - 56, FR.position.y - 18, 70, 70), close)
 	close_btn.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
 	capacity = UI.lbl(box, "", Rect2(70, 388, 300, 38), 24, Color("fbe7c0"), HORIZONTAL_ALIGNMENT_LEFT, 5, Color("2a1a10"))
@@ -40,8 +40,8 @@ func _ready() -> void:
 		b.extra = func(ci, sz): _paint_slot(ci, sz, int(b.get_meta("slot")))
 		b.pressed.connect(func(): _take(int(b.get_meta("slot"))))
 		slots.append(b)
-	UI.lbl(box, "点物品取回棋盘", Rect2(66, 1054, 320, 36), 24, Color("fbe7c0"), HORIZONTAL_ALIGNMENT_LEFT, 5, Color("2a1a10"))
-	UI.lbl(box, "棋盘上的物品拖到皮袋即可存入", Rect2(66, 1094, 330, 30), 18, Color("d8c4a0"), HORIZONTAL_ALIGNMENT_LEFT)
+	UI.lbl(box, TextCatalog.source("ui.inventorypopup.69e27b29a381"), Rect2(66, 1054, 320, 36), 24, Color("fbe7c0"), HORIZONTAL_ALIGNMENT_LEFT, 5, Color("2a1a10"))
+	UI.lbl(box, TextCatalog.source("ui.inventorypopup.7f67efa818e0"), Rect2(66, 1094, 330, 30), 18, Color("d8c4a0"), HORIZONTAL_ALIGNMENT_LEFT)
 	unlock = UI.btn(box, Rect2(410, 1052, 250, 82), "", "green", _expand, 28)
 	unlock.res = Art.AMBER_ICON
 	unlock.name = "storage_expand"
@@ -73,15 +73,15 @@ func _paint_slot(ci: CanvasItem, sz: Vector2, index: int) -> void:
 		Sprites.draw(ci, "pop_inv_niche", r)
 		if index < G.inv.size():
 			Sprites.at(ci, "pop_spot_shadow", Vector2(sz.x * 0.5, sz.y - 14), 1.0, 0.0, Color(0, 0, 0, 0.35))
-			Art.item(ci, str(G.inv[index]), sz * 0.5 + Vector2(0, -2), 86)
+			Art.item(ci, Art.chest_visual(str(G.inv[index]), G.inv_chests.has(str(index))), sz * 0.5 + Vector2(0, -2), 86)
 	elif index == cap:
 		# 下一格：虚线框 + 加号 + 价格（点它扩建）
 		Sprites.draw(ci, "pop_inv_next", r)
 		Art.item(ci, Art.AMBER_ICON, Vector2(30, 82), 30, false)
 		var f: Font = G.font_body
 		var t := str(G.rules.progression.storage_price())
-		ci.draw_string_outline(f, Vector2(46, 91), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 5, Art.INK)
-		ci.draw_string(f, Vector2(46, 91), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
+		ci.draw_string_outline(f, Vector2(46, 91), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 5, Art.INK)
+		ci.draw_string(f, Vector2(46, 91), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
 	else:
 		# 还没挖开：碎石堵着（离可扩建那格越远越暗）
 		Sprites.draw(ci, "pop_inv_rocks", r)
@@ -115,9 +115,9 @@ func _layout(force := false) -> void:
 
 func _refresh() -> void:
 	if scroll == null: return
-	capacity.text = "已存 %d / %d 格" % [G.inv.size(), G.inv_cap]
-	next_lbl.text = "同排同价，每排 +%d" % int(Data.RULES.get("storage_expand_step", 10))
-	unlock.text = "%d 扩建" % G.rules.progression.storage_price()
+	capacity.text = TextCatalog.resolve(TextCatalog.source("ui.inventorypopup.358c502fecea") % [G.inv.size(), G.inv_cap])
+	next_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.inventorypopup.0d763b2b0f6d") % int(Data.RULES.get("storage_expand_step", 10)))
+	unlock.text = TextCatalog.resolve(TextCatalog.source("ui.inventorypopup.4b4bdd4a1307") % G.rules.progression.storage_price())
 	unlock.enabled = not _busy
 	unlock.queue_redraw()
 	scroll.set_length(_rows() * ROW_H + 24)
@@ -131,7 +131,7 @@ func _take(index: int) -> void:
 	if index < 0 or index >= G.inv.size(): return
 	var to := G.rules.board.find_empty_near(G.rules.board.idx(3, 4))
 	if to < 0:
-		G.main.toast("棋盘满了！")
+		G.main.toast(TextCatalog.source("ui.inventorypopup.0b563d7d1026"))
 		return
 	var result: Dictionary = Replay.perform("inventory", {"index": index})
 	if result.has("error"): G.main.toast(str(result["error"]))
@@ -151,5 +151,5 @@ func _expand() -> void:
 		_layout(true)
 		Sfx.play("merge", 1.2)
 	else:
-		G.main.toast("没扩建成功，看看琥珀够不够、网络通不通")
+		G.main.toast(TextCatalog.source("ui.inventorypopup.ad2801cad3fd"))
 		_refresh()

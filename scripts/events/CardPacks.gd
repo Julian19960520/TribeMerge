@@ -49,5 +49,5 @@ static func probability_text(id: String) -> String:
 	var out: PackedStringArray = []
 	var chances := probabilities(id)
 	for i in chances.size():
-		if float(chances[i]) > 0.0: out.append("%d星 %.2f%%" % [i + 1, float(chances[i]) * 100.0])
+		if float(chances[i]) > 0.0: out.append(TextCatalog.source("notice.cardpacks.d0bf20158313") % [i + 1, float(chances[i]) * 100.0])
 	return "　".join(out)

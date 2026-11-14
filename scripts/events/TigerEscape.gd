@@ -20,7 +20,7 @@ static func _fraction(m: Dictionary, bot: int, leg: int) -> float:
 
 static func _create_bots(m: Dictionary) -> Array:
 	var rules: Dictionary = config().get("bots", {})
-	var names: Array = rules.get("names", ["同行者"])
+	var names: Array = rules.get("names", [TextCatalog.source("notice.tigerescape.3a66496b74b1")])
 	var bots: Array = []
 	for i in clampi(int(rules.get("count", 15)), 0, 50):
 		var pace := lerpf(float(rules.get("pace_min", 0.45)), float(rules.get("pace_max", 1.4)), _fraction(m, i, -1))
@@ -29,7 +29,7 @@ static func _create_bots(m: Dictionary) -> Array:
 		for leg in m["stages"].size():
 			elapsed += float(m["interval"]) * pace * (0.8 + 0.4 * _fraction(m, i, leg))
 			arrivals.append(elapsed)
-		bots.append({"name": str(names[i % names.size()]) if not names.is_empty() else "同行者", "avatar": i % 8, "arrivals": arrivals, "stage": 0, "status": "running"})
+		bots.append({"name": str(names[i % names.size()]) if not names.is_empty() else TextCatalog.source("notice.tigerescape.3a66496b74b1"), "avatar": i % 8, "arrivals": arrivals, "stage": 0, "status": "running"})
 	return bots
 
 
@@ -100,15 +100,15 @@ static func pending_rewards(m: Dictionary) -> Array:
 	return rewards
 
 static func local_action(action: String, node := 0) -> Dictionary:
-	if not unlocked(): return {"error": "%d级解锁逃离剑齿虎" % int(config()["unlock_level"])}
+	if not unlocked(): return {"error": TextCatalog.source("notice.tigerescape.72a4a2cc2623") % int(config()["unlock_level"])}
 	tick()
 	var s := state()
 	var m := round_state()
 	if action == "refresh": return {}
 	if action in ["join", "restart"]:
-		if not m.is_empty() and m["status"] == "running": return {"error": "这局逃生还没结束"}
-		if action == "join" and not m.is_empty(): return {"error": "请结算后再出发"}
-		if action == "restart" and m.is_empty(): return {"error": "请先开始逃生"}
+		if not m.is_empty() and m["status"] == "running": return {"error": TextCatalog.source("notice.tigerescape.9321aa28efc0")}
+		if action == "join" and not m.is_empty(): return {"error": TextCatalog.source("notice.tigerescape.e552f18430ca")}
+		if action == "restart" and m.is_empty(): return {"error": TextCatalog.source("notice.tigerescape.6b01ffc9870f")}
 		var rewards := pending_rewards(m) if not m.is_empty() else []
 		s["rounds"] = int(s["rounds"]) + 1
 		s["round"] = {"id": s["rounds"], "start": G.now(), "stage": 0, "points": 0, "destroyed": -1,
@@ -117,10 +117,10 @@ static func local_action(action: String, node := 0) -> Dictionary:
 		s["round"]["bots"] = _create_bots(s["round"])
 		return {"rewards": rewards}
 	if action == "claim":
-		if m.is_empty() or node < 1 or node > int(m["stage"]) or node in m["claimed"]: return {"error": "礼包尚未到达或已领取"}
+		if m.is_empty() or node < 1 or node > int(m["stage"]) or node in m["claimed"]: return {"error": TextCatalog.source("notice.tigerescape.aefe102938d4")}
 		m["claimed"].append(node)
 		return {"rewards": m["stages"][node - 1]["rewards"].duplicate(true)}
-	return {"error": "未知操作"}
+	return {"error": TextCatalog.source("notice.duelrace.f242d2db4cea")}
 
 static func act(action: String, node := 0) -> Dictionary:
 	if G.replay_input(): return Replay.perform("tiger", {"action": action, "node": node})

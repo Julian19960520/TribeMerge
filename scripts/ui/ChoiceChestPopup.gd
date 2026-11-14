@@ -17,7 +17,7 @@ var _choices: Array = []
 
 func _ready() -> void:
 	var c := ChoiceChest.definition(box_id)
-	Popups.frame(self, R, str(c.get("title", "自选宝箱")), Art.TEAL)
+	Popups.frame(self, R, str(c.get("title", TextCatalog.source("ui.choicechestpopup.ac914ad13619"))), Art.TEAL)
 	_choices = c.get("choices", [])
 	# 顶部：发光的宝箱
 	UI.box(box, Rect2(260, 400, 200, 146), func(ci, sz):
@@ -30,7 +30,7 @@ func _ready() -> void:
 			ci.draw_colored_polygon(PackedVector2Array([p1, p2, p3]), Color(1, 0.85, 0.4, 0.22))
 		ci.draw_circle(cc, 56, Color(1, 0.93, 0.65, 0.35))
 		Art.item(ci, box_id, cc, 132))
-	UI.lbl(box, "三选一 · 选中的物品放在宝箱的位置", Rect2(80, 544, 560, 34), 22, Color("806141"))
+	UI.lbl(box, TextCatalog.source("ui.choicechestpopup.f56440e93c43"), Rect2(80, 544, 560, 34), 22, Color("806141"))
 	if _choices.size() != 3: return
 	for k in 3:
 		var id := str(_choices[k])
@@ -43,7 +43,7 @@ func _ready() -> void:
 		UI.lbl(b, Data.name_of(id), Rect2(6, 176, CARD_W - 12, 36), 24, Art.INK)
 		UI.lbl(b, _amount(id), Rect2(14, 222, CARD_W - 28, 44), 24, Color("6b3d1a"))
 		options.append(b)
-	confirm = UI.btn(box, Rect2(190, 958, 340, 86), "先选一件", "green", _confirm, 36)
+	confirm = UI.btn(box, Rect2(190, 958, 340, 86), TextCatalog.source("ui.choicechestpopup.aa0777c142ca"), "green", _confirm, 36)
 	confirm.name = "choice_confirm"
 	confirm.enabled = false
 
@@ -67,21 +67,21 @@ func _paint_card(ci: CanvasItem, sz: Vector2, k: int, id: String) -> void:
 
 static func _tag(id: String) -> String:
 	match Rewards.kind(id):
-		"energy": return "补体力"
-		"amber": return "攒琥珀"
-		"shell": return "攒不拿拿"
-		"sand": return "加速"
-		"chest": return "碰运气"
-		"pack": return "抽卡"
-	return "直接用"
+		"energy": return TextCatalog.source("ui.choicechestpopup.736c8d9deedc")
+		"amber": return TextCatalog.source("ui.choicechestpopup.91ccc62388e4")
+		"shell": return TextCatalog.source("ui.choicechestpopup.c70dc6edebe3")
+		"sand": return TextCatalog.source("ui.boardscreen.1a96b6acadc2")
+		"chest": return TextCatalog.source("ui.choicechestpopup.f8476abc5339")
+		"pack": return TextCatalog.source("ui.choicechestpopup.02d44306fd5f")
+	return TextCatalog.source("ui.choicechestpopup.48a55a007e34")
 
 static func _amount(id: String) -> String:
-	var unit := {"energy": "体力", "amber": "琥珀", "shell": "不拿拿", "sand": "沙漏"}
+	var unit := {"energy": TextCatalog.source("ui.choicechestpopup.d6d2aa99fd69"), "amber": TextCatalog.source("developer.amber_editor.089f621992ac"), "shell": TextCatalog.source("ui.choicechestpopup.2580a668b381"), "sand": TextCatalog.source("ui.choicechestpopup.d713a4862483")}
 	var kind := Rewards.kind(id)
 	if unit.has(kind) and Data.value_of(id) > 0:
 		return "%d %s" % [Data.value_of(id), unit[kind]]
-	if kind == "chest": return "%d 件物品" % SpecialChests.count(id)
-	if kind == "pack": return "一包典藏卡"
+	if kind == "chest": return TextCatalog.source("ui.choicechestpopup.c7a66c9dc23f") % SpecialChests.count(id)
+	if kind == "pack": return TextCatalog.source("ui.choicechestpopup.480a1a6f3db3")
 	return "×1"
 
 func _choose(option: int) -> void:
@@ -94,7 +94,7 @@ func _choose(option: int) -> void:
 		tw.tween_property(b, "scale", Vector2.ONE * (1.04 if k == option else 0.97), 0.18)
 		b.queue_redraw()
 	confirm.enabled = true
-	confirm.text = "就要%s" % Data.name_of(str(_choices[option]))
+	confirm.text = TextCatalog.resolve(TextCatalog.source("ui.choicechestpopup.1b46a0d455b7") % Data.name_of(str(_choices[option])))
 	confirm.queue_redraw()
 
 func _confirm() -> void:

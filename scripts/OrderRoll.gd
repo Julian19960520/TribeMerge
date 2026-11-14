@@ -42,6 +42,8 @@ static func sub_percent(ch: String) -> float:
 	return 5.0
 
 static func flames(id: String) -> float:
+	var resolved := PriceBook.difficulty(id)
+	if resolved > 0.0: return resolved
 	var ch := Data.chain(id)
 	if id == "" or not Data.CHAINS.has(ch):
 		return 0.0
@@ -65,16 +67,17 @@ static func fmt(v: float) -> String:
 		return str(n)
 	return "%.1f" % v
 
-## 随机订单不拿拿：每理论火苗 3 不拿拿，主产物和副产物同价，稀有的副产物不再吃亏。
+## 随机订单不那那：每理论火苗 3 不那那，主产物和副产物同价，稀有的副产物不再吃亏。
 const PAY_PER_FLAME := 3.0
 
 static func shell_of(items: Array) -> int:
-	return maxi(int(round(total(items) * PAY_PER_FLAME)), 1)
+	return maxi(int(round(total(items) * PriceBook.order_shell_per_value())), 1)
 
 ## 按目标火苗随一单。avoid 里的物品组合会尽量避开，给「换一单」用。
 ## allowed 非空时只出这些链上的东西（玩家现有生产器掉得出来的）
-static func make(level: int, target: float, rng: RandomNumberGenerator, avoid: Array = [], allowed: Dictionary = {}) -> Dictionary:
-	var pool := _pool(level, target, allowed)
+static func make(level: int, target: float, rng: RandomNumberGenerator, avoid: Array = [], allowed: Dictionary = {}, blocked: Dictionary = {}, preferred: Dictionary = {}) -> Dictionary:
+	var pool := _pool(level, target, allowed, blocked)
+	if pool.is_empty() and not blocked.is_empty(): pool = _pool(level, target, allowed)
 	if pool.is_empty() and not allowed.is_empty():
 		pool = _pool(level, target)
 	if pool.is_empty():
@@ -101,7 +104,7 @@ static func make(level: int, target: float, rng: RandomNumberGenerator, avoid: A
 			if not _same(built, avoid):
 				fresh.append(built)
 		var bag: Array = fresh if not fresh.is_empty() else close
-		chosen = _weighted(bag, target, rng)
+		chosen = _weighted(bag, target, rng, preferred)
 	if chosen.is_empty():
 		return {}
 	var who := 0
@@ -120,12 +123,14 @@ static func default_diff(curve: int, index: int) -> int:
 		return maxi(1, low)
 	return maxi(1, low * 2)
 
-static func _weighted(bag: Array, target: float, rng: RandomNumberGenerator) -> Array:
+static func _weighted(bag: Array, target: float, rng: RandomNumberGenerator, preferred: Dictionary = {}) -> Array:
 	var total_w := 0.0
 	var weights: Array = []
 	for built in bag:
 		var err := absf(total(built) - target)
 		var w := 1.0 / (1.0 + err * err)
+		for id in built:
+			if preferred.has(str(id)): w *= 3.0; break
 		weights.append(w)
 		total_w += w
 	var roll := rng.randf() * total_w
@@ -135,7 +140,7 @@ static func _weighted(bag: Array, target: float, rng: RandomNumberGenerator) -> 
 			return bag[i]
 	return bag[0]
 
-static func _pool(level: int, target: float, allowed: Dictionary = {}) -> Array:
+static func _pool(level: int, target: float, allowed: Dictionary = {}, blocked: Dictionary = {}) -> Array:
 	var cap := maxf(target * 1.55, target + 2.0)
 	var out: Array = []
 	var cheapest: Dictionary = {}
@@ -146,9 +151,10 @@ static func _pool(level: int, target: float, allowed: Dictionary = {}) -> Array:
 				continue
 			if not allowed.is_empty() and not allowed.has(ch):
 				continue
-			var n := Data.max_lv(ch)
+			var n := mini(Data.max_lv(ch), int(PriceBook.catalog.get("orders", {}).get("max_item_level", Data.max_lv(ch))))
 			for lv in n:
 				var id := "%s_%d" % [ch, lv + 1]
+				if blocked.has(id): continue
 				var cost := flames(id)
 				if cost <= 0.0:
 					continue

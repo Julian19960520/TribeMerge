@@ -73,11 +73,11 @@ static func find_entry(id: String, stage: bool) -> Dictionary:
 static func claim(id: String, stage := false) -> Dictionary:
 	if G.replay_input(): return Replay.perform("seven", {"id": id, "stage": stage})
 	var entry := find_entry(id, stage)
-	if entry.is_empty(): return {"error": "任务不存在"}
+	if entry.is_empty(): return {"error": TextCatalog.source("notice.sevenday.d18174953f73")}
 	var s := state()
 	var book: Dictionary = s["stages"] if stage else s["claimed"]
-	if book.has(id): return {"error": "已领取"}
-	if (points() < int(entry["points"]) if stage else not done(entry)): return {"error": "尚未完成"}
+	if book.has(id): return {"error": TextCatalog.source("notice.sevenday.426e458a4124")}
+	if (points() < int(entry["points"]) if stage else not done(entry)): return {"error": TextCatalog.source("notice.sevenday.042811378798")}
 	book[id] = true
 	Rewards.settle(entry["rewards"])
 	_changed()

@@ -46,6 +46,8 @@ func _validate() -> void:
 	if not errors.is_empty(): return
 	_progression()
 	if not errors.is_empty(): return
+	_onboarding()
+	if not errors.is_empty(): return
 	_chests()
 	if not errors.is_empty(): return
 	_events()
@@ -54,6 +56,37 @@ func _validate() -> void:
 
 func _error(at: String, message: String) -> void:
 	errors.append("%s: %s" % [at, message])
+
+func _onboarding() -> void:
+	var d: Dictionary = docs.onboarding
+	if not _fields(d, "onboarding", {"version": TYPE_INT, "stages": TYPE_ARRAY, "orders": TYPE_ARRAY, "reference": TYPE_ARRAY}): return
+	if _fields(d.get("coin_tutorial"), "onboarding.coin_tutorial", {"drop": TYPE_STRING, "start_stage": TYPE_STRING}):
+		var coin: Dictionary = d["coin_tutorial"]
+		_item(coin["drop"], "onboarding.coin_tutorial.drop")
+	var stages := {}
+	for row in d.stages:
+		if not _fields(row, "onboarding.stages", {"key": TYPE_STRING, "mode": TYPE_STRING, "text": TYPE_STRING}): continue
+		_id(row.key, "onboarding.stages.key", stages)
+		for id in row.get("pair", []): _item(id, "onboarding.stages.pair")
+		for id in row.get("formula", []): _item(id, "onboarding.stages.formula")
+		for cell in row.get("cells", []): _number(cell, "onboarding.stages.cells", 0, int(docs.rules.cols) * int(docs.rules.rows) - 1, true)
+	var tags := {}
+	for row in d.orders:
+		if not _fields(row, "onboarding.orders", {"tag": TYPE_STRING, "items": TYPE_ARRAY, "coin": TYPE_INT, "xp": TYPE_INT, "level": TYPE_INT, "build": TYPE_INT}): continue
+		if row.has("after") and not tags.has(row.after): _error("onboarding.orders.after", "prerequisite must precede order")
+		_id(row.tag, "onboarding.orders.tag", tags)
+		if row.has("gate") and not stages.has(row.gate): _error("onboarding.orders.gate", "unknown stage")
+		for id in row["items"]: _item(id, "onboarding.orders.items")
+		_number(row.coin, "onboarding.orders.coin", 0, INF, true)
+		_number(row.xp, "onboarding.orders.xp", 0, 2, true)
+		if row.has("max_item_level"): _number(row.max_item_level, "onboarding.orders.max_item_level", 1, 64, true)
+	var frames := {}
+	for row in d.reference:
+		if frames.has(int(row.frame)): _error("onboarding.reference", "duplicate frame")
+		frames[int(row.frame)] = true
+		if not stages.has(row.stage) and str(row.stage) not in ["new_generator", "level_reward", "energy_out", "board_reward"]: _error("onboarding.reference", "unknown stage")
+	for frame in range(1, 132):
+		if not frames.has(frame): _error("onboarding.reference", "missing frame %d" % frame)
 
 func _fields(value: Variant, at: String, fields: Dictionary) -> bool:
 	if not value is Dictionary:
@@ -117,6 +150,7 @@ func _items() -> void:
 		_id(row.id, "dishes.id", items)
 		_positive(row.secs, "dishes.secs")
 		_positive(row.unlock, "dishes.unlock")
+		if row.has("order_max_level"): _number(row.order_max_level, "dishes.order_max_level", int(row.unlock), 1000, true)
 		if row.mats.is_empty(): _error("dishes.mats", "recipe cannot be empty")
 	for id in docs.reward_resources:
 		_id(id, "reward_resources." + str(id), items)
@@ -155,6 +189,11 @@ func _core() -> void:
 	var rules: Dictionary = docs.rules
 	if not _fields(rules, "rules", {"merge_coin": TYPE_DICTIONARY, "merge_bubble": TYPE_DICTIONARY, "merge_sand": TYPE_DICTIONARY, "merge_resource_drops": TYPE_DICTIONARY, "merge_resource_lines": TYPE_ARRAY, "craft_sand": TYPE_ARRAY}): return
 	for key in ["cols", "rows", "max_energy", "regen_sec", "token_step", "xp_base", "xp_div", "craft_level", "storage_initial", "rush_sec"]: _positive(rules.get(key), "rules." + key)
+	if rules.has("hot_level_step"): _positive(rules.hot_level_step, "rules.hot_level_step")
+	if rules.has("hot_level_max_bonus"): _number(rules.hot_level_max_bonus, "rules.hot_level_max_bonus", 0, 5, true)
+	if rules.has("starter_generator") and _fields(rules.starter_generator, "rules.starter_generator", {"item": TYPE_STRING}):
+		_item(rules.starter_generator.item, "rules.starter_generator.item")
+		for key in ["reward_level", "lifetime_sec"]: _positive(rules.starter_generator.get(key), "rules.starter_generator." + key)
 	if not errors.is_empty(): return
 	var size := int(rules["cols"]) * int(rules["rows"])
 	var board: Dictionary = docs.board

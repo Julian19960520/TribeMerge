@@ -51,14 +51,15 @@ def test_order_pay_grant_ack(player):
     paid = player.post('/v1/payments/mock/pay', {'order_id': created['id']}).json()
     grant = paid['grant']
     assert paid['order']['status'] == 'paid' and paid['order']['grant_id'] == grant['id']
-    assert grant['content'] == {'product': 'amber:0', 'amber': 80}
+    assert grant['content']['product'] == 'amber:0' and grant['content']['amber'] == 60
+    assert grant['content']['_pricing']['currency'] == 'CNY'
     assert [g['id'] for g in grants(player)] == [grant['id']]
-    assert account(player).paid_amber == 80
+    assert account(player).paid_amber == 60
     # Acknowledging before the snapshot that applied it is uploaded does not deliver it.
     early = player.post('/v1/payments/grants/ack', {'ids': [grant['id']]}).json()
     assert early['delivered'] == [] and early['pending'] == [grant['id']]
     assert len(grants(player)) == 1
-    assert player.upload(applied(grant['id'], amber=80), 0).json()['version'] == 1
+    assert player.upload(applied(grant['id'], amber=60), 0).json()['version'] == 1
     ack = player.post('/v1/payments/grants/ack', {'ids': [grant['id']]}).json()
     assert ack['delivered'] == [grant['id']] and ack['pending'] == []
     assert grants(player) == []
@@ -83,7 +84,7 @@ def test_lost_pay_reply_never_grants_twice(player):
     # The reply was lost; the client pays again with the same order.
     second = player.post('/v1/payments/mock/pay', {'order_id': created['id']}).json()
     assert first['grant']['id'] == second['grant']['id']
-    assert len(rows(Grant, account_id=player.id)) == 1 and account(player).paid_amber == 2500
+    assert len(rows(Grant, account_id=player.id)) == 1 and account(player).paid_amber == 1600
     assert len(grants(player)) == 1
 
 
@@ -107,7 +108,7 @@ def test_receipts_are_verified_and_single_use(player):
     assert player.post(f"/v1/payments/orders/{b['id']}/confirm", {'provider': 'mock', 'receipt': valid}).json()['order']['status'] == 'paid'
     twice = player.post(f"/v1/payments/orders/{b['id']}/confirm", {'provider': 'mock', 'receipt': other})
     assert twice.status_code == 409 and twice.json()['error'] == 'order_already_paid'
-    assert len(rows(Grant, account_id=player.id)) == 2 and account(player).paid_amber == 160
+    assert len(rows(Grant, account_id=player.id)) == 2 and account(player).paid_amber == 120
 
 
 def test_orders_belong_to_their_account(client, player):
@@ -121,7 +122,7 @@ def test_orders_belong_to_their_account(client, player):
 
 def test_lost_ack_is_settled_by_the_upload(player):
     grant = buy(player, 'amber:0')['grant']
-    player.upload(applied(grant['id'], amber=80), 0)
+    player.upload(applied(grant['id'], amber=60), 0)
     # The client never sent (or never heard back from) the ack: the upload already delivered it.
     assert grants(player) == []
     assert player.post('/v1/payments/grants/ack', {'ids': [grant['id']]}).json()['delivered'] == [grant['id']]
@@ -129,24 +130,24 @@ def test_lost_ack_is_settled_by_the_upload(player):
 
 def test_progress_without_the_grant_gets_it_again(player):
     grant = buy(player, 'amber:0')['grant']
-    player.upload(applied(grant['id'], amber=80), 0)
+    player.upload(applied(grant['id'], amber=60), 0)
     assert grants(player) == []
     # The newest save lacks the grant (e.g. local progress lost before upload): it is pending again.
     player.upload(snapshot(level=2), 1)
     assert [g['id'] for g in grants(player)] == [grant['id']]
     assert [row.kind for row in rows(AuditLog, account_id=player.id)] == ['grant_redeliver']
-    player.upload(applied(grant['id'], level=2, amber=80), 2)
+    player.upload(applied(grant['id'], level=2, amber=60), 2)
     assert grants(player) == []
 
 
 def test_paid_amber_is_not_flagged_but_free_amber_is(player):
     player.upload(snapshot(amber=10), 0)
     grant = buy(player, 'amber:4')['grant']
-    assert grant['content']['amber'] == 6500
-    assert player.upload(applied(grant['id'], amber=6510), 1).json()['version'] == 2
+    assert grant['content']['amber'] == 4300
+    assert player.upload(applied(grant['id'], amber=4310), 1).json()['version'] == 2
     assert not account(player).flagged
     # The ledger allowance is consumed by that upload; the same jump again is flagged.
-    player.upload(applied(grant['id'], amber=13010), 2)
+    player.upload(applied(grant['id'], amber=8610), 2)
     assert account(player).flagged and 'amber' in account(player).flag_reason
 
 

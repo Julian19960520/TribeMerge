@@ -12,11 +12,11 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	Sprites.at(ci, "fos_entry", Vector2(sz.x * 0.5, sz.y - 108), 0.92)
 	var ready := not FossilDig.ready_rewards().is_empty()
 	var text := "×%d" % int(FossilDig.state().get("shovels", 0))
-	if ready: text = "领奖"
-	elif FossilDig.finished(): text = "完成"
-	elif FossilDig.cleared(): text = "下一关"
+	if ready: text = TextCatalog.source("ui.duelentry.5375104054f0")
+	elif FossilDig.finished(): text = TextCatalog.source("ui.fossildigentry.c0b3fbff51cc")
+	elif FossilDig.cleared(): text = TextCatalog.source("ui.fossildigentry.4b6ccee91ad1")
 	EventEntryArt._pill(ci, Vector2(sz.x * 0.5, sz.y - 42), text, "go" if ready or FossilDig.cleared() else "num")
-	EventEntryArt.text(ci, "恐龙化石", Vector2(sz.x * 0.5, sz.y - 8), 20, Color("fff0c5"))
+	EventEntryArt.text(ci, TextCatalog.source("ui.fossildigentry.64311488dd2a"), Vector2(sz.x * 0.5, sz.y - 8), 20, Color("fff0c5"))
 	if ready: Paint.badge_num(ci, Vector2(sz.x - 18, 30), 8, 10)
 
 func fly_from(origin: Vector2) -> void:

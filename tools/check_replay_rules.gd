@@ -30,7 +30,7 @@ func run() -> void:
 	var original_locks: Array = Data.LOCKS.duplicate(true)
 	check(replay.restart_local_rules(), "local current-rule session starts")
 	var prior_generation: String = replay.get("_generation")
-	replay.perform("drop", {"from": 28, "to": 29})
+	replay.perform("drop", {"from": 23, "to": 30})
 	var old_journal := FileAccess.get_file_as_string(game.save_path + ".journal")
 	check(replay.pending.size() == 1, "old test session has durable pending input")
 	Data.RULES = original_rules.duplicate(true)

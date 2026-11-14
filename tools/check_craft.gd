@@ -85,7 +85,7 @@ func run() -> void:
 
 	# ---- 沙漏加速：每份 rush_sec 秒，一次用到做完
 	var rs := Data.rush_sec()
-	check(rs == 60, "one hourglass = %d s" % rs)
+	check(rs == 6, "one hourglass = %d s" % rs)
 	g.board[10] = {"id": "", "lock": 0, "ck": {"dish": "grill", "t0": g.now(), "secs": 3000, "uid": "x", "mats": []}}
 	g.rush = 20
 	var used: int = g.rush_cook(10)

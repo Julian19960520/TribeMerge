@@ -60,14 +60,14 @@ static func act(action: String, milestone := 0) -> Dictionary:
 	return result
 
 static func local_action(action: String, milestone:=0) -> Dictionary:
-	if not unlocked(): return {"error":"%d级解锁双人竞速"%int(config()["unlock_level"])}
+	if not unlocked(): return {"error":TextCatalog.source("notice.duelrace.2821c8ca32bd")%int(config()["unlock_level"])}
 	tick()
 	var s:=state()
 	var m: Dictionary=s["match"]
 	match action:
 		"refresh": return {}
 		"join":
-			if not m.is_empty() and (m["status"]=="running" or not m.get("claimed",false)): return {"error":"请先完成当前比赛并领取奖励"}
+			if not m.is_empty() and (m["status"]=="running" or not m.get("claimed",false)): return {"error":TextCatalog.source("notice.duelrace.285eedc7ae25")}
 			var target:=int(config()["target"])
 			var seconds: Array=config()["opponent_seconds"]
 			var duration:=G.random_for("duel").randf_range(float(seconds[0]),float(seconds[1]))
@@ -77,12 +77,12 @@ static func local_action(action: String, milestone:=0) -> Dictionary:
 			s["match"]={"id":int(s["rounds"]),"start":G.now(),"target":target,"me":0,"opponent":0,"status":"running","claimed":false,"opponent_curve":curve}
 			return {}
 		"claim":
-			if m.is_empty() or m["status"]=="running" or m.get("claimed",false): return {"error":"没有可领取的比赛奖励"}
+			if m.is_empty() or m["status"]=="running" or m.get("claimed",false): return {"error":TextCatalog.source("notice.duelrace.4aefe032c871")}
 			m["claimed"]=true
 			return {"rewards":config()["win_rewards"] if m["status"]=="won" else config()["lose_rewards"]}
 		"milestone":
-			if not milestone in ready_milestones(): return {"error":"还没达成，或者已经领过了"}
+			if not milestone in ready_milestones(): return {"error":TextCatalog.source("notice.duelrace.843577782f5f")}
 			s["claimed"].append(str(milestone))
 			for row in config()["milestones"]:
 				if int(row["wins"])==milestone: return {"rewards":row["rewards"]}
-	return {"error":"未知操作"}
+	return {"error":TextCatalog.source("notice.duelrace.f242d2db4cea")}

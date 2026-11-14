@@ -9,24 +9,24 @@ const WALKER_DIAMETER := 64.0
 const WALKER_BORDER := 1.5
 
 ## 交单后客人说的话：[台词, 需要哪个区域开工过（"" 表示一直有）]。订单自带台词时不用这里的。
-const LINES := [
-	["谢谢你！正是我想要的。", ""],
-	["太好了，今天的活儿有着落了！", ""],
-	["多亏有你，部落越来越好了。", ""],
-	["这个真不错，下次还找你！", ""],
-	["来得正好，我正等着呢！", ""],
-	["手艺越来越好啦！", ""],
-	["收到！大伙儿都会高兴的。", ""],
-	["有你在，部落就踏实了。", ""],
-	["篝火边又热闹起来了！", "fire"],
-	["烤得香喷喷的，谢谢你！", "fire"],
-	["果子新鲜，种子也饱满！", "gather"],
-	["石器磨得真锋利！", "stone"],
-	["编得又密又结实，太好了！", "weave"],
-	["有了这个，打猎更有把握了！", "hunt"],
-	["这锅煮得真香！", "cook"],
-	["木料正好合用，谢谢！", "wood"],
-	["陶器烧得真结实！", "kiln"],
+static var LINES := [
+	[TextCatalog.source("dialogue.meme.30e8acb518f0"), ""],
+	[TextCatalog.source("dialogue.meme.047ebbd00d91"), ""],
+	[TextCatalog.source("dialogue.meme.9797037f2d1e"), ""],
+	[TextCatalog.source("dialogue.meme.f7c17b842ed4"), ""],
+	[TextCatalog.source("dialogue.meme.25c231b10b18"), ""],
+	[TextCatalog.source("dialogue.meme.0d6f1320811b"), ""],
+	[TextCatalog.source("dialogue.meme.be2179f46ae1"), ""],
+	[TextCatalog.source("dialogue.meme.603ed235908d"), ""],
+	[TextCatalog.source("dialogue.meme.9beefa25a7a0"), "fire"],
+	[TextCatalog.source("dialogue.meme.0a46276ea75f"), "fire"],
+	[TextCatalog.source("dialogue.meme.59d5850dd662"), "gather"],
+	[TextCatalog.source("dialogue.meme.152797381c2d"), "stone"],
+	[TextCatalog.source("dialogue.meme.fb9d3591691a"), "weave"],
+	[TextCatalog.source("dialogue.meme.0832b4f42634"), "hunt"],
+	[TextCatalog.source("dialogue.meme.569e28a8466e"), "cook"],
+	[TextCatalog.source("dialogue.meme.a4e90661543a"), "wood"],
+	[TextCatalog.source("dialogue.meme.cb00359bcd65"), "kiln"],
 ]
 
 static var _line_bag: Array = []
@@ -81,8 +81,8 @@ static func walker(ci: CanvasItem, role: int, feet: Vector2, t: float, _facing: 
 static func bubble(ci: CanvasItem, anchor: Vector2, text: String, a: float = 1.0, max_w: float = 250.0) -> void:
 	var f: Font = G.font_body
 	var fs := 18
-	var tw := minf(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, max_w)
-	var lines := f.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs)
+	var tw := minf(f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, max_w)
+	var lines := f.get_multiline_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs)
 	var box := Vector2(tw + 28.0, lines.y + 20.0)
 	var x := clampf(anchor.x - box.x * 0.5, 8.0, 712.0 - box.x)
 	var r := Rect2(Vector2(x, anchor.y - 14.0 - box.y), box)
@@ -94,4 +94,4 @@ static func bubble(ci: CanvasItem, anchor: Vector2, text: String, a: float = 1.0
 	Art.dilate(ci, tail, 3.0, ink)
 	ci.draw_colored_polygon(b, paper)
 	ci.draw_colored_polygon(tail, paper)
-	ci.draw_multiline_string(f, r.position + Vector2(14, 10 + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs, -1, ink)
+	ci.draw_multiline_string(f, r.position + Vector2(14, 10 + f.get_ascent(fs)), TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs, -1, ink)

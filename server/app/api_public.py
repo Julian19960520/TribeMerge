@@ -12,8 +12,15 @@ from .models import Account
 from .schemas import NameReq, Resp
 from .security import Auth, current
 from .services import stamp
+from .texts import source as text_source
 
 router = APIRouter(prefix="/v1", tags=["服务"])
+
+
+@router.get("/economy/catalog")
+def economy_catalog():
+    from .economy import current
+    return current()
 
 
 @router.get("/health")
@@ -61,6 +68,6 @@ def rank_name(request: NameReq, auth: Auth = Depends(current), db: Session = Dep
     auth.account.nick = request.name.strip().replace("\n", " ")
     if not auth.account.nick:
         from .errors import ApiError
-        raise ApiError(422, "invalid_name", "名字不能为空")
+        raise ApiError(422, "invalid_name", text_source("server_notice.api_public.6aa3b1bd38fe"))
     db.commit()
     return stamp({"ok": True, "me": rank_of(db, auth.account) if auth.account.rank_progress > 0 and not auth.account.flagged else None})

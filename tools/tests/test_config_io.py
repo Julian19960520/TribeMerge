@@ -17,6 +17,9 @@ class ConfigurationIOTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="tribe-config-io-") as directory:
             project = Path(directory)
             (project / "scripts/config").mkdir(parents=True)
+            (project / "scripts/localization").mkdir(parents=True)
+            shutil.copy2(ROOT / "scripts/localization/TextCatalog.gd", project / "scripts/localization/TextCatalog.gd")
+            shutil.copytree(ROOT / "localization", project / "localization")
             for name in ("config_files.gd", "config_schema.gd"):
                 shutil.copy2(ROOT / "scripts/config" / name, project / "scripts/config" / name)
             shutil.copytree(ROOT / "data", project / "data")

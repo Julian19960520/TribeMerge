@@ -66,7 +66,7 @@ func run() -> void:
 	g.rules.progression.spend("sand",3)
 	g.rules.progression.add_currency("sand",4)
 	var resources: Dictionary=bot.snap()
-	check(resources["amber_earned"]==30 and resources["gems"]==80,"same-action spending and income count gross earned amber, not net change")
+	check(resources["amber_earned"]==30 and resources["gems"]==30,"same-action spending and income count gross earned amber, not net change")
 	check(resources["sand_earned"]==9 and resources["sand"]==6,"sand earned total is separate from remaining quantity")
 	check(bot.snap()==resources,"repeated snapshots do not count income twice")
 	bot.resource_tracking=false
@@ -98,7 +98,7 @@ func run() -> void:
 	var count_before: int=bot.events.size()
 	check(bot.merge_main(),"merge can reveal a covered neighbor")
 	check(g.board[2]["lock"]==1 and bot.events.size()==count_before+1 and bot.events[-1]["category"]=="merge","revealing a vine beneath cover is not recorded as unlocking it")
-	check(bot.reward_summary([["fire_3",2,"item"],["shell_2",60],["chest_1",1]])=="体力×10、不拿拿×60、1级藤编宝箱×1","reward summary follows credited resource units and physical item quantities")
+	check(bot.reward_summary([["fire_3",2,"item"],["shell_2",60],["chest_1",1]])=="体力×10、不那那×60、1级藤编宝箱×1","reward summary follows credited resource units and physical item quantities")
 	g.level=2
 	bot.claimed_levels={}
 	await bot.rewards()

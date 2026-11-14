@@ -4,7 +4,7 @@ extends RefCounted
 const PassPopupScript := preload("res://scripts/ui/PassPopup.gd")
 static func create(name: String, arg = null) -> PopupBase:
 	if name in ["album", "pack", "event", "card", "card_star_shop", "card_received"] and not G.rules.progression.feature_unlocked(Data.CARD_LEVEL):
-		G.main.toast("典藏卡在 %d 级解锁" % Data.CARD_LEVEL)
+		G.main.toast(TextCatalog.source("notice.progressionrules.de74876a0a22") % Data.CARD_LEVEL)
 		return null
 	var p: PopupBase
 	match name:
@@ -31,6 +31,7 @@ static func create(name: String, arg = null) -> PopupBase:
 				p.closed.connect(func():
 					if is_instance_valid(G.main) and G.rules.progression.feature_unlocked(16) and G.energy < G.rules.board.gen_cost() and Offers.wants_energy():
 						OfferController.open_energy(), CONNECT_ONE_SHOT)
+		"resource_shop": p = ShopPopups.resource_shop(str(arg))
 		"energy_amber": p = ShopPopups.energy()
 		"energy_offer": p = preload("res://scripts/ui/EnergyOfferPopup.gd").new()
 		"spree": p = preload("res://scripts/ui/SpreePopup.gd").new()
@@ -38,10 +39,13 @@ static func create(name: String, arg = null) -> PopupBase:
 		"store": p = ShopPopups.store()
 		"settings": p = SettingsPopups.settings()
 		"build": p = ProgressionPopups.build(arg)
+		"map": p = ProgressionPopups.region_map()
 		"book": p = ItemPopups.book(0 if arg == null else arg)
 		"inventory": p = ItemPopups.inventory()
 		"item_info": p = ItemPopups.item_info(arg)
 		"levelup": p = RewardPopups.levelup()
+		"onboarding_rescue": p = RewardPopups.onboarding_rescue()
+		"orders_start": p = RewardPopups.orders_start()
 		"board_reward": p = RewardPopups.board_reward(arg if arg is Array else [])
 		"event": p = CollectionPopups.event()
 		"pass": p = PassPopupScript.screen()
@@ -52,5 +56,6 @@ static func create(name: String, arg = null) -> PopupBase:
 		"card_star_shop": p = CardStarUI.shop()
 		"card_received": p = CardRewardPresentation.popup(arg if arg is Dictionary else {})
 		"level": p = RewardPopups.level_info()
+		"recipe": p = preload("res://scripts/ui/RecipePopup.gd").create(str(arg))
 		_: return null
 	return p

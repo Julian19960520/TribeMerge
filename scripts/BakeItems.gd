@@ -129,6 +129,7 @@ static func _ids() -> Array[String]:
 	for ch in Data.CHAINS:
 		for i in Data.CHAINS[ch]["items"].size():
 			out.append("%s_%d" % [ch, i + 1])
+			if str(Data.CHAINS[ch]["type"]) == "chest": out.append("%s_%d_open" % [ch, i + 1])
 	for id in Data.DISHES:
 		out.append(str(id))
 	for id in Data.REWARD_RESOURCES:

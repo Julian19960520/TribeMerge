@@ -12,11 +12,12 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from . import api_auth, api_payments, api_public, api_save, errors, logs
+from . import api_auth, api_economy, api_payments, api_public, api_save, errors, logs
 from .config import get_settings
 from .db import init_engine
 from .errors import body
 from .ratelimit import limiter
+from .texts import source as text_source
 
 logger = logging.getLogger("tribe.http")
 
@@ -43,25 +44,26 @@ def create_app() -> FastAPI:
         # 请求体大小：先看 Content-Length，没有就拒绝带 body 的请求以外的分块上传
         cl = request.headers.get("content-length")
         if cl is not None and (not cl.isdigit() or int(cl) > s.max_body_bytes):
-            return _reply(413, body("too_big", "请求体太大"), rid)
+            return _reply(413, body("too_big", text_source("server_notice.main.d361b7d6e1ac")), rid)
         if cl is None and request.method in ("POST", "PUT", "PATCH") and request.headers.get("transfer-encoding"):
-            return _reply(411, body("length_required", "需要 Content-Length"), rid)
+            return _reply(411, body("length_required", text_source("server_notice.main.43b961c83a74")), rid)
         if request.url.path != "/v1/health":
             wait = limiter.hit("ip:" + ip, s.rate_ip_per_min)
             if wait > 0:
-                resp = _reply(429, body("rate_limited", "请求太频繁", retry_after=wait), rid)
+                resp = _reply(429, body("rate_limited", text_source("server_notice.main.f952a59b306d"), retry_after=wait), rid)
                 resp.headers["Retry-After"] = str(int(wait) + 1)
                 return resp
         try:
             resp = await call_next(request)
         except Exception:
             logger.exception("unhandled")
-            resp = _reply(500, body("internal", "服务器出错了"), rid)
+            resp = _reply(500, body("internal", text_source("server_notice.main.9e0fe7610c52")), rid)
         resp.headers["X-Request-Id"] = rid
         logs.log(logger, logging.INFO, "request", method=request.method, path=request.url.path, status=resp.status_code,
                  ms=round((time.perf_counter() - t0) * 1000, 1), ip=ip)
         return resp
 
+    app.include_router(api_economy.router)
     app.include_router(api_save.router)
     app.include_router(api_payments.router)
     app.include_router(api_auth.router)

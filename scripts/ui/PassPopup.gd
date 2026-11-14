@@ -59,27 +59,27 @@ static func screen() -> PopupBase:
 	sc.jump_to(_node_y(_focus_lv()) - VIEW_H * 0.58)
 	# 头部：标题、剩余时间、等级、进度、购买
 	var head := UI.box(p.box, Rect2(0, HEAD_Y, 720, TRACK_TOP - HEAD_Y), _paint_head)
-	UI.title(p.box, "丰收通行证", Rect2(150, HEAD_Y + 30, 420, 76), 38)
+	UI.title(p.box, TextCatalog.source("ui.passpopup.d8d93e607627"), Rect2(150, HEAD_Y + 30, 420, 76), 38)
 	var time_lbl := UI.lbl(p.box, "", Rect2(292, HEAD_Y + 116, 176, 40), 22, Art.INK)
 	var lv_lbl := UI.lbl(p.box, "", Rect2(24, HEAD_Y + 216, 100, 52), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
 	var goal_lbl := UI.lbl(p.box, "", Rect2(138, HEAD_Y + 190, 260, 32), 20, Art.ROPE, HORIZONTAL_ALIGNMENT_LEFT)
 	var prog_lbl := UI.lbl(p.box, "", Rect2(134, HEAD_Y + 226, 264, 36), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 	var act := UI.btn(p.box, Rect2(428, HEAD_Y + 200, 266, 78), "", "green", func(): G.main.open("pass_buy"), 30)
 	act.extra = _price_tag
-	UI.lbl(p.box, "免费", Rect2(LEFT_X, HEAD_Y + 306, CARD_W, 40), 24, Art.INK, HORIZONTAL_ALIGNMENT_CENTER, 0, Art.INK, true)
-	UI.lbl(p.box, "贵宾", Rect2(VIP_X + 16, HEAD_Y + 306, CARD_W - 16, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
-	UI.lbl(p.box, "超级贵宾", Rect2(SUPER_X + 16, HEAD_Y + 306, CARD_W - 16, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+	UI.lbl(p.box, TextCatalog.source("developer.pass_editor.649a0fc7237e"), Rect2(LEFT_X, HEAD_Y + 306, CARD_W, 40), 24, Art.INK, HORIZONTAL_ALIGNMENT_CENTER, 0, Art.INK, true)
+	UI.lbl(p.box, TextCatalog.source("ui.passpopup.3c95d9cf581a"), Rect2(VIP_X + 16, HEAD_Y + 306, CARD_W - 16, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+	UI.lbl(p.box, TextCatalog.source("ui.passpopup.d5f15b62c0dd"), Rect2(SUPER_X + 16, HEAD_Y + 306, CARD_W - 16, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 	var refresh := func():
 		var reached := G.rules.progression.pass_reached()
-		time_lbl.text = G.fmt_time(G.rules.clock.pass_secs_left())
-		lv_lbl.text = str(reached)
+		time_lbl.text = TextCatalog.resolve(G.fmt_time(G.rules.clock.pass_secs_left()))
+		lv_lbl.text = TextCatalog.resolve(str(reached))
 		if reached >= n:
-			goal_lbl.text = "已满级" + ("，循环宝箱开启中" if G.pass_tier == 2 else "")
+			goal_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.passpopup.d6d8e1de4a98") + (TextCatalog.source("ui.passpopup.78d451afe011") if G.pass_tier == 2 else ""))
 		else:
-			goal_lbl.text = "再积累 %d 分升到 %d 级" % [maxi(0, _need_left()), reached + 1]
-		prog_lbl.text = G.rules.progression.pass_prog_text()
+			goal_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.passpopup.a0257d07f1bd") % [maxi(0, _need_left()), reached + 1])
+		prog_lbl.text = TextCatalog.resolve(G.rules.progression.pass_prog_text())
 		act.visible = G.pass_tier < 2
-		act.text = "升级超级" if G.pass_tier == 1 else "激活贵宾"
+		act.text = TextCatalog.resolve(TextCatalog.source("ui.passpopup.773660b8a7be") if G.pass_tier == 1 else TextCatalog.source("ui.passpopup.42d2ad8fbbb3"))
 		act.queue_redraw()
 		head.queue_redraw()
 		track.queue_redraw()
@@ -94,7 +94,7 @@ static func screen() -> PopupBase:
 	p.add_child(clock)
 	clock.timeout.connect(func():
 		if is_instance_valid(time_lbl):
-			time_lbl.text = G.fmt_time(G.rules.clock.pass_secs_left()))
+			time_lbl.text = TextCatalog.resolve(G.fmt_time(G.rules.clock.pass_secs_left())))
 	return p
 
 # ---------------------------------------------------------------- 轨道几何（轨道内坐标，0 在轨道顶）
@@ -200,7 +200,7 @@ static func _tap(p: PopupBase, c: Dictionary) -> void:
 		G.main.open("pass_buy")
 		return
 	if st == "future" and track != "endless":
-		G.main.toast("%d 级解锁" % lv)
+		G.main.toast(TextCatalog.source("ui.passpopup.545750bbfba5") % lv)
 		return
 	if st == "done" or c.get("busy", false):
 		return
@@ -251,7 +251,7 @@ static func _reward_spots(r: Rect2, rewards: Array) -> Array:
 	var cy := r.position.y + (r.size.y - BAND_H) * 0.5 + 2.0
 	for i in n:
 		var text := "×%d" % int(rewards[i][1])
-		var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var tw := f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var pair := icon_s * 0.62 + 6.0 + tw
 		var cx := r.get_center().x + (float(i) - (n - 1) * 0.5) * gap
 		out.append(Vector2(cx - pair * 0.5 + icon_s * 0.42, cy))
@@ -271,25 +271,25 @@ static func _paint_card(ci: CanvasItem, size: Vector2, track: String, lv: int) -
 		"ready":
 			var pr := Rect2(bc.x - 66, band.position.y - 6, 132, 44)
 			Paint.button(ci, pr, "green", seed)
-			_center_text(ci, pr.get_center() + Vector2(0, -3), "领取", 24)
+			_center_text(ci, pr.get_center() + Vector2(0, -3), TextCatalog.source("ui.duelpopup.844ab9477225"), 24)
 			if lv == 0 and G.rules.progression.pass_endless_ready() > 1:
 				_count_badge(ci, Vector2(r.end.x - 18, r.position.y + 18), G.rules.progression.pass_endless_ready())
 		"done":
 			Sprites.draw(ci, "ev_pass_card_shade", r, Color(0.32, 0.2, 0.1, 0.38))
-			_band_text(ci, bc, "已领取", Color("5a3d24"))
+			_band_text(ci, bc, TextCatalog.source("notice.sevenday.426e458a4124"), Color("5a3d24"))
 			Paint.check_mark(ci, Vector2(r.end.x - 26, r.position.y + 26), 1.5)
 		"future":
 			Sprites.draw(ci, "ev_pass_card_shade", r, Color(0.14, 0.08, 0.04, 0.42))
 			if lv == 0:
-				_band_text(ci, bc, "每 %d 分开一箱" % Data.pass_need(Data.PASS_LEVELS.size() - 1), Color("f1dfb8"))
+				_band_text(ci, bc, TextCatalog.source("ui.passpopup.3edea80ffde5") % Data.pass_need(Data.PASS_LEVELS.size() - 1), Color("f1dfb8"))
 			else:
 				Paint.glyph(ci, "lock", Vector2(bc.x - 50, bc.y + 1), 1.1)
-				_band_text(ci, bc + Vector2(14, 0), "%d 级解锁" % lv, Color("f1dfb8"))
+				_band_text(ci, bc + Vector2(14, 0), TextCatalog.source("ui.passpopup.545750bbfba5") % lv, Color("f1dfb8"))
 		"lock":
 			if lv == 0:
 				Sprites.draw(ci, "ev_pass_card_shade", r, Color(0.14, 0.08, 0.04, 0.3))
 			Paint.glyph(ci, "lock", Vector2(bc.x - 56, bc.y + 1), 1.1)
-			_band_text(ci, bc + Vector2(14, 0), "贵宾可领" if track == "prem" else "超级贵宾", Color.WHITE)
+			_band_text(ci, bc + Vector2(14, 0), TextCatalog.source("ui.passpopup.3fdee4d3367d") if track == "prem" else TextCatalog.source("ui.passpopup.d5f15b62c0dd"), Color.WHITE)
 
 ## 多边形 y >= cut 的部分（凸的圆角矩形，按扫描切开就行）
 static func _clip_bottom(pts: PackedVector2Array, cut: float) -> PackedVector2Array:
@@ -313,11 +313,11 @@ static func _count_badge(ci: CanvasItem, c: Vector2, n: int) -> void:
 static func _band_text(ci: CanvasItem, c: Vector2, text: String, col: Color) -> void:
 	var f := G.font_title
 	var fs := 20
-	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var w := f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pos := Vector2(c.x - w * 0.5, c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
 	if col.get_luminance() > 0.6:
-		ci.draw_string_outline(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Art.INK)
-	ci.draw_string(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		ci.draw_string_outline(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Art.INK)
+	ci.draw_string(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 static func _paint_rewards(ci: CanvasItem, rect: Rect2, rewards: Array) -> void:
 	var n := rewards.size()
@@ -390,7 +390,7 @@ static func _place_pulse(d: DrawBox) -> void:
 static func buy() -> PopupBase:
 	var p := PopupBase.new()
 	var r := Rect2(32, 188, 656, 1120)
-	Popups.frame(p, r, "丰收通行证", Art.CLAY)
+	Popups.frame(p, r, TextCatalog.source("ui.passpopup.d8d93e607627"), Art.CLAY)
 	UI.box(p.box, Rect2(r.position.x + 36, r.position.y + 48, r.size.x - 72, 250), _paint_hoard)
 	var tw := 292.0
 	var th := 700.0
@@ -401,8 +401,8 @@ static func buy() -> PopupBase:
 
 static func _ticket(p: PopupBase, r: Rect2, super_vip: bool) -> void:
 	UI.box(p.box, r, func(ci, sz): _paint_ticket(ci, sz, not super_vip))
-	UI.lbl(p.box, "超级贵宾" if super_vip else "贵宾", Rect2(r.position.x + 12, r.position.y + 20, r.size.x - 24, 50), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
-	UI.lbl(p.box, "解锁贵宾 + 超级两列奖励" if super_vip else "解锁贵宾一列奖励", Rect2(r.position.x + 12, r.position.y + 96, r.size.x - 24, 36), 22, Color("6b4a2a"))
+	UI.lbl(p.box, TextCatalog.source("ui.passpopup.d5f15b62c0dd") if super_vip else TextCatalog.source("ui.passpopup.3c95d9cf581a"), Rect2(r.position.x + 12, r.position.y + 20, r.size.x - 24, 50), 28, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+	UI.lbl(p.box, TextCatalog.source("ui.passpopup.fb0afee81a21") if super_vip else TextCatalog.source("ui.passpopup.4b290ba3765d"), Rect2(r.position.x + 12, r.position.y + 96, r.size.x - 24, 36), 22, Color("6b4a2a"))
 	UI.lbl(p.box, "+", Rect2(r.position.x, r.position.y + 136, r.size.x, 48), 40, Art.MOSS, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 	if super_vip:
 		var x1 := r.position.x + 78.0
@@ -411,32 +411,32 @@ static func _ticket(p: PopupBase, r: Rect2, super_vip: bool) -> void:
 		UI.icon(p.box, "fire_2", Vector2(x1, iy), 86)
 		UI.lbl(p.box, "×150", Rect2(x1 - 50, iy + 44, 100, 32), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 		UI.icon(p.box, "chest_1", Vector2(x2, iy), 86)
-		UI.lbl(p.box, "解锁循环奖励", Rect2(x2 - 72, iy + 48, 150, 32), 16, Color("6b4a2a"))
+		UI.lbl(p.box, TextCatalog.source("ui.passpopup.4e3e80e36d77"), Rect2(x2 - 72, iy + 48, 150, 32), 16, Color("6b4a2a"))
 		var y2 := iy + 146.0
 		UI.icon(p.box, "token_1", Vector2(x1, y2), 80)
 		UI.lbl(p.box, "×10", Rect2(x1 - 50, y2 + 42, 100, 32), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
-		UI.lbl(p.box, "每个心愿额外 +1 积分", Rect2(x2 - 78, y2 - 8, 156, 64), 18, Color("6b4a2a"))
+		UI.lbl(p.box, TextCatalog.source("ui.passpopup.86c69f176f11"), Rect2(x2 - 78, y2 - 8, 156, 64), 18, Color("6b4a2a"))
 		_stamp(p, r)
 	else:
 		UI.icon(p.box, "fire_2", r.position + Vector2(r.size.x * 0.5, 268), 110)
 		UI.lbl(p.box, "×150", Rect2(r.position.x, r.position.y + 322, r.size.x, 44), 30, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
 	var owned := G.pass_tier >= (2 if super_vip else 1)
-	var b := UI.btn(p.box, Rect2(r.position.x + 24, r.end.y - 108, r.size.x - 48, 80), "¥%d" % G.rules.progression.pass_cny("super" if super_vip else "vip"), "green", Callable(), 40)
+	var b := UI.btn(p.box, Rect2(r.position.x + 24, r.end.y - 108, r.size.x - 48, 80), PriceBook.product_text("pass:upgrade" if super_vip and G.pass_tier == 1 else ("pass:super" if super_vip else "pass:vip")), "green", Callable(), 40)
 	b.title_font = false  # 标题字体里没有「¥」
 	if owned:
-		b.text = "已拥有"
+		b.text = TextCatalog.resolve(TextCatalog.source("ui.passpopup.70ddc4059890"))
 		b.enabled = false
 	elif super_vip:
 		b.pressed.connect(func(): _do_super(p))
 		if G.pass_tier == 1:
 			# 已经是贵宾：只补差价，原价划掉
-			var full := "原价 ¥%d" % int(G.PASS_CNY["super"])
-			var note := UI.lbl(p.box, full + "，贵宾补差价", Rect2(r.position.x + 12, r.end.y - 150, r.size.x - 24, 34), 19, Art.CLAY)
+			var full := TextCatalog.source("ui.passpopup.9d7c86d01728") % int(G.PASS_CNY["super"])
+			var note := UI.lbl(p.box, full + TextCatalog.source("ui.passpopup.6160dd496345"), Rect2(r.position.x + 12, r.end.y - 150, r.size.x - 24, 34), 19, Art.CLAY)
 			UI.box(p.box, note.get_rect(), func(ci, sz):
 				var f: Font = G.font_body
-				var tw: float = f.get_string_size(full + "，贵宾补差价", HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
-				var fw: float = f.get_string_size(full, HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
-				var x0: float = (sz.x - tw) * 0.5 + f.get_string_size("原价 ", HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
+				var tw: float = f.get_string_size(TextCatalog.resolve(full + TextCatalog.source("ui.passpopup.6160dd496345")), HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
+				var fw: float = f.get_string_size(TextCatalog.resolve(full), HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
+				var x0: float = (sz.x - tw) * 0.5 + f.get_string_size(TextCatalog.resolve(TextCatalog.source("ui.passpopup.e3e9fb6561bf")), HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
 				ci.draw_line(Vector2(x0 - 2, sz.y * 0.52), Vector2((sz.x - tw) * 0.5 + fw + 2, sz.y * 0.52), Art.CLAY, 2.0)
 			, false)
 	else:
@@ -446,28 +446,28 @@ static func _stamp(p: PopupBase, r: Rect2) -> void:
 	var s := Rect2(r.end.x - 78, r.position.y - 8, 92, 92)
 	UI.box(p.box, s, func(ci, sz):
 		Sprites.draw(ci, "ev_pass_stamp", Rect2(Vector2.ZERO, sz)))
-	var lab := UI.lbl(p.box, "超值", Rect2(s.position.x, s.position.y + 26, s.size.x, 40), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+	var lab := UI.lbl(p.box, TextCatalog.source("ui.passpopup.52f6f555189a"), Rect2(s.position.x, s.position.y + 26, s.size.x, 40), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	lab.pivot_offset = lab.size * 0.5
 	lab.rotation = 0.18
 
 static func _do_vip(p: PopupBase) -> void:
 	if not await _purchase(p, "pass:vip"):
 		return
-	G.main.toast("已激活贵宾：体力 ×150，贵宾奖励已开放")
+	G.main.toast(TextCatalog.source("ui.passpopup.48e1690f8d94"))
 
 static func _do_super(p: PopupBase) -> void:
 	var fresh := G.pass_tier == 0
 	if not await _purchase(p, "pass:super"):
 		return
 	if fresh:
-		G.main.toast("已激活超级贵宾：体力 ×150，通行证 +10，超级奖励和循环宝箱已开放")
+		G.main.toast(TextCatalog.source("ui.passpopup.e856abda78fa"))
 	else:
-		G.main.toast("已升级超级贵宾：通行证 +10，超级奖励和循环宝箱已开放")
+		G.main.toast(TextCatalog.source("ui.passpopup.f77ab985688a"))
 
 static func _purchase(p: PopupBase, product: String) -> bool:
 	var r: Dictionary = await Payments.buy(product)
 	if not r.get("ok", false):
-		G.main.toast(str(r.get("message", "没买成，再试一次")))
+		G.main.toast(str(r.get("message", TextCatalog.source("notice.ufooffer.b9eb30abfda8"))))
 		return false
 	if is_instance_valid(p): p.close()
 	RewardPresenter.present(r.get("rewards", []), func(_k): return Vector2(360, 700))
@@ -521,12 +521,12 @@ static func _paint_head(ci: CanvasItem, sz: Vector2) -> void:
 
 ## 购买按钮右上角的价签：人民币价格（贵宾 ¥30，超级贵宾 ¥68）
 static func _price_tag(ci: CanvasItem, sz: Vector2) -> void:
-	var price := "¥%d" % G.rules.progression.pass_cny("super" if G.pass_tier == 1 else "vip")
+	var price := PriceBook.product_text("pass:upgrade" if G.pass_tier == 1 else "pass:vip")
 	var r := Rect2(sz.x - 84, -20, 92, 38)
 	Sprites.draw(ci, "ev_pass_price", r)
 	# 标题字体里没有「¥」，价签用正文字体
 	var f := G.font_body
-	var w := f.get_string_size(price, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
+	var w := f.get_string_size(TextCatalog.resolve(price), HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
 	var pos := Vector2(r.get_center().x - w * 0.5, r.get_center().y + (f.get_ascent(24) - f.get_descent(24)) * 0.5)
 	_outlined(ci, pos, price, 24, Color.WHITE, f)
 
@@ -606,8 +606,8 @@ static func _node(ci: CanvasItem, lv: int, reached: int) -> void:
 		_center_text(ci, c, str(lv), 28)
 	else:
 		var f := G.font_title
-		var w := f.get_string_size(str(lv), HORIZONTAL_ALIGNMENT_LEFT, -1, 28).x
-		ci.draw_string(f, Vector2(c.x - w * 0.5, c.y + (f.get_ascent(28) - f.get_descent(28)) * 0.5), str(lv), HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color("a8977f"))
+		var w := f.get_string_size(TextCatalog.resolve(str(lv)), HORIZONTAL_ALIGNMENT_LEFT, -1, 28).x
+		ci.draw_string(f, Vector2(c.x - w * 0.5, c.y + (f.get_ascent(28) - f.get_descent(28)) * 0.5), TextCatalog.resolve(str(lv)), HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color("a8977f"))
 
 static func _endless_node(ci: CanvasItem, lit: bool) -> void:
 	var c := Vector2(MID_X, _node_y(Data.PASS_LEVELS.size() + 1))
@@ -625,10 +625,10 @@ static func _endless_note(ci: CanvasItem) -> void:
 		ci.draw_line(Vector2(x, r.position.y - 20), Vector2(x, r.position.y + 6), Art.ROPE, 2.5)
 	Sprites.draw(ci, "ev_pass_note", r)
 	var f := G.font_title
-	var lines := ["满级之后", "每 %d 分再开一箱" % Data.pass_need(Data.PASS_LEVELS.size() - 1)]
+	var lines := [TextCatalog.source("ui.passpopup.4a594183282e"), TextCatalog.source("ui.passpopup.aa4f64d7ba63") % Data.pass_need(Data.PASS_LEVELS.size() - 1)]
 	for i in lines.size():
 		var fs := 22 if i == 0 else 18
-		var w := f.get_string_size(lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var w := f.get_string_size(TextCatalog.resolve(lines[i]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		_outlined(ci, Vector2(r.get_center().x - w * 0.5, r.position.y + 42 + i * 34), lines[i], fs, Art.FIRE2 if i == 0 else Art.BONE, f)
 
 ## 柱脚：石堆上一团篝火，写着「起点」
@@ -637,8 +637,8 @@ static func _base(ci: CanvasItem, y: float) -> void:
 	Sprites.draw(ci, "ev_pass_base", Rect2(c + Vector2(-136, 6), Vector2(272, 70)))
 	Art.item(ci, "fire_3", c + Vector2(0, -4), 92)
 	var f := G.font_title
-	var w := f.get_string_size("起点", HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-	_outlined(ci, Vector2(c.x - w * 0.5, c.y + 84), "起点", 24, Art.ROPE, f)
+	var w := f.get_string_size(TextCatalog.resolve(TextCatalog.source("ui.passpopup.5491701e1c3a")), HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
+	_outlined(ci, Vector2(c.x - w * 0.5, c.y + 84), TextCatalog.source("ui.passpopup.5491701e1c3a"), 24, Art.ROPE, f)
 
 # ---------------------------------------------------------------- 购买页画面
 
@@ -660,10 +660,10 @@ static func _paint_hoard(ci: CanvasItem, sz: Vector2) -> void:
 
 static func _center_text(ci: CanvasItem, c: Vector2, text: String, fs: int) -> void:
 	var f := G.font_title
-	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var w := f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pos := Vector2(c.x - w * 0.5, c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
 	_outlined(ci, pos, text, fs, Color.WHITE, f)
 
 static func _outlined(ci: CanvasItem, pos: Vector2, text: String, fs: int, col: Color, font: Font) -> void:
-	ci.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
-	ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	ci.draw_string_outline(font, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
+	ci.draw_string(font, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)

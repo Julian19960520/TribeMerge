@@ -20,6 +20,7 @@ from .models import AuthSession, Save
 from .security import lock_account
 from .services import audit, stamp, store_state
 from .snapshots import b64, backup
+from .texts import source as text_source
 
 SUMMARY_FIELDS = ("amber", "shells", "level", "xp", "builds", "cards")
 
@@ -38,14 +39,14 @@ def _account(db, account_id: str, token_hash: str):
     account = lock_account(db, account_id)
     session = db.get(AuthSession, token_hash, populate_existing=True)
     if session is None or session.account_id != account_id:
-        raise ApiError(401, "unauthorized", "登录凭证无效")
+        raise ApiError(401, "unauthorized", text_source("server_notice.save_service.70d12aaddeba"))
     if session.revoked_at is not None:
-        raise ApiError(401, "session_replaced" if session.revoke_reason == "replaced" else "session_revoked", "登录会话已失效")
+        raise ApiError(401, "session_replaced" if session.revoke_reason == "replaced" else "session_revoked", text_source("server_notice.save_service.d727aa9e0a8c"))
     expires = session.expires_at
     if (expires if expires.tzinfo else expires.replace(tzinfo=timezone.utc)) <= clock.utcnow():
-        raise ApiError(401, "token_expired", "登录已过期")
+        raise ApiError(401, "token_expired", text_source("server_notice.save_service.1213ea2e1fb5"))
     if account.disabled:
-        raise ApiError(403, "account_disabled", "账号不可用")
+        raise ApiError(403, "account_disabled", text_source("server_notice.save_service.3c2e935e260f"))
     return account, session
 
 
@@ -54,11 +55,11 @@ def _inflate(blob: bytes, limit: int) -> bytes:
         inflater = zlib.decompressobj(16 + zlib.MAX_WBITS)
         raw = inflater.decompress(blob, limit + 1)
     except zlib.error as e:
-        raise ApiError(422, "invalid_save", "存档数据损坏") from e
+        raise ApiError(422, "invalid_save", text_source("server_notice.save_service.4f8c7079453f")) from e
     if len(raw) > limit or inflater.unconsumed_tail:
-        raise ApiError(413, "save_too_big", "存档太大")
+        raise ApiError(413, "save_too_big", text_source("server_notice.save_service.f6e8f6d65149"))
     if not inflater.eof:
-        raise ApiError(422, "invalid_save", "存档数据不完整")
+        raise ApiError(422, "invalid_save", text_source("server_notice.save_service.4d35fc9d1240"))
     return raw
 
 
@@ -66,15 +67,15 @@ def _parse(raw: bytes) -> dict:
     try:
         snapshot = json.loads(raw)
     except (UnicodeDecodeError, ValueError) as e:
-        raise ApiError(422, "invalid_save", "存档格式错误") from e
+        raise ApiError(422, "invalid_save", text_source("server_notice.save_service.495a8d7573f5")) from e
     if not isinstance(snapshot, dict) or snapshot.get("schema") != 1:
-        raise ApiError(422, "invalid_save", "存档版本不支持")
+        raise ApiError(422, "invalid_save", text_source("server_notice.save_service.97479502e8ae"))
     for key in ("level", "xp", "amber", "shells"):
         if not isinstance(snapshot.get(key), (int, float)) or isinstance(snapshot.get(key), bool):
-            raise ApiError(422, "invalid_save", "存档缺少字段")
+            raise ApiError(422, "invalid_save", text_source("server_notice.save_service.722b8bc118cc"))
     for key in ("builds", "cards"):
         if not isinstance(snapshot.get(key), dict):
-            raise ApiError(422, "invalid_save", "存档缺少字段")
+            raise ApiError(422, "invalid_save", text_source("server_notice.save_service.722b8bc118cc"))
     return snapshot
 
 
@@ -89,10 +90,10 @@ def upload(request, auth, db) -> dict:
     try:
         blob = base64.b64decode(request.data, validate=True)
     except (binascii.Error, ValueError) as e:
-        raise ApiError(422, "invalid_save", "存档编码错误") from e
+        raise ApiError(422, "invalid_save", text_source("server_notice.save_service.c87c99f97b91")) from e
     raw = _inflate(blob, get_settings().save_max_raw_bytes)
     if hashlib.sha256(raw).hexdigest() != request.hash:
-        raise ApiError(422, "save_hash_mismatch", "存档校验失败")
+        raise ApiError(422, "save_hash_mismatch", text_source("server_notice.save_service.eb3c9220ce46"))
     snapshot = _parse(raw)
     db.rollback()
     _write_start(db)

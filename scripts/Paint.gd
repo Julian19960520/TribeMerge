@@ -388,7 +388,7 @@ static func _bubble_content(ci: CanvasItem, c: Vector2, rad: float, id: String, 
 	var f: Font = G.font_title
 	var fs := int(clampf(round(rad * 0.58), 11.0, 20.0))
 	var text := str(n)
-	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var tw := f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var pos := c + Vector2(-tw * 0.5, rad * 0.62)
-	ci.draw_string_outline(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(3, int(fs / 5.0)), Art.INK)
-	ci.draw_string(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	ci.draw_string_outline(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(3, int(fs / 5.0)), Art.INK)
+	ci.draw_string(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)

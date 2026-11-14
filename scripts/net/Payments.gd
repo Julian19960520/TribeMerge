@@ -5,8 +5,8 @@ extends RefCounted
 ## before a crash, arrive through deliver() on the next boot.
 ## Products: amber:<k>, pass:vip, pass:super, offer:<kind>:<tier>, ufo, gift:<step> (server/app/catalog.py).
 
-const OFFLINE := "需要联网才能购买，请连接网络后重试"
-const PENDING := "支付已完成，奖励会在联网后自动到账"
+static var OFFLINE := TextCatalog.source("notice.payments.7d62f95f8e9c")
+static var PENDING := TextCatalog.source("notice.payments.31274db87c00")
 const ATTEMPTS := 3
 const UPLOAD_WAIT_MS := 15000
 ## True while a delivery pass runs; a second caller waits for it instead of fetching again.
@@ -16,8 +16,9 @@ static var _results: Dictionary = {}
 
 ## Why purchases are impossible right now ("" = possible).
 static func unavailable() -> String:
-	if not Cloud.enabled: return "离线测试模式不能购买，请连接服务器后再试"
-	if Cloud.kicked != "": return "登录已失效，请在 设置 → 账号与数据 重新登录后购买"
+	if not PriceBook.ready(): return TextCatalog.source("notice.progressionrules.419ce98e5750")
+	if not Cloud.enabled: return TextCatalog.source("notice.payments.da65b18fc1eb")
+	if Cloud.kicked != "": return TextCatalog.source("notice.payments.f05233ecd0ad")
 	if not Cloud.can_talk(): return OFFLINE
 	return ""
 
@@ -34,6 +35,27 @@ static func buy(product: String, detail: Dictionary = {}) -> Dictionary:
 		return {"ok": false, "error": "pending", "message": PENDING}
 	if int(paid[0]) != 200: return _fail(paid)
 	var grant_id := str(paid[1]["grant"]["id"])
+	await deliver()
+	if not _results.has(grant_id): return {"ok": false, "error": "pending", "message": PENDING}
+	var result: Dictionary = _results[grant_id]
+	_results.erase(grant_id)
+	return result
+
+## The server reserves the charge against the latest uploaded wallet and returns
+## a once-only grant. Retrying the same request never charges a second time.
+static func buy_virtual(product: String, expected_price: int, detail: Dictionary = {}) -> Dictionary:
+	var why := unavailable()
+	if why != "": return {"ok": false, "message": why}
+	await deliver()
+	await Replay.upload()
+	if Replay.needs_upload(): return {"ok": false, "message": OFFLINE}
+	var body := {"product": product, "version": str(PriceBook.catalog.get("version", "")), "expected_price": expected_price, "detail": detail}
+	var response := await _retry("POST", "/v1/economy/purchases", body, "virtual-" + Cloud._uuid())
+	if int(response[0]) != 200:
+		if int(response[0]) == 409 and str(response[1].get("error", "")) == "catalog_changed" and is_instance_valid(G.main):
+			await preload("res://scripts/net/EconomyClient.gd").refresh(G.main)
+		return _fail(response)
+	var grant_id := str(response[1]["grant"]["id"])
 	await deliver()
 	if not _results.has(grant_id): return {"ok": false, "error": "pending", "message": PENDING}
 	var result: Dictionary = _results[grant_id]
@@ -90,4 +112,4 @@ static func _retry(method: String, path: String, body, key := "") -> Array:
 static func _fail(response: Array) -> Dictionary:
 	if int(response[0]) == 0: return {"ok": false, "error": "offline", "message": OFFLINE}
 	var data: Dictionary = response[1] if response[1] is Dictionary else {}
-	return {"ok": false, "error": str(data.get("error", "failed")), "message": str(data.get("message", "没买成，请稍后再试"))}
+	return {"ok": false, "error": str(data.get("error", "failed")), "message": str(data.get("message", TextCatalog.source("notice.payments.eeae0d82dddb")))}

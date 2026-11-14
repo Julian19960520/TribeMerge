@@ -1,6 +1,7 @@
 extends Node
 ## Policy chooses actions; G, Rewards and event controllers execute the actual game rules.
 var cfg: Dictionary
+var source_hashes: Dictionary = {}
 var start: float
 var run_id := 0
 var action_count := 0
@@ -49,6 +50,9 @@ func run() -> int:
 		push_error("Invalid simulation config: " + config_path)
 		return 2
 	cfg = raw
+	# The run uses the configuration loaded at startup, even if files are edited later.
+	for file in DirAccess.get_files_at("res://data"):
+		if file.ends_with(".json"): source_hashes[file] = FileAccess.get_sha256("res://data/" + file)
 	schedule = cfg.get("schedule", {}) if cfg.get("schedule", {}) is Dictionary else {}
 	var ph_path:=str(cfg.get("placeholder_events","res://tools/sim/placeholder_events.json"))
 	if ph_path!="" and FileAccess.file_exists(ph_path):
@@ -274,6 +278,10 @@ func go_offline(why: String) -> void:
 
 func target_level_reached() -> bool:
 	var limit:=int(cfg.get("stop_level",40))
+	var generator: Dictionary = cfg.get("stop_generator", {})
+	if not generator.is_empty():
+		for id in owned_items():
+			if Data.chain(str(id)) == str(generator.get("chain", "")) and Data.lv(str(id)) >= int(generator.get("level", 99)): return true
 	return limit>0 and G.level>=limit
 
 func observe_level() -> void:
@@ -315,6 +323,18 @@ func play() -> void:
 	Replay.inflight = {}
 	G.replay_meta = Replay.meta
 	G.new_game()
+	var resume_path := str(cfg.get("start_snapshot", ""))
+	if resume_path != "":
+		var saved = JSON.parse_string(FileAccess.get_file_as_string(resume_path))
+		if not saved is Dictionary or not Replay.restore(saved):
+			push_error("Invalid simulation starting snapshot")
+			finish_reason = "invariant_failed"
+			return
+		start = float(Replay.clock)
+		G.simulation_time = start
+	# Gameplay uses named random streams, independently of the UI/global RNGs.
+	G.random_seed = "simulation:%d" % (int(cfg["seed"]) + run_id - 1)
+	G.random_streams = {}
 	Replay.advance()
 	Replay.executing = false
 	G.clear_presentations()
@@ -327,7 +347,7 @@ func play() -> void:
 	target = []
 	last_target = ""
 	action_count = 0
-	observed_level = 1
+	observed_level = G.level
 	last_order_time = 0
 	warned_stall = false
 	finish_reason = "duration_limit"
@@ -407,7 +427,7 @@ func grant(rw: Array) -> void:
 
 func reward_summary(rewards: Array) -> String:
 	var parts:=PackedStringArray()
-	var labels:={"energy":"体力","shell":"不拿拿","amber":"琥珀","sand":"沙漏","xp":"经验","token":"祭典积分"}
+	var labels:={"energy":"体力","shell":"不那那","amber":"琥珀","sand":"沙漏","xp":"经验","token":"祭典积分"}
 	for rw in rewards:
 		if not rw is Array or rw.size()<2: continue
 		var id:=str(rw[0])
@@ -528,6 +548,12 @@ func submit_orders() -> bool:
 	for i in G.orders.size():
 		var o: Dictionary = G.orders[i]
 		if main_finished and bool(o.get("story",false)): continue
+		if str(o.get("phase", "")) == "finished":
+			var at := int(o.get("cell", -1))
+			var taken := command("tap", {"cell": at})
+			if not taken.has("error"):
+				record("craft", "取出制作完成的菜品", "设备已完成制作，先取出再提交", {"dish": o.get("dish", ""), "cell": at})
+				return true
 		if target_story and not bool(o.get("story",false)) and (o.get("items",[]) as Array).any(func(id):return useful(str(id))): continue
 		if G.rules.orders.order_ready(o):
 			var rw: Dictionary = o["rw"].duplicate(true)
@@ -572,7 +598,7 @@ func upgrade_tribe() -> bool:
 		var cost: int=G.rules.progression.build_cost(b)
 		var result := command("build", {"id": b})
 		if result.is_empty() or result.has("error"): return false
-		record("build", "升级部落 · "+str(Data.build_def(b).get("name",b)), "不拿拿足够，独立推进部落", {"building":b,"stage":G.builds[b],"cost":cost,"rewards":result.get("rewards",[])})
+		record("build", "升级部落 · "+str(Data.build_def(b).get("name",b)), "不那那足够，独立推进部落", {"building":b,"stage":G.builds[b],"cost":cost,"rewards":result.get("rewards",[])})
 		return true
 	return false
 
@@ -615,6 +641,8 @@ func choose_target() -> void:
 		if bool(o.get("story",false)) and bool(cfg.get("story_first",true)): cost-=100000
 		# 制作单材料便宜时和主线同等优先（真人会顺手凑齐），贵的等没别的事再做
 		elif str(o.get("kind",""))=="craft" and cost<=float(cfg.get("craft_pursue_taps",40)): cost-=100000
+		# XP is fixed on displayed orders. Farming cheap zero-XP cards cannot level up.
+		if int(o.get("rw", {}).get("xp", 0)) > 0: cost -= 200000
 		if not reachable: cost+=1000000
 		if cost<best:
 			best=cost
@@ -624,7 +652,7 @@ func choose_target() -> void:
 	var signature := str(target)
 	if signature!=last_target:
 		last_target=signature
-		record("decision","目标："+target_name,"优先可完成的主线；主线暂不可生产时转向副线",{"items":target})
+		record("decision","目标："+target_name,"优先可生产的经验单，其次主线和低成本制作",{"items":target})
 
 func useful(id: String) -> bool:
 	for raw in target:
@@ -934,10 +962,7 @@ func wait_next() -> void:
 		record("bottleneck","连续一天未完成订单","记录策略或配置阻塞，不赠送资源绕过",{"target":target,"board":G.board.duplicate(true),"inventory":G.inv.duplicate(),"orders":G.orders.duplicate(true)})
 
 func write_report() -> void:
-	var hashes:={}
-	for file in DirAccess.get_files_at("res://data"):
-		if file.ends_with(".json"): hashes[file]=FileAccess.get_sha256("res://data/"+file)
-	var report:={"schema":1,"config":cfg,"main_story_max_level":main_limit,"source_hashes":hashes,"production_counting":"level1_equivalent","resource_counting":"credited_gains_excluding_initial","production_lines":production_line_metrics(),"runs":summaries,"events":events,"wall_seconds":(Time.get_ticks_msec()-wall_start)/1000.0,"notes":["通过共享规则命令执行；不访问线上账号，不写入玩家日志。","各产线生产器折合一级份数：1 级计 1、2 级计 2、3 级计 4，之后每级翻倍（含低级部件），统计已解锁棋盘、储物洞和暂存区，不含锁定格及未购买气泡。","生产器最高等级统计当前已拥有的棋盘、储物洞和暂存区物品；琥珀、沙漏累计获得仅计本轮实际到账，排除初始资源，消耗不回减。","藤蔓解锁与触发合成记录在同一时间点，不额外消耗操作时间。","连续在线、零付费、跳过广告与引导手势；每个决策消耗配置的游戏内秒数。","时间快进会执行体力恢复、制作完成、跨日和活动结算。","到时长或动作上限即重开；不等同于通关。策略是可复现启发式，并非最优解。"]}
+	var report:={"schema":1,"config":cfg,"main_story_max_level":main_limit,"source_hashes":source_hashes,"production_counting":"level1_equivalent","resource_counting":"credited_gains_excluding_initial","production_lines":production_line_metrics(),"runs":summaries,"events":events,"wall_seconds":(Time.get_ticks_msec()-wall_start)/1000.0,"notes":["通过共享规则命令执行；不访问线上账号，不写入玩家日志。","各产线生产器折合一级份数：1 级计 1、2 级计 2、3 级计 4，之后每级翻倍（含低级部件），统计已解锁棋盘、储物洞和暂存区，不含锁定格及未购买气泡。","生产器最高等级统计当前已拥有的棋盘、储物洞和暂存区物品；琥珀、沙漏累计获得仅计本轮实际到账，排除初始资源，消耗不回减。","藤蔓解锁与触发合成记录在同一时间点，不额外消耗操作时间。","连续在线、零付费、跳过广告与引导手势；每个决策消耗配置的游戏内秒数。","时间快进会执行体力恢复、制作完成、跨日和活动结算。","到时长或动作上限即重开；不等同于通关。策略是可复现启发式，并非最优解。"]}
 	var f:=FileAccess.open(output,FileAccess.WRITE)
 	f.store_string(JSON.stringify(report))
 	f.close()

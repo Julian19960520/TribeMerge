@@ -1,18 +1,18 @@
 {
-  "title": "恐龙化石",
+  "title": "§ui.fossildigentry.64311488dd2a§",
   "unlock_level": 7,
   "shovels_per_order": 3,
   "dig_cost": 1,
   "stages": 10,
   "shapes": [
-    {"kind": "limb", "name": "趾骨", "w": 1, "h": 2},
-    {"kind": "spine", "name": "尾椎", "w": 1, "h": 3},
-    {"kind": "limb", "name": "腿骨", "w": 1, "h": 4},
-    {"kind": "skull", "name": "头骨", "w": 2, "h": 2},
-    {"kind": "ribs", "name": "肋骨", "w": 2, "h": 3},
-    {"kind": "pelvis", "name": "骨盆", "w": 3, "h": 3},
-    {"kind": "spine", "name": "脊椎", "w": 1, "h": 5},
-    {"kind": "ribs", "name": "胸骨", "w": 2, "h": 4}
+    {"kind": "limb", "name": "§content.fossil_dig.bec1a891ea03§", "w": 1, "h": 2},
+    {"kind": "spine", "name": "§content.fossil_dig.08741726d9f9§", "w": 1, "h": 3},
+    {"kind": "limb", "name": "§content.fossil_dig.082dff3c7c48§", "w": 1, "h": 4},
+    {"kind": "skull", "name": "§content.fossil_dig.c1122c8d2a83§", "w": 2, "h": 2},
+    {"kind": "ribs", "name": "§content.fossil_dig.f127f74f7c86§", "w": 2, "h": 3},
+    {"kind": "pelvis", "name": "§content.fossil_dig.8eb41020975b§", "w": 3, "h": 3},
+    {"kind": "spine", "name": "§content.fossil_dig.479454f098d7§", "w": 1, "h": 5},
+    {"kind": "ribs", "name": "§content.fossil_dig.910c593b4c46§", "w": 2, "h": 4}
   ],
   "milestones": [
     {"bones": 2, "rewards": [["fire_2", 20], ["shell_2", 100]]},

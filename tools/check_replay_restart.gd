@@ -27,7 +27,7 @@ func run() -> void:
 		replay._canonicalize_live()
 		replay.executing = false
 		if not replay.checkpoint(): quit(1); return
-		var result: Dictionary = replay.perform("drop", {"from": 28, "to": 29}, replay.clock)
+		var result: Dictionary = replay.perform("drop", {"from": 23, "to": 30}, replay.clock)
 		if result.get("kind", "") != "merge": quit(1); return
 		var file := FileAccess.open(expected_file, FileAccess.WRITE)
 		file.store_string(replay.digest())

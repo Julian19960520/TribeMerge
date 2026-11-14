@@ -13,7 +13,7 @@ func _ready() -> void:
 	_btn = UI.hit(self, Rect2(Vector2.ZERO, RECT.size), func(): G.main.open("spree"))
 	_btn.name = "spree_card"
 	_btn.extra = _paint
-	UI.lbl(_btn, "赶大集", Rect2(0, 78, 100, 24), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+	UI.lbl(_btn, TextCatalog.source("ui.spreecard.ebf9369c2f5f"), Rect2(0, 78, 100, 24), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	_time = UI.lbl(_btn, "", Rect2(0, 100, 100, 20), 14, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
 	_refresh()
 
@@ -24,7 +24,7 @@ func _refresh() -> void:
 	var on := Offers.active("spree") and Offers.any_left("spree")
 	_btn.visible = on
 	if on:
-		_time.text = SpreePopupScript.clock_text(Offers.remaining("spree"))
+		_time.text = TextCatalog.resolve(SpreePopupScript.clock_text(Offers.remaining("spree")))
 		_btn.queue_redraw()
 
 const SpreePopupScript := preload("res://scripts/ui/SpreePopup.gd")
@@ -33,7 +33,7 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	# 卡底 + 袋子提手、袋身 + 爆炸贴是两层预生成贴图，物品夹在中间
 	var box := Rect2(0, 0, sz.x, sz.x)
 	Sprites.draw(ci, "ev_spree_card_back", box)
-	# 柜台上摆着货：不拿拿、琥珀、体力
+	# 柜台上摆着货：不那那、琥珀、体力
 	Art.item(ci, "fire_2", Vector2(sz.x * 0.5, 44), 34, true, 0.0)
 	Art.item(ci, "shell_2", Vector2(sz.x * 0.5 - 17, 52), 38, true, -0.1)
 	Art.item(ci, Art.AMBER_ICON, Vector2(sz.x * 0.5 + 17, 52), 36, true, 0.15)

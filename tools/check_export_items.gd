@@ -132,6 +132,24 @@ func check() -> void:
 			quit(1)
 			return
 	print("PASS: six painted characters, five compatible customer identities and avatar crops exported; legacy portraits excluded")
+	var voice = load("res://scripts/ui/HeroVoice.gd")
+	var text_catalog: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://localization/texts.json"))
+	var claim_copy: Dictionary = text_catalog.get("entries", {}).get("ui.duelpopup.844ab9477225", {})
+	var expected_claim := str(claim_copy.get("zh_CN", ""))
+	if expected_claim.is_empty(): expected_claim = str(claim_copy.get("source", ""))
+	if text_catalog.get("stats", {}).get("unique_texts", 0) != text_catalog.get("entries", {}).size() or TextCatalog.resolve("§ui.duelpopup.844ab9477225§") != expected_claim:
+		push_error("Missing or invalid exported text catalogue")
+		quit(1)
+		return
+	print("PASS: %d editable copy entries exported with locale fallback" % text_catalog["entries"].size())
+	var spoken: Dictionary = voice.lines()
+	for step in Data.ConfigFiles.shared("res://data/onboarding.json")["stages"]:
+		if str(step.get("text", "")) == "": continue
+		if not spoken.get("onboarding", {}).has(str(step["key"])) or voice.text("onboarding", str(step["key"]), "") == "":
+			push_error("Missing exported hero speech: " + str(step["key"]))
+			quit(1)
+			return
+	print("PASS: %d hero speeches exported independently from gameplay rules" % [spoken.get("onboarding", {}).size() + spoken.get("tips", {}).size()])
 	var character_bakes: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/characters/baked_sprites.json"))
 	var baked_count := 0
 	for sprite_file in character_bakes.get("pixel_sha256", {}):

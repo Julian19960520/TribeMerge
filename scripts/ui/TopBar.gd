@@ -1,6 +1,6 @@
 class_name TopBar
 extends Control
-## 顶栏：等级石碑 / 体力 / 不拿拿 / 琥珀或沙漏（同一格）/ 集市
+## 顶栏：等级石碑 / 体力 / 不那那 / 琥珀或沙漏（同一格）/ 集市
 ## 第三格平时是琥珀；棋盘上选中沙漏或正在制作、能用沙漏加速的物品时换成沙漏。
 
 var _lv: Label
@@ -116,7 +116,7 @@ func _add_gem() -> void:
 	_gem_lbl = UI.lbl(c, "", Rect2(PILLS["amber"].position + Vector2(30, 0) - o, Vector2(116, 50)), 26)
 	UI.hit(c, Rect2(Vector2.ZERO, r.size), func():
 		if _gem_mode == "sand":
-			G.main.toast("沙漏能让制作变快，每份快 %s。合成到 2 级以上再收，级别越高收得越多。" % Data.rush_text())
+			G.main.toast(TextCatalog.source("ui.topbar.8204fee264bd") % Data.rush_text())
 		else:
 			_open_from("amber", "store"))
 
@@ -157,7 +157,7 @@ func _add_festival_progress() -> void:
 	_festival_lbl = UI.lbl(_festival, "", Rect2(56, 0, 276, 58), 23, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	UI.hit(_festival, Rect2(Vector2.ZERO, _festival.size), func():
 		if G.rules.progression.feature_unlocked(Data.CARD_LEVEL): G.main.open("event")
-		else: G.main.toast("祭典积分已累计，卡册在%d级开启" % Data.CARD_LEVEL))
+		else: G.main.toast(TextCatalog.source("ui.topbar.ed9bbdbbe892") % Data.CARD_LEVEL))
 	_festival.hide()
 
 func _add_shop() -> void:
@@ -276,10 +276,10 @@ func target(kind: String) -> Vector2:
 	return get_global_transform() * (r.position + Vector2(8, 24))
 
 func _refresh() -> void:
-	_festival_lbl.text = "祭典积分 %d/%d" % [G.tokens - G.token_claimed, G.TOKEN_STEP]
-	_lv.text = str(G.level)
-	_en.text = str(G.energy)
-	_sh.text = str(G.shells)
-	_gem_lbl.text = str(G.rush if _gem_mode == "sand" else G.amber)
+	_festival_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.topbar.0520da220f57") % [G.tokens - G.token_claimed, G.TOKEN_STEP])
+	_lv.text = TextCatalog.resolve(str(G.level))
+	_en.text = TextCatalog.resolve(str(G.energy))
+	_sh.text = TextCatalog.resolve(str(G.shells))
+	_gem_lbl.text = TextCatalog.resolve(str(G.rush if _gem_mode == "sand" else G.amber))
 	var left := G.rules.clock.energy_left()
-	_timer.text = G.fmt_time(left) if left > 0 else ""
+	_timer.text = TextCatalog.resolve(G.fmt_time(left) if left > 0 else "")

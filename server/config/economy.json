@@ -1,0 +1,252 @@
+{
+  "schema": 1,
+  "revision": "economy-20261114-1",
+  "default_market": "CN",
+  "units": {
+    "energy": 1.0,
+    "amber": 1.0,
+    "shell": 0.2,
+    "sand": 0.01,
+    "xp": 1.0,
+    "token": 2.0
+  },
+  "main_prices": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    25,
+    50,
+    97
+  ],
+  "sub_prices": [
+    6,
+    11,
+    22
+  ],
+  "generator_level_one_price": 120,
+  "energy": {
+    "amount": 100,
+    "prices": [
+      10,
+      20,
+      40,
+      80
+    ],
+    "reset_utc_offset_hours": 8
+  },
+  "sand": {
+    "seconds_per_unit": 6,
+    "diamonds_per_hour": 6,
+    "packs": [
+      [
+        300,
+        1
+      ],
+      [
+        900,
+        2
+      ],
+      [
+        1800,
+        3
+      ],
+      [
+        3600,
+        6
+      ],
+      [
+        7200,
+        10
+      ],
+      [
+        14400,
+        18
+      ]
+    ]
+  },
+  "shell": {
+    "amount": 100,
+    "price": 20
+  },
+  "orders": {
+    "shell_per_value": 3.0,
+    "max_chains": 3,
+    "max_item_level": 12
+  },
+  "reward_budgets": {
+    "seven_day": 4000,
+    "race": 1500,
+    "duel_race": 2200,
+    "tiger_escape": 1200,
+    "fossil_dig": 2200,
+    "merge_events": 6000
+  },
+  "generator_reward_units_per_activity": 2,
+  "fallback_item_values": {
+    "pack": [
+      20,
+      35,
+      60,
+      100,
+      160
+    ],
+    "choice": [
+      12,
+      24,
+      48,
+      96,
+      192
+    ],
+    "egen": [
+      5,
+      10,
+      20,
+      40,
+      80,
+      160
+    ],
+    "orderbox": [
+      12,
+      24,
+      48,
+      96,
+      192
+    ],
+    "upgrade": [
+      100
+    ],
+    "scissors": [
+      20
+    ]
+  },
+  "markets": {
+    "CN": {
+      "currency": "CNY",
+      "symbol": "¥",
+      "packs": [
+        [
+          600,
+          60
+        ],
+        [
+          3000,
+          330
+        ],
+        [
+          6800,
+          800
+        ],
+        [
+          12800,
+          1600
+        ],
+        [
+          32800,
+          4300
+        ],
+        [
+          64800,
+          9000
+        ]
+      ],
+      "cash_map": {
+        "3": 300,
+        "6": 600,
+        "18": 1800,
+        "30": 3000,
+        "45": 4500,
+        "68": 6800,
+        "128": 12800,
+        "328": 32800,
+        "648": 64800
+      },
+      "bundle_multiplier": 3.0
+    },
+    "US": {
+      "currency": "USD",
+      "symbol": "$",
+      "packs": [
+        [
+          199,
+          110
+        ],
+        [
+          499,
+          290
+        ],
+        [
+          999,
+          640
+        ],
+        [
+          1999,
+          1380
+        ],
+        [
+          4999,
+          3700
+        ],
+        [
+          9999,
+          8200
+        ]
+      ],
+      "cash_map": {
+        "3": 99,
+        "6": 99,
+        "18": 299,
+        "30": 499,
+        "45": 699,
+        "68": 999,
+        "128": 1999,
+        "328": 4999,
+        "648": 9999
+      },
+      "bundle_multiplier": 3.0
+    }
+  },
+  "card_values": {
+    "new_card_by_rarity": [
+      10,
+      20,
+      40,
+      80,
+      160
+    ],
+    "reference_new_card_rate": 0.6,
+    "star_value": 0.5
+  },
+  "storage": {
+    "initial_price": 50,
+    "row_step": 10
+  },
+  "refresh": {
+    "hot": 10,
+    "shell": 5
+  },
+  "daily_energy_box_shell_price": 300,
+  "member_daily_amber": 100,
+  "bubble": {
+    "price_k": 0.6,
+    "price_exp": 0.8,
+    "price_step": 5,
+    "price_min": 5,
+    "price_max": 300
+  },
+  "card_star_exchange": [
+    {
+      "cost": 100,
+      "pack": "pack_3"
+    },
+    {
+      "cost": 200,
+      "pack": "pack_4"
+    },
+    {
+      "cost": 400,
+      "pack": "pack_5"
+    }
+  ]
+}

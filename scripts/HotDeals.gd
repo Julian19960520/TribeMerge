@@ -1,111 +1,132 @@
 extends RefCounted
 
-const HINT_ODDS := [20, 55, 25]
-const PRICE_MAIN := 0.6
-const PRICE_SUB := 0.33
+const CATALOG_REVISION := 2
 
-static func from_picks(base: Array, picks: Array) -> Array:
+static func level_bonus(player_level: int) -> int:
+	var step := maxi(1, int(Data.RULES.get("hot_level_step", 8)))
+	return mini(maxi(0, player_level / step), maxi(0, int(Data.RULES.get("hot_level_max_bonus", 2))))
+
+static func grade_floor(base: Array, slot: int, player_level: int) -> int:
+	return Data.lv(str(base[slot]["id"])) + level_bonus(player_level)
+
+static func goods_pool(tier: int, player_level: int) -> Array:
 	var out: Array = []
-	for d in base:
-		out.append((d as Dictionary).duplicate())
-	for p in picks:
-		if not (p is Dictionary):
-			continue
-		var k := int(p.get("slot", -1))
-		var id := str(p.get("id", ""))
-		if k < 0 or k >= out.size() or not Data.CHAINS.has(Data.chain(id)):
-			continue
-		if Data.chain(str(out[k]["id"])) != Data.chain(id) and not (_is_goods(str(out[k]["id"])) and _is_goods(id)):
-			continue
-		var lv := Data.lv(id)
-		if lv < 1 or lv > Data.max_lv(Data.chain(id)):
-			continue
-		var old: Dictionary = out[k]
-		out[k] = {"id": id, "price": _price_like(id, old), "stock": clampi(int(old.get("stock", 3)), 1, 3 if lv >= 5 else 5)}
+	for line in Data.unlocked_lines(player_level):
+		for field in ["main", "sub"]:
+			var chain_id := str(line.get(field, ""))
+			if chain_id == "" or not Data.product_open(player_level, chain_id) or tier > Data.max_lv(chain_id): continue
+			var id := "%s_%d" % [chain_id, tier]
+			if _is_goods(id): out.append(id)
 	return out
 
-static func roll(base: Array, wanted: Array, rng: RandomNumberGenerator) -> Array:
+static func available_goods(id: String, player_level: int) -> bool:
+	return _is_goods(id) and goods_pool(Data.lv(id), player_level).has(id)
+
+static func _row(base: Dictionary, id: String) -> Dictionary:
+	var row := base.duplicate(true)
+	row["id"] = id
+	if not bool(row.get("random_generator", false)): row["price"] = price_of(id)
+	return row
+
+static func from_picks(base: Array, picks: Array, player_level: int) -> Array:
 	var out: Array = []
-	for d in base:
-		out.append((d as Dictionary).duplicate())
-	var n := _pick_count(rng)
-	var slots: Array = []
-	for k in out.size():
-		if _is_goods(str(out[k].get("id", ""))):
-			slots.append(k)
-	var pool := wanted.duplicate()
-	_shuffle(pool, rng)
+	for k in base.size():
+		var id := str(base[k]["id"])
+		if not bool(base[k].get("random_generator", false)):
+			var pool := goods_pool(grade_floor(base, k, player_level), player_level)
+			if not pool.is_empty(): id = str(pool[0])
+		out.append(_row(base[k], id))
+	var fallback := out.duplicate(true)
+	for pick in picks:
+		if not pick is Dictionary: continue
+		var slot := int(pick.get("slot", -1))
+		var id := str(pick.get("id", ""))
+		if slot < 0 or slot >= out.size(): continue
+		if bool(base[slot].get("random_generator", false)):
+			if generator_components(player_level).has(id): out[slot] = _row(base[slot], id)
+		else:
+			var floor_level := grade_floor(base, slot, player_level)
+			if available_goods(id, player_level) and Data.lv(id) >= floor_level and Data.lv(id) <= floor_level + 1: out[slot] = _row(base[slot], id)
+	return out if valid_rows(out, base, player_level) else fallback
+
+static func roll(base: Array, wanted: Array, rng: RandomNumberGenerator, player_level: int, previous: Array = []) -> Array:
+	var count := base.size() - 1
+	var omit := rng.randi_range(0, count)
+	if previous.size() == base.size():
+		var same_grades := true
+		for k in count:
+			var tier := grade_floor(base, k, player_level) + (1 if k >= omit else 0)
+			same_grades = same_grades and Data.lv(str(previous[k]["id"])) == tier
+		if same_grades: omit = (omit + rng.randi_range(1, count)) % (count + 1)
+	var out: Array = []
 	var used_chains := {}
-	while n > 0 and not pool.is_empty() and not slots.is_empty():
-		var need := str(pool.pop_back())
-		var ch := Data.chain(need)
-		if used_chains.has(ch):
+	for k in base.size():
+		var old := str(previous[k]["id"]) if k < previous.size() else ""
+		if bool(base[k].get("random_generator", false)):
+			out.append(_row(base[k], random_component(rng, player_level, old)))
 			continue
-		# 比订单要的低 1 级（60%）或 2 级；正好是别的订单要的那件就换另一个，免得太直白
-		var drops := [1, 2] if rng.randi_range(0, 99) < 60 else [2, 1]
-		var id := ""
-		for dl in drops:
-			var lv: int = Data.lv(need) - int(dl)
-			var cand := "%s_%d" % [ch, lv]
-			if lv >= 2 and not wanted.has(cand):
-				id = cand
-				break
-		if id == "" or out.any(func(d): return str(d.get("id", "")) == id):
-			continue
-		var lv := Data.lv(id)
-		# 先换同一条产线的那格（水果换水果），没有就随便一格普通货
-		var at := -1
-		for k in slots:
-			if Data.chain(str(out[k]["id"])) == ch:
-				at = k
-				break
-		if at < 0:
-			for k in slots:
-				if Data.line_of(str(out[k]["id"])).get("id", "") == Data.line_of(id).get("id", "?"):
-					at = k
-					break
-		if at < 0:
-			at = slots[rng.randi_range(0, slots.size() - 1)]
-		slots.erase(at)
-		used_chains[ch] = true
-		var old: Dictionary = out[at]
-		out[at] = {"id": id, "price": _price_like(id, old), "stock": clampi(int(old.get("stock", 3)), 1, 3 if lv >= 5 else 5)}
-		n -= 1
+		var tier := grade_floor(base, k, player_level) + (1 if k >= omit else 0)
+		var pool := goods_pool(tier, player_level)
+		if pool.size() > 1: pool.erase(old)
+		var id := _weighted_goods(pool, wanted, used_chains, rng)
+		used_chains[Data.chain(id)] = true
+		out.append(_row(base[k], id))
 	return out
 
-static func _price_like(id: String, old: Dictionary) -> int:
-	var oid := str(old.get("id", ""))
-	var of := OrderRoll.flames(oid)
-	if Data.chain(oid) == Data.chain(id) and of > 0.0 and int(old.get("price", 0)) > 0:
-		return maxi(2, int(round(float(old["price"]) * OrderRoll.flames(id) / of)))
-	return price_of(id)
+static func _weighted_goods(pool: Array, wanted: Array, used_chains: Dictionary, rng: RandomNumberGenerator) -> String:
+	if pool.is_empty(): return ""
+	var weights: Array = []
+	var total := 0.0
+	for id in pool:
+		var weight := 1.0 if used_chains.has(Data.chain(str(id))) else 2.0
+		for need in wanted:
+			if Data.chain(str(need)) != Data.chain(str(id)): continue
+			var gap := Data.lv(str(need)) - Data.lv(str(id))
+			if gap == 1: weight *= 5.0; break
+			if gap == 2: weight *= 3.0; break
+		weights.append(weight); total += weight
+	var point := rng.randf() * total
+	for i in pool.size():
+		point -= float(weights[i])
+		if point <= 0.0: return str(pool[i])
+	return str(pool.back())
+
+static func valid_rows(rows: Array, base: Array, player_level: int) -> bool:
+	if rows.size() != base.size(): return false
+	var previous_level := 0
+	for k in rows.size():
+		var row: Variant = rows[k]
+		if not row is Dictionary: return false
+		var id := str(row.get("id", ""))
+		if bool(base[k].get("random_generator", false)):
+			if not generator_components(player_level).has(id) or int(row.get("price", -1)) != int(base[k]["price"]): return false
+		else:
+			var tier := Data.lv(id)
+			var minimum := grade_floor(base, k, player_level)
+			if not available_goods(id, player_level) or tier <= previous_level or tier < minimum or tier > minimum + 1 or int(row.get("price", -1)) != price_of(id): return false
+			previous_level = tier
+		if int(row.get("stock", -1)) != int(base[k]["stock"]): return false
+	return true
+
+static func generator_components(player_level: int) -> Array:
+	var out: Array = []
+	for line in Data.unlocked_lines(player_level):
+		var id := "%s_1" % str(line["gen"])
+		if Data.is_board_item(id): out.append(id)
+	return out
+
+static func random_component(rng: RandomNumberGenerator, player_level: int, previous := "") -> String:
+	var pool := generator_components(player_level)
+	if pool.size() > 1: pool.erase(previous)
+	return str(pool[rng.randi_range(0, pool.size() - 1)]) if not pool.is_empty() else ""
 
 static func price_of(id: String) -> int:
-	var f := OrderRoll.flames(id)
-	var per := PRICE_SUB if OrderRoll.is_sub(Data.chain(id)) else PRICE_MAIN
-	return maxi(2, int(round(f * per)))
+	return PriceBook.price(id)
 
 static func _is_goods(id: String) -> bool:
-	if id == "" or Data.is_dish(id):
-		return false
-	var ch := Data.chain(id)
-	return Data.CHAINS.has(ch) and str(Data.CHAINS[ch].get("type", "")) == "item"
-
-static func _pick_count(rng: RandomNumberGenerator) -> int:
-	var r := rng.randi_range(0, 99)
-	var acc := 0
-	for k in HINT_ODDS.size():
-		acc += int(HINT_ODDS[k])
-		if r < acc:
-			return k
-	return 0
-
-static func _shuffle(a: Array, rng: RandomNumberGenerator) -> void:
-	for i in range(a.size() - 1, 0, -1):
-		var j := rng.randi_range(0, i)
-		var t = a[i]
-		a[i] = a[j]
-		a[j] = t
+	if id == "" or Data.is_dish(id): return false
+	var chain_id := Data.chain(id)
+	return Data.CHAINS.has(chain_id) and str(Data.CHAINS[chain_id].get("type", "")) == "item"
 
 static func _base_sig() -> String:
-	return str(JSON.stringify(Data.STORE_HOT).hash())
+	return "%s:%d:%d:%d" % [str(JSON.stringify(Data.STORE_HOT).hash()) + str(PriceBook.catalog.get("rules_version", "")), CATALOG_REVISION, int(Data.RULES.get("hot_level_step", 8)), int(Data.RULES.get("hot_level_max_bonus", 2))]

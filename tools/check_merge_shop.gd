@@ -35,13 +35,15 @@ func _run() -> void:
 	check(r.get("ok", false) and g.amber == 0 and g.hot_bought.is_empty() and g.hot_revision == 1, "refresh costs exactly 10 and resets hot stock")
 	check(not g.rules.progression.has_free_daily(), "hot refresh cannot reset daily free item")
 	var after_hot: Array = g.shop_view().duplicate(true)
-	var all_changed := true
+	var ordinary_changed := false
+	var component_valid := true
 	for k in before_hot.size():
-		if data.max_lv(data.chain(str(before_hot[k]["id"]))) > 1:
-			all_changed = all_changed and before_hot[k]["id"] != after_hot[k]["id"]
+		if bool(before_hot[k].get("random_generator", false)):
+			var pool: Array = load("res://scripts/HotDeals.gd").generator_components(g.level)
+			component_valid = component_valid and pool.has(str(after_hot[k]["id"])) and (pool.size() == 1 or before_hot[k]["id"] != after_hot[k]["id"])
 		else:
-			all_changed = all_changed and before_hot[k]["id"] == after_hot[k]["id"]
-	check(all_changed, "paid refresh changes multi-grade goods and replenishes fixed supplies")
+			ordinary_changed = ordinary_changed or before_hot[k]["id"] != after_hot[k]["id"]
+	check(ordinary_changed and component_valid and load("res://scripts/HotDeals.gd").valid_rows(after_hot, data.STORE_HOT, g.level), "paid refresh changes the ascending goods selection and keeps components eligible")
 	var shop_snapshot: Dictionary = g.business_snapshot().duplicate(true)
 	check(g.load_snapshot(shop_snapshot) and g.shop_view() == after_hot, "refreshed goods survive business-state restore")
 	g.discovered.erase("salad")

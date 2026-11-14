@@ -69,6 +69,10 @@ func run() -> void:
 		for part in Data.build_parts(Data.build_def("cook")):
 			for reward in part["rewards"]:
 				if Data.chain(str(reward[0])) == "hearth": parts += int(reward[1]) * (1 << (Data.lv(str(reward[0])) - 1))
-		check(8 + parts >= 16 and Data.gen_stats("hearth_5")["drops"].any(func(drop): return Data.chain(str(drop["id"])) == "roast"), "available building rewards can upgrade the starter to produce roast without later level rewards")
+		var later_parts := 0
+		for lv in range(25, 29):
+			for reward in Data.level_rewards(lv):
+				if Data.chain(str(reward[0])) == "hearth": later_parts += int(reward[1]) * (1 << (Data.lv(str(reward[0])) - 1))
+		check(8 + parts < 16 and 8 + later_parts == 16 and Data.gen_stats("hearth_5")["drops"].any(func(drop): return Data.chain(str(drop["id"])) == "roast"), "新线解锁只到4级，后续四级进度的碎片足够凑5级生产烤肉")
 	else: quit(2); return
 	quit(0 if failures == 0 else 1)

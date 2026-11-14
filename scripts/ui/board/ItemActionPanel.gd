@@ -35,13 +35,13 @@ static func _hint_op(ci: CanvasItem, c: Vector2, op: String) -> void:
 static func _hint_text(ci: CanvasItem, pos: Vector2, text: String, fs: int, col: Color = HINT_INK, outline := false) -> float:
 	var f: Font = G.font_title if outline else G.font_body
 	if outline:
-		ci.draw_string_outline(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 6, Art.INK)
-	ci.draw_string(f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-	return f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		ci.draw_string_outline(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 6, Art.INK)
+	ci.draw_string(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	return f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 
 static func _text_w(text: String, fs: int, title := false) -> float:
 	var f: Font = G.font_title if title else G.font_body
-	return f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 
 ## 文字基线：让 fs 号字在 y 处垂直居中
 static func _mid_base(y: float, fs: int, title := false) -> float:
@@ -64,7 +64,7 @@ func _paint_item_action(ci: CanvasItem, sz: Vector2) -> void:
 		_hint_op(ci, Vector2(plate + op_w * 0.5, y), "+")
 		_hint_op(ci, Vector2(plate * 2.0 + op_w * 1.5, y), "=")
 	elif mode == "produce":
-		var label := "点击生产"
+		var label := TextCatalog.source("ui.itemactionpanel.d58507c39b5a")
 		var fs := 22
 		var lw := _text_w(label, fs)
 		_hint_text(ci, Vector2(0, _mid_base(y, fs)), label, fs)
@@ -90,7 +90,7 @@ func _paint_item_action(ci: CanvasItem, sz: Vector2) -> void:
 		var plate := 72.0
 		_hint_plate(ci, Vector2(plate * 0.5, y), plate, 3, true)
 		Art.item(ci, str(items[0]), Vector2(plate * 0.5, y), plate * 0.86, false)
-		var a := "点击获得"
+		var a := TextCatalog.source("ui.itemactionpanel.d15caef6c30b")
 		var num := str(int(action["n"]))
 		var b := str(action["unit"])
 		var fa := 22
@@ -105,6 +105,6 @@ func _paint_item_action(ci: CanvasItem, sz: Vector2) -> void:
 		_hint_plate(ci, Vector2(plate * 0.5, y), plate, 5, true)
 		Art.item(ci, str(items[0]), Vector2(plate * 0.5, y), plate * 0.86, false)
 		ci.draw_texture_rect(Board.MAX_CROWN, Rect2(plate - 30, y - plate * 0.5 - 8, 38, 30), false)
-		var t := "已达最高级"
+		var t := TextCatalog.source("ui.itemactionpanel.da0648e89f8d")
 		var fs := 24
 		_hint_text(ci, Vector2(plate + (sz.x - plate - _text_w(t, fs)) * 0.5, _mid_base(y, fs)), t, fs)

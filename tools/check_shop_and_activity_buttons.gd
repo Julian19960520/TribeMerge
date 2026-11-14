@@ -33,14 +33,16 @@ func run() -> void:
 	load("res://scripts/events/ActivityRules.gd").initialize()
 	var before: Dictionary = replay.snapshot().duplicate(true)
 	var rows: Array = g.shop_view()
-	check(rows.size() == 10, "current shop creates all ten configured supply slots")
+	check(rows.size() == 6, "热卖固定六个商品")
+	var goods_rules = load("res://scripts/HotDeals.gd")
+	check(goods_rules.generator_components(g.level).has(str(rows[5]["id"])) and int(rows[5]["price"]) == 120 and int(rows[5]["stock"]) == 1, "第六格是随机产线一级生产器碎片，120琥珀，限购一件")
 	check(g.hot_bought.size() == 1 and int(g.hot_bought.get("hot_0", 0)) == 2, "opening the shop preserves same-day purchase counts")
 	var random_after: Dictionary = g.random_save().duplicate(true)
 	var seq: int = replay.seq
 	check(g.shop_view() == rows and replay.seq == seq and g.random_save() == random_after, "same-day reopening preserves goods and random stream position")
 	var saved: Dictionary = replay.snapshot()
 	replay.restore(saved)
-	check(g.shop_view() == rows and replay.seq == seq and g.random_save() == random_after, "current snapshot restores the cached ten-slot shop without rerolling")
+	check(g.shop_view() == rows and replay.seq == seq and g.random_save() == random_after, "current snapshot restores the cached six-slot shop without rerolling")
 	for arg in OS.get_cmdline_user_args():
 		if not arg.begins_with("--output="): continue
 		var ops := []
@@ -48,6 +50,45 @@ func run() -> void:
 			var op: Dictionary = entry.duplicate(true); op.erase("hash"); ops.append(op)
 		var file := FileAccess.open(arg.trim_prefix("--output="), FileAccess.WRITE)
 		file.store_string(JSON.stringify({"before": before, "ops": ops, "hash": replay.digest()})); file.close()
+	var pool_seen := {}
+	var random := RandomNumberGenerator.new(); random.seed = 667
+	var random_ok := true
+	for _i in 100:
+		var rolled: Array = goods_rules.roll(Data.STORE_HOT, [], random, g.level)
+		var component := str(rolled[5]["id"])
+		pool_seen[component] = true
+		random_ok = random_ok and rolled.size() == 6 and goods_rules.generator_components(g.level).has(component) and int(rolled[5]["price"]) == 120
+	check(random_ok and pool_seen.size() == Data.unlocked_lines(g.level).size(), "随机碎片覆盖所有已解锁产线，不出现未解锁产线")
+	for lv in [1, 5, 6, 7, 8, 15, 16, 23, 24, 25, 26, 30, 31]:
+		var eligible: Array = goods_rules.generator_components(lv)
+		var seen := {}; var valid := true
+		for _i in 200:
+			var offer: Array = goods_rules.roll(Data.STORE_HOT, [], random, lv)
+			var id := str(offer[5]["id"])
+			seen[id] = true
+			valid = valid and eligible.has(id) and int(Data.line_of(id)["unlock"]) <= lv and Data.lv(id) == 1
+		check(valid and seen.size() == eligible.size(), "%d级随机池只覆盖当前已解锁产线" % lv)
+	var forged: Array = goods_rules.from_picks(Data.STORE_HOT, [{"slot": 5, "id": "hearth_1"}], 1)
+	check(str(forged[5]["id"]) == "basket_1", "未解锁产线不能通过商品选择数据混入随机池")
+	g.amber = 500
+	var old_component := str(rows[5]["id"])
+	var refreshed: Dictionary = replay.perform("hot_refresh")
+	var next_rows: Array = g.shop_view()
+	check(refreshed.get("ok", false) and g.amber == 490 and next_rows.size() == 6 and str(next_rows[5]["id"]) != old_component and int(next_rows[5]["price"]) == 120, "刷新重抽第六格产线，保持一级碎片与120售价")
+	var purchased: Dictionary = replay.perform("shop", {"key": "hot_5", "id": str(next_rows[5]["id"])})
+	check(purchased.get("ok", false) and g.amber == 370 and g.stash.has(str(next_rows[5]["id"])), "购买第六格准确扣120琥珀并发对应碎片")
+	check(not replay.perform("shop", {"key": "hot_5", "id": str(next_rows[5]["id"])}).get("ok", false) and g.amber == 370, "同一轮热卖的生产器碎片不能重复购买")
+	var current: Dictionary = replay.snapshot()
+	g.level = 1
+	var invalid: Array = next_rows.duplicate(true); invalid[5]["id"] = "hearth_1"
+	replay.meta["hot"] = {"signature": g.rules.shop.signature(), "list": invalid}
+	var bought_before: Dictionary = g.hot_bought.duplicate(true)
+	var repaired: Array = g.shop_view()
+	check(str(repaired[5]["id"]) == "basket_1" and g.hot_bought == bought_before, "旧缓存中的未解锁碎片自动修正，保留当天购买次数")
+	var amber_before: int = g.amber
+	var rejected: Dictionary = replay.perform("shop", {"key": "hot_5", "id": "hearth_1"})
+	check(not rejected.get("ok", false) and g.amber == amber_before and not g.stash.has("hearth_1"), "购买请求也不能获得未解锁碎片")
+	replay.restore(current)
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	var shop = main.open("store")
@@ -62,7 +103,7 @@ func run() -> void:
 	var gap := -1.0
 	for node in goods.get_parent().get_children():
 		if node is Label and node.text == "热卖刷新": gap = node.position.y - bottom
-	check(count == 10 and gap >= 0 and gap < 50, "all ten shop cards render and the refresh bar follows the last row")
+	check(count == 6 and gap >= 0 and gap < 50, "六个热卖商品渲染为两排，刷新条紧跟最后一排")
 	shop.close()
 	await create_timer(0.2).timeout
 	var ev = load("res://scripts/events/MergeEvent.gd")

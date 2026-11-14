@@ -9,6 +9,7 @@ extends Control
 ## 自动提示只在棋盘界面、没有弹窗和领奖时出现；体力用完、棋盘满了由棋盘直接触发。
 
 const Meme := preload("res://scripts/Meme.gd")
+const Voice := preload("res://scripts/ui/HeroVoice.gd")
 const VINE3 := 23
 ## 头像 + 气泡贴在亮着的区域旁边（默认下方，放不下就上方；没有亮处时放底部）
 const AVATAR := 120.0
@@ -26,13 +27,14 @@ var _mat: ShaderMaterial
 var _frames: DrawBox
 var _bubble: DrawBox
 var _bust: DrawBox
-var _label: Label
+var _label: RichTextLabel
 var _cont: Label
 var _bust_home := Vector2.ZERO
 var _t := 0.0
 var _poll := 0.0
 var _armed_at := 0
 var _hole_press := false
+var _over_popup := false
 
 func _ready() -> void:
 	size = Vector2(720, 1480)
@@ -61,9 +63,17 @@ func _ready() -> void:
 	_bust.size = Vector2(AVATAR, AVATAR)
 	_bust.painter = func(ci, sz): Meme.walker_portrait(ci, Meme.HERO, Vector2(sz.x * 0.5, sz.y - 6.0), sz.x - 14.0)
 	add_child(_bust)
-	_label = UI.lbl(self, "", Rect2(), 26, Art.INK)
+	_label = RichTextLabel.new()
+	_label.bbcode_enabled = true
+	_label.scroll_active = false
+	_label.mouse_filter = MOUSE_FILTER_IGNORE
+	_label.add_theme_font_override("normal_font", G.font_body)
+	_label.add_theme_font_override("bold_font", G.font_body)
+	_label.add_theme_font_size_override("normal_font_size", 26)
+	_label.add_theme_color_override("default_color", Art.INK)
+	add_child(_label)
 	_label.add_theme_constant_override("line_spacing", 6)
-	_cont = UI.lbl(self, "点击继续", Rect2(), 22, Color("4f9a3a"), HORIZONTAL_ALIGNMENT_RIGHT)
+	_cont = UI.lbl(self, TextCatalog.source("ui.guide.b0daab78b94a"), Rect2(), 22, Color("4f9a3a"), HORIZONTAL_ALIGNMENT_RIGHT)
 
 func seen(key: String) -> bool:
 	return G.tips_seen.has(key)
@@ -75,15 +85,16 @@ func showing() -> bool:
 ## until 有值时，它返回 false 提示就自动收起；drag 为真时点亮处不收，靠 until 收。
 func show_once(key: String, text: String, target: Callable = Callable(), then: Callable = Callable(),
 		until: Callable = Callable(), drag: bool = false) -> bool:
-	if seen(key) or visible or G.tutorial_on:
+	if seen(key) or visible or G.tutorial_on and key not in ["energy_out", "energy_free"]:
 		return false
 	G.tips_seen[key] = true
 	_key = key
+	_over_popup = key == "energy_free"
 	_target = target
 	_then = then
 	_until = until
 	_drag = drag
-	_label.text = text
+	_label.text = UI.resource_rich(Voice.text("tips", key, text))
 	_t = 0.0
 	_armed_at = Time.get_ticks_msec() + 350
 	var host := get_parent()
@@ -158,7 +169,7 @@ func _process(dt: float) -> void:
 	if visible and _until.is_valid() and not _until.call():
 		_close(false)
 		return
-	if visible and G.main != null and (G.main.popup_layer.get_child_count() > 0 or G.main._rw_showing or G.main.level_pending):
+	if visible and not _over_popup and G.main != null and (G.main.popup_layer.get_child_count() > 0 or G.main._rw_showing or G.main.level_pending):
 		yield_to_popup()
 		return
 	if visible:
@@ -207,7 +218,7 @@ func _layout() -> void:
 	_mat.set_shader_parameter("hole_count", n)
 	_mat.set_shader_parameter("screen_px", size)
 	_mat.set_shader_parameter("dim_a", 0.76)
-	_cont.text = "" if _drag else ("点亮着的地方" if n > 0 else "点击继续")
+	_cont.text = TextCatalog.resolve("" if _drag else (TextCatalog.source("ui.guide.946b258d1513") if n > 0 else TextCatalog.source("ui.guide.b0daab78b94a")))
 	var x := (size.x - TALK_W) * 0.5
 	var y := 1120.0
 	if n > 0:
@@ -238,47 +249,47 @@ func _auto() -> void:
 	var bs = G.main.board_screen
 	if bs == null:
 		return
-	# 引导刚结束：先讲一遍玩法循环（订单→不拿拿→宝箱→建设）
+	# 引导刚结束：先讲一遍玩法循环（订单→不那那→建造→奖励）
 	if not seen("howto"):
 		G.tips_seen["howto"] = true
 		G.main.open("howto")
 		return
 	# 礼物在暂存区 → 拿出来合进生产器 → 生产器升级（竞品第二次装修后的那一段）
-	if not G.stash.is_empty() and show_once("stash", "我们得到了奖励！\n点这里看看是什么",
+	if not G.stash.is_empty() and show_once("stash", TextCatalog.source("ui.tips.9fe521e1e574"),
 			func(): return bs._stash_wrap.get_global_rect()):
 		return
-	if _merge3_pair().x >= 0 and show_once("gen_merge3", "太好了！把它合到藤蔓上那只\n我们的草篓就能升级！",
+	if _merge3_pair().x >= 0 and show_once("gen_merge3", TextCatalog.source("ui.tips.272590e9c636"),
 			func(): var p := _merge3_pair(); return [_cell_rect(p.x), _cell_rect(p.y)],
 			Callable(), func(): return _merge3_pair().x >= 0, true):
 		return
-	if _pair_of("basket_4").x >= 0 and seen("gen_merge3") and show_once("gen_merge5", "再合一步\n更高级的藤篮在等着我们",
+	if _pair_of("basket_4").x >= 0 and seen("gen_merge3") and show_once("gen_merge5", TextCatalog.source("ui.tips.88f65828f2ec"),
 			func(): var p := _pair_of("basket_4"); return [_cell_rect(p.x), _cell_rect(p.y)],
 			Callable(), func(): return _pair_of("basket_4").x >= 0, true):
 		return
 	var b5 := _find_id("basket_5")
-	if b5 >= 0 and show_once("gen_tap", "升级后的藤篮能摘出新东西！\n点一下看看",
+	if b5 >= 0 and show_once("gen_tap", TextCatalog.source("ui.tips.d36e5bcb2a01"),
 			func(): return _cell_rect(b5)):
 		return
 	var craft := _order_index(func(o): return str(o.get("kind", "")) == "craft")
 	if craft >= 0 and not seen("craft"): _focus_card(craft)
-	if craft >= 0 and show_once("craft", "这位族人想吃顿好的\n先备齐左边的材料，再点他开始下锅",
+	if craft >= 0 and show_once("craft", TextCatalog.source("ui.tips.d70f9c36bf8d"),
 			func(): return G.main.board_screen.focus_order_card(craft)):
 		return
 	var cook := _order_index(func(o): return str(o.get("kind", "")) == "craft" and str(o.get("phase", "")) == "cook")
 	if cook >= 0 and not seen("craft_cook"): _focus_card(cook)
-	if cook >= 0 and show_once("craft_cook", "正在做，留意一下时间\n用沙漏可以加速",
+	if cook >= 0 and show_once("craft_cook", TextCatalog.source("ui.tips.697386576ae7"),
 			func(): return G.main.board_screen.focus_order_card(cook)):
 		return
 	var dish := _order_index(func(o): return str(o.get("kind", "")) == "craft" and str(o.get("phase", "")) == "ready")
 	if dish >= 0 and not seen("craft_ready"): _focus_card(dish)
-	if dish >= 0 and show_once("craft_ready", "做好啦！\n点对勾端给客人",
+	if dish >= 0 and show_once("craft_ready", TextCatalog.source("ui.tips.93438950d84b"),
 			func(): return G.main.board_screen.focus_order_card(dish)):
 		return
 	var egen := _find_type("egen")
-	if egen >= 0 and show_once("egen", "我们收到一个火种罐！\n点它就能获得体力",
+	if egen >= 0 and show_once("egen", TextCatalog.source("ui.tips.31ac2f00f702"),
 			func(): return _cell_rect(egen)):
 		return
-	if bs._hammer_btn != null and bs._hammer_btn.visible and show_once("build", "不拿拿够了！\n去建设部落，会有更多族人来许愿",
+	if bs._hammer_btn != null and bs._hammer_btn.visible and show_once("build", TextCatalog.source("ui.tips.801dfe512415"),
 			func(): return bs._hammer_btn.get_global_rect()):
 		return
 
@@ -337,10 +348,12 @@ func energy_out() -> void:
 		var r: Rect2 = TopBar.PILLS["energy"]
 		var xf: Transform2D = tb.get_global_transform()
 		return Rect2(xf * r.position, xf * r.end - xf * r.position).abs()
-	if not show_once("energy_out", "哎呀，体力用完了！\n点体力图标补充，这次免费", pill, open):
+	if not show_once("energy_out", TextCatalog.source("ui.tips.ded9480b98f0"), pill, open):
 		open.call()
 
 ## 生产器因为棋盘满了掉不出东西时调用。
 func board_full(message: String) -> void:
-	if not show_once("board_full", "棋盘满啦！\n把用不上的收进仓库，或者卖掉"):
-		G.main.toast(message)
+	G.main.toast(message)
+
+func energy_free(rect: Rect2) -> void:
+	show_once("energy_free", TextCatalog.source("ui.tips.25546713bb54"), func(): return rect)

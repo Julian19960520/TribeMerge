@@ -1,26 +1,26 @@
 {
 	"cards": [
-		"你先提",
-		"先藏好矛",
-		"名字还没起",
-		"刚学会走",
-		"轮流当酋长",
-		"想事情",
-		"全凭自愿",
-		"夸你勇敢",
-		"酋长不在"
+		"§cards.album.4172144e1211§",
+		"§cards.album.eeebd8020757§",
+		"§cards.album.924fe722d1bb§",
+		"§cards.album.7c88078298b4§",
+		"§cards.album.a4f7a502ae8c§",
+		"§cards.album.50066d57a24d§",
+		"§cards.album.03e86a817d8c§",
+		"§cards.album.7da297a32746§",
+		"§cards.album.eff5d276440c§"
 	],
-	"name": "酋长与族人",
+	"name": "§cards.album.a39f4b697360§",
 	"texts": [
-		"兄弟，酋长说可以提意见。你先提，我看看。",
-		"兄弟，酋长正讲他怎么抓的鹿，你把咱俩的矛先藏好。",
-		"兄弟，下任酋长已经定了，就是名字还没起。",
-		"兄弟，酋长儿子刚学会走，怎么就开始给咱们带路了？",
-		"兄弟，说好轮流当酋长，怎么只在他家轮？",
-		"兄弟，咱俩坐着叫偷懒，酋长坐着怎么叫想事情？",
-		"兄弟，酋长说这回全凭自愿，你怎么还在洞口拦人？",
-		"兄弟，大家突然都夸你勇敢，你先别急着高兴。",
-		"兄弟，我发现空着手来的时候，酋长总是不在。"
+		"§cards.album.1a4b7e5b9c96§",
+		"§cards.album.f9cab9d4166b§",
+		"§cards.album.2fa04c4c00d9§",
+		"§cards.album.04e01f27bc26§",
+		"§cards.album.fdb435d391c4§",
+		"§cards.album.cf4382b9cb04§",
+		"§cards.album.bea1ba7184ca§",
+		"§cards.album.ed9035c96fd4§",
+		"§cards.album.ac4080ba622d§"
 	],
 	"art": [
 		"res://assets/cards/chief/you_speak_first.png",

@@ -54,11 +54,8 @@ func spend(kind: String, n: int) -> bool:
 	return true
 
 func energy_price() -> int:
-	var r: Dictionary = Data.RULES
-	var base = int(r.get("energy_price", 20))
-	var step = int(r.get("energy_price_step", 10))
-	var top = int(r.get("energy_price_max", 60))
-	return mini(base + step * state.energy_buys, maxi(top, base))
+	context.clock._check_day()
+	return PriceBook.energy_price(state.energy_buys)
 
 func buy_energy() -> bool:
 	context.clock._check_day()
@@ -90,7 +87,8 @@ func claim_level(lv: int) -> Array:
 	return Data.level_rewards(lv)
 
 func shop_buy(key: String, id: String) -> Dictionary:
-	if key.begins_with("deal_"): return {"ok":false,"message":"去每日特惠里领取吧"}
+	if not PriceBook.ready(): return {"ok": false, "message": TextCatalog.source("notice.progressionrules.419ce98e5750")}
+	if key.begins_with("deal_"): return {"ok":false,"message":TextCatalog.source("notice.progressionrules.88340e76cf90")}
 	context.clock._check_day()
 	context.clock.check_shell_period()
 	var offer: Dictionary = {}
@@ -109,10 +107,10 @@ func shop_buy(key: String, id: String) -> Dictionary:
 			offer = d
 			break
 	if offer.is_empty():
-		return {"ok": false, "message": "这件已经下架了"}
+		return {"ok": false, "message": TextCatalog.source("notice.progressionrules.1474fe39f598")}
 	var book: Dictionary = state.shell_bought if key.begins_with("shell_") else (state.deals_bought if key.begins_with("deal_") else state.hot_bought)
 	if int(book.get(key, 0)) >= int(offer["stock"]):
-		return {"ok": false, "message": "已经领完了" if int(offer["price"]) == 0 else "卖完了"}
+		return {"ok": false, "message": TextCatalog.source("notice.progressionrules.146d4fadcda9") if int(offer["price"]) == 0 else TextCatalog.source("notice.progressionrules.3e04d1952337")}
 	var currency = "shell" if key.begins_with("shell_") else "amber"
 	if not spend(currency, int(offer["price"])):
 		return {"ok": false, "error": "not_enough_" + currency}
@@ -129,13 +127,13 @@ func has_free_daily() -> bool:
 
 func refresh_hot() -> Dictionary:
 	if state._hot_refresh_busy:
-		return {"ok": false, "message": "正在刷新"}
+		return {"ok": false, "message": TextCatalog.source("notice.progressionrules.30fa38552623")}
 	state._hot_refresh_busy = true
 	context.clock._check_day()
 	var previous: Array = context.shop.today().duplicate(true)
 	var result: Dictionary
-	if not spend("amber", 10):
-		result = {"ok": false, "message": "琥珀不够了！"}
+	if not spend("amber", int(Data.RULES["hot_refresh_price"])):
+		result = {"ok": false, "message": TextCatalog.source("notice.boardrules.b874b509cd26")}
 	else:
 		state.hot_bought = {}
 		state.hot_revision += 1
@@ -158,9 +156,9 @@ func add_xp(n: int) -> bool:
 		state.xp -= xp_need()
 		state.level += 1
 		up = true
-		if not state.tutorial_on: context.orders.refill_orders()
+		context.orders.refill_orders()
 		state.orders_changed.emit()
-	if up and not state.tutorial_on: _order_chest()
+	if up: _order_chest()
 	if not state.tutorial_on:
 		context.orders.assign_xp()
 		state.orders_changed.emit()
@@ -275,7 +273,7 @@ func claim_pass_prem(lv: int) -> Array:
 	if lv < 1 or lv > Data.PASS_LEVELS.size() or _pass_has(state.pass_prem, lv):
 		return []
 	if state.pass_tier < 1:
-		state.present("notice", {"text": "激活通行证后可领取"})
+		state.present("notice", {"text": TextCatalog.source("notice.progressionrules.f691bdc992be")})
 		return []
 	if pass_reached() < lv:
 		return []
@@ -289,7 +287,7 @@ func claim_pass_super(lv: int) -> Array:
 	if lv < 1 or lv > Data.PASS_LEVELS.size() or _pass_has(state.pass_super, lv):
 		return []
 	if state.pass_tier < 2:
-		state.present("notice", {"text": "超级贵宾可领取"})
+		state.present("notice", {"text": TextCatalog.source("notice.progressionrules.ba68c9b6e895")})
 		return []
 	if pass_reached() < lv:
 		return []
@@ -301,7 +299,7 @@ func claim_pass_super(lv: int) -> Array:
 func claim_pass_endless() -> Array:
 	context.clock.check_pass_season()
 	if state.pass_tier != 2:
-		state.present("notice", {"text": "超级贵宾可领取循环奖励"})
+		state.present("notice", {"text": TextCatalog.source("notice.progressionrules.ba0ee9227f7d")})
 		return []
 	if pass_endless_ready() <= 0:
 		return []
@@ -310,12 +308,9 @@ func claim_pass_endless() -> Array:
 	state.changed.emit()
 	return [["chest_1", 1]]
 
-func pass_cny(tier: String) -> int:
-	if tier == "vip":
-		return int(state.PASS_CNY["vip"])
-	if state.pass_tier == 1:
-		return maxi(0, int(state.PASS_CNY["super"]) - int(state.PASS_CNY["vip"]))
-	return int(state.PASS_CNY["super"])
+func pass_cny(tier: String) -> float:
+	var product := "pass:vip" if tier == "vip" else ("pass:upgrade" if state.pass_tier == 1 else "pass:super")
+	return float(PriceBook.catalog.get("products", {}).get(product, {}).get("price_minor", 0)) / 100.0
 
 func _pass_has(arr: Array, lv: int) -> bool:
 	for x in arr:
@@ -377,6 +372,7 @@ func do_build(id: String) -> Dictionary:
 		return {}
 	var st = int(state.builds.get(id, 0))
 	state.builds[id] = st + 1
+	context.orders.refill_orders()
 	state.dirty()
 	state.changed.emit()
 	return {"idx": st, "rewards": rewards}
@@ -409,11 +405,11 @@ func open_pack(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> A
 	return open_pack_result(pack_id, cell, stash_index).get("cards", [])
 
 func open_pack_result(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> Dictionary:
-	if state._pack_busy or not feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡还没解锁"}
+	if state._pack_busy or not feature_unlocked(Data.CARD_LEVEL): return {"error": TextCatalog.source("notice.progressionrules.0cf982b1fe0e")}
 	var source = find_pack_source(pack_id, cell, stash_index)
 	if source.is_empty():
-		state.present("notice", {"text": "没有可以打开的卡包"})
-		return {"error": "没有可以打开的卡包"}
+		state.present("notice", {"text": TextCatalog.source("notice.progressionrules.525b1fc2ed14")})
+		return {"error": TextCatalog.source("notice.progressionrules.525b1fc2ed14")}
 	state._pack_busy = true
 	consume_pack_source(source)
 	var result := draw_card_pack(str(source["id"]))
@@ -432,13 +428,13 @@ func roll_card_pack(pack_id: String = "pack_1") -> Array:
 
 func draw_card_pack(pack_id: String = "pack_1") -> Dictionary:
 	if not feature_unlocked(Data.CARD_LEVEL):
-		state.present("notice", {"text": "典藏卡在 %d 级解锁" % Data.CARD_LEVEL})
-		return {"error": "典藏卡还没解锁"}
-	if CardPacks.definition(pack_id).is_empty(): return {"error": "卡包不存在"}
+		state.present("notice", {"text": TextCatalog.source("notice.progressionrules.de74876a0a22") % Data.CARD_LEVEL})
+		return {"error": TextCatalog.source("notice.progressionrules.0cf982b1fe0e")}
+	if CardPacks.definition(pack_id).is_empty(): return {"error": TextCatalog.source("notice.progressionrules.55437ec117b8")}
 	var out = []
 	for i in int(CardPacks.config()["cards_per_pack"]):
 		var selected = CardPacks.draw(pack_id, context.random_for("cards"))
-		if selected.is_empty(): return {"error": "卡池为空"}
+		if selected.is_empty(): return {"error": TextCatalog.source("notice.progressionrules.eba10df6a3dc")}
 		out.append(selected)
 	return {"cards": out, "card_rewards": collect_cards(out)}
 
@@ -457,10 +453,10 @@ func collect_cards(entries: Array) -> Array:
 	return rewards
 
 func exchange_card_stars(cost: int) -> Dictionary:
-	if not feature_unlocked(Data.CARD_LEVEL): return {"error": "典藏卡还没解锁"}
+	if not feature_unlocked(Data.CARD_LEVEL): return {"error": TextCatalog.source("notice.progressionrules.0cf982b1fe0e")}
 	var offer := CardPacks.exchange_offer(cost)
-	if offer.is_empty(): return {"error": "兑换档位不存在"}
-	if state.card_stars < cost: return {"error": "星星不足"}
+	if offer.is_empty(): return {"error": TextCatalog.source("notice.progressionrules.8d53a4bbdbeb")}
+	if state.card_stars < cost: return {"error": TextCatalog.source("notice.progressionrules.bf29777b97fd")}
 	state.card_stars -= cost
 	var pack_id := str(offer["pack"])
 	# Keep the pack intact, even with a full board or an older pack in storage.
@@ -483,14 +479,14 @@ func cards_total() -> int:
 	return n
 
 func refresh_shell() -> Dictionary:
-	if state._shell_refresh_busy: return {"ok": false, "message": "正在刷新"}
+	if state._shell_refresh_busy: return {"ok": false, "message": TextCatalog.source("notice.progressionrules.30fa38552623")}
 	state._shell_refresh_busy = true
 	var result: Dictionary
 	if spend("amber", Data.STORE_SHELL_REFRESH):
 		context.clock.check_shell_period()
 		state.shell_bought = {}
 		result = {"ok": true}
-	else: result = {"ok": false, "message": "琥珀不够了！"}
+	else: result = {"ok": false, "message": TextCatalog.source("notice.boardrules.b874b509cd26")}
 	state._shell_refresh_busy = false
 	if result.get("ok", false):
 		state.dirty()

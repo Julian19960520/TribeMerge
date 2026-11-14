@@ -1,66 +1,68 @@
 [
-	{"id": "fire", "name": "篝火广场", "line": "", "parts": [
-		{"id": "campfire", "name": "石圈篝火", "cost": 0, "rewards": []},
-		{"id": "logpile", "name": "柴火堆", "cost": 370, "rewards": [["fire_2", 10], ["amber_2", 1]]},
-		{"id": "stumps", "name": "树桩凳", "cost": 610, "rewards": [["fire_2", 10], ["basket_3", 1]]},
-		{"id": "drum", "name": "兽皮大鼓", "cost": 660, "rewards": [["fire_2", 25], ["chest_1", 1]]},
-		{"id": "totem", "name": "部落图腾", "cost": 660, "rewards": [["fire_2", 30], ["amber_3", 3]]},
-		{"id": "chiefhut", "name": "酋长大屋", "cost": 770, "rewards": [["fire_2", 40], ["amber_3", 5], ["chest_1", 1]]}
+	{"id": "fire", "name": "§names.builds.d3f08d798075§", "initial": 1, "line": "", "parts": [
+		{"id": "campfire", "name": "§names.builds.a283c4cbf1ba§", "cost": 0, "rewards": []},
+		{"id": "logpile", "name": "§names.builds.d518f764c290§", "cost": 46, "rewards": [["fire_2", 10]]},
+		{"id": "stumps", "name": "§names.builds.626f131d8f83§", "cost": 67, "rewards": [["fire_2", 10], ["basket_3", 1]]},
+		{"id": "drum", "name": "§names.builds.243e45e4330a§", "cost": 162, "rewards": [["amber_3", 10]]},
+		{"id": "totem", "name": "§names.builds.e7c0875dacc8§", "cost": 660, "rewards": [["fire_2", 30], ["amber_3", 3]]},
+		{"id": "chiefhut", "name": "§names.builds.164d1af7f77e§", "cost": 770, "rewards": [["fire_2", 40], ["amber_3", 5], ["chest_1", 1]]},
+		{"id": "spears", "name": "§names.builds.6ff2abc4f32c§", "cost": 900, "rewards": [["fire_2", 30]]},
+		{"id": "featherpole", "name": "§names.builds.3216d83b28e2§", "cost": 1100, "rewards": [["amber_3", 5], ["chest_1", 1]]}
 	]},
-	{"id": "gather", "name": "采集园", "line": "food", "parts": [
-		{"id": "berrybush", "name": "浆果丛", "cost": 630, "rewards": [["fruit_3", 1], ["fire_2", 10]]},
-		{"id": "basketrack", "name": "草篓架", "cost": 660, "rewards": [["basket_1", 1], ["fruit_2", 2]]},
-		{"id": "dryingmat", "name": "晒果草席", "cost": 840, "rewards": [["fruit_4", 2], ["fire_2", 15]]},
-		{"id": "seedjar", "name": "种子陶罐", "cost": 850, "rewards": [["seed_2", 2], ["seed_3", 1]]},
-		{"id": "sprouts", "name": "小苗圃", "cost": 880, "rewards": [["seed_5", 1], ["fire_2", 20]]},
-		{"id": "fruittree", "name": "大果树", "cost": 1020, "rewards": [["basket_1", 1], ["fruit_6", 1], ["chest_1", 1]]}
+	{"id": "gather", "name": "§names.builds.894d55a27db8§", "line": "food", "parts": [
+		{"id": "berrybush", "name": "§names.builds.e42ae8d47735§", "cost": 630, "rewards": [["fruit_3", 1], ["fire_2", 10]]},
+		{"id": "basketrack", "name": "§names.builds.01f59f26b47f§", "cost": 660, "rewards": [["basket_1", 1], ["fruit_2", 2]]},
+		{"id": "dryingmat", "name": "§names.builds.c53664c5932e§", "cost": 840, "rewards": [["fruit_4", 2], ["fire_2", 15]]},
+		{"id": "seedjar", "name": "§names.builds.d7ebb119a3df§", "cost": 850, "rewards": [["seed_2", 2], ["seed_3", 1]]},
+		{"id": "sprouts", "name": "§names.builds.7d8c94339099§", "cost": 880, "rewards": [["seed_5", 1], ["fire_2", 20]]},
+		{"id": "fruittree", "name": "§names.builds.8b440df94287§", "cost": 1020, "rewards": [["basket_1", 1], ["fruit_6", 1], ["chest_1", 1]]}
 	]},
-	{"id": "stone", "name": "石匠坊", "line": "tool", "parts": [
-		{"id": "rockpile", "name": "河卵石堆", "cost": 860, "rewards": [["tool_2", 2], ["gem_1", 1]]},
-		{"id": "anvilstone", "name": "敲石砧", "cost": 860, "rewards": [["anvil_1", 1], ["fire_2", 15]]},
-		{"id": "flintpit", "name": "燧石坑", "cost": 1210, "rewards": [["gem_2", 2], ["tool_3", 1]]},
-		{"id": "toolrack", "name": "石器架", "cost": 1290, "rewards": [["tool_4", 1], ["tool_3", 1]]},
-		{"id": "whetstone", "name": "磨石台", "cost": 1300, "rewards": [["anvil_1", 1], ["fire_2", 25]]},
-		{"id": "obsidian", "name": "黑曜石矿", "cost": 1960, "rewards": [["gem_4", 1], ["tool_5", 1], ["chest_1", 1]]}
+	{"id": "stone", "name": "§names.builds.2baacb2b891d§", "line": "tool", "parts": [
+		{"id": "rockpile", "name": "§names.builds.d2af4e49e30f§", "cost": 860, "rewards": [["tool_2", 2], ["gem_1", 1]]},
+		{"id": "anvilstone", "name": "§names.builds.5942b4666e36§", "cost": 860, "rewards": [["anvil_1", 1], ["fire_2", 15]]},
+		{"id": "flintpit", "name": "§names.builds.fb8da59f78aa§", "cost": 1210, "rewards": [["gem_2", 2], ["tool_3", 1]]},
+		{"id": "toolrack", "name": "§names.builds.b6c0a2487e11§", "cost": 1290, "rewards": [["tool_4", 1], ["tool_3", 1]]},
+		{"id": "whetstone", "name": "§names.builds.400fa71d3d0b§", "cost": 1300, "rewards": [["anvil_1", 1], ["fire_2", 25]]},
+		{"id": "obsidian", "name": "§names.builds.7f99ce77d988§", "cost": 1960, "rewards": [["gem_4", 1], ["tool_5", 1], ["chest_1", 1]]}
 	]},
-	{"id": "weave", "name": "编织棚", "line": "cloth", "parts": [
-		{"id": "grassstack", "name": "晒草垛", "cost": 1080, "rewards": [["cloth_2", 2], ["fire_2", 15]]},
-		{"id": "loomframe", "name": "编草架", "cost": 1280, "rewards": [["loom_1", 1], ["cloth_3", 1]]},
-		{"id": "dyepot", "name": "染缸", "cost": 1290, "rewards": [["cloth_4", 1], ["armor_1", 2]]},
-		{"id": "clothesline", "name": "晾衣绳", "cost": 1450, "rewards": [["cloth_5", 1], ["fire_2", 25]]},
-		{"id": "hidetent", "name": "兽皮帐篷", "cost": 2860, "rewards": [["loom_1", 1], ["armor_3", 1]]},
-		{"id": "featherpole", "name": "羽毛幡", "cost": 2990, "rewards": [["cloth_7", 1], ["armor_4", 1], ["chest_1", 1]]}
+	{"id": "weave", "name": "§names.builds.2822388c5fea§", "line": "cloth", "parts": [
+		{"id": "grassstack", "name": "§names.builds.85d878baec57§", "cost": 1080, "rewards": [["cloth_2", 2], ["fire_2", 15]]},
+		{"id": "loomframe", "name": "§names.builds.8d56f59bbaf4§", "cost": 1280, "rewards": [["loom_1", 1], ["cloth_3", 1]]},
+		{"id": "dyepot", "name": "§names.builds.5bfe06ef0c6a§", "cost": 1290, "rewards": [["cloth_4", 1], ["armor_1", 2]]},
+		{"id": "clothesline", "name": "§names.builds.1c785313b3dd§", "cost": 1450, "rewards": [["cloth_5", 1], ["fire_2", 25]]},
+		{"id": "hidetent", "name": "§names.builds.48bf1c3fe949§", "cost": 2860, "rewards": [["loom_1", 1], ["armor_3", 1]]},
+		{"id": "featherpole", "name": "§names.builds.c840e2ef0d99§", "cost": 2990, "rewards": [["cloth_7", 1], ["armor_4", 1], ["chest_1", 1]]}
 	]},
-	{"id": "hunt", "name": "猎人营", "line": "hunt", "parts": [
-		{"id": "spears", "name": "长矛架", "cost": 3840, "rewards": [["beast_1", 2], ["bird_1", 1]]},
-		{"id": "snare", "name": "绳套陷阱", "cost": 3900, "rewards": [["trap_1", 1], ["fire_2", 20]]},
-		{"id": "meatrack", "name": "晾肉架", "cost": 3920, "rewards": [["beast_2", 1], ["bird_1", 1]]},
-		{"id": "hidedry", "name": "晒皮框", "cost": 4010, "rewards": [["beast_3", 1], ["fire_2", 30]]},
-		{"id": "hunttent", "name": "猎人帐", "cost": 5010, "rewards": [["trap_1", 1], ["bird_2", 1]]},
-		{"id": "skullgate", "name": "猛犸骨门", "cost": 5050, "rewards": [["beast_4", 1], ["bird_4", 1], ["chest_1", 1]]}
+	{"id": "hunt", "name": "§names.builds.884eb1d84db8§", "line": "hunt", "parts": [
+		{"id": "spears", "name": "§names.builds.41a3d3860b46§", "cost": 3840, "rewards": [["beast_1", 2], ["bird_1", 1]]},
+		{"id": "snare", "name": "§names.builds.60b06322aeac§", "cost": 3900, "rewards": [["trap_1", 1], ["fire_2", 20]]},
+		{"id": "meatrack", "name": "§names.builds.f5a8e1d44939§", "cost": 3920, "rewards": [["beast_2", 1], ["bird_1", 1]]},
+		{"id": "hidedry", "name": "§names.builds.205a2c4c973b§", "cost": 4010, "rewards": [["beast_3", 1], ["fire_2", 30]]},
+		{"id": "hunttent", "name": "§names.builds.462e99610ceb§", "cost": 5010, "rewards": [["trap_1", 1], ["bird_2", 1]]},
+		{"id": "skullgate", "name": "§names.builds.17d4210924c7§", "cost": 5050, "rewards": [["beast_4", 1], ["bird_4", 1], ["chest_1", 1]]}
 	]},
-	{"id": "cook", "name": "火塘灶", "line": "fire", "parts": [
-		{"id": "stonestove", "name": "石圈火塘", "cost": 5010, "rewards": [["veg_2", 2], ["roast_1", 1]]},
-		{"id": "spit", "name": "烤肉架", "cost": 5080, "rewards": [["hearth_3", 1], ["roast_2", 1]]},
-		{"id": "smokehouse", "name": "熏肉棚", "cost": 5250, "rewards": [["roast_4", 1], ["veg_3", 1]]},
-		{"id": "cookpit", "name": "叶包烤坑", "cost": 5740, "rewards": [["veg_5", 1], ["fire_2", 35]]},
-		{"id": "firewood", "name": "整齐柴垛", "cost": 7790, "rewards": [["hearth_3", 1], ["roast_5", 1]]},
-		{"id": "sacredfire", "name": "圣火台", "cost": 7830, "rewards": [["veg_8", 1], ["roast_7", 1], ["chest_1", 1]]}
+	{"id": "cook", "name": "§names.builds.6833fe53fdda§", "line": "fire", "parts": [
+		{"id": "stonestove", "name": "§names.builds.be559ed8300a§", "cost": 5010, "rewards": [["veg_2", 2], ["roast_1", 1]]},
+		{"id": "spit", "name": "§names.builds.e38e300648bf§", "cost": 5080, "rewards": [["hearth_1", 1], ["roast_2", 1]]},
+		{"id": "smokehouse", "name": "§names.builds.1d6bf28049bd§", "cost": 5250, "rewards": [["roast_4", 1], ["veg_3", 1]]},
+		{"id": "cookpit", "name": "§names.builds.39b6ba54c705§", "cost": 5740, "rewards": [["veg_5", 1], ["fire_2", 35]]},
+		{"id": "firewood", "name": "§names.builds.2c21f701f87b§", "cost": 7790, "rewards": [["hearth_1", 1], ["roast_5", 1]]},
+		{"id": "sacredfire", "name": "§names.builds.aa8d8814dd68§", "cost": 7830, "rewards": [["veg_8", 1], ["roast_7", 1], ["chest_1", 1]]}
 	]},
-	{"id": "wood", "name": "木工场", "line": "wood", "parts": [
-		{"id": "logs", "name": "原木堆", "cost": 7790, "rewards": [["furn_2", 2], ["craft_1", 1]]},
-		{"id": "chopblock", "name": "劈柴墩", "cost": 7870, "rewards": [["carve_3", 1], ["fire_2", 25]]},
-		{"id": "bench", "name": "长条凳", "cost": 8080, "rewards": [["furn_4", 1], ["craft_3", 1]]},
-		{"id": "sawhorse", "name": "刨木架", "cost": 8550, "rewards": [["furn_5", 1], ["craft_4", 1]]},
-		{"id": "woodshed", "name": "木工棚", "cost": 9700, "rewards": [["carve_3", 1], ["furn_6", 1]]},
-		{"id": "carvedpole", "name": "雕花图腾柱", "cost": 9830, "rewards": [["craft_8", 1], ["furn_8", 1], ["chest_1", 1]]}
+	{"id": "wood", "name": "§names.builds.9f35a363fb01§", "line": "wood", "parts": [
+		{"id": "logs", "name": "§names.builds.f26b01f55095§", "cost": 7790, "rewards": [["furn_2", 2], ["craft_1", 1]]},
+		{"id": "chopblock", "name": "§names.builds.509654e9f655§", "cost": 7870, "rewards": [["carve_1", 1], ["fire_2", 25]]},
+		{"id": "bench", "name": "§names.builds.2f588bb78730§", "cost": 8080, "rewards": [["furn_4", 1], ["craft_3", 1]]},
+		{"id": "sawhorse", "name": "§names.builds.7601dd619177§", "cost": 8550, "rewards": [["furn_5", 1], ["craft_4", 1]]},
+		{"id": "woodshed", "name": "§names.builds.d5c9abd05eb3§", "cost": 9700, "rewards": [["carve_1", 1], ["furn_6", 1]]},
+		{"id": "carvedpole", "name": "§names.builds.7ee3ff9dfc21§", "cost": 9830, "rewards": [["craft_8", 1], ["furn_8", 1], ["chest_1", 1]]}
 	]},
-	{"id": "kiln", "name": "陶窑坊", "line": "pot", "parts": [
-		{"id": "claypit", "name": "黏土坑", "cost": 9700, "rewards": [["pot_2", 2], ["ware_1", 1]]},
-		{"id": "wheel", "name": "慢轮台", "cost": 9930, "rewards": [["kiln_3", 1], ["fire_2", 30]]},
-		{"id": "potshelf", "name": "陶罐架", "cost": 10010, "rewards": [["pot_4", 1], ["ware_3", 1]]},
-		{"id": "firepit", "name": "露天烧坑", "cost": 10540, "rewards": [["pot_5", 1], ["fire_2", 40]]},
-		{"id": "kilndome", "name": "圆顶土窑", "cost": 12480, "rewards": [["kiln_3", 1], ["ware_5", 1]]},
-		{"id": "bigjar", "name": "彩陶大瓮", "cost": 12580, "rewards": [["pot_9", 1], ["ware_7", 1], ["chest_1", 1]]}
+	{"id": "kiln", "name": "§names.builds.7a17d1fe80b3§", "line": "pot", "parts": [
+		{"id": "claypit", "name": "§names.builds.bb8593ee2dd8§", "cost": 9700, "rewards": [["pot_2", 2], ["ware_1", 1]]},
+		{"id": "wheel", "name": "§names.builds.6a17a6e2156e§", "cost": 9930, "rewards": [["kiln_1", 1], ["fire_2", 30]]},
+		{"id": "potshelf", "name": "§names.builds.d240058ed94b§", "cost": 10010, "rewards": [["pot_4", 1], ["ware_3", 1]]},
+		{"id": "firepit", "name": "§names.builds.c3f72e7eec7a§", "cost": 10540, "rewards": [["pot_5", 1], ["fire_2", 40]]},
+		{"id": "kilndome", "name": "§names.builds.5db2ce8e04c8§", "cost": 12480, "rewards": [["kiln_1", 1], ["ware_5", 1]]},
+		{"id": "bigjar", "name": "§names.builds.60ac60643fb9§", "cost": 12580, "rewards": [["pot_9", 1], ["ware_7", 1], ["chest_1", 1]]}
 	]}
 ]

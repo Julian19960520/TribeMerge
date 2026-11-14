@@ -24,7 +24,7 @@ var _tex: Texture2D
 func _ready() -> void:
 	offer = UfoOffer.state()["offer"].duplicate(true)
 	_tex = load(str(UfoOffer.config()["icon"]))
-	Popups.frame(self, R, "外星补给", Art.TEAL)
+	Popups.frame(self, R, TextCatalog.source("ui.ufopopup.b29086329435"), Art.TEAL)
 	UI.box(box, Rect2(Vector2.ZERO, Vector2(720, 1480)), _paint_back)
 	beam = UI.box(box, Rect2(SKY.position.x, SKY.position.y + 150, SKY.size.x, 200), _paint_beam, false)
 	saucer = UI.box(box, Rect2(230, 392, 260, 184), func(ci, sz):
@@ -33,15 +33,15 @@ func _ready() -> void:
 		ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE), false)
 	saucer.pivot_offset = saucer.size * 0.5
 	# 折扣星章
-	var original := int(UfoOffer.config()["original_price_cny"])
-	var price := int(UfoOffer.config()["price_cny"])
+	var original := float(UfoOffer.config()["original_price_cny"])
+	var price := float(UfoOffer.config()["price_cny"])
 	var off := int(round(price * 10.0 / original))
 	var star := UI.box(box, Rect2(78, 400, 128, 128), func(ci, sz):
 		Sprites.draw(ci, "ev_ufo_star", Rect2(Vector2.ZERO, sz)))
 	star.rotation = -0.16
 	star.pivot_offset = star.size * 0.5
-	UI.lbl(star, "%d折" % off, Rect2(0, 30, 128, 52), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
-	UI.lbl(star, "限时", Rect2(0, 78, 128, 24), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
+	UI.lbl(star, TextCatalog.source("ui.ufopopup.cf0b0f85fbc9") % off, Rect2(0, 30, 128, 52), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	UI.lbl(star, TextCatalog.source("ui.ufopopup.e1f7a0a1daa2"), Rect2(0, 78, 128, 24), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
 	# 倒计时
 	UI.box(box, Rect2(482, 398, 158, 48), func(ci, sz):
 		Sprites.draw(ci, "ev_ufo_clock", Rect2(Vector2.ZERO, sz))
@@ -54,23 +54,23 @@ func _ready() -> void:
 	shade.visible = false
 	stamp = UI.box(box, Rect2(TRAY.get_center().x - 150, TRAY.get_center().y - 40, 300, 80), func(ci, sz):
 		Sprites.draw(ci, "ev_ufo_stamp", Rect2(Vector2.ZERO, sz)))
-	UI.lbl(stamp, "飞碟已飞走", Rect2(0, 4, 300, 72), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	UI.lbl(stamp, TextCatalog.source("ui.ufopopup.d48c26b31372"), Rect2(0, 4, 300, 72), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	stamp.pivot_offset = stamp.size * 0.5
 	stamp.rotation = -0.12
 	stamp.visible = false
 	# 价格对比
 	var row_y := 892.0
-	UI.lbl(box, "原价", Rect2(120, row_y + 6, 80, 60), 24, Color("8a7560"), HORIZONTAL_ALIGNMENT_RIGHT)
-	UI.lbl(box, "¥%d" % original, Rect2(204, row_y, 120, 72), 40, Color("8a7560"))
+	UI.lbl(box, TextCatalog.source("ui.ufopopup.5b42b74c00c3"), Rect2(120, row_y + 6, 80, 60), 24, Color("8a7560"), HORIZONTAL_ALIGNMENT_RIGHT)
+	UI.lbl(box, str(UfoOffer.config().get("original_price_str", "…")), Rect2(204, row_y, 120, 72), 40, Color("8a7560"))
 	UI.box(box, Rect2(206, row_y + 10, 116, 52), func(ci, sz):
 		Sprites.draw(ci, "ev_ufo_strike", Rect2(Vector2.ZERO, sz)))
 	UI.box(box, Rect2(334, row_y + 14, 70, 44), func(ci, sz):
 		Sprites.draw(ci, "ev_ufo_arrow", Rect2(Vector2.ZERO, sz)))
-	UI.lbl(box, "¥%d" % price, Rect2(410, row_y - 8, 190, 88), 66, Color("ffb347"), HORIZONTAL_ALIGNMENT_LEFT, 12, Art.INK)
-	buy_btn = UI.btn(box, Rect2(170, 984, 380, 94), "¥%d 购买" % price, "green", _buy, 42)
+	UI.lbl(box, PriceBook.product_text("ufo"), Rect2(410, row_y - 8, 190, 88), 66, Color("ffb347"), HORIZONTAL_ALIGNMENT_LEFT, 12, Art.INK)
+	buy_btn = UI.btn(box, Rect2(170, 984, 380, 94), PriceBook.product_text("ufo"), "green", _buy, 42)
 	buy_btn.title_font = false
 	buy_btn.name = "ufo_buy"
-	UI.lbl(box, "支付暂未开放", Rect2(160, 1086, 400, 30), 19, Color("9a8468"))
+	UI.lbl(box, TextCatalog.source("ui.spreepopup.1af375cba403"), Rect2(160, 1086, 400, 30), 19, Color("9a8468"))
 	_refresh()
 
 ## 夜空、远山、星星（飞碟和光束单独一层，好做飞走动画）
@@ -135,14 +135,14 @@ func _items() -> void:
 		# 下面一行小字：订单物品写名字，加赠的货币写到账多少
 		var cap := Data.name_of(id)
 		if Rewards.is_resource(id) and Data.value_of(id) > 0:
-			cap = "%d%s" % [Data.value_of(id), {"energy": "体力", "amber": "琥珀", "shell": "不拿拿", "sand": "沙漏"}.get(Rewards.kind(id), "")]
+			cap = "%d%s" % [Data.value_of(id), {"energy": TextCatalog.source("ui.choicechestpopup.d6d2aa99fd69"), "amber": TextCatalog.source("developer.amber_editor.089f621992ac"), "shell": TextCatalog.source("ui.choicechestpopup.2580a668b381"), "sand": TextCatalog.source("ui.choicechestpopup.d713a4862483")}.get(Rewards.kind(id), "")]
 		UI.lbl(box, cap, Rect2(cx - cell * 0.5, cy + tile * 0.5 + 4, cell, 28), 18, Color("6b3d1a") if is_bonus else Color("6b4a2a"))
 		if is_bonus:
 			var tg := UI.box(box, Rect2(cx - 30, cy - tile * 0.5 - 16, 60, 28), func(ci, sz):
 				Sprites.draw(ci, "ev_ufo_bonus_tag", Rect2(Vector2.ZERO, sz)))
 			tg.pivot_offset = tg.size * 0.5
 			tg.rotation = -0.08
-			UI.lbl(tg, "加赠", Rect2(0, 0, 60, 28), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 4, Art.MOSS_D, true)
+			UI.lbl(tg, TextCatalog.source("ui.ufopopup.a2a1b4ba338f"), Rect2(0, 0, 60, 28), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 4, Art.MOSS_D, true)
 
 func _process(delta: float) -> void:
 	_t += delta
@@ -156,9 +156,9 @@ func _process(delta: float) -> void:
 func _refresh() -> void:
 	var left := maxi(0, int(ceil(float(offer.get("expires_at", 0)) - G.now())))
 	var live := left > 0 and UfoOffer.active() and not offer.is_empty()
-	clock.text = "%02d:%02d" % [left / 60, left % 60] if live else "已离开"
+	clock.text = TextCatalog.resolve("%02d:%02d" % [left / 60, left % 60] if live else TextCatalog.source("ui.ufopopup.e9988d2c63ac"))
 	buy_btn.enabled = live and not _busy
-	buy_btn.text = "¥%d 购买" % int(UfoOffer.config()["price_cny"]) if live else "下次再来"
+	buy_btn.text = TextCatalog.resolve(PriceBook.product_text("ufo") if live else TextCatalog.source("ui.spreepopup.35dabb9b716f"))
 	buy_btn.queue_redraw()
 	if not live and not _gone: _leave()
 
@@ -184,5 +184,5 @@ func _buy() -> void:
 	# The items land on the board through the grant's own board_spawn presentations.
 	if result.get("ok", false): close()
 	else:
-		G.main.toast(str(result.get("message", result.get("error", "没买成，再试一次"))))
+		G.main.toast(str(result.get("message", result.get("error", TextCatalog.source("notice.ufooffer.b9eb30abfda8")))))
 		_refresh()

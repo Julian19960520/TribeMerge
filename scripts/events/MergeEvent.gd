@@ -203,17 +203,17 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 	var cells: Array = s["cells"]
 	var cols := int(c["board"]["cols"])
 	var view := int(s["view"])
-	if action != "claim" and int(args.get("view", view)) != view: return {"error": "棋盘动了一下，再试一次"}
+	if action != "claim" and int(args.get("view", view)) != view: return {"error": TextCatalog.source("notice.mergeevent.1690899b5094")}
 	var lo := view * cols
 	var hi := lo + int(c["board"]["visible_rows"]) * cols
 	var result := {}
-	if action != "claim" and bool(s["claimed"]): return {"error": "本期奖励已领取"}
+	if action != "claim" and bool(s["claimed"]): return {"error": TextCatalog.source("notice.mergeevent.382e6cd7a7d1")}
 	s["view"] = view
 	if action == "spawn":
 		var cost := int(c["points"]["spawn_cost"])
-		if int(s["points"]) < cost: return {"error": "帮族人实现心愿可获得活动积分"}
+		if int(s["points"]) < cost: return {"error": TextCatalog.source("notice.mergeevent.61192eec0f98")}
 		var to := MergeGrid.nearest_empty(cells, cols, hi - cols + cols / 2, func(k): return k >= lo and k < hi)
-		if to < 0: return {"error": "这里满了，先合并一些物品"}
+		if to < 0: return {"error": TextCatalog.source("notice.mergeevent.634a45c3f2c5")}
 		var id := str(c["chain"][int(c["points"]["spawn_tier"]) - 1]["id"])
 		s["points"] = int(s["points"]) - cost
 		s["spent"] = int(s["spent"]) + cost
@@ -224,10 +224,10 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		var a := int(args.get("from", -1))
 		var b := int(args.get("to", -1))
 		if a < lo or a >= hi or b < lo or b >= hi: return {"error": ""}
-		if int(cells[b]["lock"]) == 2: return {"error": "先在旁边合并，揭开覆盖"}
+		if int(cells[b]["lock"]) == 2: return {"error": TextCatalog.source("notice.mergeevent.6609aa98c87b")}
 		var next := func(id): return next_id(c, id)
 		var kind := MergeGrid.drop_kind(cells, a, b, next)
-		if kind == "": return {"error": "拖一个一样的物品过去就能解锁" if int(cells[b]["lock"]) != 0 else ""}
+		if kind == "": return {"error": TextCatalog.source("notice.mergeevent.7100074c0c36") if int(cells[b]["lock"]) != 0 else ""}
 		var locked := int(cells[b]["lock"]) != 0
 		var id := str(cells[a]["id"])
 		var under := str(cells[b]["id"])
@@ -240,18 +240,18 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		if drop != "": result["drops"] = [drop]
 	elif action == "recycle":
 		var at := int(args.get("cell", -1))
-		if at < lo or at >= hi or int(cells[at]["lock"]) != 0 or str(cells[at]["id"]) == "": return {"error": "选一个没被锁住的物品"}
+		if at < lo or at >= hi or int(cells[at]["lock"]) != 0 or str(cells[at]["id"]) == "": return {"error": TextCatalog.source("notice.mergeevent.ddc20351115f")}
 		cells[at]["id"] = ""
 		result = {"kind": "recycle"}
 	elif action == "claim":
 		var ready := claimable(c, s)
-		if ready.is_empty(): return {"error": "继续解锁遗迹，到达下一个宝箱即可领取"}
+		if ready.is_empty(): return {"error": TextCatalog.source("notice.mergeevent.9c400b890514")}
 		var have := got(c, s).duplicate()
 		have.append_array(ready)
 		s["got"] = have
 		if have.has(milestones(c).size() - 1): s["claimed"] = true
 		result = {"kind": "claim", "milestones": ready, "rewards": claim_rewards(c, ready)}
-	else: return {"error": "未知操作"}
+	else: return {"error": TextCatalog.source("notice.duelrace.f242d2db4cea")}
 	if action in ["drop", "spawn", "recycle"]:
 		_advance(c, s)
 		result["advance_rows"] = view - int(s["view"])

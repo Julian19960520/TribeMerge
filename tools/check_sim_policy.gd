@@ -34,8 +34,25 @@ func run() -> void:
 	for entry in [[39,false],[40,true],[41,true]]:
 		g.level=entry[0]
 		check(bot.target_level_reached()==entry[1],"stop predicate at Lv%d"%entry[0])
+	g.level=20;bot.cfg["stop_generator"]={"chain":"basket","level":6}
+	g.stash=["basket_6"]
+	check(bot.target_level_reached(),"generator milestone can stop calibration before the character-level limit")
+	g.stash=[];bot.cfg.erase("stop_generator")
 	bot.record_reward("book","图鉴测试","真实来源标记")
 	check(bot.events[-1]["category"]=="reward" and bot.events[-1]["reward_source"]=="book","reward source survives serialization")
+	g.level=10
+	for cell in g.board: cell["id"]=""; cell["lock"]=0
+	g.board[0]["id"]="basket_5"
+	g.orders=[{"who":0,"items":["fruit_1"],"rw":{"shell":1},"story":false},{"who":0,"items":["fruit_7"],"rw":{"shell":10,"xp":1},"story":false},g.rules.orders._craft_order(Data.DISHES["salad"])]
+	bot.target_dirty=true;bot.choose_target()
+	check(bot.target==["fruit_7"],"fixed XP cards take priority over cheap zero-XP deliveries and recipes")
+	var cooking: Dictionary=g.rules.orders._craft_order(Data.DISHES["salad"])
+	cooking["manual_collect"]=true;g.orders=[cooking]
+	for i in cooking["mats"].size(): g.board[i + 1]["id"] = str(cooking["mats"][i])
+	var started: Dictionary=bot.command("craft",{"cell":0})
+	bot.tick(int(cooking["secs"]) + 1)
+	check(not started.has("error") and str(g.orders[0].get("phase",""))=="finished","fixture finishes a manual-collection recipe through shared rules")
+	check(bot.submit_orders() and str(g.orders[0].get("phase",""))=="ready" and g.board[int(g.orders[0]["cell"])]["id"]=="salad","bot takes the finished dish before attempting delivery")
 	bot.stream.close()
 	bot.queue_free()
 	await process_frame

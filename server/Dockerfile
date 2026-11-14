@@ -6,6 +6,7 @@ WORKDIR /srv/server
 COPY server/requirements.txt .
 RUN pip install -r requirements.txt
 COPY data /srv/data
+COPY localization /srv/localization
 COPY server /srv/server
 RUN useradd --system --uid 10001 tribe && chown -R tribe /srv
 USER tribe

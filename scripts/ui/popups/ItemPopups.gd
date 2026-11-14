@@ -28,9 +28,12 @@ static func book(tab: int = 0) -> PopupBase:
 			_book_place_tabs(tab_btns, idx)
 			_book_page(holder, r, idx))
 		b.extra = func(ci, sz): _book_tab_draw(ci, sz, idx == int(state["line"]), icon, idx)
+		b.set_meta("book_tab", idx)
 		tab_btns.append(b)
+	Popups.live(p, G.changed, func():
+		for button in tab_btns: button.queue_redraw())
 	_book_page(holder, r, int(state["line"]))
-	var heading := UI.title(p.box, "图鉴", Rect2(br.position.x + 16, br.position.y + 2, br.size.x - 32, br.size.y - 6), 40, Color.WHITE)
+	var heading := UI.title(p.box, TextCatalog.source("ui.homescreen.06169ded8b7b"), Rect2(br.position.x + 16, br.position.y + 2, br.size.x - 32, br.size.y - 6), 40, Color.WHITE)
 	var x := UI.hit(p.box, Rect2(r.end.x - 52, r.position.y - 24, 70, 70), p.close)
 	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
 	return p
@@ -54,9 +57,21 @@ static func _book_place_tabs(btns: Array[TButton], line: int) -> void:
 		btns[i].pivot_offset = rect.size * 0.5
 		btns[i].queue_redraw()
 
-static func _book_tab_draw(ci: CanvasItem, sz: Vector2, on: bool, icon: String, _seed: int) -> void:
+static func _book_tab_draw(ci: CanvasItem, sz: Vector2, on: bool, icon: String, line_i: int) -> void:
 	Sprites.draw(ci, "pop_booktab_on" if on else "pop_booktab_off", Rect2(0, 3, sz.x + 18, sz.y - 6))
 	Art.item(ci, icon, Vector2(sz.x * 0.5 - 6.0, sz.y * 0.52), 58.0)
+	if _book_has_reward(line_i): Paint.badge_num(ci, Vector2(sz.x - 20, 15), 9, 9)
+
+static func _book_has_reward(line_i: int) -> bool:
+	if line_i == Data.LINES.size():
+		for id in Data.DISHES:
+			if G.rules.board.book_prize(str(id)): return true
+	elif line_i >= 0 and line_i < Data.LINES.size():
+		for key in ["gen", "main", "sub"]:
+			var chain := str(Data.LINES[line_i][key])
+			for lv in Data.CHAINS[chain]["items"].size():
+				if G.rules.board.book_prize("%s_%d" % [chain, lv + 1]): return true
+	return false
 
 ## 每条产线右缘页签上的图。
 
@@ -80,6 +95,7 @@ static func _book_cell_x(r: Rect2, col: int) -> float:
 
 static func _book_page(holder: Control, r: Rect2, line_i: int) -> void:
 	for c in holder.get_children():
+		holder.remove_child(c)
 		c.queue_free()
 	if line_i == Data.LINES.size():
 		_book_dishes(holder, r)
@@ -98,6 +114,7 @@ static func _book_page(holder: Control, r: Rect2, line_i: int) -> void:
 	y = _book_chain(page, r, str(line["main"]), y)
 	y = _book_chain(page, r, str(line["sub"]), y)
 	sc.set_length(y + 8.0)
+	_book_focus_reward(sc)
 	holder.modulate.a = 0.0
 	holder.create_tween().tween_property(holder, "modulate:a", 1.0, 0.15)
 
@@ -111,7 +128,7 @@ static func _book_chain(page: Control, r: Rect2, chain_id: String, y: float) -> 
 		if G.discovered.has("%s_%d" % [chain_id, l + 1]):
 			n += 1
 	var mid := _book_cell_x(r, 0) + 126.0 * 1.5
-	Popups.section(page, "%s（%d/%d）" % [str(c["name"]), n, items.size()], y, Color("8a5a30"), mid)
+	Popups.section(page, TextCatalog.source("ui.itempopups.2a16b06f2781") % [str(c["name"]), n, items.size()], y, Color("8a5a30"), mid)
 	y += 52
 	for l in items.size():
 		var lv := l
@@ -132,6 +149,7 @@ static func _book_slot(page: Control, cell: Rect2, id: String, _seed: int) -> vo
 			Paint.gift(ci, sz * 0.5, 86)
 		else:
 			Art.item(ci, id, sz * 0.5, 86))
+	box.set_meta("book_item", id)
 	var slot := {"b": null}
 	var btn := UI.hit(page, cell, func():
 		if not G.discovered.has(id): return
@@ -147,6 +165,12 @@ static func _book_slot(page: Control, cell: Rect2, id: String, _seed: int) -> vo
 		var from := b.get_global_rect().get_center() if is_instance_valid(b) else Vector2(360, 700)
 		RewardPresenter.present([["fire_2", fire]], func(_k): return from))
 	slot["b"] = btn
+
+static func _book_focus_reward(sc: Scroller) -> void:
+	for child in sc.content.get_children():
+		if child.has_meta("book_item") and G.rules.board.book_prize(str(child.get_meta("book_item"))):
+			sc.jump_to(child.position.y - (sc.size.y - child.size.y) * 0.5)
+			return
 
 # ---------------------------------------------------------------- 储物洞
 
@@ -204,7 +228,7 @@ static func item_info(id: String) -> PopupBase:
 	Popups.frame(p, r, c["name"], Art.TEAL)
 	var state := {"id": id}
 	var shown: String = state["id"]
-	var name_lbl := UI.lbl(p.box, "%s · 第 %d 级" % [Data.name_of(shown), Data.lv(shown)], Rect2(r.position.x, r.position.y + 48, r.size.x, 36), 24, Color("7a5a3a"))
+	var name_lbl := UI.lbl(p.box, TextCatalog.source("ui.itempopups.bcfcbb40fe43") % [Data.name_of(shown), Data.lv(shown)], Rect2(r.position.x, r.position.y + 48, r.size.x, 36), 24, Color("7a5a3a"))
 	var items: Array = c["items"]
 	var cols := 4
 	var step := 112.0
@@ -226,36 +250,43 @@ static func item_info(id: String) -> PopupBase:
 		var cur_id: String = state["id"]
 		var t := c["type"] as String
 		var y := 0.0
-		if t == "gen":
+		if t in ["gen", "egen"]:
 			var st := Data.gen_stats(cur_id)
 			if st.is_empty():
-				Popups.section(lower, "还不能生产", y)
+				Popups.section(lower, TextCatalog.source("ui.itempopups.64325f217366"), y)
 				var nxt := Data.first_prod_lv(Data.chain(cur_id))
 				if nxt <= 0:
-					UI.lbl(lower, "这一级还不能生产", Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
+					UI.lbl(lower, TextCatalog.source("ui.itempopups.2bdee9823731"), Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
 				else:
-					UI.lbl(lower, "合成到 %d 级后才能点击生产" % nxt, Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
+					UI.lbl(lower, TextCatalog.source("ui.itempopups.c3e8c56f5b66") % nxt, Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
 					UI.icon(lower, "%s_%d" % [Data.chain(cur_id), nxt], Vector2(r.get_center().x, y + 160), 100)
 			else:
-				Popups.section(lower, "能变出", y)
+				Popups.section(lower, TextCatalog.source("ui.itempopups.08d23ef54331"), y)
 				var drops: Array = st["drops"]
 				y = _info_item_grid(lower, drops, y + 48, r.get_center().x)
 				if st.has("charges"):
-					UI.lbl(lower, "满储 %d 次，用完 %d 分钟后回满" % [st["charges"], st["refill"]], Rect2(r.position.x, y, r.size.x, 36), 22, Color("7a5a3a"))
+					var rest := TextCatalog.source("ui.itempopups.f12e39a2141a") % [st["charges"], st["refill"]]
+					if G.rules.starter.is_item(cur_id): rest = TextCatalog.source("ui.itempopups.b49f281cdc42") % [int(st["refill"]) / 60, int(st["charges"]), int(G.rules.starter.config()["lifetime_sec"]) / 86400]
+					UI.lbl(lower, rest, Rect2(r.position.x, y, r.size.x, 36), 22, Color("7a5a3a"))
 					y += 40
+					if G.rules.starter.is_item(cur_id) and not G.rules.starter.progress().is_empty():
+						var remaining := G.rules.starter.time_left()
+						var text := TextCatalog.source("ui.itempopups.b9d8853e0ce7") if remaining == 0 else TextCatalog.source("ui.itempopups.eb87147f8aba") % G.fmt_time(remaining)
+						UI.lbl(lower, text, Rect2(r.position.x, y, r.size.x, 36), 22, Art.CLAY)
+						y += 40
 		elif t == "item":
-			Popups.section(lower, "获取途径：", y)
+			Popups.section(lower, TextCatalog.source("ui.itempopups.308b64c5efce"), y)
 			var sources: Array = []
 			for source in Data.producers_of(ch): sources.append({"id":source})
 			y = _info_item_grid(lower, sources, y + 48, r.get_center().x)
 		elif t in ["pack", "chest", "upgrade", "scissors"]:
-			Popups.section(lower, "用途", y)
+			Popups.section(lower, TextCatalog.source("ui.itempopups.05b36669c4ad"), y)
 			var usage := UI.lbl(lower, Data.describe(cur_id), Rect2(r.position.x + 18, y + 50, r.size.x - 36, 160), 23, Art.INK)
 			usage.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			y += 210
 		else:
-			Popups.section(lower, "获取途径：", y)
-			UI.lbl(lower, "宝物里随机掉、开宝箱、升级奖励", Rect2(r.position.x, y + 60, r.size.x, 60), 24, Color("7a5a3a"))
+			Popups.section(lower, TextCatalog.source("ui.itempopups.308b64c5efce"), y)
+			UI.lbl(lower, TextCatalog.source("ui.itempopups.874962b8db6e"), Rect2(r.position.x, y + 60, r.size.x, 60), 24, Color("7a5a3a"))
 		lower_scroll.set_length(maxf(y + 24, 220))
 	var buys: Array = []
 	var refresh_buys := func() -> void:
@@ -291,7 +322,7 @@ static func item_info(id: String) -> PopupBase:
 				return
 			state["id"] = slot_id
 			var now: String = state["id"]
-			name_lbl.text = "%s · 第 %d 级" % [Data.name_of(now), Data.lv(now)]
+			name_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.itempopups.bcfcbb40fe43") % [Data.name_of(now), Data.lv(now)])
 			for cell_box in cells:
 				cell_box.queue_redraw()
 			rebuild.call()
@@ -337,9 +368,9 @@ static func _draw_count(ci: CanvasItem, c: Vector2, n: int) -> void:
 		return
 	var label := str(n)
 	var fs := 15 if n < 10 else 12
-	var w := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var w := f.get_string_size(TextCatalog.resolve(label), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var baseline := c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
-	ci.draw_string(f, Vector2(c.x - w * 0.5, baseline), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("f4ead8"))
+	ci.draw_string(f, Vector2(c.x - w * 0.5, baseline), TextCatalog.resolve(label), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color("f4ead8"))
 
 ## 集市里还买得到的这一件。deal 为真时记在每日特惠，否则记在热卖。
 
@@ -363,7 +394,7 @@ static func _shop_offer(id: String) -> Dictionary:
 		var left := int(row["stock"]) - int(book.get(row["key"], 0))
 		if left > 0:
 			return {"price": int(row["price"]), "left": left, "key": str(row["key"]), "deal": deal}
-	# 琥珀栏没有（或卖完）才看不拿拿小摊
+	# 琥珀栏没有（或卖完）才看不那那小摊
 	for k in Data.STORE_SHELL.size():
 		if str(Data.STORE_SHELL[k].get("id", "")) == id:
 			var o := _shell_offer("shell_%d" % k)
@@ -371,7 +402,7 @@ static func _shop_offer(id: String) -> Dictionary:
 				return o
 	return {}
 
-## 不拿拿小摊这一格本轮还剩的，卖完返回 {}
+## 不那那小摊这一格本轮还剩的，卖完返回 {}
 
 static func _shell_offer(key: String) -> Dictionary:
 	var k := int(key.trim_prefix("shell_"))
@@ -390,18 +421,22 @@ static func _buy_from_shop(id: String, origin: Vector2) -> bool:
 static func _buy_offer(id: String, offer: Dictionary, origin: Vector2) -> bool:
 	if offer.is_empty() or G.main == null:
 		return false
-	var r: Dictionary = G.shop_buy(str(offer["key"]), id)
+	var r: Dictionary
+	if Cloud.enabled and str(offer["key"]).begins_with("hot_"):
+		r = await preload("res://scripts/net/Payments.gd").buy_virtual("shop:" + id, PriceBook.price(id), {"key": str(offer["key"])})
+	else:
+		r = G.shop_buy(str(offer["key"]), id)
 	if not r.get("ok", false):
 		var err := str(r.get("error", ""))
-		var msg := "琥珀不够了！" if err == "not_enough_amber" else ("不拿拿不够了！" if err == "not_enough_shell" else str(r.get("message", "连不上服务器，请稍后再试")))
+		var msg := TextCatalog.source("notice.boardrules.b874b509cd26") if err == "not_enough_amber" else (TextCatalog.source("ui.itempopups.8ffa1d6846b7") if err == "not_enough_shell" else str(r.get("message", TextCatalog.source("notice.cloud.7428cb59febf"))))
 		G.main.toast(msg)
 		return false
 	G.rules.board.discover(id)
 	RewardPresenter.present(Rewards.items([id]), func(_k): return origin)
 	if Rewards.is_resource(id) and Data.value_of(id) > 0:
-		G.main.toast("获得 %d%s" % [Data.value_of(id), Rewards.unit(id)])
+		G.main.toast(TextCatalog.source("ui.itempopups.f7b943bd6db4") % [Data.value_of(id), Rewards.unit(id)])
 	else:
-		G.main.toast("已放入暂存区：%s" % Data.name_of(id))
+		G.main.toast(TextCatalog.source("ui.itempopups.3cccefa5cc16") % Data.name_of(id))
 	return true
 
 static func _pulse_source(chain_id: String) -> void:
@@ -427,14 +462,15 @@ static func _book_dishes(holder: Control, r: Rect2) -> void:
 	for id in ids:
 		if G.discovered.has(id): discovered += 1
 	var mid := _book_cell_x(r, 0) + 126.0 * 1.5
-	Popups.section(sc.content, "族人爱吃的菜（%d/%d）" % [discovered, ids.size()], 16, Color("8a5a30"), mid)
+	Popups.section(sc.content, TextCatalog.source("ui.itempopups.7229dc7c50fd") % [discovered, ids.size()], 16, Color("8a5a30"), mid)
 	var heading: Label = sc.content.get_child(0)
 	Popups.live(sc, G.board_changed, func():
 		var count := 0
 		for id in ids:
 			if G.discovered.has(id): count += 1
-		heading.text = "族人爱吃的菜（%d/%d）" % [count, ids.size()])
+		heading.text = TextCatalog.resolve(TextCatalog.source("ui.itempopups.7229dc7c50fd") % [count, ids.size()]))
 	for k in ids.size():
 		var cell := Rect2(_book_cell_x(r, k % 4) - 52, 68 + (k / 4) * 116, 104, 104)
 		_book_slot(sc.content, cell, str(ids[k]), k)
 	sc.set_length(68 + ceilf(ids.size() / 4.0) * 116 + 10)
+	_book_focus_reward(sc)

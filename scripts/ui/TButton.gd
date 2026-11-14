@@ -6,7 +6,8 @@ const VisualRuntime := preload("res://scripts/resources/VisualRuntime.gd")
 signal pressed
 
 var style := "green"
-var text := ""
+var text := "":
+	set(value): text = UI.resource_text(value)
 var font_size := 34
 var is_round := false
 var res := ""

@@ -1,200 +1,195 @@
 extends SceneTree
-## 竞品式新手流程走一遍，不能卡住：
-## 一、强引导（全屏蒙黑只露交互区）：剧情句点击继续、合成、合出生产器（弹新生产器）、生产、交两单、第一次建设、
-##    讲订单和等级（点开等级详情）后结束；每个要操作的步骤都必须亮出至少一块区域。
-## 二、引导后的一次性提示：第二次建设送半编草篓 → 暂存区 → 合到藤蔓上 → 两只小草篓合成藤篮 → 点藤篮。
-## godot --headless --path . --script tools/check_guide_playthrough.gd -- --replay-test --cloud-off
-## 加 --guide-shots=DIR 时每个步骤第一次出现截一张图（需要有窗口，不能 --headless）
+## Drives the actual UI and shared commands from the opening through construction 3.
+## No board items or currencies are injected. --shots-dir=DIR captures each lesson.
 var failures := 0
+var main
+var game
+var replay
+var seen := {}
+var shots := ""
+var checkpoint_out := ""
+var steps := 0
+var checkpoint_checked := false
+var free_seen := false
+var manual_seen := false
+var same_step := 0
+var last_step := ""
 func _initialize() -> void: run.call_deferred()
 func check(ok: bool, label: String) -> void:
 	print(("PASS " if ok else "FAIL ") + label)
 	if not ok: failures += 1
-
-const ACTIONS := ["merge1", "vine", "to_prod", "produce", "make_fruit2", "submit1", "produce_more", "climb",
-	"submit2", "upgrade", "build", "back", "level"]
-const BEATS := ["merge1", "produce", "produce_more", "upgrade", "back", "level"]
-
-var shots := ""
-var new_gen_seen := false
-
-func _drag(board, a: int, b: int) -> void:
-	var e := InputEventMouseButton.new()
-	e.button_index = MOUSE_BUTTON_LEFT
-	e.pressed = true
-	e.position = board.cell_center(a)
-	board._gui_input(e)
-	for t in [0.3, 1.0]:
-		var m := InputEventMouseMotion.new()
-		m.position = board.cell_center(a).lerp(board.cell_center(b), t)
-		board._gui_input(m)
-	var r := InputEventMouseButton.new()
-	r.button_index = MOUSE_BUTTON_LEFT
-	r.pressed = false
-	r.position = board.cell_center(b)
-	board._gui_input(r)
-
-func _find_btn(n: Node, res: String):
-	if "res" in n and str(n.get("res")) == res: return n
-	for c in n.get_children():
-		var f = _find_btn(c, res)
-		if f != null: return f
+func _find(id: String, include_locked := false) -> int:
+	for i in game.board.size():
+		if str(game.board[i]["id"]) == id and (int(game.board[i]["lock"]) == 0 or include_locked and int(game.board[i]["lock"]) == 1): return i
+	return -1
+func _button(n: Node, name: String):
+	if n is Control and n.has_signal("pressed") and (n.name == name or name == "build" and n.get("res") == "shell_2"): return n
+	for child in n.get_children():
+		var found = _button(child, name)
+		if found != null: return found
 	return null
-
-func _shot(name: String) -> void:
-	if shots == "": return
-	await create_timer(0.8).timeout
-	await RenderingServer.frame_post_draw
-	root.get_viewport().get_texture().get_image().save_png("%s/%s.png" % [shots, name])
-
-## 领奖全屏、升级弹窗、新生产器弹窗：点掉（建设窗不点，它要按绿按钮）
-func _tap_popups(main) -> void:
-	for p in main.popup_layer.get_children():
-		var tap = p.get("on_tap")
-		var tappable: bool = tap is Callable and tap.is_valid()
-		if (p.has_meta("board_reward") or p.has_meta("reward_screen") or tappable) and _find_btn(p, "shell_2") == null:
-			if tappable: tap.call()
-			elif p.has_method("close"): p.close()
-
-func _on_present(kind, _payload) -> void:
-	if kind == "new_generator": new_gen_seen = true
-
+func _tap_popups() -> bool:
+	var p = main.popup_layer.top()
+	if p == null: return false
+	if p._closing: return true
+	var step := str(game.rules.onboarding.stage().get("key", ""))
+	if step in ["level_rule", "level_preview", "recipe_mats", "recipe_time", "recipe_ready"]:
+		main._guide.skip_beat()
+	elif step in ["level_close", "recipe_close", "build_preview"]: p.close()
+	elif step == "build1":
+		var button = _button(p, "build")
+		if button != null: button.pressed.emit()
+	elif step == "howto": p.close()
+	elif p.on_tap.is_valid(): p.on_tap.call()
+	else: p.close()
+	return true
+func _produce() -> bool:
+	var id := str(game.rules.onboarding.config()["upgraded_generator"])
+	var at := _find(id)
+	if at < 0: at = _find(str(game.rules.onboarding.config()["generator"]))
+	if at < 0: return false
+	if game.energy == 0:
+		# Use the level-four gift before buying stamina again.
+		if game.level >= 4:
+			var egen := _find("emberpot_1")
+			if egen >= 0 and game.rules.board.gen_left(egen) > 0:
+				replay.perform("tap", {"cell": egen}); return true
+			var stashed: int = game.stash.find("emberpot_1")
+			if stashed >= 0: replay.perform("stash", {"index": stashed}); return true
+		var result: Dictionary = replay.perform("energy")
+		if result.get("free", false): free_seen = true
+		return not result.has("error")
+	var r: Dictionary = replay.perform("tap", {"cell": at})
+	return not r.has("error")
+func _free_play() -> bool:
+	# The gift is a persistent producer; collect usable energy when it is needed.
+	for chain in ["fire", "shell", "sand"]:
+		for lv in range(6, 1, -1):
+			var at := _find("%s_%d" % [chain, lv])
+			if at >= 0 and (chain != "fire" or lv == 6 or game.energy == 0):
+				replay.perform("tap", {"cell": at}); return true
+	for oi in game.orders.size():
+		var o: Dictionary = game.orders[oi]
+		if game.rules.orders.order_ready(o): main.board_screen._on_deliver(oi); return true
+		if game.rules.orders.craft_mats_ready(o): main.board_screen._on_craft(oi); return true
+		if str(o.get("phase", "")) == "finished":
+			manual_seen = true
+			replay.perform("tap", {"cell": int(o["cell"])}); return true
+		if str(o.get("phase", "")) == "cook":
+			replay.perform("tick", {}, replay.clock + game.rules.orders.cook_left(int(o["cell"])) + 1); return true
+	# Protect requested exact goods; combine everything else along reachable chains.
+	var protect := {}
+	for o in game.orders:
+		for id in o.get("mats", o["items"]): protect[str(id)] = int(protect.get(str(id), 0)) + 1
+	for lv in range(7, 0, -1):
+		for chain in ["fruit", "seed", "fire", "shell"]:
+			var id := "%s_%d" % [chain, lv]
+			if protect.has(id) and game.rules.onboarding.count(id) <= int(protect[id]): continue
+			var from := _find(id)
+			if from < 0: continue
+			for to in game.board.size():
+				if to == from or str(game.board[to]["id"]) != id or int(game.board[to]["lock"]) == 2: continue
+				var r: Dictionary = replay.perform("drop", {"from": from, "to": to})
+				if not r.has("error"): return true
+	if _produce(): return true
+	# Board-full fallback sells a surplus item rather than rewriting the board.
+	for i in game.board.size():
+		var id := str(game.board[i]["id"])
+		if int(game.board[i]["lock"]) == 0 and Data.type_of(id) == "item" and not protect.has(id):
+			replay.perform("discard", {"cell": i}); replay.perform("discard_finish"); return true
+	return false
 func run() -> void:
-	for a in OS.get_cmdline_user_args():
-		if a.begins_with("--guide-shots="): shots = a.trim_prefix("--guide-shots=")
-	var g = root.get_node("G")
-	g.new_game()
-	g.presentation_event.connect(_on_present)
-	var main = load("res://main.tscn").instantiate()
-	root.add_child(main)
-	await create_timer(0.3).timeout
-	var guide = main._guide
-	var bs = main.board_screen
-	var board = bs.board
-	var seen := {}
-	var beats := {}
-	var stuck := 0
-	var last := ""
-	var empty := 0
-	var to_build_ticks := 0
-	var beat_locked := true
-	## 交第一张单（樱桃）时，藤蔓下的樱桃（第 33 格）还压在石头下，不会出现「交单还是开藤蔓」二选一
-	var vine_cherry_hidden := true
-	for _k in 600:
-		if not g.tutorial_on: break
-		if shots != "":
-			for p in main.popup_layer.get_children():
-				if p.has_meta("reward_screen") and not seen.has("popup_%d" % p.get_instance_id()):
-					seen["popup_%d" % p.get_instance_id()] = true
-					await _shot("popup_%02d" % seen.size())
-		_tap_popups(main)
-		var step: String = guide._step
-		if not seen.has(step + guide._beat) and guide.visible:
-			await _shot("guide_%02d_%s%s" % [seen.size(), step, "_beat" if guide._beat != "" else ""])
-			step = guide._step
-		seen[step + guide._beat] = true
-		seen[step] = true
-		if step == "to_build": to_build_ticks += 1
-		## 剧情句：亮着但不让操作，点任意处继续
-		if guide._beat != "":
-			beats[guide._beat] = true
-			if guide.visible and (guide.allows_drop(guide.SRC, guide.DST) or guide.allows_activate(guide.PROD) or not guide._pass.is_empty()):
-				beat_locked = false
-			await create_timer(0.45).timeout
-			var click := InputEventMouseButton.new()
-			click.button_index = MOUSE_BUTTON_LEFT
-			click.pressed = true
-			guide._gui_input(click)
-			await create_timer(0.1).timeout
-			continue
-		## 转场、弹出动画的一两帧里区域可能还没量出来，连续 2 秒都没有才算错
-		empty = empty + 1 if step in ACTIONS and guide.visible and guide._strong() and guide._holes.is_empty() else 0
-		if empty > 8:
-			check(false, "步骤 %s 没有亮出可操作区域" % step)
+	game = root.get_node("G"); replay = root.get_node("Replay")
+	game.simulation_time = 1794240000
+	game.new_game()
+	replay.meta = {}; replay.seq = 0; replay.base = 0; replay.pending = []; replay.inflight = {}
+	replay.clock = 1794240000
+	game.random_seed = "reference-full-playthrough"; game.random_streams = {}
+	replay.executing = true; replay.advance(); replay._canonicalize_live(); replay.executing = false
+	game.clear_presentations()
+	main = load("res://main.tscn").instantiate(); root.add_child(main)
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--shots-dir="): shots = arg.trim_prefix("--shots-dir=")
+		if arg.begins_with("--checkpoint-out="): checkpoint_out = arg.trim_prefix("--checkpoint-out=")
+	await create_timer(0.2).timeout
+	check(main.screen == "home" and game.orders.is_empty(), "#1 外景开场，尚无订单")
+	check(game.energy == 100 and game.shells == 0 and game.amber == 30, "开局100体力、0不那那、30琥珀")
+	for k in 3500:
+		steps += 1
+		game.simulation_time = replay.clock
+		if not game.tutorial_on: break
+		var guide = main._guide
+		var step := str(game.rules.onboarding.stage().get("key", ""))
+		var mode := str(game.rules.onboarding.stage().get("mode", ""))
+		same_step = same_step + 1 if step == last_step else 0
+		last_step = step
+		if same_step > (1800 if mode == "free" else 50):
+			check(false, "引导卡在 " + step)
+			print("STATE ", game.level, " ", game.xp, " energy ", game.energy, " amber ", game.amber, " orders ", game.orders)
+			print("BOARD ", game.board)
 			break
-		match step:
-			"merge1", "vine", "stones", "to_prod", "make_fruit2", "climb":
-				if guide._merge_a >= 0 and guide._merge_b >= 0:
-					_drag(board, guide._merge_a, guide._merge_b)
-				elif step == "climb":
-					bs._on_activate(guide.PROD)
-			"produce", "produce_more":
-				bs._on_activate(guide.PROD)
-			"submit1", "submit2":
-				if step == "submit1" and int(g.board[33]["lock"]) != 2: vine_cherry_hidden = false
-				for oi in g.orders.size():
-					if g.rules.orders.order_ready(g.orders[oi]):
-						bs._on_deliver(oi)
-						break
-			"upgrade":
-				bs._on_hammer()
-			"build":
-				for p in main.popup_layer.get_children():
-					var b = _find_btn(p, "shell_2")
-					if b != null: b.pressed.emit()
-			"back":
-				main.home.go.pressed.emit()
-			"level":
-				bs._base_btn.pressed.emit()
-		stuck = stuck + 1 if step == last else 0
-		last = step
-		if stuck == 20 and OS.get_environment("GUIDE_DEBUG") != "":
-			print("DEBUG step=%s screen=%s popups=%s" % [step, main.screen, main.popup_layer.get_children()])
-		if stuck > 60:
-			check(false, "引导卡在 %s" % step)
-			break
-		await create_timer(0.25).timeout
-	check(not g.tutorial_on, "整段引导能走完")
-	for s in ACTIONS:
-		check(seen.has(s), "经过了步骤 %s" % s)
-	for b in BEATS:
-		check(beats.has(b), "说了剧情句 %s" % b)
-	check(beat_locked, "剧情句时棋盘和按钮都点不了")
-	check(vine_cherry_hidden and str(g.board[33]["id"]) != "fruit_2", "第一张单的樱桃不用和藤蔓抢：交单时藤蔓樱桃还没露出来，之后爬藤时才打开")
-	check(new_gen_seen, "合出小草篓时弹了新生产器")
-	check(g.level == 1 and g.xp == 2, "引导结束时经验 2/3，再交一单升级")
-	## 截图模式每张停 0.8 秒，量不准，只在正常跑的时候查
-	if shots == "": check(to_build_ticks > 0 and to_build_ticks <= 4, "点锤子后建设窗 1 秒内弹出（%d 次轮询）" % to_build_ticks)
-
-	# ---- 二、第二次建设送半编草篓，提示带着把生产器升到藤篮
-	await create_timer(0.5).timeout
-	for p in main.popup_layer.get_children():
-		if p.has_method("close"): p.close()
-	await create_timer(0.3).timeout
-	g.shells += 1000
-	var built: Dictionary = await root.get_node("Replay").perform("build", {"id": "fire"})
-	check(not built.has("error") and g.stash.has("basket_3"), "第二次建设送半编草篓（进暂存区）")
-	var tips = main.tips
-	var b5_tapped := false
-	new_gen_seen = false
-	for _k in 200:
-		_tap_popups(main)
-		for p in main.popup_layer.get_children():
-			if p.get_meta("fullscreen", false) and p.has_method("close"): p.close()
-		if tips.visible:
-			if not seen.has("tip_" + tips._key):
-				seen["tip_" + tips._key] = true
-				await _shot("tip_%s" % tips._key)
-			match tips._key:
-				"stash":
-					bs._on_stash()
-					tips._close(false)
-				"gen_merge3":
-					var p3: Vector2i = tips._merge3_pair()
-					if p3.x >= 0: _drag(board, p3.x, p3.y)
-				"gen_merge5":
-					var p5: Vector2i = tips._pair_of("basket_4")
-					if p5.x >= 0: _drag(board, p5.x, p5.y)
-				"gen_tap":
-					bs._on_activate(tips._find_id("basket_5"))
-					tips._close(false)
-					b5_tapped = true
-				_:
-					tips._close(false)
-		if b5_tapped: break
-		await create_timer(0.25).timeout
-	for k in ["howto", "stash", "gen_merge3", "gen_merge5", "gen_tap"]:
-		check(g.tips_seen.has(k), "引导后的提示 %s 出现过" % k)
-	check(new_gen_seen, "合出藤篮时弹了生产器升级")
-	check(b5_tapped and tips._find_id("basket_5") >= 0, "提示带着把生产器升到藤篮并点了它")
-	quit(1 if failures > 0 else 0)
+		if not seen.has(step):
+			seen[step] = true
+			print("STEP ", step, " lv=", game.level, " xp=", game.xp, " energy=", game.energy, " money=", game.shells)
+			if shots != "":
+				await create_timer(0.45).timeout
+				await RenderingServer.frame_post_draw
+				root.get_viewport().get_texture().get_image().save_png(shots + "/" + step + ".png")
+		if not checkpoint_checked and step == "gen_merge3":
+			var snap: Dictionary = replay.snapshot()
+			var before := JSON.stringify(game.rules.onboarding.progress())
+			replay.restore(snap)
+			check(JSON.stringify(game.rules.onboarding.progress()) == before, "中途恢复保留当前步骤和已发订单，不重发奖励")
+			checkpoint_checked = true
+		if main.home.is_building():
+			pass # Construction finishes on its own; never open or install a crate.
+		elif _tap_popups(): pass
+		elif main.level_pending or main._rw_showing or main._wipe.running(): pass
+		elif guide.visible and guide._mode == "stash": main.board_screen._on_stash()
+		elif mode in ["dialog", "banner"]: guide.skip_beat()
+		elif mode == "enter_board" or mode == "back": main.home.go.pressed.emit()
+		elif mode == "merge":
+			var pair: Vector2i = guide.merge_hint()
+			if pair.x >= 0:
+				var merge_result: Dictionary = replay.perform("drop", {"from": pair.x, "to": pair.y})
+				if k < 30: print("MERGE ", pair, " ", merge_result)
+		elif mode in ["produce", "collect", "energy_gen", "take_dish"]:
+			if mode == "take_dish": manual_seen = true
+			var at: int = guide._cell_target()
+			if at >= 0: main.board_screen._on_activate(at)
+		elif mode == "submit": main.board_screen._on_deliver(guide._order_index())
+		elif mode == "open_build": main.board_screen._on_hammer()
+		elif mode == "level_open": main.board_screen._base_btn.pressed.emit()
+		elif mode == "recipe_open":
+			var oi: int = guide._order_index()
+			if oi >= 0: main.open("recipe", str(game.orders[oi]["dish"]))
+		elif mode == "cook": main.board_screen._on_craft(guide._order_index())
+		elif mode == "stash": main.board_screen._on_stash()
+		elif step in ["build2_wait", "build3_wait"]:
+			main.board_screen._on_hammer()
+			await create_timer(0.65).timeout
+			var b = _button(main.popup_layer, "build")
+			if b != null: b.pressed.emit()
+		elif mode == "free":
+			if not _free_play():
+				check(false, "无法继续自由阶段 " + step)
+				break
+		await create_timer(0.03 if mode == "free" else 0.12).timeout
+		if k % 200 == 199: print("PROGRESS ", k, " ", step)
+	check(not game.tutorial_on and game.level >= 5 and int(game.builds.get("fire", 0)) >= 4, "#131 完整流程走到5级、第三次建设完")
+	for row in game.rules.onboarding.config()["stages"]:
+		var key := str(row["key"])
+		if key == "complete": continue
+		check(seen.has(key) or game.rules.onboarding.progress().get("completed", []).has(key), "实际经过 " + key)
+	check(free_seen, "体力耗尽后用过首次免费补充")
+	check(manual_seen, "菜做完后从设备取出，再提交订单")
+	check(checkpoint_checked, "在生产器升级中途恢复过快照")
+	print("COMMANDS ", steps)
+	if failures == 0 and checkpoint_out != "":
+		var file := FileAccess.open(checkpoint_out, FileAccess.WRITE)
+		file.store_string(JSON.stringify(replay.snapshot(), "\t")); file.close()
+	await create_timer(1.0).timeout
+	main.free(); game.main = null
+	await process_frame
+	await process_frame
+	quit(1 if failures else 0)

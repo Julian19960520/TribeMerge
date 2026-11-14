@@ -254,6 +254,9 @@ static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool 
 	if _vector_item(ci, id, c, size, rot): return
 	Items.blit(ci, id, c, size, rim, rot)
 
+static func chest_visual(id: String, opened: bool) -> String:
+	return id + "_open" if opened and Data.type_of(id) == "chest" else id
+
 ## 用原始绘制代码现场画物品。只给生成 PNG 的工具和开发预览用，游戏里不要调用。
 static func draw_item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool = true, rot: float = 0.0) -> void:
 	if id == "":
@@ -282,7 +285,7 @@ static func draw_item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: 
 	var s: int = abs(ch.hash()) % 97 + lv * 7
 	match ch:
 		"fire", "shell", "amber", "sand": _currency(ci, ch, lv, s, rim)
-		"chest", "energybox", "premiumbox", "orderbox": _box(ci, ch, lv, s, rim)
+		"chest", "energybox", "premiumbox", "orderbox": _box(ci, ch, lv, s, rim, id.ends_with("_open"))
 		"choice": _choice_box(ci, id, lv, s, rim)
 		"pack": _pack(ci, lv, s, rim)
 		"upgrade": _upgrade(ci, s, rim)
@@ -368,7 +371,7 @@ static func _scallop_det(ci: CanvasItem, c: Vector2, sz: float, rot: float, s: i
 		ln(ci, hinge, hinge + Vector2(cos(a), sin(a)) * sz * 1.1, 1.6, SHELL_D.darkened(0.25), s + k)
 
 # ---------------------------------------------------------------- 四种可领取资源
-## 体力（闪电）、不拿拿（香蕉）、琥珀、沙漏共用一套等级排布：
+## 体力（闪电）、不那那（香蕉）、琥珀、沙漏共用一套等级排布：
 ## 1 级零件（不能领取）→ 2 级一整个 → 3 级两个 → 4 级四个 → 5 级一堆 → 6 级一筐。
 ## 每种资源只写「一个单位」的画法（_cur_parts 外形 + _cur_detail 细节），排布由 _cur_layout 决定。
 const BANANA := Color("ffd447")
@@ -443,12 +446,12 @@ static func _cur_layout(ch: String, lv: int) -> Array:
 	match lv:
 		1:
 			if ch == "shell":
-				# 半截不拿拿的重心在左边，挪回格子中间
+				# 半截不那那的重心在左边，挪回格子中间
 				return [[Vector2(19, -5), 1.15, -0.35]]
 			return [[Vector2(0, 2), 1.15, 0.0]]
 		2:
 			if ch == "shell":
-				# 单根不拿拿斜着放（顶栏、订单里的资源图标就是它）
+				# 单根不那那斜着放（顶栏、订单里的资源图标就是它）
 				return [[Vector2(-2, 6), 1.15, -0.62]]
 			return [[Vector2(0, 0), 1.18, 0.08 if ch == "fire" else 0.0]]
 		3:
@@ -520,7 +523,7 @@ static func _bolt_detail(ci: CanvasItem, frag: bool, s: int, k: float) -> void:
 	ci.draw_polyline(_X(poly([Vector2(6, -26), Vector2(-6, 1), Vector2(-10, 1)], s + 3, 0.3)), hl, _lw(3.0, k), true)
 	ci.draw_polyline(_X(poly([Vector2(12, -5), Vector2(0, 18)], s + 4, 0.3)), Color(1, 0.6, 0.1, 0.55), _lw(2.6, k), true)
 
-# ---------- 不拿拿：香蕉
+# ---------- 不那那：香蕉
 
 ## 香蕉弧：t 从 0（梗那头，左）到 1（尖，右），弯成一个笑脸弧
 static func _banana_pt(t: float, side: float) -> Vector2:
@@ -544,7 +547,7 @@ static func _banana_parts(frag: bool, s: int) -> Array:
 	var stem_a := _banana_pt(0.0, 0.0)
 	var stem := capsule(stem_a - _banana_stem_dir() * 2.0, stem_a + _banana_stem_dir() * 9.0 + Vector2(0, -2), 3.4, s + 1)
 	if frag:
-		# 半截不拿拿：梗那一半，断口露出果肉
+		# 半截不那那：梗那一半，断口露出果肉
 		return [P(_X(_banana_body(0.0, 0.52, s)), BANANA, 1), P(_X(stem), LEAF_D.lerp(WOOD, 0.5), 1)]
 	return [P(_X(_banana_body(0.0, 1.0, s)), BANANA, 1), P(_X(stem), LEAF_D.lerp(WOOD, 0.5), 1)]
 
@@ -802,7 +805,7 @@ static func _emberpot(ci: CanvasItem, s: int, rim: bool) -> void:
 		ci.draw_colored_polygon(star_pts(p, 5.5, 2.2, 4, s + 50 + k), FIRE2)
 
 # ---------------------------------------------------------------- 宝箱、卡包、道具
-## 宝箱一律合着盖，每种宝箱一个外形：藤编宝箱 = 圆顶藤箱、体力宝箱 = 木桶、高级宝箱 = 尖顶匣、
+## 宝箱有合盖和开盖两种烘焙状态：藤编宝箱 = 圆顶藤箱、体力宝箱 = 木桶、高级宝箱 = 尖顶匣、
 ## 订单补给箱 = 木板条箱、自选宝箱 = 三个小窗的箱子。正面的徽章画着里面会出的东西。
 ## 档次一眼区分：1 素 → 2 草绳箍 → 3 铜箍铆钉 → 4 深色箱身 + 金箍 + 宝石 → 5 金饰 + 皇冠 + 光晕星光。
 const BOX_PURPLE := Color("8a5cc9")
@@ -840,15 +843,78 @@ static func _box_end(ci: CanvasItem, tier: int, prev: Transform2D, s: int) -> vo
 	_outer = prev
 	ci.draw_set_transform_matrix(prev)
 
-static func _box(ci: CanvasItem, ch: String, lv: int, s: int, rim: bool) -> void:
+static func _box(ci: CanvasItem, ch: String, lv: int, s: int, rim: bool, opened := false) -> void:
 	var tier := clampi(lv, 1, 5)
 	var prev := _box_begin(ci, tier)
+	if opened:
+		_open_box(ci, ch, tier, s, rim)
+		_box_end(ci, tier, prev, s)
+		return
 	match ch:
 		"energybox": _box_barrel(ci, tier, s, rim)
 		"premiumbox": _box_casket(ci, tier, s, rim)
 		"orderbox": _box_crate(ci, tier, lv, s, rim)
 		_: _box_trunk(ci, tier, s, rim)
 	_box_end(ci, tier, prev, s)
+
+static func _open_box(ci: CanvasItem, ch: String, tier: int, s: int, rim: bool) -> void:
+	var trim: Color = BOX_TRIM[tier]
+	var col := Color("c08a4a")
+	var top := -2.0
+	var half := 38.0
+	var body: PackedVector2Array
+	var lid: PackedVector2Array
+	match ch:
+		"energybox":
+			col = Color("d9773a"); top = -26.0; half = 29.0
+			var right := []; var left := []
+			for i in 13:
+				var y := lerpf(top, 38.0, float(i) / 12.0)
+				right.append(Vector2(_barrel_hw(y), y)); left.append(Vector2(-_barrel_hw(y), y))
+			left.reverse()
+			body = poly(right + left, s, 0.5)
+			lid = ell(Vector2(0, top - 19), Vector2(30, 14), s + 1, 0.03, 20, -0.16)
+		"premiumbox":
+			col = BOX_PURPLE; top = 2.0; half = 36.0
+			body = rrect(Rect2(-half, top, half * 2, 38 - top), 6, s, 0.5)
+			lid = poly([Vector2(-39, -24), Vector2(39, -24), Vector2(29, -52), Vector2(-29, -52)], s + 1, 0.5)
+		"orderbox":
+			col = Color("a8693a"); top = -18.0; half = 37.0
+			body = rrect(Rect2(-half, top, half * 2, 38 - top), 5, s, 0.5)
+			lid = poly([Vector2(-40, -35), Vector2(40, -35), Vector2(32, -55), Vector2(-32, -55)], s + 1, 0.4)
+		_:
+			body = rrect(Rect2(-half, top, half * 2, 38 - top), 6, s, 0.5)
+			var dome := []
+			for i in 15:
+				var x := lerpf(-40.0, 40.0, float(i) / 14.0)
+				dome.append(Vector2(x, _dome_y(x) - 26))
+			lid = poly(dome, s + 1, 0.4)
+	if tier >= 4: col = col.darkened(0.25)
+	var inner := ell(Vector2(0, top - 2), Vector2(half - 3, 10), s + 3, 0.02, 20)
+	var parts := [P(lid, col.lightened(0.1), 1)]
+	parts.append_array(_box_crown(Vector2(0, -55), tier, s + 2))
+	parts.append_array([P(body, col, 1), P(inner, Color("332011"), 2)])
+	sil(ci, parts, rim)
+	ci.draw_arc(Vector2(0, top - 2), half - 1, 0.0, PI, 20, trim if tier >= 2 else col.lightened(0.22), 5.0, true)
+	if ch == "chest": _weave(ci, Rect2(-32, 10, 64, 23), s + 4)
+	else:
+		for y in [14.0, 30.0]: ln(ci, Vector2(-half + 5, y), Vector2(half - 5, y), 1.6, col.darkened(0.4), s + int(y))
+	if tier >= 2:
+		for x in [-half * 0.65, half * 0.65]: _strap(ci, x, top + 8, top + 8, 37, 7, trim, tier, s + int(x))
+	if tier >= 3: _studs(ci, [Vector2(-half + 7, 28), Vector2(half - 7, 28)], trim)
+	if ch == "energybox":
+		_emblem(ci, Vector2(0, 10), 16, tier, s + 8)
+		_icon_bolt(ci, Vector2(0, 10), 0.34)
+	elif ch == "premiumbox":
+		_emblem(ci, Vector2(0, 21), 15, tier, s + 8)
+		_icon_amber(ci, Vector2(0, 21), 0.3)
+	elif ch == "orderbox":
+		var paper := rrect(Rect2(-14, 4, 28, 29), 2, s + 8, 0.3)
+		sil(ci, [P(paper, BONE, 1)], false, 1.5)
+		for k in 3: ln(ci, Vector2(-8, 11 + k * 7), Vector2(8, 11 + k * 7), 1.5, WOOD_D, s + k)
+		ci.draw_circle(Vector2(8, 30), 6, BERRY)
+	else:
+		ci.draw_circle(Vector2(0, 17), 5, trim)
 
 ## 竖着的箍带（跟着箱子上沿的高度 top 起）
 static func _strap(ci: CanvasItem, x: float, top_l: float, top_r: float, bottom: float, w: float, col: Color, tier: int, s: int) -> void:

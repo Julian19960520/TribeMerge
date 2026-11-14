@@ -1,5 +1,5 @@
 {
-  "title": "逃离剑齿虎",
+  "title": "§ui.tigerescapepopup.4d795b5b190d§",
   "unlock_level": 6,
   "attack_interval_sec": 10800,
   "stages": [
@@ -124,21 +124,21 @@
     "pace_min": 0.45,
     "pace_max": 1.4,
     "names": [
-      "阿岩",
-      "小叶",
-      "石头",
-      "阿木",
-      "小牙",
-      "大熊",
-      "阿花",
-      "阿骨",
-      "小鹿",
-      "阿泉",
-      "阿风",
-      "小果",
-      "阿苗",
-      "大山",
-      "小火"
+      "§content.tiger_escape.9f425ef68f34§",
+      "§content.tiger_escape.29528a7d9f0f§",
+      "§content.tiger_escape.a1aca9fd68a9§",
+      "§content.tiger_escape.75df31bee772§",
+      "§cards.albums.cace8a6d3337§",
+      "§content.tiger_escape.719c3182c1d1§",
+      "§content.tiger_escape.2b64c437bc1b§",
+      "§content.tiger_escape.b32f3f9ee121§",
+      "§content.tiger_escape.be20ec93d3ea§",
+      "§content.tiger_escape.e9273aff56e0§",
+      "§content.tiger_escape.be78444301fa§",
+      "§content.tiger_escape.0de61cbc5605§",
+      "§content.tiger_escape.d85d9ebc0132§",
+      "§content.tiger_escape.3a77460a2b25§",
+      "§content.tiger_escape.57beb958bc19§"
     ]
   }
 }

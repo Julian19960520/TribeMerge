@@ -79,21 +79,21 @@ func run() -> void:
 	# 2. A normal purchase arrives once, is uploaded and acknowledged.
 	var bought: Dictionary = await Payments.buy("amber:0")
 	await idle()
-	check(bought.get("ok", false) and int(bought.get("amber", 0)) == 80 and g.amber == before + 80, "buying the ¥6 pack adds 80 amber")
-	check((await pending_grants()).is_empty() and not replay.needs_upload() and await cloud_amber() == before + 80, "the grant is uploaded and acknowledged")
+	check(bought.get("ok", false) and int(bought.get("amber", 0)) == 60 and g.amber == before + 60, "buying the ¥6 pack adds 60 amber")
+	check((await pending_grants()).is_empty() and not replay.needs_upload() and await cloud_amber() == before + 60, "the grant is uploaded and acknowledged")
 	await Payments.deliver()
-	check(g.amber == before + 80, "delivering again does not add amber twice")
+	check(g.amber == before + 60, "delivering again does not add amber twice")
 
 	# 3. Paid but the reply was lost and the client restarted: the grant arrives once on the next delivery.
 	var lost := await pay_silently("amber:1")
-	check(lost != "" and g.amber == before + 80 and (await pending_grants()).size() == 1, "a payment whose reply was lost leaves one pending grant")
+	check(lost != "" and g.amber == before + 60 and (await pending_grants()).size() == 1, "a payment whose reply was lost leaves one pending grant")
 	g.save_game()
 	var stored = JSON.parse_string(FileAccess.get_file_as_string(g.save_path))
 	replay.restore(stored)
 	await Payments.deliver()
 	await idle()
-	check(g.amber == before + 580 and replay.meta["grants"].has(lost), "after a restart the lost purchase is applied once")
-	check((await pending_grants()).is_empty() and await cloud_amber() == before + 580, "the recovered grant is uploaded and acknowledged")
+	check(g.amber == before + 390 and replay.meta["grants"].has(lost), "after a restart the lost purchase is applied once")
+	check((await pending_grants()).is_empty() and await cloud_amber() == before + 390, "the recovered grant is uploaded and acknowledged")
 
 	# 4. Applied locally but neither uploaded nor acknowledged: the server sends it again and it is not applied twice.
 	var twice := await pay_silently("amber:0")

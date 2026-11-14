@@ -29,8 +29,8 @@ var _t := 0.0
 func _ready() -> void:
 	SevenDay.login()
 	page = _first_page()
-	Popups.frame(self, PANEL, "七日任务", Color("ad6e36"))
-	UI.lbl(box, "所有页同时累计，可提前完成 · 每项单独领奖", Rect2(60, 236, 600, 34), 20, Color("8a6a48"))
+	Popups.frame(self, PANEL, TextCatalog.source("notice.data.f205a3d7f611"), Color("ad6e36"))
+	UI.lbl(box, TextCatalog.source("ui.sevendaypopup.2ec1f6c49767"), Rect2(60, 236, 600, 34), 20, Color("8a6a48"))
 	UI.box(box, Rect2(60, 274, 600, 50), func(ci, sz):
 		Art.item(ci, "xp_1", Vector2(22, 25), 40))
 	score = UI.lbl(box, "", Rect2(108, 272, 300, 52), 34, Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
@@ -46,7 +46,7 @@ func _ready() -> void:
 	tasks_root.mouse_filter = MOUSE_FILTER_IGNORE
 	box.add_child(tasks_root)
 	for k in 7:
-		var b := UI.btn(box, Rect2(48 + k * 90, TAB_Y, 84, 84), "第%d天" % (k + 1), "hide", func(): page = k; _refresh(), 21)
+		var b := UI.btn(box, Rect2(48 + k * 90, TAB_Y, 84, 84), TextCatalog.source("ui.sevendaypopup.670ac1b359ac") % (k + 1), "hide", func(): page = k; _refresh(), 21)
 		tabs.append(b)
 	G.seven_day_changed.connect(_schedule_refresh)
 	_refresh()
@@ -76,11 +76,11 @@ func _refresh() -> void:
 	if not is_instance_valid(score): return
 	var stages: Array = SevenDay.config()["milestones"]
 	var pts := SevenDay.points()
-	score.text = "成长积分 %d" % pts
-	goal.text = "全部领完啦！"
+	score.text = TextCatalog.resolve(TextCatalog.source("ui.sevendaypopup.bb26f1585be9") % pts)
+	goal.text = TextCatalog.resolve(TextCatalog.source("ui.sevendaypopup.d5a0e6c1dab4"))
 	for stage in stages:
 		if pts < int(stage["points"]):
-			goal.text = "再得 %d 分领下一档" % (int(stage["points"]) - pts)
+			goal.text = TextCatalog.resolve(TextCatalog.source("ui.sevendaypopup.84563e6328b4") % (int(stage["points"]) - pts))
 			break
 	rail.queue_redraw()
 	for child in tasks_root.get_children():
@@ -148,9 +148,9 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		var label := str(int(st["points"]))
 		var f: Font = G.font_title
 		var fs := 18 if label.length() < 3 else 16
-		var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		ci.draw_string_outline(f, Vector2(x - tw * 0.5, RAIL_Y + 7), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color.WHITE if reached else Color("f3ecdc"))
-		ci.draw_string(f, Vector2(x - tw * 0.5, RAIL_Y + 7), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Art.INK)
+		var tw := f.get_string_size(TextCatalog.resolve(label), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		ci.draw_string_outline(f, Vector2(x - tw * 0.5, RAIL_Y + 7), TextCatalog.resolve(label), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color.WHITE if reached else Color("f3ecdc"))
+		ci.draw_string(f, Vector2(x - tw * 0.5, RAIL_Y + 7), TextCatalog.resolve(label), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Art.INK)
 		# 泡泡和积分石之间的挂绳
 		Sprites.draw(ci, "ev_sd_rope", Rect2(x - 3, 98, 6, 30))
 		# 奖励泡泡：可领的上下跳、外圈发光；已领的变灰打勾；大奖更大、带光芒
@@ -177,7 +177,7 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		if grand:
 			var rib := Rect2(c.x - 30, c.y + rad - 6, 60, 24)
 			Sprites.draw(ci, "ev_sd_grand_rib", rib)
-			EventEntryArt.text(ci, "大奖", Vector2(c.x, rib.position.y + 19), 17, Color.WHITE, 4)
+			EventEntryArt.text(ci, TextCatalog.source("ui.sevendaypopup.42b1d59acde2"), Vector2(c.x, rib.position.y + 19), 17, Color.WHITE, 4)
 
 ## 「+1」小角标：这一档不止一样奖励
 func _more(ci: CanvasItem, c: Vector2, n: int) -> void:
@@ -206,7 +206,7 @@ func _task(task: Dictionary, y: float, k: int) -> void:
 		# 积分牌：一块石头挂牌，越难颜色越热；已领变灰
 		Sprites.draw(ci, "ev_sd_tag_claimed" if claimed else "ev_sd_tag_%d" % tier_key, Rect2(Vector2(16, sz.y * 0.5 - 42), Vector2(80, 84)))
 		EventEntryArt.text(ci, str(pts), Vector2(56, sz.y * 0.5 + 6), 32, Color.WHITE, 6)
-		EventEntryArt.text(ci, "积分", Vector2(56, sz.y * 0.5 + 30), 15, Color.WHITE, 4)
+		EventEntryArt.text(ci, TextCatalog.source("developer.pass_editor.10939f548645"), Vector2(56, sz.y * 0.5 + 30), 15, Color.WHITE, 4)
 		# 进度条
 		var bar := Rect2(112, 70, 196, 30)
 		var pfs := 18 if progress.length() <= 7 else 16
@@ -223,20 +223,20 @@ func _task(task: Dictionary, y: float, k: int) -> void:
 			ci.draw_circle(Vector2(560, sz.y * 0.5 - 8), 26, Art.INK)
 			ci.draw_circle(Vector2(560, sz.y * 0.5 - 8), 23, Art.MOSS_D)
 			ci.draw_polyline(PackedVector2Array([Vector2(548, sz.y * 0.5 - 8), Vector2(557, sz.y * 0.5 + 1), Vector2(573, sz.y * 0.5 - 18)]), Color.WHITE, 5, true)
-			EventEntryArt.text(ci, "已领取", Vector2(560, sz.y * 0.5 + 40), 20, Color("7a7264"), 0)
+			EventEntryArt.text(ci, TextCatalog.source("notice.sevenday.426e458a4124"), Vector2(560, sz.y * 0.5 + 40), 20, Color("7a7264"), 0)
 		elif ready:
 			# 「可领取」角标
 			var rib := Rect2(sz.x - 118, -12, 96, 30)
 			Sprites.draw(ci, "ev_sd_ready_rib", rib)
-			EventEntryArt.text(ci, "可领取", rib.get_center() + Vector2(0, 7), 18, Color.WHITE, 4))
+			EventEntryArt.text(ci, TextCatalog.source("ui.sevendaypopup.54cd6730d6f4"), rib.get_center() + Vector2(0, 7), 18, Color.WHITE, 4))
 	UI.lbl(tasks_root, str(task["title"]), Rect2(160, y + 12, 330, 44), 25, Color("8a7a66") if claimed else Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
 	if claimed: return
 	if not done:
 		UI.box(tasks_root, Rect2(530, y + 34, 128, 56), func(ci, sz):
 			Sprites.draw(ci, "ev_sd_wip", Rect2(Vector2.ZERO, sz))
-			EventEntryArt.text(ci, "进行中", Vector2(sz.x * 0.5, sz.y * 0.5 + 8), 22, Color("9a8a70"), 0), false)
+			EventEntryArt.text(ci, TextCatalog.source("ui.sevendaypopup.dc9591e56d50"), Vector2(sz.x * 0.5, sz.y * 0.5 + 8), 22, Color("9a8a70"), 0), false)
 		return
-	var b := UI.btn(tasks_root, Rect2(526, y + 28, 136, 70), "领取", "green", func(): _claim(str(task["id"]), false), 28)
+	var b := UI.btn(tasks_root, Rect2(526, y + 28, 136, 70), TextCatalog.source("ui.duelpopup.844ab9477225"), "green", func(): _claim(str(task["id"]), false), 28)
 	b.enabled = true
 
 func _claim(id: String, stage: bool) -> void:
@@ -252,9 +252,9 @@ func _stage(stage: Dictionary) -> void:
 		return
 	var p := PopupBase.new()
 	var grand := bool(stage.get("grand", false))
-	Popups.frame(p, Rect2(80, 470, 560, 520), str(stage.get("title", "阶段奖励")), Art.CLAY if grand else Art.TEAL)
+	Popups.frame(p, Rect2(80, 470, 560, 520), str(stage.get("title", TextCatalog.source("ui.sevendaypopup.359ef6249d74"))), Art.CLAY if grand else Art.TEAL)
 	var got := SevenDay.stage_got(stage)
-	var line := "已领取" if got else "累计 %d 积分可领（还差 %d）" % [int(stage["points"]), int(stage["points"]) - SevenDay.points()]
+	var line := TextCatalog.source("notice.sevenday.426e458a4124") if got else TextCatalog.source("ui.sevendaypopup.95d8603beb6e") % [int(stage["points"]), int(stage["points"]) - SevenDay.points()]
 	UI.lbl(p.box, line, Rect2(110, 545, 500, 46), 25, Color("8a5a30"))
 	var rewards: Array = stage["rewards"]
 	UI.box(p.box, Rect2(80, 600, 560, 220), func(ci, sz):
@@ -262,5 +262,5 @@ func _stage(stage: Dictionary) -> void:
 			var x: float = sz.x * 0.5 + (k - (rewards.size() - 1) / 2.0) * 150
 			Paint.reward_bubble(ci, Vector2(x, 96), 58, str(rewards[k][0]), 0, 770 + k)
 			EventEntryArt.text(ci, "×%d" % int(rewards[k][1]), Vector2(x, 190), 28, Color.WHITE, 6))
-	UI.btn(p.box, Rect2(230, 860, 260, 76), "知道了", "teal", p.close, 28)
+	UI.btn(p.box, Rect2(230, 860, 260, 76), TextCatalog.source("ui.mergeeventpopup.de32e20193ad"), "teal", p.close, 28)
 	G.main._attach_popup(p)

@@ -17,7 +17,7 @@ static var AMBER_PACKS: Array = []
 static var BUILDS: Array = []
 static var LEVEL_REWARDS := {}
 static var STORE_HOT: Array = []
-## 集市「不拿拿小摊」（data/store_shell.json）：每项 {"id", "price", "stock"}，每 STORE_SHELL_HOURS 小时刷新
+## 集市「不那那小摊」（data/store_shell.json）：每项 {"id", "price", "stock"}，每 STORE_SHELL_HOURS 小时刷新
 static var STORE_SHELL: Array = []
 static var STORE_SHELL_HOURS := 8
 static var STORE_SHELL_REFRESH := 5
@@ -40,7 +40,7 @@ const CARD_LEVEL := 8
 ## 活动和入口按等级一个个开放：竞品开局什么活动都没有，玩熟了合成再陆续出现。
 ## 带自己配置文件的活动（剑齿虎、化石、双人竞速、篝火竞速、月石遗迹）用各自的 unlock_level。
 const FEATURE_LEVELS := {"seven": 3, "gift": 4, "pass": 5, "rank": 6, "ufo": 7}
-const FEATURE_NAMES := {"seven": "七日任务", "gift": "部落礼包", "pass": "通行证", "rank": "排行榜", "ufo": "飞碟商人"}
+static var FEATURE_NAMES := {"seven": TextCatalog.source("notice.data.f205a3d7f611"), "gift": TextCatalog.source("notice.data.70541fc12efb"), "pass": TextCatalog.source("developer.host.2f0a2b5a01ff"), "rank": TextCatalog.source("notice.data.1ee95aa94712"), "ufo": TextCatalog.source("notice.data.c086e8b44aa2")}
 static func feature_level(id: String) -> int:
 	return int(FEATURE_LEVELS.get(id, 1))
 
@@ -50,7 +50,7 @@ static func activity_levels() -> Dictionary:
 	for id in FEATURE_LEVELS: out[FEATURE_NAMES[id]] = int(FEATURE_LEVELS[id])
 	for f in ["tiger_escape", "fossil_dig", "duel_race", "race"]:
 		var c: Dictionary = ConfigFiles.shared("res://data/%s.json" % f)
-		var title := str(c.get("title", {"duel_race": "双人竞速", "race": "篝火竞速"}.get(f, f)))
+		var title := str(c.get("title", {"duel_race": TextCatalog.source("notice.data.33c9c97e48ba"), "race": TextCatalog.source("notice.data.bb33bbf8c01b")}.get(f, f)))
 		out[title] = int(c.get("unlock_level", 1))
 	for s in ConfigFiles.shared("res://data/merge_events.json").get("seasons", []):
 		if bool(s.get("enabled", true)): out[str(s.get("entry_title", s.get("title", "")))] = int(s.get("unlock_level", 1))
@@ -72,6 +72,7 @@ static func _static_init() -> void:
 
 ## Commit a validated registry generation; on failure retain the prior complete generation.
 static func refresh() -> bool:
+	ConfigFiles.runtime_overrides = PriceBook.catalog.get("documents", {})
 	if not ConfigFiles.refresh():
 		for error in ConfigFiles.last_errors: push_error(error)
 		return false
@@ -134,7 +135,7 @@ static func _load() -> void:
 				maximum = maxi(maximum, int(curve["diff"][i]))
 		low.append(minimum)
 		high.append(maximum)
-	RANDOM_CURVES = [{"name": "下限", "diff": low}, {"name": "上限", "diff": high}]
+	RANDOM_CURVES = [{"name": TextCatalog.source("notice.data.2c3f8d6ce49a"), "diff": low}, {"name": TextCatalog.source("notice.data.8e7ddbeee310"), "diff": high}]
 	UNLOCK_ROWS = {}
 	for row in ConfigFiles.shared(ConfigFiles.UNLOCKS)["rows"]: UNLOCK_ROWS[row["id"]] = row["open"]
 	_line_index = {}
@@ -157,6 +158,8 @@ static func story_orders(level: int) -> Array:
 
 ## 升到下一级要的声望 = xp_base + (等级 - 1) / xp_div，在 data/rules.json 里调。
 static func xp_need(level: int) -> int:
+	var early: Array = RULES.get("xp_by_level", [])
+	if level >= 1 and level <= early.size(): return maxi(1, int(early[level - 1]))
 	var base := int(RULES.get("xp_base", 3))
 	var div := maxi(1, int(RULES.get("xp_div", 2)))
 	return maxi(1, base + (maxi(level, 1) - 1) / div)
@@ -246,25 +249,25 @@ static func level_unlocks(level: int) -> Array:
 	var out: Array = []
 	for l in LINES:
 		if int(l.get("unlock", 0)) == level and level > 1:
-			out.append("能做%s了" % str(l.get("name", "")))
+			out.append(TextCatalog.source("notice.data.3c0db30d775a") % str(l.get("name", "")))
 		var sub := str(l.get("sub", ""))
 		if sub != "" and level > 1 and product_open(level, sub) and not product_open(level - 1, sub):
-			out.append("族人开始想要%s" % str(CHAINS.get(str(l["sub"]), {}).get("name", "")))
+			out.append(TextCatalog.source("notice.data.1f0a007ab89d") % str(CHAINS.get(str(l["sub"]), {}).get("name", "")))
 	if level == int(RULES.get("craft_level", 3)):
-		out.append("新玩法：族人想吃饭啦（要下锅做）")
+		out.append(TextCatalog.source("notice.data.60f991a1a015"))
 	for id in DISHES:
 		var d: Dictionary = DISHES[id]
 		if int(d["unlock"]) == level and level > int(RULES.get("craft_level", 3)):
-			out.append("新菜谱：%s" % str(d["name"]))
+			out.append(TextCatalog.source("notice.data.1b4046c64e71") % str(d["name"]))
 	if level > 1 and order_total(level) > order_total(level - 1):
-		out.append("同时许愿的族人 +%d，现在 %d 位" % [order_total(level) - order_total(level - 1), order_total(level)])
+		out.append(TextCatalog.source("notice.data.cceb0cae7767") % [order_total(level) - order_total(level - 1), order_total(level)])
 	if level == CARD_LEVEL:
-		out.append("丰收祭卡册开放")
+		out.append(TextCatalog.source("notice.data.f0ffe31b59db"))
 	var acts := activity_levels()
 	for name in acts:
-		if int(acts[name]) == level and level > 1: out.append("新活动：%s" % name)
+		if int(acts[name]) == level and level > 1: out.append(TextCatalog.source("notice.data.a3fe574ac2c6") % name)
 	if level == BOOST_LEVEL:
-		out.append("新玩法：双倍体力（宝物变出的东西高 1 级）")
+		out.append(TextCatalog.source("notice.data.651ad0fee6e4"))
 	return out
 
 static func is_dish(id: String) -> bool:
@@ -457,7 +460,7 @@ static func _make_gen_stats(id: String) -> Dictionary:
 		st["refill"] = int(slot.get("refill_min", 12))
 	return st
 
-## 体力生产器（type "egen"，如火种罐）：点击不耗体力，一批 charges 次，点空后休息 refill_min 分钟再整批回满。
+## 体力生产器：不耗体力，具体有效期与恢复时钟由新人生产器规则管理。
 ## 配置在 chains.json 这条链的 prod[0]。返回格式同 gen_stats，多一个 "free"。
 static func egen_stats(id: String) -> Dictionary:
 	var prod = CHAINS[chain(id)].get("prod", [])
@@ -470,7 +473,7 @@ static func egen_stats(id: String) -> Dictionary:
 			usable.append({"id": str(d["id"]), "p": int(d["p"])})
 	if usable.is_empty():
 		return {}
-	return {"drops": usable, "charges": int(slot.get("charges", 24)), "refill": int(slot.get("refill_min", 720)), "free": true}
+	return {"drops": usable, "charges": int(slot.get("charges", 8)), "refill": int(slot.get("refill_min", 720)), "free": true}
 
 static func producers_of(ch: String) -> Array:
 	var l := line(str(CHAINS[ch].get("line", "")))
@@ -483,77 +486,80 @@ static func producers_of(ch: String) -> Array:
 
 static func describe(id: String) -> String:
 	if is_numeric_resource(id): return str(REWARD_RESOURCES[id]["description"])
-	if type_of(id) == "upgrade": return "拖到可升级物品上，使其提升1级，使用后消失。"
-	if type_of(id) == "scissors": return "拖到2级及以上物品上，拆成两个低一级物品，使用后消失。"
-	if Data.chain(id) == "orderbox": return "点一下就给一件族人正想要的东西，共%d次。篮子越高级给的越好，没打开前还能合成升级。" % int(SpecialChests.order_definition(id)["count"])
-	if Data.chain(id) == "premiumbox": return "%d级高级宝箱，点一下取出一件，共%d件体力或琥珀。没打开前还能合成升级。" % [lv(id), SpecialChests.count(id)]
+	if type_of(id) == "upgrade": return TextCatalog.source("notice.data.83eb30deb5bb")
+	if type_of(id) == "scissors": return TextCatalog.source("notice.data.befb6f57c800")
+	if Data.chain(id) == "orderbox": return TextCatalog.source("notice.data.c14a2bd6dafb") % int(SpecialChests.order_definition(id)["count"])
+	if Data.chain(id) == "premiumbox": return TextCatalog.source("notice.data.7c86baa46882") % [lv(id), SpecialChests.count(id)]
 	if Data.chain(id) == "energybox":
 		var total := 0
 		for item in SpecialChests.definition(id)["items"]: total += value_of(str(item))
-		return "%d级体力宝箱，点一下取出一件，共%d件、%d点体力。取出的体力还能继续合成。" % [lv(id), SpecialChests.count(id), total]
-	if Data.chain(id) == "chest": return "%d级藤编宝箱，点一下拿出一件，共%d件：资源、好东西或宝物。没打开前还能合成升级。" % [lv(id), SpecialChests.count(id)]
+		return TextCatalog.source("notice.data.57a9680ca8c6") % [lv(id), SpecialChests.count(id), total]
+	if Data.chain(id) == "chest": return TextCatalog.source("notice.data.f531c7922f96") % [lv(id), SpecialChests.count(id)]
 	if DISHES.has(id):
 		var d: Dictionary = DISHES[id]
 		var bits: PackedStringArray = []
 		for m in d["mats"]:
 			bits.append(name_of(str(m)))
 		var secs := int(d["secs"])
-		var clock := "%d 秒" % secs
+		var clock := TextCatalog.source("notice.data.517926f2a953") % secs
 		if secs >= 3600:
-			clock = "%d 小时" % (secs / 3600) if secs % 3600 == 0 else "%d 小时 %d 分钟" % [secs / 3600, secs % 3600 / 60]
+			clock = TextCatalog.source("notice.data.f24d0c399e61") % (secs / 3600) if secs % 3600 == 0 else TextCatalog.source("notice.data.f6dc3c925a2d") % [secs / 3600, secs % 3600 / 60]
 		elif secs >= 60:
-			clock = "%d 分钟" % (secs / 60) if secs % 60 == 0 else "%d 分 %d 秒" % [secs / 60, secs % 60]
-		return "用%s做成。制作需要 %s，可以用沙漏加速。%d 级解锁。" % ["、".join(bits), clock, int(d["unlock"])]
+			clock = TextCatalog.source("notice.data.441275a944fb") % (secs / 60) if secs % 60 == 0 else TextCatalog.source("notice.data.14bf9175170a") % [secs / 60, secs % 60]
+		return TextCatalog.source("notice.data.fabf3c04d980") % ["、".join(bits), clock, int(d["unlock"])]
 	var t := type_of(id)
 	var nx := next_id(id)
-	var tail := "合成可得：%s。" % name_of(nx) if nx != "" else "已经是最高级！"
+	var tail := TextCatalog.source("notice.data.f706e677fd73") % name_of(nx) if nx != "" else TextCatalog.source("notice.data.994bd700ac50")
 	match t:
 		"gen":
 			var st := gen_stats(id)
 			if st.is_empty():
 				var n := first_prod_lv(chain(id))
 				if n <= 0:
-					return "还不能生产。%s" % tail
-				return "还不能生产，合成到 %d 级才能点击。%s" % [n, tail]
+					return TextCatalog.source("notice.data.4901cf0da721") % tail
+				return TextCatalog.source("notice.data.0c5c3fdb9314") % [n, tail]
 			var bits: PackedStringArray = []
 			for d in st["drops"]:
 				bits.append("%s %d" % [name_of(str(d["id"])), int(d["p"])])
-			return "点一下能拿到%s。%s" % ["、".join(bits), tail]
+			return TextCatalog.source("notice.data.5cb11c71f59f") % ["、".join(bits), tail]
 		"egen":
 			var st := gen_stats(id)
 			if st.is_empty():
-				return "还不能生产。"
+				return TextCatalog.source("notice.data.da558152175b")
 			var rest := int(st["refill"])
-			var rest_text := "%d 小时" % (rest / 60) if rest % 60 == 0 else "%d 分钟" % rest
-			return "点一下免费掉出体力，每批 %d 次，用完休息 %s。体力合成到更高级再收，收得更多！" % [int(st["charges"]), rest_text]
+			var rest_text := TextCatalog.source("notice.data.f24d0c399e61") % (rest / 60) if rest % 60 == 0 else TextCatalog.source("notice.data.441275a944fb") % rest
+			var starter: Dictionary = RULES.get("starter_generator", {})
+			if id == str(starter.get("item", "")):
+				return TextCatalog.source("notice.data.2e905efaff17") % [int(starter["reward_level"]), int(starter["lifetime_sec"]) / 86400, rest_text, int(st["charges"])]
+			return TextCatalog.source("notice.data.08c4e6ad065d") % [int(st["charges"]), rest_text]
 		"item":
 			var l := line_of(id)
 			var sell := value_of(id)
-			var back := "丢掉可以换回 %d 不拿拿。" % sell if sell > 0 else ""
+			var back := TextCatalog.source("notice.data.b797c33cee7e") % sell if sell > 0 else ""
 			if not l.is_empty():
-				return "从%s里拿到的。%s%s" % [CHAINS[l["gen"]]["name"], back, tail]
+				return TextCatalog.source("notice.data.3d317673a560") % [CHAINS[l["gen"]]["name"], back, tail]
 			if back != "":
 				return back + tail
 		"energy", "shell", "amber", "sand" when value_of(id) <= 0:
-			return "合成到 2 级才能收取。%s" % tail
+			return TextCatalog.source("notice.data.d63394fd4de9") % tail
 		"energy":
-			return "点击收取 %d 点体力。%s" % [value_of(id), tail]
+			return TextCatalog.source("notice.data.bfcc2a59e43c") % [value_of(id), tail]
 		"shell":
-			return "点击收取 %d 不拿拿。%s" % [value_of(id), tail]
+			return TextCatalog.source("notice.data.4e95c9c43291") % [value_of(id), tail]
 		"amber":
-			return "点击收取 %d 琥珀。%s" % [value_of(id), tail]
+			return TextCatalog.source("notice.data.ce2d2f368aea") % [value_of(id), tail]
 		"sand":
-			return "点击收取 %d 份沙漏。每份能让正在制作的成品快 %s。%s" % [value_of(id), rush_text(), tail]
+			return TextCatalog.source("notice.data.e6c372cc495b") % [value_of(id), rush_text(), tail]
 		"choice":
-			return "%d级自选宝箱，点开三选一，选中的物品会留在这一格。没打开前还能合成升级。" % lv(id)
+			return TextCatalog.source("notice.data.10ea43411057") % lv(id)
 		"chest":
-			return "点一下取出一件物品，取完宝箱就没了。"
+			return TextCatalog.source("notice.data.83a2fa3dc002")
 		"pack":
-			return "%d级卡包，每包%d张卡片。%s" % [lv(id), int(CardPacks.config()["cards_per_pack"]), CardPacks.probability_text(id)]
+			return TextCatalog.source("notice.data.15eca9cf6383") % [lv(id), int(CardPacks.config()["cards_per_pack"]), CardPacks.probability_text(id)]
 		"token":
-			return "丰收祭的活动积分，每攒 %d 个换一个兽皮卡包。" % int(RULES.get("token_step", 10))
+			return TextCatalog.source("notice.data.14617eddea71") % int(RULES.get("token_step", 10))
 		"xp":
-			return "主角经验。实现带 ★ 的心愿就能获得，攒满就升级。"
+			return TextCatalog.source("notice.data.78a6f00684d0")
 	return tail
 
 static func build_def(id: String) -> Dictionary:
@@ -594,13 +600,9 @@ static func bubble_ok(id: String) -> bool:
 
 ## 价格 = k × 理论火苗^exp，按 step 取整：稀有度越高越贵，但越高级折扣越大。
 static func bubble_price(id: String) -> int:
-	var r := bubble_rule()
-	var raw := float(r.get("price_k", 0.6)) * pow(maxf(OrderRoll.flames(id), 1.0), float(r.get("price_exp", 0.8)))
-	var step := maxf(1.0, float(r.get("price_step", 5)))
-	var p := int(round(raw / step) * step)
-	return clampi(p, int(r.get("price_min", 5)), int(r.get("price_max", 300)))
+	return PriceBook.price(id, "bubble")
 
-## 合成掉不拿拿：合成结果越高级，掉的不拿拿物品越大（rules.json merge_coin.tiers = [[最低等级, 物品], ...]）。
+## 合成掉不那那：合成结果越高级，掉的不那那物品越大（rules.json merge_coin.tiers = [[最低等级, 物品], ...]）。
 static func merge_coin_item(merged: String) -> String:
 	var r = RULES.get("merge_coin", {})
 	var out := ""
@@ -614,8 +616,8 @@ static func merge_coin_chance() -> float:
 	var r = RULES.get("merge_coin", {})
 	return clampf(float(r.get("chance", 0.0)), 0.0, 1.0) if r is Dictionary else 0.0
 
-## 合成掉沙漏：普通物品合成后，在掉不拿拿之外再有 merge_sand.chance 的机会掉一个沙漏（rules.json merge_sand）。
-## 和不拿拿共用同一个掷点：[不拿拿概率, 不拿拿概率 + 沙漏概率) 这一段掉沙漏。服务器 Economy.merge_sand_item 同一套算法。
+## 合成掉沙漏：普通物品合成后，在掉不那那之外再有 merge_sand.chance 的机会掉一个沙漏（rules.json merge_sand）。
+## 和不那那共用同一个掷点：[不那那概率, 不那那概率 + 沙漏概率) 这一段掉沙漏。服务器 Economy.merge_sand_item 同一套算法。
 static func merge_sand_item(merged: String, level: int) -> String:
 	var r = RULES.get("merge_sand", {})
 	if not (r is Dictionary) or level < int(r.get("min_level", 1)) or DISHES.has(merged):
@@ -634,7 +636,7 @@ static func merge_sand_chance() -> float:
 
 static func rush_text() -> String:
 	var s := rush_sec()
-	return "%d 分钟" % (s / 60) if s % 60 == 0 else "%d 秒" % s
+	return TextCatalog.source("notice.data.441275a944fb") % (s / 60) if s % 60 == 0 else TextCatalog.source("notice.data.517926f2a953") % s
 
 ## 一份沙漏让制作快多少秒（rules.json rush_sec）。
 static func rush_sec() -> int:
@@ -670,7 +672,7 @@ static func resource_drop(scope: String, roll: float, level: int, merged: String
 		if level < int(entry.get("min_level", 1)): continue
 		if bool(entry.get("items_only", false)) and type_of(merged) != "item": continue
 		var id := str(entry.get("item", ""))
-		if not CHAINS.has(chain(id)) or not type_of(id) in ["shell", "amber", "energy", "sand"]: continue
+		if not is_board_item(id) or not type_of(id) in ["shell", "amber", "energy", "sand"]: continue
 		total += clampf(float(entry.get("chance", 0)), 0.0, 1.0)
-		if roll < total: return "%s_1" % chain(id)
+		if roll < total: return id
 	return ""

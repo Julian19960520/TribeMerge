@@ -36,10 +36,10 @@ static func pop_open() -> PopupBase:
 func _setup() -> void:
 	chain = Net.inst()
 	var r := R
-	Popups.frame(self, r, "部落礼包链", Art.CLAY)
+	Popups.frame(self, r, TextCatalog.source("ui.giftchainpopup.5e220b4208f3"), Art.CLAY)
 	_prog = UI.lbl(box, "", Rect2(r.position.x + 40, r.position.y + 52, 260, 36), 22, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
 	_time = UI.lbl(box, "", Rect2(r.end.x - 320, r.position.y + 52, 280, 36), 22, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_RIGHT)
-	var tip := UI.lbl(box, "按顺序领取 · 越往后越丰厚", Rect2(r.position.x, r.position.y + 90, r.size.x, 34), 20, Color("8a6a4a"))
+	var tip := UI.lbl(box, TextCatalog.source("ui.giftchainpopup.b3f29bad2869"), Rect2(r.position.x, r.position.y + 90, r.size.x, 34), 20, Color("8a6a4a"))
 	tip.modulate.a = 0.9
 	# 绳子（在卡片后面）
 	UI.box(box, Rect2(0, 0, 720, 1480), _paint_rope, false)
@@ -57,7 +57,7 @@ func _setup() -> void:
 func _process(_d: float) -> void:
 	if Engine.get_process_frames() % 20 == 0 and _time != null:
 		var left: float = chain.ends_at() - G.now()
-		_time.text = ("本期剩余 %s" % _fmt_left(left)) if chain.ok and left > 0.0 else ""
+		_time.text = TextCatalog.resolve((TextCatalog.source("ui.giftchainpopup.3dc7ee799f91") % _fmt_left(left)) if chain.ok and left > 0.0 else "")
 		if chain.ok and left <= 0.0 and not chain.loading:
 			chain.fetch()
 
@@ -71,7 +71,7 @@ static func _x0(cnt: int) -> float:
 static func _fmt_left(s: float) -> String:
 	var t := int(maxf(s, 0.0))
 	if t >= 86400:
-		return "%d天%d小时" % [t / 86400, (t % 86400) / 3600]
+		return TextCatalog.source("ui.giftchainpopup.ec6ebf9298e4") % [t / 86400, (t % 86400) / 3600]
 	return "%02d:%02d:%02d" % [t / 3600, (t % 3600) / 60, t % 60]
 
 # ---------------------------------------------------------------- 渲染
@@ -97,13 +97,13 @@ func _render() -> void:
 
 func _refresh_text() -> void:
 	var h: int = mini(chain.head(), chain.total())
-	_prog.text = "进度 %d / %d" % [h, chain.total()]
+	_prog.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.beed887fea16") % [h, chain.total()])
 	if not chain.online() or (not chain.ok and chain.fetched_once):
-		_status.text = "需要联网才能领取和购买"
+		_status.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.6fc9ed84dfa7"))
 	elif not chain.ok:
-		_status.text = "正在连接部落…"
+		_status.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.9b001b04f0a8"))
 	elif chain.done():
-		_status.text = "本期礼包全部领完啦！下期 %s 后刷新" % _fmt_left(chain.ends_at() - G.now())
+		_status.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.d952510eeb4d") % _fmt_left(chain.ends_at() - G.now()))
 	else:
 		_status.text = ""
 
@@ -189,15 +189,15 @@ func _card(i: int, live: bool) -> Control:
 		var b := UI.btn(n, br, "", "orange" if paid else "green", Callable(), 32)
 		b.title_font = not paid
 		if not online:
-			b.text = "需要联网"
+			b.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.6d9b08e20841"))
 			b.enabled = false
 		else:
-			b.text = Net.price_text(s) if paid else "免费领取"
+			b.text = TextCatalog.resolve(Net.price_text(s) if paid else TextCatalog.source("ui.giftchainpopup.e6bc71b83c80"))
 			b.enabled = not chain.busy
 		b.pressed.connect(func(): _press(i, n, b))
 		b.name = "gift_btn"
 	else:
-		var lk := UI.lbl(n, Net.price_text(s) if paid else "免费", Rect2(br.position.x, br.position.y + 8, br.size.x, 50), 26,
+		var lk := UI.lbl(n, Net.price_text(s) if paid else TextCatalog.source("developer.pass_editor.649a0fc7237e"), Rect2(br.position.x, br.position.y + 8, br.size.x, 50), 26,
 			Color("f3e2c0"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, not paid)  # 标题字体没有 ¥，价格用正文字体
 		lk.modulate.a = 0.85
 	return n
@@ -249,7 +249,7 @@ func _press(i: int, card: Control, b: TButton) -> void:
 	else:
 		r = await chain.claim(i)
 	if not r.get("ok", false):
-		G.main.toast(str(r.get("message", "连不上服务器，请稍后再试")))
+		G.main.toast(str(r.get("message", TextCatalog.source("notice.cloud.7428cb59febf"))))
 		if is_instance_valid(b):
 			b.enabled = true
 			b.queue_redraw()

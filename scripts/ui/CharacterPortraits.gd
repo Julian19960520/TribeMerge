@@ -8,7 +8,7 @@ static var _cache = TextureCache.new(24 * 1024 * 1024)
 
 static func catalog() -> Dictionary:
 	if _catalog.is_empty():
-		var value: Variant = JSON.parse_string(FileAccess.get_file_as_string(CONFIG))
+		var value: Variant = TextCatalog.hydrate(JSON.parse_string(FileAccess.get_file_as_string(CONFIG)))
 		if value is Dictionary and value.get("roles") is Array and value.get("characters") is Dictionary:
 			_catalog = value
 		else:
@@ -23,7 +23,7 @@ static func definition(role: int) -> Dictionary:
 	return catalog().get("characters", {}).get(character_id(role), {})
 
 static func person_name(role: int) -> String:
-	return str(definition(role).get("name", "族人"))
+	return str(definition(role).get("name", TextCatalog.source("ui.characterportraits.bbb9058f0671")))
 
 static func texture(role: int) -> Texture2D:
 	if "--replay-worker" in OS.get_cmdline_user_args(): return null

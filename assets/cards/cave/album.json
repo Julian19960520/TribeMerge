@@ -1,26 +1,26 @@
 {
 	"cards": [
-		"原住户",
-		"改个方向",
-		"门堵好了",
-		"洞太矮",
-		"冬暖夏凉",
-		"躺着喝水",
-		"画大一点",
-		"长牙",
-		"藏好洞口"
+		"§cards.album.0b2563b3967e§",
+		"§cards.album.a8ca837b1333§",
+		"§cards.album.79430bba4b49§",
+		"§cards.album.532d29bdb19b§",
+		"§cards.album.dfa730904ef5§",
+		"§cards.album.a818ec1fface§",
+		"§cards.album.fbc20c78cf11§",
+		"§cards.album.152d45e2a787§",
+		"§cards.album.4c80684b212f§"
 	],
-	"name": "洞穴生活",
+	"name": "§cards.album.ab35cbaf6c42§",
 	"texts": [
-		"兄弟，这洞什么都好，就是里面那头熊不肯搬。",
-		"兄弟，画的时候把方向换一下，就当是我追它。",
-		"兄弟，洞口堵好了，咱们今晚睡外面？",
-		"兄弟，这洞住久了，咱们会不会又四脚走路？",
-		"兄弟，这洞冬暖夏凉，它怎么知道现在什么季节？",
-		"兄弟，这洞下雨的时候，能躺着喝水。",
-		"兄弟，咱们在洞口画头更大的熊，它会不会就搬走？",
-		"兄弟，先别往里搬，这洞怎么还长牙？",
-		"兄弟，洞口别藏得太好，咱们明天还得回来。"
+		"§cards.album.228151d6e1e9§",
+		"§cards.album.afb072cd7c14§",
+		"§cards.album.1d206962dc41§",
+		"§cards.album.3ed1d44f73a9§",
+		"§cards.album.a113a1350eb3§",
+		"§cards.album.fd99dcc44d5c§",
+		"§cards.album.1d18423d863d§",
+		"§cards.album.8a19b7bc6248§",
+		"§cards.album.0e181c735bce§"
 	],
 	"art": [
 		"res://assets/cards/cave/resident_bear.png",

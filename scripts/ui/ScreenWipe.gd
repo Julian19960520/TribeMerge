@@ -43,10 +43,10 @@ func play(to: String, swap: Callable) -> void:
 	_t = 0.0
 	if to == "board":
 		_icon = "basket_6"
-		_label = "去合成"
+		_label = TextCatalog.source("ui.homescreen.a2bebd02a1d3")
 	else:
 		_icon = "fire_4"
-		_label = "回部落"
+		_label = TextCatalog.source("ui.screenwipe.2aa51e612535")
 	visible = true
 	mouse_filter = MOUSE_FILTER_STOP
 	set_process(true)
@@ -269,5 +269,5 @@ func _draw_badge() -> void:
 	if s > 0.6:
 		var base := ctr + Vector2(-120, 160)
 		var a := clampf((s - 0.6) / 0.4, 0.0, 1.0)
-		draw_string_outline(G.font_title, base, _label, HORIZONTAL_ALIGNMENT_CENTER, 240, 44, 10, Color(Art.INK, a))
-		draw_string(G.font_title, base, _label, HORIZONTAL_ALIGNMENT_CENTER, 240, 44, Color(1, 0.95, 0.8, a))
+		draw_string_outline(G.font_title, base, TextCatalog.resolve(_label), HORIZONTAL_ALIGNMENT_CENTER, 240, 44, 10, Color(Art.INK, a))
+		draw_string(G.font_title, base, TextCatalog.resolve(_label), HORIZONTAL_ALIGNMENT_CENTER, 240, 44, Color(1, 0.95, 0.8, a))

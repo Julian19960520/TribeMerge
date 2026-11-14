@@ -1,27 +1,27 @@
 [
 	{
 		"cards": [
-			"果子熟了",
-			"分工合作",
-			"酸果子",
-			"我的果子",
-			"不太好摘",
-			"会飞的籽",
-			"藏好了",
-			"酋长的树",
-			"找到了"
+			"§cards.albums.f2ae555194e9§",
+			"§cards.albums.c19793afa866§",
+			"§cards.albums.388dfd6bfc25§",
+			"§cards.albums.184aa45333fd§",
+			"§cards.albums.8f9b677a47c8§",
+			"§cards.albums.6826dc454654§",
+			"§cards.albums.2977eaa42023§",
+			"§cards.albums.b36c08ea4808§",
+			"§cards.albums.f6259612fe04§"
 		],
-		"name": "采摘",
+		"name": "§cards.albums.cd0f2982c4b3§",
 		"texts": [
-			"兄弟，我发现有些果子不用摘，树自己会扔。",
-			"兄弟，我发现你在上面摘的时候，我在下面也能吃饱。",
-			"兄弟，这个果子吃完，脸就挤到一起了。",
-			"兄弟，我发现每个果子咬一口，它们就都归我了。",
-			"兄弟，果子摘下来了，树还了我一巴掌。",
-			"兄弟，这个果子里面的籽会追人。",
-			"兄弟，我把果子藏好了。你帮我找找。",
-			"兄弟，这棵树比酋长还老，但他说是他的。",
-			"兄弟，我想起来果子藏哪了。"
+			"§cards.albums.566eb8810f2c§",
+			"§cards.albums.d83052315f58§",
+			"§cards.albums.7347294388e0§",
+			"§cards.albums.1987f56023b8§",
+			"§cards.albums.b7ba92539d6c§",
+			"§cards.albums.9338ef241069§",
+			"§cards.albums.1a2e9880d3c0§",
+			"§cards.albums.f0e4e5d41cac§",
+			"§cards.albums.f50be22957f5§"
 		],
 		"art": [
 			"res://assets/cards/gathering/ripe_fruit.png",
@@ -37,156 +37,156 @@
 	},
 	{
 		"cards": [
-			"鹿影",
-			"潜行",
-			"第一支矛",
-			"追踪",
-			"伏击",
-			"满载而归",
-			"鹿角",
-			"猎人誓言",
-			"林间晨雾"
+			"§cards.albums.93e5219dea07§",
+			"§cards.albums.6da1499a06e3§",
+			"§cards.albums.00b88391592e§",
+			"§cards.albums.4cabac041057§",
+			"§cards.albums.fe3c6dda5ec7§",
+			"§cards.albums.a962eebf8683§",
+			"§cards.albums.bf7d9a7a9a7d§",
+			"§cards.albums.8f74818a148d§",
+			"§cards.albums.e2366079c57e§"
 		],
-		"name": "林中狩猎"
+		"name": "§cards.albums.574b7fbcef15§"
 	},
 	{
 		"cards": [
-			"钻木取火",
-			"第一缕烟",
-			"围炉",
-			"火舞",
-			"守夜人",
-			"烤肉香",
-			"火光故事",
-			"星空下",
-			"余烬"
+			"§cards.albums.34ac98d2eefc§",
+			"§cards.albums.1fc92c5330a8§",
+			"§cards.albums.a6c54676c89f§",
+			"§cards.albums.73857e33353b§",
+			"§cards.albums.3e2c44a58ed3§",
+			"§cards.albums.897c7a599be8§",
+			"§cards.albums.237735c08600§",
+			"§cards.albums.30de50d820fe§",
+			"§cards.albums.c87800f628b7§"
 		],
-		"name": "篝火之夜"
+		"name": "§cards.albums.ec624481f545§"
 	},
 	{
 		"cards": [
-			"赭石手印",
-			"红色野牛",
-			"画师",
-			"炭笔",
-			"火把照壁",
-			"群手",
-			"神秘符号",
-			"壁上星辰",
-			"传承"
+			"§cards.albums.4a1bed093e2c§",
+			"§cards.albums.dbbe1f835822§",
+			"§cards.albums.995db99758fe§",
+			"§cards.albums.dc21e5da6d3e§",
+			"§cards.albums.950489489002§",
+			"§cards.albums.0fea12b4a66f§",
+			"§cards.albums.8794e3a4533d§",
+			"§cards.albums.2ae8672c5d08§",
+			"§cards.albums.387b20be60eb§"
 		],
-		"name": "洞穴壁画"
+		"name": "§cards.albums.f10852082070§"
 	},
 	{
 		"cards": [
-			"太阳鼓",
-			"面具",
-			"祭舞",
-			"贝壳项链",
-			"丰收果",
-			"图腾柱",
-			"长老祝福",
-			"欢宴",
-			"月下歌"
+			"§cards.albums.51bfd2093cb6§",
+			"§cards.albums.cce4a7c478a4§",
+			"§cards.albums.db86ff4a3a1f§",
+			"§cards.albums.cd6b9a866a06§",
+			"§cards.albums.15e7ae877220§",
+			"§cards.albums.8ae267e3eda3§",
+			"§cards.albums.b8e764792838§",
+			"§cards.albums.eba3babeab1f§",
+			"§cards.albums.32c9d6d7fbe2§"
 		],
-		"name": "丰收祭典"
+		"name": "§cards.albums.8c84506bb7e2§"
 	},
 	{
 		"cards": [
-			"鱼叉",
-			"浅滩",
-			"编网",
-			"跳跃的鲈鱼",
-			"独木舟",
-			"晒鱼",
-			"水鸟",
-			"河神",
-			"满网"
+			"§cards.albums.f1f39558eea9§",
+			"§cards.albums.d3c37e5037ee§",
+			"§cards.albums.0e74a570dd28§",
+			"§cards.albums.9bd053845795§",
+			"§cards.albums.6661d030b2ff§",
+			"§cards.albums.dd4fa6cc4bfd§",
+			"§cards.albums.86c46c78293a§",
+			"§cards.albums.7e52fae1a1af§",
+			"§cards.albums.ec0e99907541§"
 		],
-		"name": "河畔渔猎"
+		"name": "§cards.albums.d1d8f6e7ee40§"
 	},
 	{
 		"cards": [
-			"第一颗莓",
-			"藤篮",
-			"蜂巢",
-			"野蘑菇",
-			"坚果林",
-			"晨露",
-			"满篮",
-			"分享",
-			"种子"
+			"§cards.albums.914b6ec6a575§",
+			"§cards.albums.07e35a586b64§",
+			"§cards.albums.c24ea109a7b8§",
+			"§cards.albums.c9aee433d3b9§",
+			"§cards.albums.bcf481315f8a§",
+			"§cards.albums.63e873a955a5§",
+			"§cards.albums.9f162f4cbda8§",
+			"§cards.albums.7e564575eb7d§",
+			"§cards.albums.5e20fc223736§"
 		],
-		"name": "采集时节"
+		"name": "§cards.albums.ca58c68ead72§"
 	},
 	{
 		"cards": [
-			"燧石",
-			"敲击",
-			"石片飞溅",
-			"磨刃",
-			"绑柄",
-			"石斧",
-			"石矛",
-			"老匠人",
-			"传艺"
+			"§cards.albums.96e81d6689a3§",
+			"§cards.albums.891469d49c21§",
+			"§cards.albums.a390c2f17f57§",
+			"§cards.albums.ce704e063fdf§",
+			"§cards.albums.578e025a12ee§",
+			"§cards.albums.52698ee7d8f0§",
+			"§cards.albums.0a13922f8bfe§",
+			"§cards.albums.6b934c8f5e5d§",
+			"§cards.albums.defafb832584§"
 		],
-		"name": "石器工坊"
+		"name": "§cards.albums.588cbbb747ea§"
 	},
 	{
 		"cards": [
-			"老酋长",
-			"巫医",
-			"猎手",
-			"小不点",
-			"阿焰",
-			"小牙",
-			"长老",
-			"画师",
-			"守夜人"
+			"§cards.albums.4f770111d349§",
+			"§cards.albums.b71ac8c03b13§",
+			"§cards.albums.2f3a36d0e244§",
+			"§cards.albums.2f692e2f36a8§",
+			"§cards.albums.aae4332bbf5c§",
+			"§cards.albums.cace8a6d3337§",
+			"§cards.albums.58fb1b5f2c46§",
+			"§cards.albums.995db99758fe§",
+			"§cards.albums.3e2c44a58ed3§"
 		],
-		"name": "部落人物"
+		"name": "§cards.albums.d8535c77ef4b§"
 	},
 	{
 		"cards": [
-			"春雨",
-			"夏雷",
-			"秋实",
-			"冬雪",
-			"候鸟",
-			"冰河",
-			"花开",
-			"落叶",
-			"新月"
+			"§cards.albums.35d377242c03§",
+			"§cards.albums.f4527a1da163§",
+			"§cards.albums.1398940c8da9§",
+			"§cards.albums.0c7b57c79953§",
+			"§cards.albums.df0ae4a37893§",
+			"§cards.albums.e64a25295fbe§",
+			"§cards.albums.82f0f5344972§",
+			"§cards.albums.3ce777d39b5e§",
+			"§cards.albums.68cfe8d7608b§"
 		],
-		"name": "四季轮转"
+		"name": "§cards.albums.8da4bbfab509§"
 	},
 	{
 		"cards": [
-			"剑齿虎",
-			"巨鹿",
-			"洞熊",
-			"披毛犀",
-			"恐鸟",
-			"巨狼",
-			"大地懒",
-			"古象",
-			"巨鳄"
+			"§cards.albums.b9e89bda580d§",
+			"§cards.albums.686060a6930e§",
+			"§cards.albums.1bc29faf66cf§",
+			"§cards.albums.7a43617bf62b§",
+			"§cards.albums.086e695da6fb§",
+			"§cards.albums.4d730cf81d50§",
+			"§cards.albums.8d37cb95db66§",
+			"§cards.albums.c582125f5180§",
+			"§cards.albums.c0e5f093470f§"
 		],
-		"name": "远古巨兽"
+		"name": "§cards.albums.d156944976ea§"
 	},
 	{
 		"cards": [
-			"北斗",
-			"银河",
-			"流星",
-			"月神",
-			"日神",
-			"风神",
-			"雷神",
-			"星图",
-			"启明"
+			"§cards.albums.058ba68a9fdc§",
+			"§cards.albums.8738812f1d3f§",
+			"§cards.albums.b80b2398566a§",
+			"§cards.albums.b600fd7c3642§",
+			"§cards.albums.52a0188d4209§",
+			"§cards.albums.b4cbfcbe1818§",
+			"§cards.albums.474cac5faa37§",
+			"§cards.albums.28e2ebfb3f83§",
+			"§cards.albums.98bb33ddd577§"
 		],
-		"name": "星空传说"
+		"name": "§cards.albums.3847b7045283§"
 	}
 ]

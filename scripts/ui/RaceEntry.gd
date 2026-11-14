@@ -27,7 +27,7 @@ func _ready() -> void:
 
 func _on_tap() -> void:
 	if not race.unlocked():
-		G.main.toast("%d 级解锁篝火竞速" % race.unlock_level())
+		G.main.toast(TextCatalog.source("ui.raceentry.8bcea5694ccb") % race.unlock_level())
 		return
 	RacePopup.open()
 
@@ -77,23 +77,23 @@ func fly_from(from: Vector2) -> void:
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	# 一个状态牌：锁 → 等级；空闲 → 开赛；匹配中；比赛中 → 名次（金银铜底色）；比完 → 领奖 / 结算
-	var badge := {"text": "开赛", "style": "teal"}
+	var badge := {"text": TextCatalog.source("ui.duelentry.a75fb7376be1"), "style": "teal"}
 	var dot := false
-	if not race.unlocked(): badge = {"text": "%d级" % race.unlock_level(), "style": "lock"}
+	if not race.unlocked(): badge = {"text": TextCatalog.source("ui.duelentry.e0cda514ecc2") % race.unlock_level(), "style": "lock"}
 	elif race.ended():
 		dot = int(race.pending_result().get("me", {}).get("place", 0)) in [1, 2, 3]
-		badge = {"text": "领奖" if dot else "结算", "style": "go"}
-	elif race.matching(): badge = {"text": "匹配中", "style": "time"}
+		badge = {"text": TextCatalog.source("ui.duelentry.5375104054f0") if dot else TextCatalog.source("ui.raceentry.0e4062a72843"), "style": "go"}
+	elif race.matching(): badge = {"text": TextCatalog.source("ui.raceentry.9741f68e19c7"), "style": "time"}
 	elif race.racing():
 		var place: int = race.place_of(race.me())
-		badge = {"text": "第%d名" % place, "style": ["gold", "silver", "bronze"][place - 1] if place in [1, 2, 3] else "num"}
-	EventEntryArt.paint(ci, sz, "race", "香蕉竞速", badge, not race.unlocked(), dot, _bump)
+		badge = {"text": TextCatalog.source("ui.raceentry.a99e21d72785") % place, "style": ["gold", "silver", "bronze"][place - 1] if place in [1, 2, 3] else "num"}
+	EventEntryArt.paint(ci, sz, "race", TextCatalog.source("ui.raceentry.fb8cff7697b3"), badge, not race.unlocked(), dot, _bump)
 
 static func _txt(ci: CanvasItem, f: Font, s: String, c: Vector2, fs: int, col: Color, ol: int = 0) -> void:
 	if f == null:
 		return
-	var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var w := f.get_string_size(TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var p := Vector2(c.x - w * 0.5, c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
 	if ol > 0:
-		ci.draw_string_outline(f, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ol, Art.INK)
-	ci.draw_string(f, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		ci.draw_string_outline(f, p, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ol, Art.INK)
+	ci.draw_string(f, p, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)

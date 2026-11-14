@@ -14,7 +14,7 @@
   ],
   "characters": {
     "hero": {
-      "name": "主角 阿焰",
+      "name": "§content.portraits.0a301c70c79a§",
       "art": "res://assets/characters/hero.png",
       "avatar": [
         0.2,
@@ -30,7 +30,7 @@
       ]
     },
     "companion": {
-      "name": "族人 阿石",
+      "name": "§content.portraits.edc5aa6f1fcd§",
       "art": "res://assets/characters/companion.png",
       "avatar": [
         0.2,
@@ -40,7 +40,7 @@
       ]
     },
     "chief": {
-      "name": "酋长 巴图",
+      "name": "§content.portraits.ac4580a33b4c§",
       "art": "res://assets/characters/chief.png",
       "avatar": [
         0.24,
@@ -50,7 +50,7 @@
       ]
     },
     "elder": {
-      "name": "长者 老凿",
+      "name": "§content.portraits.058fb84eb930§",
       "art": "res://assets/characters/elder.png",
       "avatar": [
         0.2,
@@ -60,7 +60,7 @@
       ]
     },
     "woman": {
-      "name": "女族人 月禾",
+      "name": "§content.portraits.e707b073c405§",
       "art": "res://assets/characters/woman.png",
       "avatar": [
         0.18,
@@ -70,7 +70,7 @@
       ]
     },
     "child": {
-      "name": "小酋长 果果",
+      "name": "§content.portraits.5b41839a39f7§",
       "art": "res://assets/characters/child.png",
       "avatar": [
         0.14,

@@ -39,7 +39,7 @@ func frame_texture(id: String, rim: bool, frame: int) -> Texture2D:
 	var texture: Texture2D = _cache.fetch(path)
 	if texture == null and not _missing.has(id):
 		_missing[id] = true
-		push_warning("物品 %s 没有预绘制图片，请运行「生成物品图.bat」。" % id)
+		push_warning(TextCatalog.source("notice.itemanim.5dd3ad32f0af") % id)
 	return texture
 
 func cache_stats() -> Dictionary:

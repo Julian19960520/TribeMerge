@@ -22,6 +22,8 @@ from . import clock
 from .config import get_settings
 from .errors import ApiError
 from .models import Grant, PaymentOrder
+from .texts import hydrate
+from .texts import source as text_source
 
 DAY = 86400
 BEIJING = 8 * 3600
@@ -30,11 +32,13 @@ ITEM_ID = re.compile(r"^([a-z]+)_(\d{1,2})$")
 
 @lru_cache
 def _load(data_dir: str, name: str):
-    return json.loads((Path(data_dir) / name).read_text(encoding="utf-8"))
+    return hydrate(json.loads((Path(data_dir) / name).read_text(encoding="utf-8")))
 
 
 def data(name: str):
-    return _load(get_settings().data_dir, name)
+    from .economy import current
+    resolved = current()["documents"].get(name.removesuffix(".json"))
+    return hydrate(resolved) if resolved is not None else _load(get_settings().data_dir, name)
 
 
 def _chains() -> dict:
@@ -70,7 +74,7 @@ def _price_fen(value) -> int:
         value = float(digits) if digits else 0
     fen = int(round(float(value) * 100))
     if fen <= 0:
-        raise ApiError(422, "not_for_sale", "该商品不出售")
+        raise ApiError(422, "not_for_sale", text_source("server_notice.catalog.7045bcb55a06"))
     return fen
 
 
@@ -117,7 +121,7 @@ def quote(db, account_id: str, product: str, detail: dict) -> dict:
         packs = data("amber_packs.json")
         index = int(parts[1])
         if index >= len(packs):
-            raise ApiError(404, "unknown_product", "商品不存在")
+            raise ApiError(404, "unknown_product", text_source("server_notice.catalog.1ae6d9f15326"))
         price = _price_fen(packs[index]["price"])
         content["amber"] = int(packs[index]["n"])
     elif kind == "pass" and len(parts) == 2 and parts[1] in ("vip", "super"):
@@ -126,7 +130,7 @@ def quote(db, account_id: str, product: str, detail: dict) -> dict:
         tier = 1 if parts[1] == "vip" else 2
         owned = owned_pass_tier(db, account_id, season)
         if owned >= tier:
-            raise ApiError(409, "already_owned", "本赛季已拥有")
+            raise ApiError(409, "already_owned", text_source("server_notice.catalog.6790f18b666b"))
         row = purchase["vip" if tier == 1 else "super_vip"]
         rewards = _reward_list(row["rewards"])
         price = _price_fen(row["price_cny"])
@@ -143,7 +147,7 @@ def quote(db, account_id: str, product: str, detail: dict) -> dict:
         tiers = offer.get("tiers", []) if isinstance(offer, dict) else []
         index = int(parts[2])
         if index >= len(tiers):
-            raise ApiError(404, "unknown_product", "商品不存在")
+            raise ApiError(404, "unknown_product", text_source("server_notice.catalog.1ae6d9f15326"))
         tier = tiers[index]
         # A window lasts duration_sec and windows are separated by a cooldown, so no
         # duration-long interval can legitimately hold more than `limit` purchases.
@@ -152,7 +156,7 @@ def quote(db, account_id: str, product: str, detail: dict) -> dict:
             PaymentOrder.account_id == account_id, PaymentOrder.product == product,
             PaymentOrder.status == "paid", PaymentOrder.paid_at >= since)).scalar_one()
         if bought >= int(tier.get("limit", 1)):
-            raise ApiError(409, "limit_reached", "本期已买完")
+            raise ApiError(409, "limit_reached", text_source("notice.offers.9f313e10b9ed"))
         price = _price_fen(tier["price_cny"])
         content["rewards"] = _reward_list(tier["rewards"])
         content["offer"] = {"kind": parts[1], "tier": index}
@@ -161,13 +165,13 @@ def quote(db, account_id: str, product: str, detail: dict) -> dict:
         offer_id = str(detail.get("offer_id", ""))
         items = detail.get("items")
         if not config.get("enabled", False):
-            raise ApiError(409, "not_for_sale", "活动未开放")
+            raise ApiError(409, "not_for_sale", text_source("server_notice.catalog.8269829e18fd"))
         if not re.fullmatch(r"[0-9]{1,20}", offer_id) or not isinstance(items, list) \
                 or not int(config.get("min_items", 1)) <= len(items) <= int(config["max_items"]):
-            raise ApiError(422, "invalid_product", "礼包内容不合法")
+            raise ApiError(422, "invalid_product", text_source("server_notice.catalog.0a4e3a4d8698"))
         for item in items:
             if not isinstance(item, str) or item_type(item) != "item":
-                raise ApiError(422, "invalid_product", "礼包内容不合法")
+                raise ApiError(422, "invalid_product", text_source("server_notice.catalog.0a4e3a4d8698"))
         price = _price_fen(config["price_cny"])
         content["rewards"] = [[item, 1, "physical"] for item in [*items, *config.get("bonus_items", [])]]
         content["ufo"] = offer_id
@@ -176,18 +180,21 @@ def quote(db, account_id: str, product: str, detail: dict) -> dict:
         steps = data("gift_chain.json")["steps"]
         step = int(parts[1])
         if step >= len(steps) or float(steps[step].get("price", 0)) <= 0:
-            raise ApiError(404, "unknown_product", "商品不存在")
+            raise ApiError(404, "unknown_product", text_source("server_notice.catalog.1ae6d9f15326"))
         cycle = gift_cycle(now)
         price = _price_fen(steps[step]["price"])
         content["rewards"] = _reward_list(steps[step]["rewards"])
         content["gift"] = {"cycle": cycle, "step": step}
         once_key = f"gift:{cycle}:{step}"
     else:
-        raise ApiError(404, "unknown_product", "商品不存在")
+        raise ApiError(404, "unknown_product", text_source("server_notice.catalog.1ae6d9f15326"))
     if once_key and db.execute(select(PaymentOrder.id).where(
             PaymentOrder.account_id == account_id, PaymentOrder.once_key == once_key,
             PaymentOrder.status == "paid")).first() is not None:
-        raise ApiError(409, "already_owned", "已经买过了")
+        raise ApiError(409, "already_owned", text_source("server_notice.catalog.523afb6e7f0d"))
+    from .economy import current
+    book = current()
+    content["_pricing"] = {"currency": book["currency"], "market": book["market"], "version": book["version"]}
     return {"price_fen": price, "content": content, "once_key": once_key}
 
 

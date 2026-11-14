@@ -92,7 +92,7 @@ static func tick() -> void:
 ## Paid through the server; the grant delivers the shown items plus the bonus and marks the offer paid.
 static func buy(offer_id: String) -> Dictionary:
 	var offer: Dictionary = state()["offer"]
-	if not active() or str(offer.get("id", "")) != offer_id: return {"ok": false, "error": "飞碟已经飞走了", "message": "飞碟已经飞走了"}
+	if not active() or str(offer.get("id", "")) != offer_id: return {"ok": false, "error": TextCatalog.source("notice.ufooffer.5e24b751acf2"), "message": TextCatalog.source("notice.ufooffer.5e24b751acf2")}
 	var result: Dictionary = await Payments.buy("ufo", {"offer_id": offer_id, "items": offer.get("items", []).duplicate()})
-	if not result.get("ok", false): result["error"] = str(result.get("message", "没买成，再试一次"))
+	if not result.get("ok", false): result["error"] = str(result.get("message", TextCatalog.source("notice.ufooffer.b9eb30abfda8")))
 	return result

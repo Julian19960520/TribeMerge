@@ -14,6 +14,7 @@ from .config import get_settings
 from .errors import ApiError
 from .logs import log
 from .models import AuditLog, IdempotencyKey
+from .texts import source as text_source
 
 logger = logging.getLogger("tribe")
 IDEM_TTL = timedelta(days=2)
@@ -62,7 +63,7 @@ def request_fingerprint(payload: dict) -> str:
 def idem_get(db, account_id: str, key: str, endpoint: str, fingerprint: str):
     row = db.get(IdempotencyKey, (account_id, key), populate_existing=True)
     if row is not None and (row.endpoint != endpoint or row.request_hash != fingerprint):
-        raise ApiError(409, "idempotency_key_reused", "批次编号已用于其他操作")
+        raise ApiError(409, "idempotency_key_reused", text_source("server_notice.services.4c861a5b2c15"))
     return row
 
 

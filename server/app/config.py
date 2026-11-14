@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     database_url: str = f"sqlite:///{(SERVER_DIR / 'tribe.db').as_posix()}"
     # 游戏配置目录（data/*.json），服务器和客户端读同一份
     data_dir: str = str(REPO_DIR / "data")
+    pricing_market: str = "CN"
     # token 签名无关：token 是随机串，库里只存 sha256(pepper + token)。pepper 必须在正式环境里换掉。
     token_pepper: str = "dev-pepper-change-me"
     token_ttl_days: int = 30

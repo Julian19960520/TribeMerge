@@ -40,19 +40,19 @@ static func paint(ci: CanvasItem, sz: Vector2, kind: String, title: String, badg
 
 static func text(ci: CanvasItem, s: String, center: Vector2, fs: int, color: Color, ol := 6) -> void:
 	var f: Font = G.font_title
-	var p := center - Vector2(f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x / 2, 0)
-	ci.draw_string_outline(f, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ol, Art.INK)
-	ci.draw_string(f, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
+	var p := center - Vector2(f.get_string_size(TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x / 2, 0)
+	ci.draw_string_outline(f, p, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ol, Art.INK)
+	ci.draw_string(f, p, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
 
 ## 状态小牌：压在图片脚下，宽度随字
 static func _pill(ci: CanvasItem, c: Vector2, s: String, style: String) -> void:
 	var cols: Array = PILL.get(style, PILL["num"])
 	var f: Font = G.font_title
 	var fs := 18
-	var w := maxf(44.0, f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 20.0)
+	var w := maxf(44.0, f.get_string_size(TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 20.0)
 	var r := Rect2(c - Vector2(w * 0.5, 13), Vector2(w, 26))
 	Sprites.draw(ci, "ev_pill_" + (style if PILL.has(style) else "num"), r)
-	var p := Vector2(c.x - f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x * 0.5, c.y + 7)
+	var p := Vector2(c.x - f.get_string_size(TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x * 0.5, c.y + 7)
 	if style in ["go", "lock", "teal"]:
-		ci.draw_string_outline(f, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Art.INK)
-	ci.draw_string(f, p, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, cols[1])
+		ci.draw_string_outline(f, p, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Art.INK)
+	ci.draw_string(f, p, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, cols[1])

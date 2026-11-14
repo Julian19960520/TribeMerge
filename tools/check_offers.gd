@@ -18,7 +18,7 @@ func run() -> void:
 	for kind in ["spree", "energy"]:
 		for index in offers.tiers(kind).size():
 			var tier: Dictionary = offers.tier(kind, index)
-			var percent: float = offers.value(tier["rewards"]) / (float(tier["price_cny"]) * 15.0) * 100.0
+			var percent: float = offers.value(tier["rewards"]) / (float(tier["price_cny"]) * float(Data.ConfigFiles.shared("res://data/gift_chain.json")["cny_amber"])) * 100.0
 			check(absf(percent - float(tier["value_pct"])) <= 5.0, "%s tier %d value matches the displayed percentage" % [kind, index])
 	check(not replay.perform("offer", {"kind": "spree"}).get("ok", false), "spree stays locked at level twelve")
 	g.level = 13

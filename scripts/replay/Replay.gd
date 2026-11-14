@@ -18,6 +18,20 @@ const MANUAL_ALBUM_RULES := "148e80059573539ac7a6780c5d7b775ce0de00abadb91be0ac3
 ## The preceding browser release can retain its checkpoint across the cloud-save update.
 const PREVIOUS_OFFLINE_RULES := "7b5522454546bf929f010087a8dd4b3f4bfa6ee083cf312b0fc9d12795514b7d"
 const BEFORE_CARD_STARS_RULES := "abdb072fabf8603a575f3325b536dbe42681bc7f12fb96248ebd2abf689a5e07"
+const BEFORE_COIN_PICKUP_REMOVAL_RULES := "ef86550b91aa273856e22b106727f8dda55d4d85327c1c195b7470389ada58f0"
+const BEFORE_SERVER_ECONOMY_RULES := "dd9c7769e3ae345795094b422f6e88b2002f27ff66970c989ab03fcf040475ae"
+const BEFORE_HOT_SHOP_RULES := "e074486b0d78b486fb0cb7d423172f49966d3a1708e49ac9e342e3fe6a0c730e"
+const BEFORE_COOK_PACING_RULES := "1865782de6ee1dd9fb3f854d042154831e6cd96d99abdb30bcb0f95eafce4d8f"
+const BEFORE_TEXT_CATALOG_RULES := "4ec090c45c807a5174aaae85245097d900a4a4abbe4d1951ffbed8afd35faf1d"
+const BEFORE_PRODUCER_PACING_RULES := "e30916c754d1633c67d3e3affc43f587e352969010aad5955cfb8eb0660d0d97"
+const BEFORE_ORDER_FLOW_RULES := "31ec7cbd1f190378cf1a8814c3ac0f9c298caff482c76815e252c207d22bdd7b"
+const BEFORE_LEVEL_TWO_COIN_RULES := "fa628d805418c824fee3bed4c9278942a9249dc4d95f5022b1fcd8b79af59f56"
+const BEFORE_RARE_COIN_RULES := "38c358b1683e4966cd8bb9539303288785bd1c0d1195e1a53613d801ad0183d2"
+const BEFORE_COIN_DISCOVERY_RULES := "80240f5439369be58b4aa8cdf831b9c5553ee39cf5b50e0661ce7a888915b3a9"
+const BEFORE_BUILD_FLOW_RULES := "747be4e98beed55f025b5b44cd19580eaad90f67779f24a995f82219a61a2de7"
+const BEFORE_TUTORIAL_FIX_RULES := "1bbaf673be6810105f7e3a4fa0b15c5d3b9abd57b231fdfbb900f94f96edc831"
+const BEFORE_TUTORIAL_SITE_RULES := "fe667ea176bc41986b36eebe4ff6187becd564e8e62c8608434a345ec6cffbd8"
+const BEFORE_ONBOARDING_RULES := "0db23ef076a26fd053b2606408cef60d84fcac0a74c017095eabb493e306eee9"
 const BEFORE_STORAGE_ROW_RULES := "b40bce3652724254881454ff4f1e64944a2b5184fa3062481df01afffe1622a3"
 const HUD_FIELDS := ["level", "xp", "energy", "shells", "amber", "rush", "energy_stamp", "boost", "boost_gm", "inv", "inv_chests", "inv_cap", "discovered", "book_claimed", "builds", "cards", "card_stars", "stash", "tokens", "token_claimed", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season", "hot_bought", "hot_revision", "deals_bought", "deals_day", "shell_bought", "shell_period", "energy_buys", "offers", "ufo_offer", "gm_activities", "local_race", "duel_race", "tiger_escape", "fossil_dig"]
 var active := false
@@ -68,7 +82,8 @@ func _ready() -> void:
 	if not Cloud.enabled: meta["allow_gm"] = true
 	if G.random_seed == "": G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
 	var skip_journal := false
-	var upgrade_snapshot := G.loaded_save and not Cloud.enabled and ((str(saved.get("rules", "")) == PREVIOUS_OFFLINE_RULES and rules_hash() == FifthLineUpgrade.TO_RULES) or str(saved.get("rules", "")) in [BEFORE_CARD_STARS_RULES, BEFORE_STORAGE_ROW_RULES])
+	var economy_update := PriceBook.ready() and str(saved.get("rules_code", "")) == str(Data.ConfigFiles.shared("res://data/replay_build.json").get("code_sha256", ""))
+	var upgrade_snapshot := G.loaded_save and not Cloud.enabled and (economy_update or (str(saved.get("rules", "")) == PREVIOUS_OFFLINE_RULES and rules_hash() == FifthLineUpgrade.TO_RULES) or str(saved.get("rules", "")) in [BEFORE_CARD_STARS_RULES, BEFORE_STORAGE_ROW_RULES, BEFORE_ONBOARDING_RULES, BEFORE_TUTORIAL_SITE_RULES, BEFORE_TUTORIAL_FIX_RULES, BEFORE_BUILD_FLOW_RULES, BEFORE_COIN_DISCOVERY_RULES, BEFORE_RARE_COIN_RULES, BEFORE_LEVEL_TWO_COIN_RULES, BEFORE_ORDER_FLOW_RULES, BEFORE_COIN_PICKUP_REMOVAL_RULES, BEFORE_PRODUCER_PACING_RULES, BEFORE_TEXT_CATALOG_RULES, BEFORE_COOK_PACING_RULES, BEFORE_HOT_SHOP_RULES, BEFORE_SERVER_ECONOMY_RULES])
 	var upgrade_fifth_line := G.loaded_save and not Cloud.enabled and FifthLineUpgrade.applies(str(saved.get("rules", "")), rules_hash(), [RewardUpgrade.FROM_RULES, AUTOMATIC_ALBUM_RULES])
 	var upgrade_rewards := G.loaded_save and not Cloud.enabled and RewardUpgrade.applies(str(saved.get("rules", "")), rules_hash(), AUTOMATIC_ALBUM_RULES)
 	var upgrade_albums := G.loaded_save and not Cloud.enabled and str(saved.get("rules", "")) == AUTOMATIC_ALBUM_RULES and (rules_hash() == MANUAL_ALBUM_RULES or upgrade_rewards)
@@ -81,7 +96,7 @@ func _ready() -> void:
 			pending = []
 			inflight = {}
 		else:
-			recovery_error = "本地测试存档规则版本已更新"
+			recovery_error = TextCatalog.source("notice.replay.f7d86ceb2a6d")
 			pending = []
 			inflight = {}
 			base = 0
@@ -89,7 +104,7 @@ func _ready() -> void:
 			meta = {}
 			_generation = _new_generation()
 			G.loaded_save = false
-			Cloud._say.call_deferred(recovery_error + "，已开始新的测试进度")
+			Cloud._say.call_deferred(recovery_error + TextCatalog.source("notice.replay.c703852a5037"))
 			G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
 			G.random_streams = {}
 	_session_rules = rules_hash()
@@ -120,14 +135,35 @@ func _ready() -> void:
 		inflight = {}
 	if not checkpoint() and (upgrade_albums or upgrade_rewards or upgrade_fifth_line or upgrade_snapshot): authorized = false
 
+## A remote price update starts a new journal epoch while retaining all progress.
+func install_economy_catalog(catalog: Dictionary) -> bool:
+	if str(catalog.get("version", "")) == str(PriceBook.catalog.get("version", "")): return true
+	if executing: return false
+	if active and not checkpoint(): return false
+	var previous: Dictionary = PriceBook.catalog.duplicate(true)
+	if not PriceBook.install(catalog): return false
+	if not Data.refresh():
+		PriceBook.install(previous)
+		Data.refresh()
+		return false
+	_rules = ""
+	_rules_revision = -1
+	_session_rules = rules_hash()
+	pending = []
+	inflight = {}
+	base = seq
+	_generation = _new_generation()
+	G._apply_rules()
+	return checkpoint() if active else true
+
 func journal() -> Dictionary:
 	return {"base": base, "pending": pending, "inflight": inflight, "authorized": authorized,
-		"generation": _generation, "rules": _session_rules if _session_rules != "" else rules_hash()}
+		"generation": _generation, "rules": _session_rules if _session_rules != "" else rules_hash(), "rules_code": str(Data.ConfigFiles.shared("res://data/replay_build.json").get("code_sha256", ""))}
 
 func rules_hash() -> String:
 	var revision: int = Data.ConfigFiles.revision
 	if _rules == "" or revision != _rules_revision:
-		var parts := ["tribe-rules-1-godot-" + ENGINE]
+		var parts := ["tribe-rules-1-godot-" + ENGINE, "economy:" + str(PriceBook.catalog.get("rules_version", ""))]
 		for name in DirAccess.get_files_at("res://data"):
 			if name.ends_with(".json"):
 				var path := "res://data/" + name
@@ -189,7 +225,7 @@ func checkpoint() -> bool:
 	var error := JournalStore.write_checkpoint(G.save_path, G.save_dict(true))
 	if error != OK:
 		_generation = previous_generation
-		Cloud._say("无法保存进度，请检查可用存储空间")
+		Cloud._say(TextCatalog.source("notice.replay.d850002400ec"))
 		return false
 	JournalStore.rotate(_journal_path())
 	_ops_since_checkpoint = 0
@@ -299,7 +335,7 @@ func _recover() -> void:
 		var result = perform(str(operation["name"]), operation["args"], int(operation["at"]))
 		if _failed(result) or seq != int(operation["seq"]) or digest() != str(operation["hash"]):
 			restore(before)
-			recovery_error = "本地操作恢复校验失败，已保留最后完整操作"
+			recovery_error = TextCatalog.source("notice.replay.4b24e700e14a")
 			break
 		pending.append(operation)
 	_recovering = false
@@ -319,11 +355,11 @@ func _failed(result) -> bool:
 	return result is Dictionary and (result.has("error") or result.get("ok", true) == false)
 
 func perform(name: String, args: Dictionary = {}, at := -1):
-	if not active: return {"error": "未启用操作重放"}
-	if executing: return {"error": "操作正在处理"}
-	if not worker and not authorized: return {"error": "首次进入需要联网取得存档"}
+	if not active: return {"error": TextCatalog.source("notice.replay.810773e81f61")}
+	if executing: return {"error": TextCatalog.source("notice.replay.cb31501f6619")}
+	if not worker and not authorized: return {"error": TextCatalog.source("notice.replay.854bb07390a5")}
 	if not worker and not _recovering and _session_rules != "" and rules_hash() != _session_rules:
-		return {"error": "配置已变化，请保存并重开测试局"}
+		return {"error": TextCatalog.source("notice.replay.58f2bd5863bd")}
 	var before := snapshot()
 	var old_opened: Array = G.opened.duplicate()
 	var old_cooked: Array = G.cooked_pop.duplicate()
@@ -338,7 +374,7 @@ func perform(name: String, args: Dictionary = {}, at := -1):
 	advance()
 	var result: Dictionary = _reducer.dispatch(name, args)
 	result["ok"] = not _failed(result)
-	if not result["ok"] and not result.has("error"): result["error"] = str(result.get("message", "操作失败"))
+	if not result["ok"] and not result.has("error"): result["error"] = str(result.get("message", TextCatalog.source("notice.cloud.0c3b4cf7aa25")))
 	var failed := _failed(result)
 	var committed_name := name
 	var committed_args := args
@@ -378,7 +414,7 @@ func perform(name: String, args: Dictionary = {}, at := -1):
 			executing = false
 			G.clear_presentations()
 			G.set_block_signals(was_blocked)
-			return {"error": "无法保存操作，请检查可用存储空间"}
+			return {"error": TextCatalog.source("notice.replay.efaa509c63bb")}
 		pending.append(operation)
 		if pending.size() > MAX_PENDING: pending = pending.slice(pending.size() - MAX_PENDING)
 		_ops_since_checkpoint += 1
@@ -436,10 +472,10 @@ func connect_session(why: String) -> void:
 	elif why == "login" or (version != base and not bool(data.get("mine", false))):
 		# The account was played on another device since this one last synced.
 		if not adopt(data):
-			Cloud._say("云端存档无法读取，暂不同步本机进度")
+			Cloud._say(TextCatalog.source("notice.replay.a15761cc8a53"))
 			Cloud._offline("boot")
 			return
-		if why != "login": Cloud._say("已载入其他设备上的最新进度")
+		if why != "login": Cloud._say(TextCatalog.source("notice.replay.cba6feb567e0"))
 	elif version != base:
 		# Our own earlier upload whose reply was lost; this device is newer.
 		_force_upload = true
@@ -490,7 +526,7 @@ func upload() -> void:
 		return
 	var data: Dictionary = response[1]
 	if data.get("conflict", false):
-		if adopt(data): Cloud._say("账号在其他设备上有更新的进度，已载入云端存档")
+		if adopt(data): Cloud._say(TextCatalog.source("notice.replay.33822a3ab1af"))
 		else: Cloud._offline("upload")
 		return
 	pending = pending.filter(func(operation): return int(operation["seq"]) > uploaded_seq)
