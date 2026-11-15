@@ -98,8 +98,9 @@ func shop_buy(key: String, id: String) -> Dictionary:
 		var d: Dictionary = hot[k].duplicate()
 		d["key"] = "hot_%d" % k
 		rows.append(d)
-	for k in Data.STORE_SHELL.size():
-		var d: Dictionary = Data.STORE_SHELL[k].duplicate()
+	var stall: Array = context.shop.shell_stall()
+	for k in stall.size():
+		var d: Dictionary = stall[k].duplicate()
 		d["key"] = "shell_%d" % k
 		rows.append(d)
 	for d in rows:
@@ -539,6 +540,9 @@ func refresh_shell() -> Dictionary:
 	var result: Dictionary
 	if spend("amber", Data.STORE_SHELL_REFRESH):
 		context.clock.check_shell_period()
+		# 补货：周期号后面的补货次数 +1，小摊按新的种子重新摆货
+		var sp := str(state.shell_period)
+		state.shell_period = sp.get_slice(":", 0) + ":" + str(int(sp.get_slice(":", 1)) + 1 if sp.contains(":") else 1)
 		state.shell_bought = {}
 		result = {"ok": true}
 	else: result = {"ok": false, "message": TextCatalog.source("notice.boardrules.b874b509cd26")}

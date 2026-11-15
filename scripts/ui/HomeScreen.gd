@@ -20,6 +20,21 @@ var _go_q: Array[Callable] = []
 ## 0 原位，1 滑入，2 到位，3 等滑出，4 滑出
 var _go_phase := 0
 var _village: DrawBox
+var _ground: DrawBox
+var _front: DrawBox
+## 部落大地图层（TribeArt.WORLD 大小），position 就是镜头偏移
+var _world: Control
+var _arrow: TButton
+## 拖动：按下位置、是否已经拖起来、上一帧位置、松手后的惯性速度
+var _press_at := Vector2.ZERO
+var _pressing := false
+var _dragging := false
+var _last_drag := Vector2.ZERO
+var _fling := Vector2.ZERO
+var _cam_tw: Tween
+## 屏幕上能看清村庄的区域（扣掉顶栏和底部按钮）
+const VIEW_FOCUS := Vector2(360, 760)
+const DRAG_START := 14.0
 ## {区域 id: 部件下标}：正在播建造动画的那件，村庄层先不画
 var _hide := {}
 var _build_fx: Control
@@ -34,14 +49,32 @@ const CARD_YELLOW_L := Color("f2c66e")
 func _ready() -> void:
 	size = Vector2(720, 1480)
 	mouse_filter = MOUSE_FILTER_IGNORE
-	_village = UI.box(self, Rect2(0, 0, 720, 1480), func(ci, sz): Paint.village(ci, sz, G.builds, G.level, _hide))
+	# 部落大地图：比屏幕大，手指拖动看；村庄、走动的小人、地块牌子、建造动画都在 _world 里，按钮固定在屏幕上
+	var view := Control.new()
+	view.size = size
+	view.clip_contents = true
+	view.mouse_filter = MOUSE_FILTER_IGNORE
+	add_child(view)
+	_world = Control.new()
+	_world.size = TribeArt.WORLD
+	_world.mouse_filter = MOUSE_FILTER_IGNORE
+	view.add_child(_world)
+	# 三层：地面和后排树、前排树都是静止的，只在建造变化时重画；只有建筑层跟着沸腾线重绘，拖动和动画才不卡
+	_ground = UI.box(_world, Rect2(Vector2.ZERO, TribeArt.WORLD), func(_ci, _sz): Paint.village_ground(_ci, G.builds, G.level), false)
+	_village = UI.box(_world, Rect2(Vector2.ZERO, TribeArt.WORLD), func(ci, _sz): TribeArt.village(ci, G.builds, G.level, _hide))
+	_front = UI.box(_world, Rect2(Vector2.ZERO, TribeArt.WORLD), func(_ci, _sz): Paint.village_front(_ci, G.builds, G.level), false)
 	# 「兄弟，我发现」小人在村里溜达（在牌子和按钮下面，只在小人身上接点击）
 	var walkers := TribeWalkersScript.new()
-	add_child(walkers)
+	_world.add_child(walkers)
 	_spots_root = Control.new()
 	_spots_root.mouse_filter = MOUSE_FILTER_IGNORE
-	add_child(_spots_root)
+	_world.add_child(_spots_root)
 	_build_spots()
+	# 下一处要建的地方在屏幕外时，屏幕边上一个箭头指过去，点一下镜头滑过去
+	_arrow = UI.hit(self, Rect2(0, 0, 96, 96), func(): focus_next(true))
+	_arrow.extra = func(ci, sz): _paint_arrow(ci, sz)
+	_arrow.visible = false
+	focus_next(false)
 
 	# 左上两张小卡：通行证、部落礼包（同一套黄色卡片）
 	var ev := UI.hit(self, Rect2(14, 148, 100, 124), func(): G.main.open("pass"))
@@ -128,12 +161,189 @@ func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
 		ci.draw_string_outline(f, pos, "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 4, Art.INK)
 		ci.draw_string(f, pos, "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
 
+# ---------------------------------------------------------------- 镜头：拖动、惯性、对准地块
+
+## 镜头偏移夹在地图范围内（按当前缩放后的地图大小算）
+func _clamp_cam(p: Vector2) -> Vector2:
+	var w := TribeArt.WORLD * _zoom()
+	return Vector2(clampf(p.x, size.x - w.x, 0.0), clampf(p.y, size.y - w.y, 0.0))
+
+## 缩放：最小刚好铺满屏幕，最大 1.6 倍
+const ZOOM_MAX := 1.6
+func _zoom() -> float:
+	return _world.scale.x if _world != null else 1.0
+
+func _zoom_min() -> float:
+	return maxf(size.x / TribeArt.WORLD.x, size.y / TribeArt.WORLD.y)
+
+## 以主页坐标里的 anchor 为中心缩放（手指中点 / 鼠标位置下的那块地不动）
+func zoom_at(anchor: Vector2, factor: float) -> void:
+	var z0 := _zoom()
+	var z1 := clampf(z0 * factor, _zoom_min(), ZOOM_MAX)
+	if is_equal_approx(z0, z1): return
+	if _cam_tw != null and _cam_tw.is_valid(): _cam_tw.kill()
+	_fling = Vector2.ZERO
+	var wp := (anchor - _world.position) / z0
+	_world.scale = Vector2.ONE * z1
+	_world.position = _clamp_cam(anchor - wp * z1)
+
+## 屏幕事件坐标 → 主页坐标
+func _to_home(p: Vector2) -> Vector2:
+	return get_global_transform_with_canvas().affine_inverse() * p
+
+## 把地图上的点 at 放到屏幕的 VIEW_FOCUS 处
+func focus_on(at: Vector2, animate: bool) -> void:
+	var to := _clamp_cam(VIEW_FOCUS - at * _zoom())
+	_fling = Vector2.ZERO
+	if _cam_tw != null and _cam_tw.is_valid(): _cam_tw.kill()
+	if not animate or _world == null:
+		if _world != null: _world.position = to
+		return
+	_cam_tw = create_tween()
+	_cam_tw.tween_property(_world, "position", to, 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+## 对准下一处要建的地块（没有就对准篝火广场）
+func focus_next(animate: bool) -> void:
+	var id := G.rules.progression.next_build_id()
+	focus_on(TribeArt.area_at(id if id != "" else "fire"), animate)
+
+## 能不能拖：在部落页、没有弹窗、没有新手引导的黑罩、没在播建造动画（引导期间没有黑罩时照样能拖）
+func _can_drag() -> bool:
+	if not is_visible_in_tree() or is_building() or G.main == null or G.main.popup_layer.get_child_count() > 0:
+		return false
+	var guide = G.main.get("_guide")
+	return not (guide != null and is_instance_valid(guide) and guide.visible)
+
+## 双指缩放：按下的手指 {index: 位置}
+var _touches := {}
+var _pinch_d := 0.0
+var _pinching := false
+## 双指松开后跟着来的那次模拟鼠标抬起不算点击
+var _eat_release := false
+var _mouse_up_in_pinch := false
+
+func _input(e: InputEvent) -> void:
+	if _world == null:
+		return
+	# 双指：记下每根手指；两根手指时按距离变化缩放，期间不拖动
+	if e is InputEventScreenTouch:
+		if e.pressed: _touches[e.index] = e.position
+		else: _touches.erase(e.index)
+		if _touches.size() >= 2 and _can_drag():
+			if not _pinching: _mouse_up_in_pinch = false
+			_pinching = true
+			_pressing = false
+			_dragging = false
+			var ps: Array = _touches.values()
+			_pinch_d = (ps[0] as Vector2).distance_to(ps[1])
+		elif _touches.is_empty() and _pinching:
+			_pinching = false
+			_eat_release = not _mouse_up_in_pinch
+		return
+	if e is InputEventScreenDrag:
+		if not _touches.has(e.index): return
+		_touches[e.index] = e.position
+		if _pinching and _touches.size() >= 2:
+			var ps: Array = _touches.values()
+			var d := (ps[0] as Vector2).distance_to(ps[1])
+			if _pinch_d > 1.0 and d > 1.0:
+				zoom_at(_to_home(((ps[0] as Vector2) + (ps[1] as Vector2)) * 0.5), d / _pinch_d)
+			_pinch_d = d
+			get_viewport().set_input_as_handled()
+		return
+	if e is InputEventMagnifyGesture and _can_drag():
+		zoom_at(_to_home(e.position), e.factor)
+		return
+	# 鼠标滚轮
+	if e is InputEventMouseButton and e.pressed and e.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		if _can_drag():
+			zoom_at(_to_home(e.position), 1.1 if e.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.1)
+			get_viewport().set_input_as_handled()
+		return
+	if _pinching:
+		# 双指期间，系统模拟出来的鼠标事件不拖地图；松手时也别当成点击
+		if e is InputEventMouseButton or e is InputEventMouseMotion: get_viewport().set_input_as_handled()
+		if e is InputEventMouseButton and not e.pressed: _mouse_up_in_pinch = true
+		return
+	if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
+		if e.pressed:
+			_pressing = _can_drag()
+			_dragging = false
+			_press_at = e.position
+			_last_drag = e.position
+			_fling = Vector2.ZERO
+		else:
+			if _dragging or _eat_release:
+				# 拖过了就不算点击，免得松手时点到牌子或小人
+				get_viewport().set_input_as_handled()
+			_pressing = false
+			_dragging = false
+			_eat_release = false
+	elif e is InputEventMouseMotion and _pressing:
+		if not _dragging and e.position.distance_to(_press_at) > DRAG_START:
+			_dragging = true
+			if _cam_tw != null and _cam_tw.is_valid(): _cam_tw.kill()
+		if _dragging:
+			var d: Vector2 = (e.position - _last_drag) * _world_scale()
+			_world.position = _clamp_cam(_world.position + d)
+			_fling = d / maxf(get_process_delta_time(), 0.008)
+			_last_drag = e.position
+			get_viewport().set_input_as_handled()
+
+## 事件坐标是屏幕像素，主页按 720 宽缩放；换算回主页坐标
+func _world_scale() -> float:
+	var k := get_global_transform_with_canvas().get_scale().x
+	return 1.0 / k if k > 0.0 else 1.0
+
+func _update_camera(delta: float) -> void:
+	if not _dragging and _fling.length() > 20.0:
+		_world.position = _clamp_cam(_world.position + _fling * delta)
+		_fling *= pow(0.04, delta)
+	elif not _dragging:
+		_fling = Vector2.ZERO
+	# 下一处要建的地块在屏幕外：屏幕边上显示箭头
+	var id := G.rules.progression.next_build_id()
+	var show := id != "" and not G.tutorial_on
+	if show:
+		var p := TribeArt.area_at(id) * _zoom() + _world.position
+		var inner := Rect2(60, 230, size.x - 120, 1020)
+		show = not inner.has_point(p)
+		if show:
+			var c := Vector2(clampf(p.x, inner.position.x, inner.end.x), clampf(p.y, inner.position.y, inner.end.y))
+			_arrow.position = c - _arrow.size * 0.5
+			_arrow.set_meta("dir", (p - c).normalized())
+	if _arrow.visible != show: _arrow.visible = show
+	if show: _arrow.queue_redraw()
+
+func _paint_arrow(ci: CanvasItem, sz: Vector2) -> void:
+	var c := sz * 0.5
+	var dir: Vector2 = _arrow.get_meta("dir", Vector2.DOWN)
+	var bob := sin(float(Time.get_ticks_msec()) / 220.0) * 5.0
+	ci.draw_circle(c, 34, Color(0, 0, 0, 0.18))
+	ci.draw_circle(c, 31, Art.BONE)
+	Paint.hammer(ci, c, 0.42)
+	var tip := c + dir * (44.0 + bob)
+	var side := dir.orthogonal() * 14.0
+	ci.draw_colored_polygon(PackedVector2Array([tip, tip - dir * 22.0 + side, tip - dir * 22.0 - side]), Color("e0a24a"))
+	Art.outline(ci, PackedVector2Array([tip, tip - dir * 22.0 + side, tip - dir * 22.0 - side, tip]), 2.0, Art.INK)
+
 func set_active(active: bool) -> void:
 	visible = active
 	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
 	if active and _spots_dirty: _build_spots()
 
+## 建筑层直接重画；地面和前排树很大，只在开放的地块变了时才重画（G.changed 每秒都会来，不能每次都画）
+var _lots_sig := ""
+func _redraw_village() -> void:
+	_village.queue_redraw()
+	var sig := str(Paint._opened(G.builds, G.level))
+	if sig == _lots_sig: return
+	_lots_sig = sig
+	if _ground != null: _ground.queue_redraw()
+	if _front != null: _front.queue_redraw()
+
 func _process(delta: float) -> void:
+	_update_camera(delta)
 	_clock_elapsed += delta
 	if _event_lbl and _clock_elapsed >= 1.0:
 		_clock_elapsed = fmod(_clock_elapsed, 1.0)
@@ -164,7 +374,7 @@ func _build_spots() -> void:
 		if wanted.has(id): continue
 		_spot_nodes[id].queue_free()
 		_spot_nodes.erase(id)
-	_village.queue_redraw()
+	_redraw_village()
 
 ## 区域木牌：名字 + 进度条；未开放显示等级；钱够下一件时右上角亮红点
 func _paint_tag(ci: CanvasItem, sz: Vector2, id: String) -> void:
@@ -223,6 +433,7 @@ func _open_next_build() -> void:
 				all_done = false
 		G.main.toast(TextCatalog.source("ui.homescreen.c91ca0a16fee") if all_done else TextCatalog.source("ui.homescreen.da3219beab24"))
 		return
+	focus_on(TribeArt.area_at(id), true)
 	G.main.open("build", id)
 
 # ---------------------------------------------------------------- 建造动画
@@ -235,19 +446,20 @@ func play_build(area: String, idx: int, kind: String, part_name: String, rewards
 	if is_building():
 		_build_fx.queue_free()
 	_hide = {area: idx}
-	_village.queue_redraw()
+	_redraw_village()
 	var at := TribeArt.part_at(area, idx)
+	focus_on(at, true)
 	var h := float(TribeArt._HEIGHT.get(kind, 80)) * TribeArt.VS
 	var fx := Control.new()
-	fx.size = size
+	fx.size = TribeArt.WORLD
 	fx.mouse_filter = MOUSE_FILTER_STOP
-	add_child(fx)
+	_world.add_child(fx)
 	_build_fx = fx
 	var st := {"t": 0.0, "hits": 0, "popped": false}
 	var dur := 2.3
-	var box := UI.box(fx, Rect2(Vector2.ZERO, size), func(ci, _sz): _paint_build(ci, at, kind, h, float(st["t"])), false)
+	var box := UI.box(fx, Rect2(Vector2.ZERO, TribeArt.WORLD), func(ci, _sz): _paint_build(ci, at, kind, h, float(st["t"])), false)
 	var lbl := UI.lbl(fx, TextCatalog.source("ui.homescreen.28c5830c2172") % part_name, Rect2(at.x - 200, at.y - h - 70, 400, 50), 32, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
-	lbl.position.x = clampf(lbl.position.x, -60.0, size.x - 340.0)
+	lbl.position.x = clampf(lbl.position.x, -60.0, TribeArt.WORLD.x - 340.0)
 	lbl.modulate.a = 0.0
 	lbl.pivot_offset = lbl.size * 0.5
 	var tw := fx.create_tween()
@@ -272,7 +484,7 @@ func play_build(area: String, idx: int, kind: String, part_name: String, rewards
 	, 0.0, dur, dur)
 	tw.tween_callback(func():
 		_hide = {}
-		_village.queue_redraw()
+		_redraw_village()
 		_build_spots()
 		fx.queue_free()
 		_build_fx = null

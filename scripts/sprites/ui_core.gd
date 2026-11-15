@@ -30,8 +30,8 @@ static func entries() -> Array:
 		"draw": func(ci, r): live_badge_num(ci, r.get_center())})
 	out.append({"key": "check_mark", "w": 34, "h": 34, "pad": 4,
 		"draw": func(ci, r): live_check_mark(ci, r.get_center())})
-	out.append({"key": "level_badge", "w": 250, "h": 230, "pad": 10,
-		"draw": func(ci, r): live_level_badge(ci, r.get_center() + Vector2(0, -2), 220.0)})
+	out.append({"key": "level_badge", "w": 250, "h": 270, "pad": 10,
+		"draw": func(ci, r): live_level_badge(ci, r.get_center(), 220.0)})
 	out.append({"key": "bar_bg", "w": 200, "h": 36, "pad": 6, "nine": [18, 17, 18, 17],
 		"draw": func(ci, r): _bar_bg(ci, r)})
 	out.append({"key": "bar_fill", "w": 194, "h": 30, "pad": 2, "nine": [15, 14, 15, 14],
@@ -204,26 +204,29 @@ static func live_badge_num(ci: CanvasItem, c: Vector2, seed: int = 7, radius: fl
 	Art.dilate(ci, b, 2.5, Art.INK)
 	ci.draw_colored_polygon(b, Art.CLAY)
 
-static func live_level_badge(ci: CanvasItem, c: Vector2, s: float, seed: int = 8) -> void:
-	var w := s * 0.5
-	var arr := []
-	for k in 9:
-		var a := PI + PI * float(k) / 8.0
-		arr.append(c + Vector2(cos(a) * w, sin(a) * w * 0.55 - s * 0.12))
-	arr.append(c + Vector2(w * 0.92, s * 0.42))
-	arr.append(c + Vector2(-w * 0.92, s * 0.42))
-	var pts := Art.poly(arr, seed, 1.0)
-	Art.dilate(ci, pts, 7.0, Color(1, 0.98, 0.9, 0.95))
-	Art.dilate(ci, pts, 3.5, Art.INK)
-	Art.shade(ci, pts, Color("b0a493"), 1)
-	var inner := PackedVector2Array()
-	for o in Geometry2D.offset_polygon(pts, -8.0):
-		inner = o
-	if inner.size() > 2:
-		Art.outline(ci, inner, 2.0, Color(0.3, 0.2, 0.1, 0.5))
-	for i in 5:
-		var x := c.x - w * 0.6 + w * 0.3 * float(i)
-		ci.draw_colored_polygon(Art.poly([Vector2(x, c.y + s * 0.3), Vector2(x + 5, c.y + s * 0.36), Vector2(x, c.y + s * 0.42), Vector2(x - 5, c.y + s * 0.36)], seed + i), Art.CLAY)
+## 等级：一颗胖胖的金星，等级数字由调用处写在中心。c 是星星中心，s 是整体宽度。
+static func live_level_badge(ci: CanvasItem, c: Vector2, s: float, _seed: int = 8) -> void:
+	var outer := s * 0.5
+	var inner := s * 0.3
+	var raw := PackedVector2Array()
+	for k in 10:
+		var a := -PI * 0.5 + TAU * float(k) / 10.0
+		raw.append(c + Vector2(cos(a), sin(a)) * (outer if k % 2 == 0 else inner))
+	# 角磨圆：先往里缩再往外扩
+	var star := raw
+	for o in Geometry2D.offset_polygon(raw, -s * 0.05, Geometry2D.JOIN_ROUND):
+		for o2 in Geometry2D.offset_polygon(o, s * 0.05, Geometry2D.JOIN_ROUND):
+			star = o2
+	Art.dilate(ci, star, s * 0.035, Color(1, 0.98, 0.9, 0.95))
+	Art.dilate(ci, star, s * 0.018, Art.INK)
+	ci.draw_colored_polygon(star, Color("e79a1e"))
+	for o in Geometry2D.offset_polygon(star, -s * 0.045, Geometry2D.JOIN_ROUND):
+		var lifted := PackedVector2Array()
+		for p in o:
+			lifted.append(p + Vector2(0, -s * 0.015))
+		ci.draw_colored_polygon(lifted, Color("ffc93c"))
+	ci.draw_colored_polygon(Art.ell(c + Vector2(-s * 0.13, -s * 0.17), Vector2(s * 0.07, s * 0.03), 3, 0.0, 12, -0.7, 0.0), Color(1, 1, 1, 0.55))
+	Art.outline(ci, star, s * 0.012, Art.INK)
 
 static func live_bar(ci: CanvasItem, r: Rect2, t: float, col: Color = Art.MOSS, seed: int = 9) -> void:
 	var b := Art.rrect(r, r.size.y * 0.5, seed, 0.5)

@@ -13,6 +13,7 @@ const K_HAMMER := 1.4
 const K_BOOK := 1.2
 const K_CARDS := 1.45
 const K_HUT := 1.1
+const K_SHOP := 1.1
 const K_POUCH := 1.2
 const K_HOME := 1.0
 const S_GIFT := 86.0
@@ -46,6 +47,8 @@ static func entries() -> Array:
 		"draw": func(ci, r): live_cards_icon(ci, r.get_center(), K_CARDS)})
 	out.append({"key": "paint_hut", "w": int(106 * K_HUT), "h": int(100 * K_HUT), "pad": 6,
 		"draw": func(ci, r): live_hut_icon(ci, r.get_center(), K_HUT)})
+	out.append({"key": "paint_shop", "w": int(112 * K_SHOP), "h": int(108 * K_SHOP), "pad": 6,
+		"draw": func(ci, r): live_shop_icon(ci, r.get_center(), K_SHOP)})
 	out.append({"key": "paint_pouch", "w": int(96 * K_POUCH), "h": int(104 * K_POUCH), "pad": 6,
 		"draw": func(ci, r): live_pouch(ci, r.get_center(), K_POUCH)})
 	out.append({"key": "paint_home", "w": int(80 * K_HOME), "h": int(96 * K_HOME), "pad": 6,
@@ -271,6 +274,51 @@ static func live_hut_icon(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 		Art.ln(ci, Vector2(x * 0.2, -32), Vector2(x, 0), 1.8, Color(0.45, 0.28, 0.05, 0.7), i)
 	for i in 4:
 		ci.draw_colored_polygon(Art.poly([Vector2(-30 + i * 16, 2), Vector2(-22 + i * 16, 2), Vector2(-26 + i * 16, 12)], i), Art.CLAY if i % 2 == 0 else Art.TEAL)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+## 集市：条纹遮阳棚的小摊，柜台上摆着果子、琥珀、香蕉（和部落小屋区分开）
+static func live_shop_icon(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	# 柱子和柜台
+	Art.sil(ci, [Art.P(Art.rrect(Rect2(-48, -30, 9, 64), 3, 1, 0.4), Art.WOOD_D, 2),
+		Art.P(Art.rrect(Rect2(39, -30, 9, 64), 3, 2, 0.4), Art.WOOD_D, 2),
+		Art.P(Art.rrect(Rect2(-46, 12, 92, 26), 5, 3, 0.5), Art.WOOD, 1)])
+	for i in 3:
+		Art.ln(ci, Vector2(-40, 20 + i * 7), Vector2(40, 20 + i * 7), 1.6, Color(0.4, 0.22, 0.08, 0.5), i)
+	# 柜台上的货
+	Art.sil(ci, [Art.P(Art.ell(Vector2(-24, 4), Vector2(11, 10), 4, 0.05), Art.BERRY, 0),
+		Art.P(Art.poly([Vector2(-6, -8), Vector2(6, -8), Vector2(11, 2), Vector2(0, 12), Vector2(-11, 2)], 5), Art.AMBER, 0),
+		Art.P(Art.poly([Vector2(14, -4), Vector2(20, 6), Vector2(32, 8), Vector2(38, 2), Vector2(31, 4), Vector2(22, 1), Vector2(18, -6)], 6), Color("f6cf3c"), 1)], false, 2.5)
+	ci.draw_circle(Vector2(-27, 0), 2.5, Color(1, 1, 1, 0.6))
+	# 条纹遮阳棚：上窄下宽，底边一排半圆
+	var n := 5
+	var tl := Vector2(-42, -50)
+	var tr := Vector2(42, -50)
+	var bl := Vector2(-54, -24)
+	var br := Vector2(54, -24)
+	var shape := PackedVector2Array([tl, tr])
+	var stripes: Array = []
+	for i in range(n - 1, -1, -1):
+		var b0 := bl.lerp(br, float(i) / n)
+		var b1 := bl.lerp(br, float(i + 1) / n)
+		var m := (b0 + b1) * 0.5
+		var hw := (b1.x - b0.x) * 0.5
+		var arc := PackedVector2Array()
+		for k in 9:
+			var a := PI * float(k) / 8.0
+			arc.append(m + Vector2(cos(a) * hw, sin(a) * 8.0))
+		shape.append_array(arc)
+		var t0 := tl.lerp(tr, float(i) / n)
+		var t1 := tl.lerp(tr, float(i + 1) / n)
+		var st := PackedVector2Array([t0, t1])
+		st.append_array(arc)
+		stripes.append([st, i])
+	Art.dilate(ci, shape, 9.0, Color(1, 0.98, 0.92, 0.96))
+	Art.dilate(ci, shape, 3.0, Art.INK)
+	for sp in stripes:
+		ci.draw_colored_polygon(sp[0], Art.CLAY if int(sp[1]) % 2 == 0 else Art.BONE)
+	ci.draw_colored_polygon(PackedVector2Array([tl, tr, tr + Vector2(2, 7), tl + Vector2(-2, 7)]), Color(1, 1, 1, 0.25))
+	Art.outline(ci, shape, 2.2, Art.INK)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 static func live_pouch(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:

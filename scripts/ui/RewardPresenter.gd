@@ -16,7 +16,7 @@ static func present(rewards: Array, from: Callable = Callable(), delivery: Dicti
 		if Data.is_numeric_resource(id): physical = false
 		if physical and str(reward[2]) == "item" and origin < 0 and type in Rewards.RESOURCE_TYPES and Data.value_of(id) > 0: physical = false
 		if not physical and (type in Rewards.RESOURCE_TYPES or type in ["xp", "token"]):
-			var dest: Vector2 = G.main.topbar.get_global_transform() * Vector2(64, 82) if type == "xp" else G.main.topbar.target(type)
+			var dest: Vector2 = G.main.topbar.get_global_transform() * TopBar.LEVEL_C if type == "xp" else G.main.topbar.target(type)
 			G.main.fly(id, pos, dest, Callable(), 90)
 		elif origin < 0:
 			item_flies.append([id, pos])

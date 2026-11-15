@@ -7,7 +7,7 @@
   ],
   "stats": {
     "unique_texts": 1873,
-    "references": 2495,
+    "references": 2496,
     "scopes": {
       "developer": 203,
       "legacy_story": 31,
@@ -4682,7 +4682,7 @@
         "data/chains.json#/23/name",
         "scripts/ui/ChoiceChestPopup.gd:79",
         "scripts/ui/UfoPopup.gd:138",
-        "scripts/ui/popups/ShopPopups.gd:224"
+        "scripts/ui/popups/ShopPopups.gd:241"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -4806,7 +4806,7 @@
         "addons/tribe_config/editors/board_editor.gd:55",
         "addons/tribe_config/editors/board_editor.gd:64",
         "addons/tribe_config/editors/board_editor.gd:66",
-        "scripts/ui/BoardScreen.gd:383"
+        "scripts/ui/BoardScreen.gd:393"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -5346,7 +5346,7 @@
       "en_US": "",
       "refs": [
         "addons/tribe_config/editors/chains_editor.gd:60",
-        "scripts/ui/popups/ShopPopups.gd:410"
+        "scripts/ui/popups/ShopPopups.gd:427"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -6210,7 +6210,7 @@
         "addons/tribe_config/host.gd:31",
         "scripts/Data.gd:51",
         "scripts/ui/CfgEdit.gd:91",
-        "scripts/ui/HomeScreen.gd:52"
+        "scripts/ui/HomeScreen.gd:85"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -6281,7 +6281,7 @@
       "refs": [
         "addons/tribe_config/host.gd:27",
         "scripts/ui/CfgEdit.gd:92",
-        "scripts/ui/HomeScreen.gd:88"
+        "scripts/ui/HomeScreen.gd:121"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -6632,8 +6632,8 @@
         "scripts/ui/config/ConfigGrowthPage.gd:313",
         "scripts/ui/popups/ShopPopups.gd:20",
         "scripts/ui/popups/ShopPopups.gd:28",
-        "scripts/ui/popups/ShopPopups.gd:406",
-        "scripts/ui/popups/ShopPopups.gd:418"
+        "scripts/ui/popups/ShopPopups.gd:423",
+        "scripts/ui/popups/ShopPopups.gd:435"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12574,11 +12574,11 @@
       "en_US": "",
       "refs": [
         "scripts/domain/BoardRules.gd:73",
-        "scripts/domain/ProgressionRules.gd:136",
-        "scripts/domain/ProgressionRules.gd:544",
+        "scripts/domain/ProgressionRules.gd:137",
+        "scripts/domain/ProgressionRules.gd:548",
         "scripts/replay/Reducer.gd:124",
         "scripts/replay/Reducer.gd:92",
-        "scripts/ui/popups/ItemPopups.gd:431",
+        "scripts/ui/popups/ItemPopups.gd:432",
         "scripts/ui/popups/ShopPopups.gd:52"
       ],
       "scope": "runtime",
@@ -12701,7 +12701,7 @@
         "scripts/ui/AccountPopup.gd:57",
         "scripts/ui/GiftChainPopup.gd:252",
         "scripts/ui/RacePopup.gd:80",
-        "scripts/ui/popups/ItemPopups.gd:431"
+        "scripts/ui/popups/ItemPopups.gd:432"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13983,9 +13983,9 @@
       "zh_CN": "典藏卡还没解锁",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:463",
-        "scripts/domain/ProgressionRules.gd:487",
-        "scripts/domain/ProgressionRules.gd:511",
+        "scripts/domain/ProgressionRules.gd:464",
+        "scripts/domain/ProgressionRules.gd:488",
+        "scripts/domain/ProgressionRules.gd:512",
         "scripts/replay/Reducer.gd:296",
         "scripts/replay/Reducer.gd:310"
       ],
@@ -13998,7 +13998,7 @@
       "zh_CN": "已经领完了",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:113"
+        "scripts/domain/ProgressionRules.gd:114"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14009,7 +14009,7 @@
       "zh_CN": "这件已经下架了",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:110"
+        "scripts/domain/ProgressionRules.gd:111"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14020,8 +14020,8 @@
       "zh_CN": "正在刷新",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:130",
-        "scripts/domain/ProgressionRules.gd:537"
+        "scripts/domain/ProgressionRules.gd:131",
+        "scripts/domain/ProgressionRules.gd:538"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14032,7 +14032,7 @@
       "zh_CN": "卖完了",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:113"
+        "scripts/domain/ProgressionRules.gd:114"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14055,8 +14055,8 @@
       "zh_CN": "没有可以打开的卡包",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:466",
-        "scripts/domain/ProgressionRules.gd:467"
+        "scripts/domain/ProgressionRules.gd:467",
+        "scripts/domain/ProgressionRules.gd:468"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14067,7 +14067,7 @@
       "zh_CN": "卡包不存在",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:488"
+        "scripts/domain/ProgressionRules.gd:489"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14089,7 +14089,7 @@
       "zh_CN": "兑换档位不存在",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:513"
+        "scripts/domain/ProgressionRules.gd:514"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14100,7 +14100,7 @@
       "zh_CN": "超级贵宾可领取循环奖励",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:302"
+        "scripts/domain/ProgressionRules.gd:303"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14111,7 +14111,7 @@
       "zh_CN": "超级贵宾可领取",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:290"
+        "scripts/domain/ProgressionRules.gd:291"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14122,7 +14122,7 @@
       "zh_CN": "星星不足",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:514"
+        "scripts/domain/ProgressionRules.gd:515"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14133,7 +14133,7 @@
       "zh_CN": "典藏卡在 %d 级解锁",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:486",
+        "scripts/domain/ProgressionRules.gd:487",
         "scripts/ui/PopupRegistry.gd:7"
       ],
       "scope": "runtime",
@@ -14147,7 +14147,7 @@
       "zh_CN": "卡池为空",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:492"
+        "scripts/domain/ProgressionRules.gd:493"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14158,7 +14158,7 @@
       "zh_CN": "激活通行证后可领取",
       "en_US": "",
       "refs": [
-        "scripts/domain/ProgressionRules.gd:276"
+        "scripts/domain/ProgressionRules.gd:277"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14549,7 +14549,7 @@
       "refs": [
         "scripts/replay/Reducer.gd:268",
         "scripts/replay/Reducer.gd:292",
-        "scripts/ui/BoardScreen.gd:556"
+        "scripts/ui/BoardScreen.gd:566"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14791,8 +14791,8 @@
         "scripts/ui/TigerEscapePopup.gd:162",
         "scripts/ui/TigerEscapePopup.gd:237",
         "scripts/ui/popups/CollectionPopups.gd:111",
-        "scripts/ui/popups/ShopPopups.gd:275",
-        "scripts/ui/popups/ShopPopups.gd:418"
+        "scripts/ui/popups/ShopPopups.gd:292",
+        "scripts/ui/popups/ShopPopups.gd:435"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14908,10 +14908,10 @@
       "en_US": "",
       "refs": [
         "scripts/events/UfoOffer.gd:97",
-        "scripts/ui/BoardScreen.gd:787",
+        "scripts/ui/BoardScreen.gd:797",
         "scripts/ui/PassPopup.gd:470",
         "scripts/ui/UfoPopup.gd:187",
-        "scripts/ui/popups/ShopPopups.gd:365"
+        "scripts/ui/popups/ShopPopups.gd:382"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16021,7 +16021,7 @@
       "zh_CN": "加速",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:413",
+        "scripts/ui/BoardScreen.gd:423",
         "scripts/ui/ChoiceChestPopup.gd:73"
       ],
       "scope": "runtime",
@@ -16033,7 +16033,7 @@
       "zh_CN": "%d级解锁收藏卡。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:862"
+        "scripts/ui/BoardScreen.gd:872"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16046,7 +16046,7 @@
       "zh_CN": "%d 秒后消失",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:831"
+        "scripts/ui/BoardScreen.gd:841"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16059,7 +16059,7 @@
       "zh_CN": "还没有沙漏。棋盘上的沙漏合成后再收，一次收得更多",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:491"
+        "scripts/ui/BoardScreen.gd:501"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16070,7 +16070,7 @@
       "zh_CN": "在旁边合成就能震开巨石，\n露出的东西拖一样的过去就能拿到。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:384"
+        "scripts/ui/BoardScreen.gd:394"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16081,7 +16081,7 @@
       "zh_CN": "制作 %s",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:361"
+        "scripts/ui/BoardScreen.gd:371"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16094,7 +16094,7 @@
       "zh_CN": "奖励、买到的东西和放不下的物品都会先放在这里",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:608"
+        "scripts/ui/BoardScreen.gd:618"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16105,7 +16105,7 @@
       "zh_CN": "卡包已保留，%d级开启",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:612"
+        "scripts/ui/BoardScreen.gd:622"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16118,7 +16118,7 @@
       "zh_CN": "出售 +%d",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:432"
+        "scripts/ui/BoardScreen.gd:442"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16131,7 +16131,7 @@
       "zh_CN": "用琥珀买下泡泡里的物品，\n倒计时结束泡泡就会消失。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:381"
+        "scripts/ui/BoardScreen.gd:391"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16142,7 +16142,7 @@
       "zh_CN": "剩余%d件。%s",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:860"
+        "scripts/ui/BoardScreen.gd:870"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16156,8 +16156,8 @@
       "zh_CN": "还要 %s。沙漏 %d（每份快 %s），做完要 %d 份。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:305",
-        "scripts/ui/BoardScreen.gd:362"
+        "scripts/ui/BoardScreen.gd:315",
+        "scripts/ui/BoardScreen.gd:372"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16173,10 +16173,10 @@
       "zh_CN": "%s (Lv.%d)",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:372",
-        "scripts/ui/BoardScreen.gd:380",
-        "scripts/ui/BoardScreen.gd:393",
-        "scripts/ui/BoardScreen.gd:820"
+        "scripts/ui/BoardScreen.gd:382",
+        "scripts/ui/BoardScreen.gd:390",
+        "scripts/ui/BoardScreen.gd:403",
+        "scripts/ui/BoardScreen.gd:830"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16190,7 +16190,7 @@
       "zh_CN": "%d级开启",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:177"
+        "scripts/ui/BoardScreen.gd:187"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16203,7 +16203,7 @@
       "zh_CN": "撤销",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:439"
+        "scripts/ui/BoardScreen.gd:449"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16214,7 +16214,7 @@
       "zh_CN": "升级",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:192"
+        "scripts/ui/BoardScreen.gd:202"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16226,8 +16226,8 @@
       "en_US": "",
       "refs": [
         "scripts/ui/BoardScreen.gd:108",
-        "scripts/ui/BoardScreen.gd:422",
-        "scripts/ui/BoardScreen.gd:512"
+        "scripts/ui/BoardScreen.gd:432",
+        "scripts/ui/BoardScreen.gd:522"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16249,7 +16249,7 @@
       "zh_CN": "制作完成",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:500"
+        "scripts/ui/BoardScreen.gd:510"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16260,7 +16260,7 @@
       "zh_CN": "双倍体力已关闭",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:532"
+        "scripts/ui/BoardScreen.gd:542"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16271,7 +16271,7 @@
       "zh_CN": "%d  买下",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:822"
+        "scripts/ui/BoardScreen.gd:832"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16284,7 +16284,7 @@
       "zh_CN": "点击打开，三件物品里挑一件。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:856"
+        "scripts/ui/BoardScreen.gd:866"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16295,7 +16295,7 @@
       "zh_CN": "%s：%s",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:279"
+        "scripts/ui/BoardScreen.gd:289"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16309,7 +16309,7 @@
       "zh_CN": "做好啦！菜在棋盘上，点对勾端给族人",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:585"
+        "scripts/ui/BoardScreen.gd:595"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16320,7 +16320,7 @@
       "zh_CN": "暂存区",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:170"
+        "scripts/ui/BoardScreen.gd:180"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16331,7 +16331,7 @@
       "zh_CN": "点一下取出一件物品，取完宝箱就没了。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:859"
+        "scripts/ui/BoardScreen.gd:869"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16342,7 +16342,7 @@
       "zh_CN": "%d级卡包，每包%d张卡片，点击查看星级概率。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:862"
+        "scripts/ui/BoardScreen.gd:872"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16356,7 +16356,7 @@
       "zh_CN": "完成建设任务来获得更多心愿！",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:249"
+        "scripts/ui/BoardScreen.gd:259"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16367,7 +16367,7 @@
       "zh_CN": "阿焰 Lv.%d",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:332"
+        "scripts/ui/BoardScreen.gd:342"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16380,7 +16380,7 @@
       "zh_CN": "%d级解锁双倍体力",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:526"
+        "scripts/ui/BoardScreen.gd:536"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16393,7 +16393,7 @@
       "zh_CN": "用了 %d 份沙漏，还差 %d 份",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:498"
+        "scripts/ui/BoardScreen.gd:508"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16407,7 +16407,7 @@
       "zh_CN": "双倍体力已开启：宝物每次耗 2 点体力，变出的东西高 1 级",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:530"
+        "scripts/ui/BoardScreen.gd:540"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16418,7 +16418,7 @@
       "zh_CN": "没送成，再试一次",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:271"
+        "scripts/ui/BoardScreen.gd:281"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16429,7 +16429,7 @@
       "zh_CN": "点物品看详情，拖动相同物品来合成",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:407"
+        "scripts/ui/BoardScreen.gd:417"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16976,7 +16976,7 @@
       "en_US": "",
       "refs": [
         "scripts/ui/DailyAdPopup.gd:17",
-        "scripts/ui/popups/ShopPopups.gd:277"
+        "scripts/ui/popups/ShopPopups.gd:294"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -17219,7 +17219,7 @@
         "scripts/ui/SevenDayPopup.gd:239",
         "scripts/ui/TigerEscapePopup.gd:162",
         "scripts/ui/popups/CollectionPopups.gd:111",
-        "scripts/ui/popups/ShopPopups.gd:279"
+        "scripts/ui/popups/ShopPopups.gd:296"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -18045,7 +18045,7 @@
       "zh_CN": "图鉴",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:84",
+        "scripts/ui/HomeScreen.gd:117",
         "scripts/ui/popups/ItemPopups.gd:36"
       ],
       "scope": "runtime",
@@ -18057,7 +18057,7 @@
       "zh_CN": "Lv.%d 开放",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:198",
+        "scripts/ui/HomeScreen.gd:408",
         "scripts/ui/popups/ProgressionPopups.gd:134",
         "scripts/ui/popups/ProgressionPopups.gd:74"
       ],
@@ -18072,7 +18072,7 @@
       "zh_CN": "%s 建成！",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:249"
+        "scripts/ui/HomeScreen.gd:461"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -18085,7 +18085,7 @@
       "zh_CN": "地图",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:75"
+        "scripts/ui/HomeScreen.gd:108"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -18096,7 +18096,7 @@
       "zh_CN": "去合成",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:91",
+        "scripts/ui/HomeScreen.gd:124",
         "scripts/ui/ScreenWipe.gd:46"
       ],
       "scope": "runtime",
@@ -18108,7 +18108,7 @@
       "zh_CN": "等前一块建完",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:198"
+        "scripts/ui/HomeScreen.gd:408"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -18119,7 +18119,7 @@
       "zh_CN": "部落已经全部建好啦！",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:224"
+        "scripts/ui/HomeScreen.gd:434"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -18130,7 +18130,7 @@
       "zh_CN": "建造",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:78"
+        "scripts/ui/HomeScreen.gd:111"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -18141,7 +18141,7 @@
       "zh_CN": "主角升级后会开放新的建造区域",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:224"
+        "scripts/ui/HomeScreen.gd:434"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -18152,7 +18152,7 @@
       "zh_CN": "排行",
       "en_US": "",
       "refs": [
-        "scripts/ui/HomeScreen.gd:71"
+        "scripts/ui/HomeScreen.gd:104"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -18351,7 +18351,7 @@
       "zh_CN": "已放入暂存区：%s",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ItemPopups.gd:439"
+        "scripts/ui/popups/ItemPopups.gd:440"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -18375,8 +18375,8 @@
       "zh_CN": "族人爱吃的菜（%d/%d）",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ItemPopups.gd:465",
-        "scripts/ui/popups/ItemPopups.gd:471"
+        "scripts/ui/popups/ItemPopups.gd:466",
+        "scripts/ui/popups/ItemPopups.gd:472"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -18401,7 +18401,7 @@
       "zh_CN": "不那那不够了！",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ItemPopups.gd:431"
+        "scripts/ui/popups/ItemPopups.gd:432"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -18493,7 +18493,7 @@
       "zh_CN": "获得 %d%s",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ItemPopups.gd:437"
+        "scripts/ui/popups/ItemPopups.gd:438"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -19178,7 +19178,7 @@
         "data/gift_chain.json#/steps/16/tag",
         "data/gift_chain.json#/steps/9/tag",
         "scripts/ui/PassPopup.gd:449",
-        "scripts/ui/popups/ShopPopups.gd:350"
+        "scripts/ui/popups/ShopPopups.gd:367"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -19874,7 +19874,7 @@
       "en_US": "",
       "refs": [
         "scripts/ui/RacePopup.gd:404",
-        "scripts/ui/popups/ShopPopups.gd:296"
+        "scripts/ui/popups/ShopPopups.gd:313"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20644,7 +20644,7 @@
       "zh_CN": "资源补给",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:219"
+        "scripts/ui/popups/ShopPopups.gd:232"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20666,7 +20666,7 @@
       "zh_CN": "热卖",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:173"
+        "scripts/ui/popups/ShopPopups.gd:186"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20688,7 +20688,7 @@
       "zh_CN": "开通",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:276"
+        "scripts/ui/popups/ShopPopups.gd:293"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20699,7 +20699,7 @@
       "zh_CN": "会员",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:263"
+        "scripts/ui/popups/ShopPopups.gd:280"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20710,7 +20710,8 @@
       "zh_CN": "购买失败",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:488"
+        "scripts/ui/popups/ShopPopups.gd:504",
+        "scripts/ui/popups/ShopPopups.gd:538"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20721,8 +20722,8 @@
       "zh_CN": "售罄",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:418",
-        "scripts/ui/popups/ShopPopups.gd:444"
+        "scripts/ui/popups/ShopPopups.gd:435",
+        "scripts/ui/popups/ShopPopups.gd:461"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20733,7 +20734,7 @@
       "zh_CN": "补货失败",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:170"
+        "scripts/ui/popups/ShopPopups.gd:183"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20766,7 +20767,7 @@
       "zh_CN": "广告",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:265"
+        "scripts/ui/popups/ShopPopups.gd:282"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20777,7 +20778,7 @@
       "zh_CN": "刷新失败",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:206"
+        "scripts/ui/popups/ShopPopups.gd:219"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20824,8 +20825,8 @@
       "zh_CN": "不那那补给",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:221",
-        "scripts/ui/popups/ShopPopups.gd:466"
+        "scripts/ui/popups/ShopPopups.gd:489",
+        "scripts/ui/popups/ShopPopups.gd:516"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20858,8 +20859,8 @@
       "zh_CN": "沙漏补给",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:222",
-        "scripts/ui/popups/ShopPopups.gd:466"
+        "scripts/ui/popups/ShopPopups.gd:489",
+        "scripts/ui/popups/ShopPopups.gd:516"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20881,7 +20882,7 @@
       "zh_CN": "HOT",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:406"
+        "scripts/ui/popups/ShopPopups.gd:423"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20903,7 +20904,7 @@
       "zh_CN": "刷新",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:195"
+        "scripts/ui/popups/ShopPopups.gd:208"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20914,7 +20915,7 @@
       "zh_CN": "补货",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:162"
+        "scripts/ui/popups/ShopPopups.gd:175"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20936,7 +20937,7 @@
       "zh_CN": "热卖刷新",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:195"
+        "scripts/ui/popups/ShopPopups.gd:208"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20958,8 +20959,8 @@
       "zh_CN": "剩余 %d",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:417",
-        "scripts/ui/popups/ShopPopups.gd:443"
+        "scripts/ui/popups/ShopPopups.gd:434",
+        "scripts/ui/popups/ShopPopups.gd:460"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -20994,7 +20995,7 @@
       "zh_CN": "小摊补货",
       "en_US": "",
       "refs": [
-        "scripts/ui/popups/ShopPopups.gd:162"
+        "scripts/ui/popups/ShopPopups.gd:175"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21601,7 +21602,7 @@
       "zh_CN": "祭典积分 %d/%d",
       "en_US": "",
       "refs": [
-        "scripts/ui/TopBar.gd:279"
+        "scripts/ui/TopBar.gd:299"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -21615,7 +21616,7 @@
       "zh_CN": "沙漏能让制作变快，每份快 %s。合成到 2 级以上再收，级别越高收得越多。",
       "en_US": "",
       "refs": [
-        "scripts/ui/TopBar.gd:119"
+        "scripts/ui/TopBar.gd:139"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -21628,7 +21629,7 @@
       "zh_CN": "祭典积分已累计，卡册在%d级开启",
       "en_US": "",
       "refs": [
-        "scripts/ui/TopBar.gd:160"
+        "scripts/ui/TopBar.gd:180"
       ],
       "scope": "runtime",
       "placeholders": [

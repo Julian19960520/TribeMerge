@@ -12,26 +12,32 @@ const CLAYW := Color("b65a38")
 const SMOKE := Color(0.96, 0.94, 0.9, 0.6)
 const PLUM := Color("7d3c8c")
 
+## 部落大地图（主页上手指拖动看）的尺寸：比屏幕宽一倍多、高一半多。地平线在 WORLD_HORIZON。
+const WORLD := Vector2(1600, 2300)
+const WORLD_HORIZON := 430.0
+## 地块半径：未开放的地块盖一片密林，开放后露出一块空地
+const LOT_R := 170.0
+
 ## 主页上部件的缩放
 const VS := 0.8
-## 区域在主页上的中心；parts 是每件部件相对中心的落地点（按 builds.json 里的部件顺序）；tag 是区域牌子的位置。
+## 区域在部落大地图上的中心（篝火广场居中，其余按建造顺序绕一圈）；parts 是每件部件相对中心的落地点（按 builds.json 里的部件顺序）；tag 是区域牌子的位置。
 ## 高的部件尽量放在后排两角，给牌子让出中间。
 const AREAS := {
-	"fire": {"at": Vector2(360, 872), "tag": Vector2(0, 100), "parts": [
+	"fire": {"at": Vector2(800, 1250), "tag": Vector2(0, 100), "parts": [
 		Vector2(0, 6), Vector2(-104, 34), Vector2(98, 40), Vector2(-118, -34), Vector2(96, -54), Vector2(-14, -66), Vector2(-132, 92), Vector2(134, 92)]},
-	"gather": {"at": Vector2(360, 600), "tag": Vector2(0, -124), "parts": [
+	"gather": {"at": Vector2(800, 930), "tag": Vector2(0, -124), "parts": [
 		Vector2(0, -46), Vector2(-66, -24), Vector2(-46, 40), Vector2(62, -22), Vector2(6, 8), Vector2(88, 36)]},
-	"stone": {"at": Vector2(124, 600), "tag": Vector2(0, -124), "parts": [
+	"stone": {"at": Vector2(500, 1110), "tag": Vector2(0, -124), "parts": [
 		Vector2(-50, 38), Vector2(44, 40), Vector2(0, -44), Vector2(-62, -22), Vector2(2, 6), Vector2(64, -22)]},
-	"weave": {"at": Vector2(596, 600), "tag": Vector2(0, -124), "parts": [
+	"weave": {"at": Vector2(1100, 1110), "tag": Vector2(0, -124), "parts": [
 		Vector2(0, -44), Vector2(-64, -24), Vector2(-46, 40), Vector2(4, 6), Vector2(48, 42), Vector2(90, -8)]},
-	"hunt": {"at": Vector2(124, 884), "tag": Vector2(0, -124), "parts": [
+	"hunt": {"at": Vector2(470, 1460), "tag": Vector2(0, -124), "parts": [
 		Vector2(-92, 14), Vector2(0, -46), Vector2(-44, 44), Vector2(4, 4), Vector2(62, -22), Vector2(56, 46)]},
-	"cook": {"at": Vector2(596, 884), "tag": Vector2(0, -124), "parts": [
+	"cook": {"at": Vector2(1130, 1460), "tag": Vector2(0, -124), "parts": [
 		Vector2(0, -44), Vector2(-46, 42), Vector2(-62, -18), Vector2(8, 10), Vector2(62, -22), Vector2(52, 44)]},
-	"wood": {"at": Vector2(124, 1176), "tag": Vector2(0, -124), "parts": [
+	"wood": {"at": Vector2(590, 1790), "tag": Vector2(0, -124), "parts": [
 		Vector2(-48, 40), Vector2(0, -44), Vector2(6, 8), Vector2(62, -22), Vector2(-62, -18), Vector2(70, 42)]},
-	"kiln": {"at": Vector2(596, 1176), "tag": Vector2(0, -124), "parts": [
+	"kiln": {"at": Vector2(1010, 1790), "tag": Vector2(0, -124), "parts": [
 		Vector2(-46, 40), Vector2(0, -44), Vector2(-62, -22), Vector2(8, 8), Vector2(62, -20), Vector2(54, 44)]},
 }
 
@@ -95,6 +101,7 @@ static func plot_key(id: String, open: bool) -> String:
 	return k
 
 ## 整个村庄的部件层。hide = {区域 id: 部件下标}：这件正在播建造动画，先不画。
+## 开放的地块露出一块空地；没开放的地块由 Paint.village 盖密林，这里不画。
 static func village(ci: CanvasItem, builds: Dictionary, level: int, hide: Dictionary = {}) -> void:
 	for b in Data.BUILDS:
 		if b is not Dictionary:
@@ -102,9 +109,11 @@ static func village(ci: CanvasItem, builds: Dictionary, level: int, hide: Dictio
 		var id := str(b.get("id", ""))
 		var parts := Data.build_parts(b)
 		var st := clampi(int(builds.get(id, 0)), 0, parts.size())
-		var open := level >= Data.build_unlock(b)
+		var open := lot_open(id, level)
+		if not open and st == 0:
+			continue
 		var at := area_at(id)
-		Sprites.draw(ci, plot_key(id, open), Rect2(at + PLOT_BOX.position, PLOT_BOX.size))
+		clearing(ci, at, id)
 		var order: Array = []
 		for k in st:
 			if hide.has(id) and int(hide[id]) == k:
@@ -118,6 +127,20 @@ static func village(ci: CanvasItem, builds: Dictionary, level: int, hide: Dictio
 		for k in order:
 			var pid := str(parts[k].get("id", "")) if parts[k] is Dictionary else ""
 			part(ci, pid, part_at(id, k), VS)
+
+## 地块能不能建（游戏里看建造规则：产线开放且前一块建完；没有游戏状态时只看等级）
+static func lot_open(id: String, level: int) -> bool:
+	if Engine.get_main_loop() is SceneTree and (Engine.get_main_loop() as SceneTree).root.has_node("G"):
+		var g = (Engine.get_main_loop() as SceneTree).root.get_node("G")
+		if g.rules != null: return g.rules.progression.build_open(id)
+	return level >= Data.build_unlock(Data.build_def(id))
+
+## 开出来的空地：一片压实的土地，边上一圈浅草
+static func clearing(ci: CanvasItem, at: Vector2, id: String) -> void:
+	var r := Vector2(LOT_R * 1.05, LOT_R * 0.62)
+	ci.draw_colored_polygon(Art.ell(at + Vector2(0, 10), r * 1.08, 3, 0.0, 40, 0.0, 0.0), Color("8fb453"))
+	ci.draw_colored_polygon(Art.ell(at + Vector2(0, 10), r, 3, 0.0, 40, 0.0, 0.0), Color("c9a464") if id == "fire" else Color("b9a062"))
+	ci.draw_colored_polygon(Art.ell(at + Vector2(0, 4), r * 0.8, 3, 0.0, 40, 0.0, 0.0), Color("d3b273") if id == "fire" else Color("c4ab6c"))
 
 ## 地块图、地基图相对区域中心 / 落地点的内容框
 const PLOT_BOX := Rect2(-128, -74, 256, 168)

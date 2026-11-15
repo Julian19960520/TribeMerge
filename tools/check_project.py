@@ -88,6 +88,8 @@ def main() -> None:
                 ("check_order_flow", ["--replay-test", "--cloud-off"], "order-flow"),
                 ("check_order_xp", ["--replay-test", "--cloud-off"], "order-xp"),
                 ("check_activity_schedule", ["--replay-test", "--cloud-off"], "activity-schedule"),
+                ("check_village_drag", ["--replay-test", "--cloud-off"], "village-drag"),
+                ("check_shell_stall", ["--replay-test", "--cloud-off"], "shell-stall"),
                 ("check_chest_exit", ["--replay-test", "--cloud-off"], "chest-exit"),
                 ("check_starter_generator", ["--replay-test", "--cloud-off"], "starter-generator"),
                 ("check_craft_book_ui", ["--replay-test", "--cloud-off"], "craft-book-ui"),

@@ -7,14 +7,9 @@ const Meme := preload("res://scripts/Meme.gd")
 ## 人物使用共享圆形头像；气泡继续贴预生成的图。
 const TribeSprites := preload("res://scripts/sprites/tribe.gd")
 
-## 路口（主页坐标）和路口之间的小路
-const NODES := [
-	Vector2(80, 742), Vector2(240, 742), Vector2(360, 742), Vector2(480, 742), Vector2(640, 742),
-	Vector2(244, 860), Vector2(476, 860),
-	Vector2(80, 1012), Vector2(240, 1012), Vector2(480, 1012), Vector2(640, 1012),
-	Vector2(300, 1262), Vector2(420, 1262),
-]
-const EDGES := [[0, 1], [1, 2], [2, 3], [3, 4], [1, 5], [3, 6], [5, 8], [6, 9], [7, 8], [9, 10], [8, 11], [9, 12], [11, 12]]
+## 路口：篝火广场前一个，每块开放的地块前一个；小路都从广场通到各个地块（部落大地图坐标）
+var NODES: Array = []
+var EDGES: Array = []
 const SPEED := 38.0
 const HIT := Vector2(76, 80)
 ## 两次自动冒话之间至少隔多久（秒）
@@ -28,14 +23,33 @@ var _chat_cd := 3.0
 var _t := 0.0
 
 func _ready() -> void:
-	size = Vector2(720, 1480)
+	size = TribeArt.WORLD
 	mouse_filter = MOUSE_FILTER_STOP
 	_rng.randomize()
+	_sync_count()
+	G.changed.connect(_sync_count)
+
+## 按开放的地块重算路口和小路；地块变了就让小人都回到广场附近重新走
+func _sync_paths() -> bool:
+	var nodes: Array = [TribeArt.area_at("fire") + Vector2(0, 150)]
+	for b in Data.BUILDS:
+		var id := str(b.get("id", ""))
+		if id == "fire" or not (TribeArt.lot_open(id, G.level) or int(G.builds.get(id, 0)) > 0): continue
+		nodes.append(TribeArt.area_at(id) + Vector2(0, 90))
+	if nodes == NODES: return false
+	NODES = nodes
+	EDGES = []
+	_adj = {}
+	var hub := TribeArt.area_at("fire")
+	# 广场前绕一圈的几个点，小人在广场上也会走动
+	for k in 3:
+		NODES.append(hub + Vector2(-150 + k * 150, 40 + (k % 2) * 40))
+		EDGES.append([0, NODES.size() - 1])
+	for i in range(1, nodes.size()): EDGES.append([0, i])
 	for e in EDGES:
 		_adj.get_or_add(e[0], []).append(e[1])
 		_adj.get_or_add(e[1], []).append(e[0])
-	_sync_count()
-	G.changed.connect(_sync_count)
+	return true
 
 ## 开工的区域越多，村里的人越多：2～8 个
 func _want_count() -> int:
@@ -46,6 +60,10 @@ func _want_count() -> int:
 	return clampi(n, 2, 8)
 
 func _sync_count() -> void:
+	if _sync_paths():
+		for w in _walkers:
+			var at := _rng.randi_range(0, NODES.size() - 1)
+			w["pos"] = NODES[at]; w["from"] = at; w["to"] = at; w["wait"] = _rng.randf_range(0.0, 2.0)
 	var want := mini(_want_count(), Data.PEOPLE.size() if not Data.PEOPLE.is_empty() else 8)
 	while _walkers.size() < want:
 		var at := _rng.randi_range(0, NODES.size() - 1)
@@ -163,7 +181,7 @@ func _bubble(anchor: Vector2, text: String, a: float) -> void:
 	var tw := minf(f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, max_w)
 	var lines := f.get_multiline_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, tw + 1.0, fs)
 	var box := Vector2(tw + 28.0, lines.y + 20.0)
-	var x := clampf(anchor.x - box.x * 0.5, 8.0, 712.0 - box.x)
+	var x := clampf(anchor.x - box.x * 0.5, 8.0, TribeArt.WORLD.x - 8.0 - box.x)
 	var r := Rect2(Vector2(x, anchor.y - 14.0 - box.y), box)
 	var mod := Color(1, 1, 1, a)
 	Sprites.draw(self, "tribe_bubble", r, mod)

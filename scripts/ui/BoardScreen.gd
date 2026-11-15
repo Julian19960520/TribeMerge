@@ -139,9 +139,19 @@ func _paint_bg(ci: CanvasItem, sz: Vector2) -> void:
 
 func _paint_scene(ci: CanvasItem, sz: Vector2) -> void:
 	Paint.vgrad(ci, Rect2(0, 0, sz.x, 380), Color("78c2c4"), Color("e9d9a6"))
-	Paint.hills(ci, 300, sz.x, 60, Color("8bb39a"), 5, 400)
-	for i in 4:
-		Paint.palm(ci, Vector2(40 + i * 220, 380), 160 + i * 10, i + 10, Color("3c7a44"))
+	# 和部落地图同一套远景：几层远山，近处一排林梢
+	ci.draw_circle(Vector2(sz.x * 0.72, 110), 52, Color(1, 0.95, 0.7, 0.45))
+	ci.draw_circle(Vector2(sz.x * 0.72, 110), 34, Color("fff1b8"))
+	Paint.far_range(ci, 250, sz.x, 110.0, 1, Color("b7cfc6"), 400)
+	Paint.far_range(ci, 290, sz.x, 80.0, 4, Color("8fb3a4"), 400)
+	Paint.far_range(ci, 330, sz.x, 50.0, 9, Color("6c977c"), 400)
+	Paint.treeline(ci, 350, sz.x, 3, Color("3f7a45"), 400)
+	Paint.treeline(ci, 385, sz.x, 17, Color("2f6b3a"), 400)
+	# 林子前面再站几棵树，前后两排，远的那排略高、略小
+	for i in 7:
+		Paint.forest_tree(ci, Vector2(70 + i * 98 + (Art.srnd(i + 40) - 0.5) * 30, 336 + Art.srnd(i + 50) * 14), i + 60)
+	for i in 6:
+		Paint.forest_tree(ci, Vector2(120 + i * 98 + (Art.srnd(i + 70) - 0.5) * 30, 372 + Art.srnd(i + 80) * 10), i + 90)
 	Sprites.draw(ci, "board_curtain_l", Rect2(0, 0, 90, 380))
 	Sprites.draw(ci, "board_curtain_r", Rect2(sz.x - 90, 0, 90, 380))
 	Sprites.draw(ci, "board_log", Rect2(-10, 372, sz.x + 20, 50))
@@ -195,7 +205,7 @@ func _paint_hammer(ci: CanvasItem, sz: Vector2) -> void:
 	var tp := Vector2((sz.x - tw) * 0.5, 46)
 	ci.draw_string_outline(G.font_title, tp, TextCatalog.resolve(title), HORIZONTAL_ALIGNMENT_LEFT, -1, tfs, 5, Art.INK)
 	ci.draw_string(G.font_title, tp, TextCatalog.resolve(title), HORIZONTAL_ALIGNMENT_LEFT, -1, tfs, Color("fff1c4"))
-	Paint.hammer(ci, Vector2(sz.x * 0.5, 112), 1.35)
+	Paint.hammer(ci, Vector2(sz.x * 0.5, 114), 0.82)
 	var id := G.rules.progression.next_build_id()
 	var cost := G.rules.progression.build_cost(id) if id != "" else 0
 	Art.item(ci, "shell_2", Vector2(sz.x * 0.5 - 34, 186), 40)

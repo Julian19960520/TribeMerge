@@ -316,7 +316,7 @@ static func level_info() -> PopupBase:
 		Paint.panel(ci, r)
 		var br := Rect2(r.get_center().x - 220, r.position.y + 30, 440, 80)
 		Paint.banner(ci, br, Art.TEAL)
-		Paint.level_badge(ci, Vector2(r.get_center().x, r.position.y - 6), 130)
+		Paint.level_badge(ci, Vector2(r.get_center().x, r.position.y - 14), 120)
 		var art := PS.LI_ART
 		Sprites.draw(ci, "pop_li_art_base", art)
 		Paint.vgrad(ci, art.grow(-3), Color("8fd0d4"), Color("f0deb0"))
@@ -333,11 +333,11 @@ static func level_info() -> PopupBase:
 		Sprites.draw(ci, "pop_li_arrow", PS.LI_ARROW)
 		ShopPopups._slot(ci, Rect2(r.position.x + 40, r.position.y + 680, r.size.x - 80, 280), Color("ecd9b3"), Color(0.6, 0.4, 0.2, 0.4), true))
 	UI.title(p.box, TextCatalog.source("developer.story_editor.34243df4d613"), Rect2(r.get_center().x - 200, r.position.y + 50, 400, 60), 38, Color.WHITE)
-	UI.lbl(p.box, str(G.level), Rect2(r.get_center().x - 60, r.position.y - 44, 120, 80), 50, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+	UI.lbl(p.box, str(G.level), Rect2(r.get_center().x - 60, r.position.y - 54, 120, 80), 44, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	var tip := UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.64ccff6c3eaf"), Rect2(r.position.x + 40, r.position.y + 446, r.size.x - 80, 90), 25, Color("6b4a2a"))
 	tip.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 	UI.lbl(p.box, "%d/%d" % [G.xp, G.rules.progression.xp_need()], Rect2(r.position.x + 70, r.position.y + 560, 400, 44), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(p.box, str(G.level + 1), Rect2(r.position.x + 480, r.position.y + 548, 80, 60), 34, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	UI.lbl(p.box, str(G.level + 1), Rect2(r.position.x + 500, r.position.y + 552, 80, 60), 32, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	p.set_meta("level_progress", Rect2(80, 790, 560, 100))
 	p.set_meta("level_rewards", Rect2(80, 920, 560, 280))
 	p.set_meta("onboarding_close", Rect2(r.end.x - 52, r.position.y - 24, 70, 70))

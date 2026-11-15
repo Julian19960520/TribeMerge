@@ -6,7 +6,7 @@ const HERO := 8
 const XIAOYA := 9
 const ROLE_COUNT := 10
 const WALKER_DIAMETER := 64.0
-const WALKER_BORDER := 1.5
+const WALKER_BORDER := 4.0
 
 ## 交单后客人说的话：[台词, 需要哪个区域开工过（"" 表示一直有）]。订单自带台词时不用这里的。
 static var LINES := [
@@ -65,8 +65,11 @@ static func customer_name(role: int, short: bool = false) -> String:
 ## 地图角色使用圆形头像，浅色底和细描边保证在草地与道路上清楚可辨。
 static func walker_portrait(ci: CanvasItem, role: int, feet: Vector2, diameter: float = WALKER_DIAMETER) -> void:
 	var center := feet - Vector2(0, diameter * 0.5)
-	ci.draw_circle(center, diameter * 0.5 + WALKER_BORDER, Art.INK)
-	ci.draw_circle(center, diameter * 0.5, Art.BONE)
+	# 奶白外边 + 粗墨线，都跟着沸腾线抖（和其他贴纸描边一个手感）
+	var r := diameter * 0.5
+	ci.draw_colored_polygon(Art.ell(center, Vector2.ONE * (r + WALKER_BORDER + 4.0), role * 7 + 1, 0.0, 28, 0.0, 1.2), Color(1, 0.98, 0.92, 0.96))
+	ci.draw_colored_polygon(Art.ell(center, Vector2.ONE * (r + WALKER_BORDER), role * 7 + 2, 0.0, 28, 0.0, 1.2), Art.INK)
+	ci.draw_circle(center, r, Art.BONE)
 	portrait(ci, role, center, diameter)
 
 ## 圆形头像沿用原有走动、跳动和脚下影子。

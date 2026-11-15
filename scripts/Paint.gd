@@ -95,6 +95,9 @@ static func cards_icon(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 static func hut_icon(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	Sprites.at(ci, "paint_hut", c, s / PS.K_HUT)
 
+static func shop_icon(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
+	Sprites.at(ci, "paint_shop", c, s / PS.K_SHOP)
+
 static func pouch(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	Sprites.at(ci, "paint_pouch", c, s / PS.K_POUCH)
 
@@ -329,39 +332,185 @@ static func campfire_scene(ci: CanvasItem, c: Vector2, s: float) -> void:
 
 
 ## hide = {区域 id: 部件下标}：正在播建造动画的那件先不画
-static func village(ci: CanvasItem, sz: Vector2, builds: Dictionary, level: int = 99, hide: Dictionary = {}) -> void:
-	# 地平线在 450 左右；篝火广场的位置决定小路和广场
-	var hub := TribeArt.area_at("fire")
-	vgrad(ci, Rect2(0, 0, sz.x, 450), Color("7cc6c9"), Color("f6dca0"))
-	ci.draw_circle(Vector2(540, 200), 56, Color(1, 0.95, 0.7, 0.6))
-	ci.draw_circle(Vector2(540, 200), 39, Color("fff1b8"))
-	hills(ci, 320, sz.x, 90, Color("8fb4a8"), 3, 490)
-	hills(ci, 390, sz.x, 70, Color("6f9c6a"), 7, 530)
-	vgrad(ci, Rect2(0, 450, sz.x, sz.y - 450), Color("9cc35a"), Color("6d9a3c"))
-	hills(ci, 490, sz.x, 40, Color("86b54e"), 11, 590)
-	for i in 5:
-		palm(ci, Vector2(30 + i * 160 + Art.srnd(i) * 40, 490), 110 + Art.srnd(i + 3) * 50, i)
-	var river := PackedVector2Array()
-	for k in 15:
-		var y := 530.0 + float(k) * 70.0
-		river.append(Vector2(700 + sin(float(k) * 0.8) * 14.0, y))
-	for k in 15:
-		var y := 530.0 + float(14 - k) * 70.0
-		river.append(Vector2(740 + sin(float(14 - k) * 0.8) * 14.0, y))
-	ci.draw_colored_polygon(river, Color("5fb4c8"))
-	var path := PackedVector2Array()
-	var top := hub.y - 50.0
-	var plen := sz.y - top
-	for k in 9:
-		var t := float(k) / 8.0
-		path.append(Vector2(360 + sin(t * 4.0) * 40.0 - 50.0 * (1.0 - t), top + t * plen))
-	for k in 9:
-		var t := 1.0 - float(k) / 8.0
-		path.append(Vector2(360 + sin(t * 4.0) * 40.0 + 50.0 + 40.0 * t, top + t * plen))
-	ci.draw_colored_polygon(path, Color("d9b778"))
-	# 广场和草丛是预生成图（ui_core.gd 的 village_ground，按 720×1480 画的）
-	Sprites.draw(ci, "village_ground", Rect2(0, 450, sz.x, sz.y - 450))
+## 部落大地图（TribeArt.WORLD 大小，主页上手指拖动看）。sz 不用了，保留参数给旧调用方。
+## 篝火广场在中间，其余地块按建造顺序绕一圈；没开放的地块盖着密林，地图四周也是林子，建一块开一块。
+## 整张部落地图一次画完（预览用）。主页拆成三层：地面和后排树（静止）、建筑（跟着沸腾线重绘）、前排树（静止）。
+static func village(ci: CanvasItem, _sz: Vector2, builds: Dictionary, level: int = 99, hide: Dictionary = {}) -> void:
+	village_ground(ci, builds, level)
 	TribeArt.village(ci, builds, level, hide)
+	village_front(ci, builds, level)
+
+## 远山：几层山脊，越远越淡、越偏天色
+static func far_range(ci: CanvasItem, base_y: float, width: float, amp: float, seed: int, col: Color, bottom: float) -> void:
+	var pts := PackedVector2Array()
+	var n := 64
+	for k in n + 1:
+		var x := width * float(k) / float(n)
+		var t := x / width
+		var y := base_y
+		y -= amp * (0.55 + 0.45 * sin(t * 5.1 + float(seed)))
+		y -= amp * 0.5 * maxf(0.0, sin(t * 11.3 + float(seed) * 2.3))
+		y -= amp * 0.18 * sin(t * 37.0 + float(seed) * 5.1)
+		pts.append(Vector2(x, y))
+	var ridge := pts.duplicate()
+	pts.append(Vector2(width, bottom))
+	pts.append(Vector2(0, bottom))
+	ci.draw_colored_polygon(pts, col)
+	ci.draw_polyline(ridge, col.lightened(0.18), 3.0)
+
+## 地图边上的一排林梢剪影，接住草地和远山
+static func treeline(ci: CanvasItem, y: float, width: float, seed: int, col: Color, bottom: float) -> void:
+	var x := -30.0
+	var i := seed
+	var pts := PackedVector2Array([Vector2(-30, bottom)])
+	while x < width + 60.0:
+		var r := 34.0 + Art.srnd(i) * 26.0
+		var top := y - r - Art.srnd(i + 7) * 30.0
+		for k in 7:
+			var a := PI + PI * float(k) / 6.0
+			pts.append(Vector2(x + r + cos(a) * r, top + r + sin(a) * r * 0.9))
+		x += r * 1.5
+		i += 1
+	pts.append(Vector2(width + 60, bottom))
+	ci.draw_colored_polygon(pts, col)
+
+## 哪些地块已经开放（开放的或已经开始建的）
+static func _opened(builds: Dictionary, level: int) -> Dictionary:
+	var opened := {}
+	for b in Data.BUILDS:
+		var id := str(b.get("id", ""))
+		opened[id] = TribeArt.lot_open(id, level) or int(builds.get(id, 0)) > 0
+	return opened
+
+## 整张图的树，分前后两排：站在某块开放地块前面（下方）的算前排，画在建筑上面
+static func _village_trees(builds: Dictionary, level: int, front: bool) -> Array:
+	var W := TribeArt.WORLD
+	var hz := TribeArt.WORLD_HORIZON
+	var hub := TribeArt.area_at("fire")
+	var opened := _opened(builds, level)
+	var trees: Array = []
+	# 没开放的地块：一丛密林
+	for b in Data.BUILDS:
+		var id := str(b.get("id", ""))
+		if bool(opened[id]): continue
+		var c := TribeArt.area_at(id)
+		for k in 16:
+			var a := Art.srnd(k * 13 + absi(id.hash()) % 97) * TAU
+			var d := sqrt(Art.srnd(k * 29 + 5 + absi(id.hash()) % 89)) * TribeArt.LOT_R
+			trees.append([c + Vector2(cos(a) * d, sin(a) * d * 0.62 - 10.0), k + absi(id.hash()) % 50])
+	# 其余空地都种满树：错开的网格 + 抖动，避开开放的地块、土路和河
+	var step := Vector2(92, 74)
+	var gi := 0
+	var row := 0
+	var y0 := hz + 150.0
+	while y0 + row * step.y < W.y + 40.0:
+		var y := y0 + row * step.y
+		var col := 0
+		var x0 := -20.0 + (step.x * 0.5 if row % 2 == 1 else 0.0)
+		while x0 + col * step.x < 1470.0:
+			gi += 1
+			var p := Vector2(x0 + col * step.x, y) + Vector2(Art.srnd(gi * 7 + 1) - 0.5, Art.srnd(gi * 7 + 2) - 0.5) * Vector2(52, 40)
+			col += 1
+			if _clear_ground(p, opened, hub): continue
+			trees.append([p, gi + 200])
+		row += 1
+	var out: Array = []
+	for t in trees:
+		var p: Vector2 = t[0]
+		# 前后排按一条平滑的分界线切：分界线以下全算前排，相邻两棵树不会前后颠倒
+		var cut := INF
+		for id in opened:
+			if not bool(opened[id]): continue
+			var c := TribeArt.area_at(str(id))
+			cut = minf(cut, c.y + 0.45 * maxf(0.0, absf(p.x - c.x) - TribeArt.LOT_R * 1.2))
+		if (p.y > cut) == front: out.append(t)
+	out.sort_custom(func(a, c): return float(a[0].y) < float(c[0].y))
+	return out
+
+## 前排树：画在建筑上面
+static func village_front(ci: CanvasItem, builds: Dictionary, level: int) -> void:
+	for t in _village_trees(builds, level, true):
+		forest_tree(ci, t[0], int(t[1]))
+
+## 地面层：天空、远山、林梢、草地、河、土路、后排树
+static func village_ground(ci: CanvasItem, builds: Dictionary, level: int) -> void:
+	var W := TribeArt.WORLD
+	var hz := TribeArt.WORLD_HORIZON
+	var hub := TribeArt.area_at("fire")
+	# 天空、远山
+	vgrad(ci, Rect2(0, 0, W.x, hz), Color("8fcfd6"), Color("f8e2ae"))
+	ci.draw_circle(Vector2(1180, 170), 70, Color(1, 0.95, 0.7, 0.45))
+	ci.draw_circle(Vector2(1180, 170), 46, Color("fff1b8"))
+	far_range(ci, hz - 70.0, W.x, 150.0, 1, Color("b7cfc6"), hz + 40.0)
+	far_range(ci, hz - 20.0, W.x, 110.0, 4, Color("8fb3a4"), hz + 60.0)
+	far_range(ci, hz + 30.0, W.x, 70.0, 9, Color("6c977c"), hz + 90.0)
+	# 草地
+	vgrad(ci, Rect2(0, hz + 60.0, W.x, W.y - hz - 60.0), Color("9cc35a"), Color("6d9a3c"))
+	# 地图边上的林梢
+	treeline(ci, hz + 110.0, W.x, 3, Color("3f7a45"), hz + 200.0)
+	treeline(ci, hz + 150.0, W.x, 17, Color("2f6b3a"), hz + 220.0)
+	# 右边一条河
+	var river := PackedVector2Array()
+	var rows := 24
+	for k in rows + 1:
+		var y := hz + 170.0 + float(k) * (W.y - hz - 170.0) / float(rows)
+		river.append(Vector2(1480 + sin(float(k) * 0.8) * 22.0, y))
+	for k in rows + 1:
+		var j := rows - k
+		var y := hz + 170.0 + float(j) * (W.y - hz - 170.0) / float(rows)
+		river.append(Vector2(1545 + sin(float(j) * 0.8) * 22.0, y))
+	ci.draw_colored_polygon(river, Color("5fb4c8"))
+	# 草地上的浅色斑块，打破大片平涂
+	for i in 46:
+		var p := Vector2(60 + Art.srnd(i * 7 + 1) * 1380.0, hz + 180.0 + Art.srnd(i * 7 + 2) * (W.y - hz - 220.0))
+		ci.draw_colored_polygon(Art.ell(p, Vector2(60, 22) * (0.6 + Art.srnd(i * 7 + 3)), i, 0.1, 14), Color(0.75, 0.86, 0.45, 0.35))
+	# 从篝火广场通往各个开放地块的土路
+	var opened := _opened(builds, level)
+	for b in Data.BUILDS:
+		var id := str(b.get("id", ""))
+		if id == "fire" or not bool(opened[id]): continue
+		_dirt_path(ci, hub, TribeArt.area_at(id), absi(id.hash()) % 7)
+	# 后排树（没开放的地块盖着的密林、空地上的树）
+	for t in _village_trees(builds, level, false):
+		forest_tree(ci, t[0], int(t[1]))
+
+## 这一点要留空：开放地块的空地、通往它们的土路
+static func _clear_ground(p: Vector2, opened: Dictionary, hub: Vector2) -> bool:
+	for id in opened:
+		if not bool(opened[id]): continue
+		var c := TribeArt.area_at(str(id))
+		# 按树干上方一点算（树冠往上长）：下边的树冠不压住空地，上边的树贴到空地边上
+		var q := (p + Vector2(0, -30) - c - Vector2(0, 10)) / Vector2(TribeArt.LOT_R * 1.2, TribeArt.LOT_R * 0.74)
+		if q.length() < 1.0: return true
+		if str(id) != "fire" and Geometry2D.get_closest_point_to_segment(p, hub, c).distance_to(p) < 78.0: return true
+	return false
+
+## 一棵林子里的树：树干 + 两三层深浅不一的树冠
+static func forest_tree(ci: CanvasItem, base: Vector2, seed: int) -> void:
+	var s := 0.8 + Art.srnd(seed * 3 + 1) * 0.5
+	ci.draw_colored_polygon(Art.ell(base + Vector2(0, 4), Vector2(34, 10) * s, seed, 0.05, 14), Color(0.2, 0.3, 0.12, 0.35))
+	ci.draw_rect(Rect2(base + Vector2(-5, -40) * s, Vector2(10, 42) * s), Color("6a4526"))
+	var greens := [Color("2f6b3a"), Color("3d7f40"), Color("4f9447")]
+	for k in 3:
+		var c := base + Vector2((Art.srnd(seed * 5 + k) - 0.5) * 26.0, -58.0 - float(k) * 16.0) * s
+		ci.draw_colored_polygon(Art.ell(c, Vector2(44 - k * 9, 34 - k * 7) * s, seed + k, 0.12, 16), greens[k])
+	ci.draw_circle(base + Vector2(-10, -98) * s, 7.0 * s, Color(1, 1, 1, 0.12))
+
+## 从 a 到 b 的一条弯弯的土路
+static func _dirt_path(ci: CanvasItem, a: Vector2, b: Vector2, seed: int) -> void:
+	var n := 14
+	var side := (b - a).normalized().orthogonal()
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for k in n + 1:
+		var t := float(k) / float(n)
+		var p := a.lerp(b, t) + side * sin(t * PI) * (20.0 + float(seed) * 4.0)
+		var w := 22.0 - 6.0 * t
+		left.append(p + side * w)
+		right.append(p - side * w)
+	right.reverse()
+	left.append_array(right)
+	ci.draw_colored_polygon(left, Color("d9b778"))
 
 static func _spot_hut(ci: CanvasItem, c: Vector2, st: int) -> void:
 	if st == 0:

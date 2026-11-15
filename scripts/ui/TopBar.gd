@@ -11,12 +11,18 @@ var _festival: Control
 var _festival_lbl: Label
 var _festival_until := 0
 
+## 顶栏横向排布：等级星 | 三条资源 | 集市，按看得见的墨线边算，左右留边和各段间距都约 16
+## 资源条左边伸出图标（ICON_OVERHANG），间距从图标左边算
+const PILL_W := 136.0
+const ICON_OVERHANG := 22.0
 const PILLS := {
-	"energy": Rect2(126, 52, 150, 50),
-	"shell": Rect2(294, 52, 150, 50),
-	"amber": Rect2(462, 52, 150, 50),
-	"sand": Rect2(462, 52, 150, 50),
+	"energy": Rect2(134, 52, PILL_W, 50),
+	"shell": Rect2(302, 52, PILL_W, 50),
+	"amber": Rect2(470, 52, PILL_W, 50),
+	"sand": Rect2(470, 52, PILL_W, 50),
 }
+const LEVEL_C := Vector2(60, 80)
+const LEVEL_SIZE := 96.0
 
 ## 第三格当前显示什么
 var _gem_mode := "amber"
@@ -38,7 +44,7 @@ func _ready() -> void:
 	_add_gem()
 	_add_shop()
 	_add_festival_progress()
-	_close = UI.hit(self, Rect2(644, 40, 70, 70), func():
+	_close = UI.hit(self, Rect2(629, 40, 70, 70), func():
 		if not _closers.is_empty():
 			_closers.back().call())
 	_close.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
@@ -66,42 +72,56 @@ func _make_chip(id: String, r: Rect2) -> Control:
 	_home[id] = r.position
 	return c
 
+## 资源图标：按每张图实际不透明部分的大小和偏移换算，让四个图标看起来一样大、中心对齐
+## [绘制尺寸, 中心偏移]，图里的留白不一样，所以绘制尺寸各不相同
+const ICON_FIT := {
+	"fire_2": [100.0, Vector2(-2, -4)],
+	"shell_2": [86.0, Vector2(17, -5)],
+	"amber_2": [102.0, Vector2(3, -6)],
+	"sand_2": [100.0, Vector2(-2, -4)],
+}
+const ICON_AT := Vector2(8, 25)
+
+func _icon(ci: CanvasItem, id: String, pill: Rect2) -> void:
+	var fit: Array = ICON_FIT.get(id, [64.0, Vector2.ZERO])
+	Art.item(ci, id, pill.position + ICON_AT + fit[1], fit[0])
+
 func _add_level() -> void:
-	var r := Rect2(14, 30, 100, 104)
+	var r := Rect2(LEVEL_C - Vector2(LEVEL_SIZE, 104) * 0.5, Vector2(LEVEL_SIZE, 104))
 	var c := _make_chip("level", r)
 	var o := r.position
 	UI.box(c, Rect2(Vector2.ZERO, r.size), func(ci, _sz):
-		Paint.level_badge(ci, Vector2(64, 82) - o, 92))
-	_lv = UI.lbl(c, "1", Rect2(Vector2(22, 52) - o, Vector2(84, 60)), 40, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+		Paint.level_badge(ci, LEVEL_C - o, LEVEL_SIZE))
+	_lv = UI.lbl(c, "1", Rect2(LEVEL_C + Vector2(-42, -28) - o, Vector2(84, 60)), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 9, Art.INK, true)
 	UI.hit(c, Rect2(Vector2.ZERO, r.size), func(): _open_from("level", "level"))
 
 func _add_energy() -> void:
-	var r := Rect2(114, 40, 170, 80)
+	var r := Rect2(PILLS["energy"].position.x - ICON_OVERHANG - 4.0, 40, PILL_W + ICON_OVERHANG + 8.0, 80)
 	var c := _make_chip("energy", r)
 	var o := r.position
 	var e := Rect2(PILLS["energy"].position - o, PILLS["energy"].size)
 	UI.box(c, Rect2(Vector2.ZERO, r.size), func(ci, _sz):
 		Paint.pill(ci, e)
-		Art.item(ci, "fire_2", e.position + Vector2(2, 22), 64)
-		Paint.plus_badge(ci, e.position + Vector2(12, 46)))
-	_en = UI.lbl(c, "", Rect2(PILLS["energy"].position + Vector2(30, 0) - o, Vector2(116, 50)), 26)
-	_timer = UI.lbl(c, "", Rect2(PILLS["energy"].position + Vector2(30, 46) - o, Vector2(110, 24)), 15, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
+		_icon(ci, "fire_2", e)
+		Paint.plus_badge(ci, e.position + Vector2(24, 46)))
+	_en = UI.lbl(c, "", Rect2(PILLS["energy"].position + Vector2(30, 0) - o, Vector2(PILL_W - 34.0, 50)), 26)
+	_timer = UI.lbl(c, "", Rect2(PILLS["energy"].position + Vector2(30, 46) - o, Vector2(PILL_W - 40.0, 24)), 15, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	UI.hit(c, Rect2(Vector2.ZERO, r.size), func(): _open_from("energy", "energy"))
 
 func _add_shell() -> void:
-	var r := Rect2(284, 40, 168, 80)
+	var r := Rect2(PILLS["shell"].position.x - ICON_OVERHANG - 4.0, 40, PILL_W + ICON_OVERHANG + 8.0, 80)
 	var c := _make_chip("shell", r)
 	var o := r.position
 	var s := Rect2(PILLS["shell"].position - o, PILLS["shell"].size)
 	UI.box(c, Rect2(Vector2.ZERO, r.size), func(ci, _sz):
 		Paint.pill(ci, s)
-		Art.item(ci, "shell_2", s.position + Vector2(4, 24), 58))
-	_sh = UI.lbl(c, "", Rect2(PILLS["shell"].position + Vector2(30, 0) - o, Vector2(116, 50)), 26)
+		_icon(ci, "shell_2", s))
+	_sh = UI.lbl(c, "", Rect2(PILLS["shell"].position + Vector2(30, 0) - o, Vector2(PILL_W - 34.0, 50)), 26)
 	UI.hit(c, Rect2(Vector2.ZERO, r.size), func(): _open_from("shell", "howto"))
 
 ## 第三格：琥珀 / 沙漏共用。切换时竖着翻一下。
 func _add_gem() -> void:
-	var r := Rect2(452, 40, 170, 80)
+	var r := Rect2(PILLS["amber"].position.x - ICON_OVERHANG - 4.0, 40, PILL_W + ICON_OVERHANG + 8.0, 80)
 	var c := _make_chip("amber", r)
 	c.pivot_offset = PILLS["amber"].position - r.position + PILLS["amber"].size * 0.5
 	var o := r.position
@@ -109,11 +129,11 @@ func _add_gem() -> void:
 	_gem_box = UI.box(c, Rect2(Vector2.ZERO, r.size), func(ci, _sz):
 		Paint.pill(ci, a)
 		if _gem_mode == "sand":
-			Art.item(ci, "sand_2", a.position + Vector2(4, 22), 60)
+			_icon(ci, "sand_2", a)
 		else:
-			Art.item(ci, Art.AMBER_ICON, a.position + Vector2(2, 24), 56)
-			Paint.plus_badge(ci, a.position + Vector2(12, 46)))
-	_gem_lbl = UI.lbl(c, "", Rect2(PILLS["amber"].position + Vector2(30, 0) - o, Vector2(116, 50)), 26)
+			_icon(ci, Art.AMBER_ICON, a)
+			Paint.plus_badge(ci, a.position + Vector2(24, 46)))
+	_gem_lbl = UI.lbl(c, "", Rect2(PILLS["amber"].position + Vector2(30, 0) - o, Vector2(PILL_W - 34.0, 50)), 26)
 	UI.hit(c, Rect2(Vector2.ZERO, r.size), func():
 		if _gem_mode == "sand":
 			G.main.toast(TextCatalog.source("ui.topbar.8204fee264bd") % Data.rush_text())
@@ -161,12 +181,12 @@ func _add_festival_progress() -> void:
 	_festival.hide()
 
 func _add_shop() -> void:
-	var r := Rect2(644, 34, 70, 84)
+	var r := Rect2(624, 34, 80, 84)
 	var c := _make_chip("shop", r)
 	_shop = UI.hit(c, Rect2(Vector2.ZERO, r.size), func(): _open_from("shop", "store"))
 	_shop.extra = func(ci, sz):
-		Paint.hut_icon(ci, sz * 0.5 + Vector2(0, 4), 0.85)
-		if G.rules.progression.has_free_daily(): Paint.badge_num(ci, Vector2(sz.x - 18, 18), 7, 8.0)
+		Paint.shop_icon(ci, Vector2(sz.x * 0.5, 44), 0.72)
+		if G.rules.progression.has_free_daily(): Paint.badge_num(ci, Vector2(sz.x - 10, 16), 7, 8.0)
 
 func _open_from(id: String, popup_name: String) -> void:
 	var p: PopupBase = G.main.open(popup_name)
