@@ -169,8 +169,9 @@ func _build_spots() -> void:
 ## 区域木牌：名字 + 进度条；未开放显示等级；钱够下一件时右上角亮红点
 func _paint_tag(ci: CanvasItem, sz: Vector2, id: String) -> void:
 	var b := Data.build_def(id)
-	var total := Data.build_stages(b)
-	var st := clampi(int(G.builds.get(id, 0)), 0, total)
+	var prog: Dictionary = G.rules.progression.build_progress(id)
+	var total := int(prog["total"])
+	var st := int(prog["done"])
 	var open := G.rules.progression.build_open(id)
 	var done := st >= total
 	var seed := absi(id.hash()) % 90
@@ -194,7 +195,7 @@ func _paint_tag(ci: CanvasItem, sz: Vector2, id: String) -> void:
 			var fill := Rect2(bar.position, Vector2(maxf(9.0, bar.size.x * float(st) / float(maxi(total, 1))), bar.size.y))
 			Sprites.draw(ci, "tribe_tag_fill", fill, Art.MOSS if not done else Art.OCHRE)
 	else:
-		var t := TextCatalog.source("ui.homescreen.1f67da2b53a5") % Data.build_unlock(b)
+		var t := TextCatalog.source("ui.homescreen.1f67da2b53a5") % Data.build_unlock(b) if not G.rules.progression.feature_unlocked(Data.build_unlock(b)) else TextCatalog.source("ui.homescreen.bebe53ada85d")
 		ci.draw_string_outline(G.font_body, Vector2(48, 44), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Art.INK)
 		ci.draw_string(G.font_body, Vector2(48, 44), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("ffe7a8"))
 	if open and not done and G.shells >= G.rules.progression.build_cost(id):

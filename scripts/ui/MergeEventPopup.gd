@@ -36,10 +36,14 @@ func _ready() -> void:
 		close()
 		return
 	_known = MergeEvent.state(cfg)["discovered"].duplicate()
-	MoonArt.warm()
+	MoonArt.warm(cfg)
 	_build()
 	G.merge_event_changed.connect(_refresh)
 	_refresh()
+
+## 面板小图按 theme.sprites 选一套配色（默认月石遗迹的 ev_me_）。
+static func sp(c: Dictionary, name: String) -> String:
+	return str(c.get("theme", {}).get("sprites", "ev_me_")) + name
 
 func _c(key: String, fallback: String) -> Color:
 	return Color(str(cfg["theme"].get(key, fallback)))
@@ -53,8 +57,8 @@ func _build() -> void:
 	var banner := UI.box(box, br.grow(8), func(ci, sz): Paint.banner(ci, Rect2(Vector2(8, 8), sz - Vector2(16, 16)), _c("banner", "2f6377")))
 	box.move_child(banner, 2)
 	UI.box(box, Rect2(214, 224, 292, 36), func(ci, sz):
-		Sprites.draw(ci, "ev_me_timer_fill", Rect2(Vector2.ZERO, sz))
-		Sprites.draw(ci, "ev_me_timer_line", Rect2(Vector2.ZERO, sz), Color(_c("glow", "bff3f0"), 0.35))
+		Sprites.draw(ci, sp(cfg, "timer_fill"), Rect2(Vector2.ZERO, sz))
+		Sprites.draw(ci, sp(cfg, "timer_line"), Rect2(Vector2.ZERO, sz), Color(_c("glow", "bff3f0"), 0.35))
 		Paint.glyph(ci, "clock", Vector2(24, sz.y / 2), 0.9))
 	timer = UI.lbl(box, "", Rect2(244, 224, 256, 36), 20, Color("d6f3ef"))
 	_build_track()
@@ -70,7 +74,7 @@ func _build() -> void:
 
 func _build_track() -> void:
 	track = UI.box(box, TRACK, _paint_track, false)
-	UI.lbl(box, TextCatalog.source("ui.mergeeventpopup.5a1bccabdfae"), Rect2(TRACK.position.x + 22, TRACK.position.y + 8, 200, 34), 24, CREAM, HORIZONTAL_ALIGNMENT_LEFT, 0, INK, true)
+	UI.lbl(box, str(cfg.get("progress_title", TextCatalog.source("ui.mergeeventpopup.5a1bccabdfae"))), Rect2(TRACK.position.x + 22, TRACK.position.y + 8, 200, 34), 24, CREAM, HORIZONTAL_ALIGNMENT_LEFT, 0, INK, true)
 	progress = UI.lbl(box, "", Rect2(TRACK.end.x - 250, TRACK.position.y + 8, 228, 34), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_RIGHT, 5, INK, true)
 	var ms := MergeEvent.milestones(cfg)
 	var total := float(MergeEvent.goal_total(cfg))
@@ -90,10 +94,10 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 	var bar := Rect2(BAR.position - o, BAR.size)
 	var total := float(MergeEvent.goal_total(cfg))
 	var frac := clampf(float(MergeEvent.progress(cfg, s)) / total, 0.0, 1.0)
-	Sprites.draw(ci, "ev_me_groove", bar)
+	Sprites.draw(ci, sp(cfg, "groove"), bar)
 	if frac > 0.0:
 		var fill := Rect2(bar.position, Vector2(maxf(bar.size.y, bar.size.x * frac), bar.size.y))
-		Sprites.draw(ci, "ev_me_fill", fill, _c("accent", "8cdece"))
+		Sprites.draw(ci, sp(cfg, "fill"), fill, _c("accent", "8cdece"))
 		ci.draw_colored_polygon(Art.rrect(Rect2(fill.position + Vector2(6, 3), Vector2(fill.size.x - 12, 6)), 3, 410, 0.0), Color(1, 1, 1, 0.5))
 		var shine := fmod(_t * 0.35, 1.0) * fill.size.x
 		ci.draw_circle(fill.position + Vector2(shine, fill.size.y / 2), 6, Color(1, 1, 1, 0.35))
@@ -108,7 +112,7 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		if state == 1:
 			c.y -= absf(sin(_t * 4.0)) * 6.0
 			ci.draw_circle(c, r + 12 + 3 * sin(_t * 6.0), Color(1, 0.93, 0.55, 0.28))
-		Sprites.draw(ci, "ev_me_node_%s_%d" % ["big" if last else "small", state], Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0))
+		Sprites.draw(ci, sp(cfg, "node_%s_%d") % ["big" if last else "small", state], Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0))
 		Art.item(ci, _featured(ms[k]["rewards"]), c, r * (1.55 if last else 1.45))
 		if state == 2:
 			ci.draw_circle(c, r - 2, Color(0.1, 0.2, 0.22, 0.45))
@@ -117,7 +121,7 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		if str(cfg["board"].get("goal", "")) == "discover_all" and not last and state != 1: tag = TextCatalog.source("ui.mergeeventpopup.77188a2c2c50") % int(ms[k]["at"])
 		var tw := 62.0 if state == 1 else 54.0
 		var pill := Rect2(c + Vector2(-tw / 2, r - 4), Vector2(tw, 26))
-		Sprites.draw(ci, "ev_me_tag_on" if state == 1 else "ev_me_tag_off", pill)
+		Sprites.draw(ci, sp(cfg, "tag_on") if state == 1 else sp(cfg, "tag_off"), pill)
 		var font: Font = G.font_title if state == 1 else G.font_body
 		var fs := 18
 		var w := font.get_string_size(TextCatalog.resolve(tag), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
@@ -156,7 +160,7 @@ func _paint_corner_vines(ci: CanvasItem, sz: Vector2) -> void:
 
 func _build_bottom() -> void:
 	collection = UI.box(box, SHELF, _paint_collection, false)
-	var chain: Array = cfg["chain"]
+	var chain := _shelf()
 	var gap := (SHELF.size.x - 24) / chain.size()
 	for k in chain.size():
 		UI.hit(box, Rect2(SHELF.position.x + 12 + gap * k, SHELF.position.y, gap, SHELF.size.y), _show_relic.bind(k))
@@ -191,13 +195,17 @@ func _paint_spawn(ci: CanvasItem, sz: Vector2) -> void:
 	var bob := sin(_t * 2.5) * 3.0 if can else 0.0
 	MergeEventArt.draw_item(ci, cfg, str(cfg["chain"][int(cfg["points"]["spawn_tier"]) - 1]["id"]), c + Vector2(0, bob - 2), 78, Color.WHITE if can else Color(0.7, 0.75, 0.78, 0.8))
 
+## 底部陈列的那条线：有壁画就陈列壁画（收集目标），否则陈列灯光 / 遗物。
+func _shelf() -> Array:
+	return cfg.get("mural", cfg["chain"])
+
 func _show_relic(k: int) -> void:
-	var row: Dictionary = cfg["chain"][k]
+	var row: Dictionary = _shelf()[k]
 	var known: bool = MergeEvent.state(cfg)["discovered"].has(str(row["id"]))
 	G.main.toast((str(row["name"]) if known else TextCatalog.source("ui.mergeeventpopup.a76417399914")) + TextCatalog.source("ui.mergeeventpopup.8431070b30f3") % (k + 1))
 
 func _paint_collection(ci: CanvasItem, sz: Vector2) -> void:
-	var chain: Array = cfg["chain"]
+	var chain := _shelf()
 	var s := MergeEvent.state(cfg)
 	MoonArt.panel(ci, "shelf", sz)
 	var gap := (sz.x - 24) / chain.size()
@@ -207,12 +215,12 @@ func _paint_collection(ci: CanvasItem, sz: Vector2) -> void:
 	for k in chain.size():
 		var c := Vector2(12 + gap * (k + 0.5), sz.y / 2 + 4)
 		var id := str(chain[k]["id"])
-		Sprites.draw(ci, "ev_me_socket", Rect2(c - Vector2(gap * 0.43, 25), Vector2(gap * 0.86, 50)))
+		Sprites.draw(ci, sp(cfg, "socket"), Rect2(c - Vector2(gap * 0.43, 25), Vector2(gap * 0.86, 50)))
 		if s["discovered"].has(id):
 			if k == top: ci.draw_circle(c, 30 + 2 * sin(_t * 3.0), Color(_c("glow", "bff3f0"), 0.22))
 			MergeEventArt.draw_item(ci, cfg, id, c + Vector2(0, -6), gap * 0.86)
 		else:
-			MergeEventArt.draw_item(ci, cfg, id, c + Vector2(0, -4), gap * 0.78, Color(0.05, 0.13, 0.17, 0.85))
+			MergeEventArt.draw_item(ci, cfg, id, c + Vector2(0, -4), gap * 0.78, Color(_c("recess", "2f5058").darkened(0.5), 0.85))
 		var n := str(k + 1)
 		ci.draw_string(G.font_title, c + Vector2(gap * 0.28, 24), TextCatalog.resolve(n), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("dcefe9") if s["discovered"].has(id) else Color("6f8f92"))
 
@@ -232,6 +240,7 @@ func _refresh() -> void:
 			_known[id] = true
 			var row := MergeEvent.item(cfg, str(id))
 			var k: int = cfg["chain"].find(row)
+			if k < 0: k = cfg.get("mural", []).find(row)
 			if k > 0 and is_instance_valid(fx):
 				fx.add("banner", Vector2(360, 520), {"id": str(id), "text": TextCatalog.source("ui.mergeeventpopup.3b9afd98b0cb") + str(row.get("name", ""))})
 				Sfx.play("fanfare")
@@ -283,7 +292,7 @@ func _preview_rewards(k: int) -> void:
 		var reward: Array = rewards[j]
 		var x := 90 + gap * j
 		UI.box(p.box, Rect2(x + 6, 636, gap - 12, 200), func(ci, sz):
-			Sprites.draw(ci, "ev_me_reward_card", Rect2(Vector2.ZERO, sz))
+			Sprites.draw(ci, sp(cfg, "reward_card"), Rect2(Vector2.ZERO, sz))
 			ci.draw_circle(Vector2(sz.x / 2, 82), 52, Color(_c("glow", "bff3f0"), 0.15))
 			Art.item(ci, str(reward[0]), Vector2(sz.x / 2, 82), minf(112, gap - 30)))
 		UI.lbl(p.box, "×%d" % int(reward[1]), Rect2(x, 770, gap, 50), 32, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, INK, true)
@@ -322,6 +331,10 @@ class Fx extends Control:
 				parts.append({"k": "fly", "from": data.get("from", pos), "p": pos, "t": 0.0, "dur": 0.42, "id": str(data.get("id", "")), "done": data.get("done", Callable())})
 			"banner":
 				parts.append({"k": "banner", "p": pos, "t": 0.0, "dur": 1.9, "id": str(data.get("id", "")), "s": str(data.get("text", ""))})
+			"collect":
+				parts.append({"k": "collect", "p": pos, "t": 0.0, "dur": 0.7, "id": str(data.get("id", ""))})
+				add("spark", pos, {"small": true})
+				if str(data.get("text", "")) != "": add("text", pos + Vector2(0, -50), {"text": str(data["text"]), "color": Color("ffd68a"), "size": 26})
 
 	func _process(delta: float) -> void:
 		if parts.is_empty(): return
@@ -370,12 +383,15 @@ class Fx extends Control:
 					var pos := from.lerp(p, e2) + Vector2(0, -sin(t * PI) * 120)
 					draw_circle(pos, 30, Color(0.75, 1, 0.97, 0.25))
 					MergeEventArt.draw_item(self, cfg, str(q["id"]), pos, 70 + sin(t * PI) * 16)
+				"collect":
+					var up := p + Vector2(0, -t * t * 260)
+					MergeEventArt.draw_item(self, cfg, str(q["id"]), up, 80 * (1.0 + 0.35 * sin(minf(t * 3.0, 1.0) * PI * 0.5)), Color(1, 1, 1, 1 - t * t))
 				"banner":
 					var a := clampf(minf(t * 6.0, (1 - t) * 4.0), 0, 1)
 					var sc := 0.8 + 0.2 * minf(1.0, t * 6.0)
 					draw_set_transform(p, 0, Vector2.ONE * sc)
 					var r := Rect2(-210, -58, 420, 116)
-					Sprites.draw(self, "ev_me_banner", r, Color(1, 1, 1, a))
+					Sprites.draw(self, str(cfg.get("theme", {}).get("sprites", "ev_me_")) + "banner", r, Color(1, 1, 1, a))
 					draw_circle(Vector2(-140, 0), 50, Color(0.75, 1, 0.97, 0.25 * a))
 					MergeEventArt.draw_item(self, cfg, str(q["id"]), Vector2(-140, -2), 96, Color(1, 1, 1, a))
 					draw_string(G.font_body, Vector2(-80, -14), TextCatalog.resolve(TextCatalog.source("ui.mergeeventpopup.8580bd8a7bb0")), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.75, 0.95, 0.92, a))

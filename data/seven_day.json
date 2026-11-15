@@ -60,8 +60,8 @@
     {
      "id": "d1_5",
      "metric": "shell",
-     "target": 600,
-     "title": "§content.seven_day.0c34d0a94408§",
+     "target": 300,
+     "title": "§content.seven_day.e4ac37402afd§",
      "points": 10,
      "rewards": [
       [
@@ -186,8 +186,8 @@
     {
      "id": "d3_3",
      "metric": "shell",
-     "target": 4500,
-     "title": "§content.seven_day.b434f406404f§",
+     "target": 2000,
+     "title": "§content.seven_day.689b08e7387c§",
      "points": 20,
      "rewards": [
       [
@@ -350,8 +350,8 @@
     {
      "id": "d5_3",
      "metric": "shell",
-     "target": 8000,
-     "title": "§content.seven_day.cef592af32e7§",
+     "target": 3600,
+     "title": "§content.seven_day.ac08362f2082§",
      "points": 25,
      "rewards": [
       [
@@ -552,8 +552,8 @@
     {
      "id": "d7_5",
      "metric": "shell",
-     "target": 12000,
-     "title": "§content.seven_day.4eed11a42478§",
+     "target": 5400,
+     "title": "§content.seven_day.bc72081368e2§",
      "points": 30,
      "rewards": [
       [

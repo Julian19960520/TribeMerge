@@ -2,10 +2,522 @@
 	"version": 1,
 	"seasons": [
 		{
+			"id": "cave_mural",
+			"title": "§content.merge_events.3eeac2acb55e§",
+			"entry_title": "§content.merge_events.3eeac2acb55e§",
+			"progress_title": "§content.merge_events.6b0f501cd20c§",
+			"enabled": true,
+			"unlock_level": 10,
+			"start_utc": "2026-11-02T00:00:00",
+			"repeat_days": 7,
+			"duration_days": 7,
+			"theme": {
+				"entry_icon": "res://assets/events/cave/entry.svg",
+				"background": "2a1a12",
+				"sky_top": "1e130d",
+				"sky_bottom": "4a2c1a",
+				"panel": "efdcb4",
+				"banner": "9a4a22",
+				"tile": "e8cf9e",
+				"tile_alt": "dcbf88",
+				"recess": "4a3020",
+				"covered": "5a4030",
+				"covered_alt": "6a4c36",
+				"vine": "8a6a3a",
+				"glow": "ffd68a",
+				"locked": "4e3424",
+				"accent": "f0a040",
+				"style": "cave",
+				"sprites": "ev_cv_",
+				"baked": "res://assets/events/cave/baked",
+				"frame": "5a3a26",
+				"track": "3a2418",
+				"shelf": "6a4a32",
+				"card": "2e1c12",
+				"point_icon": "res://assets/events/cave/glow_1.svg"
+			},
+			"board": {
+				"cols": 6,
+				"visible_rows": 7,
+				"total_rows": 17,
+				"reveal_rows": 3,
+				"seed": 41,
+				"layers": [
+					{
+						"rows": 2,
+						"tiers": [
+							1
+						]
+					},
+					{
+						"rows": 3,
+						"tiers": [
+							1,
+							1,
+							2,
+							2,
+							3
+						]
+					},
+					{
+						"rows": 3,
+						"tiers": [
+							2,
+							3,
+							3,
+							4,
+							4
+						]
+					},
+					{
+						"rows": 4,
+						"tiers": [
+							3,
+							4,
+							5,
+							5,
+							6
+						]
+					},
+					{
+						"rows": 4,
+						"tiers": [
+							5,
+							6,
+							6,
+							7,
+							8
+						]
+					}
+				],
+				"goal": "unlock_all",
+				"advance_by_tier": [
+					{
+						"tier": 4,
+						"rows": 3
+					},
+					{
+						"tier": 6,
+						"rows": 3
+					},
+					{
+						"tier": 8,
+						"rows": 4
+					}
+				],
+				"brush_col": 2,
+				"specials": [
+					{
+						"depth": 1,
+						"col": 4,
+						"id": "paint_1"
+					},
+					{
+						"depth": 2,
+						"col": 1,
+						"id": "paint_1"
+					},
+					{
+						"depth": 4,
+						"col": 3,
+						"id": "paint_1"
+					},
+					{
+						"depth": 5,
+						"col": 0,
+						"id": "paint_1"
+					},
+					{
+						"depth": 6,
+						"col": 5,
+						"id": "paint_1"
+					},
+					{
+						"depth": 7,
+						"col": 2,
+						"id": "paint_1"
+					},
+					{
+						"depth": 9,
+						"col": 4,
+						"id": "paint_2"
+					},
+					{
+						"depth": 11,
+						"col": 1,
+						"id": "paint_2"
+					},
+					{
+						"depth": 13,
+						"col": 3,
+						"id": "paint_2"
+					},
+					{
+						"depth": 15,
+						"col": 5,
+						"id": "paint_2"
+					}
+				]
+			},
+			"points": {
+				"order_thresholds": [
+					5,
+					8
+				],
+				"order_rewards": [
+					1,
+					2,
+					3
+				],
+				"spawn_cost": 1,
+				"spawn_tier": 1
+			},
+			"chain": [
+				{
+					"id": "glow_1",
+					"name": "§content.merge_events.eefe3b318042§",
+					"icon": "res://assets/events/cave/glow_1.svg"
+				},
+				{
+					"id": "glow_2",
+					"name": "§content.merge_events.adc5bd9a0b04§",
+					"icon": "res://assets/events/cave/glow_2.svg"
+				},
+				{
+					"id": "glow_3",
+					"name": "§content.merge_events.8edb29025d75§",
+					"icon": "res://assets/events/cave/glow_3.svg"
+				},
+				{
+					"id": "glow_4",
+					"name": "§content.merge_events.eca08b0f2335§",
+					"icon": "res://assets/events/cave/glow_4.svg"
+				},
+				{
+					"id": "glow_5",
+					"name": "§content.merge_events.f67f7f55b5c9§",
+					"icon": "res://assets/events/cave/glow_5.svg"
+				},
+				{
+					"id": "glow_6",
+					"name": "§content.merge_events.80e1b26d7a45§",
+					"icon": "res://assets/events/cave/glow_6.svg",
+					"drops": [
+						[
+							"mural_1",
+							1
+						]
+					]
+				},
+				{
+					"id": "glow_7",
+					"name": "§content.merge_events.8719da9eb8ae§",
+					"icon": "res://assets/events/cave/glow_7.svg",
+					"drops": [
+						[
+							"mural_1",
+							2
+						]
+					]
+				},
+				{
+					"id": "glow_8",
+					"name": "§content.merge_events.3416f573c240§",
+					"icon": "res://assets/events/cave/glow_8.svg",
+					"drops": [
+						[
+							"mural_2",
+							1
+						]
+					]
+				},
+				{
+					"id": "glow_9",
+					"name": "§content.merge_events.68b001217552§",
+					"icon": "res://assets/events/cave/glow_9.svg",
+					"drops": [
+						[
+							"mural_3",
+							1
+						]
+					]
+				},
+				{
+					"id": "glow_10",
+					"name": "§content.merge_events.8789f17ab831§",
+					"icon": "res://assets/events/cave/glow_10.svg",
+					"drops": [
+						[
+							"mural_4",
+							1
+						],
+						[
+							"paint_1",
+							1
+						]
+					]
+				},
+				{
+					"id": "glow_11",
+					"name": "§names.builds.be559ed8300a§",
+					"icon": "res://assets/events/cave/glow_11.svg",
+					"drops": [
+						[
+							"mural_5",
+							1
+						]
+					]
+				},
+				{
+					"id": "glow_12",
+					"name": "§content.merge_events.6b16f343aafd§",
+					"icon": "res://assets/events/cave/glow_12.svg",
+					"drops": [
+						[
+							"mural_6",
+							1
+						]
+					]
+				}
+			],
+			"mural": [
+				{
+					"id": "mural_1",
+					"name": "§content.merge_events.84ca8d2e47b9§",
+					"icon": "res://assets/events/cave/mural_1.svg",
+					"rewards": []
+				},
+				{
+					"id": "mural_2",
+					"name": "§content.merge_events.9e5457a9fb80§",
+					"icon": "res://assets/events/cave/mural_2.svg",
+					"rewards": [
+						[
+							"fire_2",
+							1
+						]
+					]
+				},
+				{
+					"id": "mural_3",
+					"name": "§content.tiger_escape.be20ec93d3ea§",
+					"icon": "res://assets/events/cave/mural_3.svg",
+					"rewards": [
+						[
+							"amber_2",
+							1
+						]
+					]
+				},
+				{
+					"id": "mural_4",
+					"name": "§names.chains.b63c3bf55b5f§",
+					"icon": "res://assets/events/cave/mural_4.svg",
+					"rewards": [
+						[
+							"fire_3",
+							1
+						]
+					]
+				},
+				{
+					"id": "mural_5",
+					"name": "§content.merge_events.4264bfc3ce45§",
+					"icon": "res://assets/events/cave/mural_5.svg",
+					"rewards": [
+						[
+							"amber_3",
+							1
+						]
+					]
+				},
+				{
+					"id": "mural_6",
+					"name": "§content.merge_events.c394c5a36c68§",
+					"icon": "res://assets/events/cave/mural_6.svg",
+					"rewards": [
+						[
+							"energybox_1",
+							1
+						]
+					]
+				},
+				{
+					"id": "mural_7",
+					"name": "§content.merge_events.cacc13cab74e§",
+					"icon": "res://assets/events/cave/mural_7.svg",
+					"rewards": [
+						[
+							"chest_1",
+							1
+						],
+						[
+							"fire_3",
+							1
+						]
+					]
+				},
+				{
+					"id": "mural_8",
+					"name": "§content.merge_events.fbfd84f0686f§",
+					"icon": "res://assets/events/cave/mural_8.svg",
+					"rewards": [
+						[
+							"choice_1",
+							1
+						],
+						[
+							"pack_1",
+							1
+						],
+						[
+							"amber_4",
+							1
+						]
+					]
+				}
+			],
+			"brush": {
+				"id": "brush",
+				"max_charges": 8,
+				"levels": [
+					{
+						"fed": 0,
+						"name": "§content.merge_events.d25886af44cf§",
+						"icon": "res://assets/events/cave/brush_1.svg",
+						"tiers": [
+							[
+								1,
+								70
+							],
+							[
+								2,
+								25
+							],
+							[
+								3,
+								5
+							]
+						]
+					},
+					{
+						"fed": 4,
+						"name": "§content.merge_events.ae40e821d055§",
+						"icon": "res://assets/events/cave/brush_2.svg",
+						"tiers": [
+							[
+								1,
+								50
+							],
+							[
+								2,
+								35
+							],
+							[
+								3,
+								15
+							]
+						]
+					},
+					{
+						"fed": 9,
+						"name": "§content.merge_events.d801e595f0a5§",
+						"icon": "res://assets/events/cave/brush_3.svg",
+						"tiers": [
+							[
+								2,
+								55
+							],
+							[
+								3,
+								35
+							],
+							[
+								4,
+								10
+							]
+						]
+					}
+				]
+			},
+			"paints": [
+				{
+					"id": "paint_1",
+					"name": "§content.merge_events.8d80194993d7§",
+					"icon": "res://assets/events/cave/paint_1.svg",
+					"charges": 2
+				},
+				{
+					"id": "paint_2",
+					"name": "§content.merge_events.ceffd7355de4§",
+					"icon": "res://assets/events/cave/paint_2.svg",
+					"charges": 4
+				}
+			],
+			"milestones": [
+				{
+					"at": 20,
+					"rewards": [
+						[
+							"fire_2",
+							30
+						],
+						[
+							"chest_1",
+							1
+						]
+					]
+				},
+				{
+					"at": 45,
+					"rewards": [
+						[
+							"amber_3",
+							10
+						],
+						[
+							"pack_1",
+							1
+						]
+					]
+				},
+				{
+					"at": 70,
+					"rewards": [
+						[
+							"amber_3",
+							15
+						],
+						[
+							"energybox_1",
+							1
+						]
+					]
+				},
+				{
+					"at": 96,
+					"rewards": [
+						[
+							"amber_3",
+							35
+						],
+						[
+							"fire_2",
+							80
+						],
+						[
+							"choice_1",
+							1
+						]
+					]
+				}
+			]
+		},
+		{
 			"id": "moon_relics",
 			"title": "§ui.mergeevententry.973c334a813e§",
 			"entry_title": "§ui.mergeevententry.973c334a813e§",
-			"enabled": true,
+			"enabled": false,
 			"unlock_level": 10,
 			"start_utc": "2026-11-02T00:00:00",
 			"repeat_days": 7,

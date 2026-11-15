@@ -10,21 +10,25 @@ func run() -> void:
 	g.tutorial_on = false
 	g.seen_tutorial = true
 	g.level = 10
+	load("res://scripts/events/ActivitySchedule.gd").bypass = true # 只测单个活动的绘制，不受档期轮换影响
 	var ev = load("res://scripts/events/MergeEvent.gd")
 	var cfg: Dictionary = ev.current()
+	if ev.state(cfg).is_empty(): g.merge_events[str(cfg["key"])] = ev.fresh(cfg)
 	var state: Dictionary = ev.state(cfg)
-	state["cells"][95] = {"id": "moon_1", "lock": 0}
-	state["cells"][94] = {"id": "moon_1", "lock": 0}
-	state["cells"][89] = {"id": "moon_1", "lock": 1}
+	var first := str(cfg["chain"][0]["id"])
+	var bottom: int = state["cells"].size() - int(cfg["board"]["cols"]) - 1
+	state["cells"][bottom] = {"id": first, "lock": 0}
+	state["cells"][bottom - 1] = {"id": first, "lock": 0}
+	state["cells"][bottom - 6] = {"id": first, "lock": 1}
 	state["points"] = 8
-	state["discovered"] = {"moon_1": true}
+	state["discovered"] = {first: true}
 	var path := "res://scripts/ui/MergeEventBoard.gd"
 	var tag := "after"
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--baseline="):
 			path = a.trim_prefix("--baseline=")
 			tag = "before"
-	var source := FileAccess.get_file_as_string(path).replace("class_name MergeEventBoard\n", "")
+	var source := FileAccess.get_file_as_string(path).replace("\r\n", "\n").replace("class_name MergeEventBoard\n", "")
 	source = source.replace("extends Control\n", "extends Control\nvar draw_usec := 0\n")
 	source = source.replace("func _draw() -> void:\n", "func _draw() -> void:\n\tvar started := Time.get_ticks_usec()\n")
 	source = source.replace("\nfunc _pop(", "\n\tdraw_usec = Time.get_ticks_usec() - started\n\nfunc _pop(")
@@ -44,7 +48,7 @@ func run() -> void:
 		await process_frame
 		await RenderingServer.frame_post_draw
 	var idle := draw_count - count
-	board.selected = 95
+	board.selected = bottom
 	var samples: Array = []
 	for i in 60:
 		board.queue_redraw()

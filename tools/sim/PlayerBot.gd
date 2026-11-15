@@ -150,7 +150,7 @@ func track_resources() -> void:
 func snap() -> Dictionary:
 	track_resources()
 	var parts := 0
-	for v in G.builds.values(): parts += int(v)
+	for b in Data.BUILDS: parts += int(G.builds.get(str(b["id"]), 0))
 	var moon := 0
 	var c := MergeEvent.current()
 	var activity := MergeEvent.state(c) if MergeEvent.available(c) else {}
@@ -673,7 +673,7 @@ func upgrade_tribe() -> bool:
 		var cost: int=G.rules.progression.build_cost(b)
 		var result := command("build", {"id": b})
 		if result.is_empty() or result.has("error"): return false
-		record("build", "升级部落 · "+str(Data.build_def(b).get("name",b)), "不那那足够，独立推进部落", {"building":b,"stage":G.builds[b],"cost":cost,"rewards":result.get("rewards",[])})
+		record("build", "升级部落 · "+str(Data.build_def(b).get("name",b)), "不那那足够，独立推进部落", {"building":b,"stage":int(G.builds.get(b,0)),"step":int(result.get("step",0)),"finished":bool(result.get("finished",true)),"cost":cost,"rewards":result.get("rewards",[])})
 		return true
 	return false
 

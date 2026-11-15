@@ -318,27 +318,64 @@ func _pass_has(arr: Array, lv: int) -> bool:
 			return true
 	return false
 
+## 部落按 builds.json 的顺序一块地一块地建：前一块建完（且产线开放）才开下一块；
+## 旧存档里已经动工的地块照样可以接着建。
 func next_build_id() -> String:
-	if int(state.builds.get("fire", 0)) < 2 and build_can("fire"):
-		return "fire"
-	var best = ""
-	var best_cost = 0
 	for b in Data.BUILDS:
 		var id = str(b["id"])
-		if not build_can(id):
-			continue
-		var c = build_cost(id)
-		if best == "" or c < best_cost:
-			best = id
-			best_cost = c
-	return best
+		if build_can(id):
+			return id
+	return ""
 
 func build_open(id: String) -> bool:
-	return feature_unlocked(Data.build_unlock(Data.build_def(id)))
+	var d = Data.build_def(id)
+	if d.is_empty() or not feature_unlocked(Data.build_unlock(d)):
+		return false
+	return state.gm_activities or build_started(id) or _previous_build_done(id)
+
+## 这块地是否已经动工（建过一件以上，或当前这件已经建了几次）
+func build_started(id: String) -> bool:
+	var d = Data.build_def(id)
+	return int(state.builds.get(id, 0)) > int(d.get("initial", 0)) or build_step(id) > 0
+
+func _previous_build_done(id: String) -> bool:
+	var prev := {}
+	for b in Data.BUILDS:
+		if str(b["id"]) == id:
+			break
+		prev = b
+	return prev.is_empty() or int(state.builds.get(str(prev["id"]), 0)) >= Data.build_stages(prev)
+
+## 挡住这块地的前一块（没有就返回空）
+func build_blocker(id: String) -> String:
+	var prev := ""
+	for b in Data.BUILDS:
+		if str(b["id"]) == id:
+			break
+		prev = str(b["id"])
+	return "" if prev == "" or _previous_build_done(id) else prev
 
 func build_can(id: String) -> bool:
 	var d = Data.build_def(id)
 	return not d.is_empty() and build_open(id) and int(state.builds.get(id, 0)) < Data.build_stages(d)
+
+## 当前这件部件已经建了几次（每件要建 steps 次才落成）；存在 builds["_steps"] 里
+func build_step(id: String) -> int:
+	var steps = state.builds.get("_steps", {})
+	return int(steps.get(id, 0)) if steps is Dictionary else 0
+
+## 这块地一共要建多少次、已经建了多少次
+func build_progress(id: String) -> Dictionary:
+	var parts = Data.build_parts(Data.build_def(id))
+	var built = int(state.builds.get(id, 0))
+	var total = 0
+	var done = 0
+	for k in parts.size():
+		var n = Data.part_steps(parts[k])
+		total += n
+		if k < built: done += n
+		elif k == built: done += mini(build_step(id), n)
+	return {"done": done, "total": total}
 
 func build_part(id: String) -> Dictionary:
 	var parts = Data.build_parts(Data.build_def(id))
@@ -353,7 +390,15 @@ func build_cost(id: String) -> int:
 		return maxi(0, int(part["cost"]))
 	return 60 + int(state.builds.get(id, 0)) * 45
 
+## 建完当前这件部件发的奖励（中间几次不发）
 func build_rewards(id: String) -> Array:
+	var part = build_part(id)
+	if build_step(id) + 1 < Data.part_steps(part):
+		return []
+	return build_piece_rewards(id)
+
+## 当前这件部件落成时的奖励（界面预告用）
+func build_piece_rewards(id: String) -> Array:
 	var part = build_part(id)
 	var out = []
 	var all = part.get("rewards", [])
@@ -371,11 +416,21 @@ func do_build(id: String) -> Dictionary:
 	if not spend("shell", cost):
 		return {}
 	var st = int(state.builds.get(id, 0))
-	state.builds[id] = st + 1
-	context.orders.refill_orders()
+	var need = Data.part_steps(build_part(id))
+	var step = build_step(id) + 1
+	var steps: Dictionary = state.builds.get("_steps", {}) if state.builds.get("_steps", {}) is Dictionary else {}
+	var finished = step >= need
+	if finished:
+		state.builds[id] = st + 1
+		steps.erase(id)
+	else:
+		steps[id] = step
+	if steps.is_empty(): state.builds.erase("_steps")
+	else: state.builds["_steps"] = steps
+	if finished: context.orders.refill_orders()
 	state.dirty()
 	state.changed.emit()
-	return {"idx": st, "rewards": rewards}
+	return {"idx": st, "rewards": rewards, "finished": finished, "step": step if not finished else need, "steps": need}
 
 func find_pack_source(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> Dictionary:
 	if cell >= 0:

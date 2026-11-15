@@ -1,6 +1,6 @@
 # 活动棋盘与自选宝箱配置
 
-客户端与 Python 服务端共用 `data/merge_events.json`。当前活动「月石遗迹」10 级开放，每周一期；香蕉竞速独立使用 `server/config/race.json`，12 级开放，仅前三名按名次递减奖励。
+客户端与 Python 服务端共用 `data/merge_events.json`。当前活动「火光岩画」（`cave_mural`）10 级开放，每周一期；旧的「月石遗迹」（`moon_relics`）已停用，配置保留供旧存档查看和领奖。香蕉竞速独立使用 `server/config/race.json`，12 级开放，仅前三名按名次递减奖励。
 
 ## 开设新一期
 
@@ -18,6 +18,23 @@
 | `milestones` | `[{at, rewards}, ...]`，按 `at`（解锁格数；`discover_all` 时为发现件数）升序，最后一项必须等于总目标，即通关奖励。`rewards` 为 `[[主棋盘物品ID, 数量], ...]`：资源数量是实际到账量，其余物品进入暂存区，经统一领奖函数结算。旧配置只写 `rewards` 时视为唯一一个通关里程碑 |
 
 保留旧期配置以支持查看旧棋盘及领取已完成的奖励。过期后不能投放、合并或回收，但已完成且未领取的奖励仍可领取一次。更换美术可直接替换图标路径；美术必须随 Godot 工程导出。
+
+## 三条线的活动（火光岩画）
+
+配置里有 `mural`、`brush`、`paints` 时，活动按三条线运转（存档 `rules_version` 4，多出 `brush` 与 `queue`）：
+
+| 线 | 配置 | 规则 |
+| --- | --- | --- |
+| 一：灯光 | `chain`，12 级：松脂滴 → 松脂块 → 干苔灯芯 → 树枝火把 → 桦皮火把 → 松明火把 → 贝壳油灯 → 兽脂石灯 → 火把束 → 洞壁火龛 → 石圈火塘 → 部落火塘 | 订单积分投放 1 级（1 积分 = 1 滴松脂）。每级可配 `drops`：合成到这一级时掉出壁画（6 级起），10 级还掉一份颜料 |
+| 二：壁画 | `mural`，8 级：赭石点 → 红手印 → 小鹿 → 野牛 → 奔马 → 狩猎图 → 猛犸群像 → 部落迁徙图 | 每级可配 `rewards`：合成到这一级时在活动棋盘上掉出体力、琥珀、各类宝箱 |
+| 三：画笔 | `brush`：`max_charges` 颜料上限，`levels` 按累计喂颜料次数 `fed` 升档（苔藓刷 / 兽毛笔 / 骨管喷笔），每档 `tiers` 为壁画等级权重 | 开局放在底排 `board.brush_col`，不能回收。把挖出的颜料（`paints`：红赭 2 次、彩泥 4 次）拖到画笔上充能，点画笔消耗 1 次，在旁边画出一幅壁画 |
+
+- 颜料埋在 `board.specials`（`{id, depth, col}`）指定的覆盖格下，揭开后直接可用，不用配对解锁。
+- **奖励留在活动棋盘**：体力、琥珀等资源先选中、再点一下领取（动作 `collect`，按物品面值结算）；箱子类显示成气泡，点一下进主棋盘暂存区。
+- 掉落物摆到合成位置附近的空格；棋盘满时进洞口队列 `queue`（棋盘左上角显示下一件和数量），每次操作后有空格就按顺序出来，不会丢失。
+- 最高级的灯或壁画选中后再点一下「挂上岩壁」，腾出格子。
+- 画笔抽签只在真能画出时才取随机数（`activity_brush:` 种子），客户端与服务端回放一致。
+- 美术：图标由 `tools/gen_cave_icons.py` 生成到 `assets/events/cave/`；地砖、背景、面板烘焙到 `theme.baked`（`godot --path . --script tools/bake_moon.gd -- --cloud-off --save=user://bake-moon.json --season=cave_mural:0`）。`theme.style = "cave"` 时石板画赭红岩画记号、背景是火光洞壁；`frame`/`track`/`shelf`/`card` 为面板底色。改了 `data/merge_events.json` 要先跑 `python tools/compile_economy.py`，运行时读的是服务端目录里的配置。
 
 ## 棋盘与积分
 
@@ -83,7 +100,7 @@
 
 - `scripts/merge/MergeGrid.gd`：主棋盘与活动共用格子定位、邻居、最近空位、拖拽判定及交换/合并基础修改。
 - `scripts/events/MergeEvent.gd`：活动配置、进度、动作、领奖与服务端调用。
-- `server/app/merge_event.py`：联机活动的积分、动作与奖励权威校验；上传快照不能覆盖活动进度。
+- 联机时服务端跑同一份 GDScript 回放（`scripts/replay/Reducer.gd` 的 `activity` 分支）校验动作与奖励；上传快照不能覆盖活动进度。
 - `tools/check_merge_event.gd`：等级、积分、分层、合并解锁、滚动、保存、里程碑分段领奖与一次性、宝箱与 UI 检查。
 - `assets/events/moon/relic_1..8.svg`、`point.svg`：月石碎片 → 月石吊坠 → 青铜月盘 → 月纹玉环 → 月辉王冠 → 月光权杖 → 月神雕像 → 月神祭坛，越高级越大、6 级起带月光光晕。覆盖石板、藤蔓与地砖提前烘焙为图集，`MergeEventBoard.gd` 只在状态改变时重绘，合并等动效单独绘制。
 - `server/tests/test_merge_event.py`、`server/tests/test_race.py`：接口与竞速奖励回归。

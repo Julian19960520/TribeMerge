@@ -6,6 +6,114 @@
 			"pad": 6.0,
 			"w": 192.0
 		},
+		"ev_cv_banner": {
+			"frames": 4,
+			"h": 116,
+			"pad": 6,
+			"w": 420
+		},
+		"ev_cv_fill": {
+			"frames": 4,
+			"h": 20,
+			"nine": [
+				10,
+				10,
+				10,
+				10
+			],
+			"pad": 3,
+			"w": 508
+		},
+		"ev_cv_groove": {
+			"frames": 4,
+			"h": 20,
+			"nine": [
+				12,
+				10,
+				12,
+				10
+			],
+			"pad": 6,
+			"w": 508
+		},
+		"ev_cv_node_big_0": {
+			"frames": 4,
+			"h": 72,
+			"pad": 6,
+			"w": 72
+		},
+		"ev_cv_node_big_1": {
+			"frames": 4,
+			"h": 72,
+			"pad": 6,
+			"w": 72
+		},
+		"ev_cv_node_big_2": {
+			"frames": 4,
+			"h": 72,
+			"pad": 6,
+			"w": 72
+		},
+		"ev_cv_node_small_0": {
+			"frames": 4,
+			"h": 56,
+			"pad": 6,
+			"w": 56
+		},
+		"ev_cv_node_small_1": {
+			"frames": 4,
+			"h": 56,
+			"pad": 6,
+			"w": 56
+		},
+		"ev_cv_node_small_2": {
+			"frames": 4,
+			"h": 56,
+			"pad": 6,
+			"w": 56
+		},
+		"ev_cv_reward_card": {
+			"frames": 4,
+			"h": 200,
+			"nine": [
+				26,
+				26,
+				26,
+				26
+			],
+			"pad": 6,
+			"w": 170
+		},
+		"ev_cv_socket": {
+			"frames": 4,
+			"h": 50,
+			"pad": 4,
+			"w": 50
+		},
+		"ev_cv_tag_off": {
+			"frames": 4,
+			"h": 26,
+			"pad": 5,
+			"w": 54
+		},
+		"ev_cv_tag_on": {
+			"frames": 4,
+			"h": 26,
+			"pad": 5,
+			"w": 62
+		},
+		"ev_cv_timer_fill": {
+			"frames": 4,
+			"h": 36,
+			"pad": 4,
+			"w": 292
+		},
+		"ev_cv_timer_line": {
+			"frames": 4,
+			"h": 36,
+			"pad": 4,
+			"w": 292
+		},
 		"ev_disc": {
 			"frames": 4.0,
 			"h": 100.0,
@@ -79,64 +187,64 @@
 			"w": 720.0
 		},
 		"ev_entry_duel": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_entry_duel_grey": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_entry_race": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_entry_race_grey": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_entry_ruins": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_entry_ruins_grey": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_entry_seven": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_entry_seven_grey": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_entry_tiger": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_entry_tiger_grey": {
-			"frames": 4,
-			"h": 132,
-			"pad": 12,
-			"w": 128
+			"frames": 4.0,
+			"h": 132.0,
+			"pad": 12.0,
+			"w": 128.0
 		},
 		"ev_gift_badge_free": {
 			"frames": 4.0,
@@ -1039,16 +1147,16 @@
 			"w": 150.0
 		},
 		"ev_spree_card_back": {
-			"frames": 4,
-			"h": 100,
-			"pad": 6,
-			"w": 100
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 6.0,
+			"w": 100.0
 		},
 		"ev_spree_card_front": {
-			"frames": 4,
-			"h": 100,
-			"pad": 6,
-			"w": 100
+			"frames": 4.0,
+			"h": 100.0,
+			"pad": 6.0,
+			"w": 100.0
 		},
 		"ev_spree_grid": {
 			"frames": 4.0,

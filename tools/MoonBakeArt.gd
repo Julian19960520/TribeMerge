@@ -1,5 +1,6 @@
 extends Control
-## Offline painter only. Runtime uses assets/events/moon/baked PNGs.
+## Offline painter only. Runtime uses the baked PNGs (theme.baked).
+## theme.style == "cave"：石板上是赭红岩画记号、背景是火光洞壁，其余配色都取 theme。
 var cfg: Dictionary
 var cell := 96.0
 var _t := 0.0
@@ -12,6 +13,8 @@ func _c(key: String, fallback: String) -> Color:
 	return Color(str(cfg["theme"].get(key, fallback)))
 func _color(key: String, fallback: String) -> Color:
 	return _c(key, fallback)
+func _cave() -> bool:
+	return str(cfg["theme"].get("style", "")) == "cave"
 
 func _floor(r: Rect2, i: int, parity: int) -> void:
 	var base := _color("tile", "e6d9b2") if parity % 2 == 0 else _color("tile_alt", "d9c99c")
@@ -49,11 +52,50 @@ func _slab(r: Rect2, i: int, alpha: float, frontier: bool) -> void:
 	draw_polyline(PackedVector2Array([face.position + Vector2(9, face.size.y - 16), face.position + Vector2(8, 12), face.position + Vector2(face.size.x - 16, 8)]), Color(1, 1, 1, 0.28 * alpha), 3.0)
 	if frontier:
 		Art.outline(self, top, 2.0, Color(_color("glow", "bff3f0"), 0.45 * alpha))
-	_rune(face.get_center() + Vector2(0, 1), cell * 0.17, int(Art.srnd(i * 11 + 5) * 5.0), base, alpha)
+	if _cave():
+		# 岩画是渗进石头里的旧颜料：比石板更暗、偏褐，下沿一道浅色刻痕让它像刻在面上，不抢物品的眼。
+		var kind := int(Art.srnd(i * 11 + 5) * 5.0)
+		var mark := face.get_center() + Vector2(0, 1)
+		_ochre(mark + Vector2(1.0, 1.5), cell * 0.17, kind, Color(base.lightened(0.18), 0.35 * alpha))
+		_ochre(mark, cell * 0.17, kind, Color(base.darkened(0.42).lerp(Color(0.4, 0.13, 0.07), 0.3), 0.8 * alpha))
+	else: _rune(face.get_center() + Vector2(0, 1), cell * 0.17, int(Art.srnd(i * 11 + 5) * 5.0), base, alpha)
 	if Art.srnd(i * 5 + 2) > 0.45:
 		var a := face.position + Vector2(face.size.x * (0.6 + Art.srnd(i) * 0.3), face.size.y - 3)
 		draw_polyline(PackedVector2Array([a, a + Vector2(-6, -10), a + Vector2(-3, -18), a + Vector2(-10, -26)]), Color(base.darkened(0.55), 0.8 * alpha), 2.0)
-	_slab_vine(face, i, alpha)
+	if _cave(): _soot(face, i, alpha)
+	else: _slab_vine(face, i, alpha)
+
+## 岩板上用赭石随手画的记号：点阵、手印、波纹、小兽、太阳。
+func _ochre(c: Vector2, s: float, kind: int, red: Color) -> void:
+	match kind:
+		0:
+			for k in 5: draw_circle(c + Vector2.from_angle(k * TAU / 5 + 0.4) * s * 0.85, s * 0.24, red)
+		1:
+			draw_circle(c + Vector2(0, s * 0.35), s * 0.5, red)
+			for k in 4: draw_line(c + Vector2((k - 1.5) * s * 0.3, 0), c + Vector2((k - 1.5) * s * 0.42, -s * 0.95), red, s * 0.24, true)
+		2:
+			for k in 3:
+				var pts := PackedVector2Array()
+				for j in 9: pts.append(c + Vector2((j / 8.0 - 0.5) * s * 2.2, (k - 1) * s * 0.6 + sin(j * 1.4) * s * 0.18))
+				draw_polyline(pts, red, 3.0, true)
+		3:
+			draw_line(c + Vector2(-s, 0), c + Vector2(s * 0.7, 0), red, s * 0.45, true)
+			for k in 4: draw_line(c + Vector2(-s * 0.8 + k * s * 0.5, 0), c + Vector2(-s * 0.9 + k * s * 0.5, s * 0.8), red, 2.4, true)
+			draw_line(c + Vector2(s * 0.7, 0), c + Vector2(s * 1.0, -s * 0.6), red, 3.0, true)
+		_:
+			draw_circle(c, s * 0.45, red)
+			for k in 8: draw_line(c + Vector2.from_angle(k * TAU / 8) * s * 0.7, c + Vector2.from_angle(k * TAU / 8) * s * 1.05, red, 2.4, true)
+
+## 洞壁石板上的烟熏黑痕和一撮干苔。
+func _soot(face: Rect2, i: int, alpha: float) -> void:
+	var v := Art.srnd(i * 17 + 3)
+	if v < 0.4:
+		var m := face.position + Vector2(face.size.x * (0.2 + Art.srnd(i) * 0.6), 4)
+		draw_colored_polygon(Art.ell(m + Vector2(0, 6), Vector2(14, 7), 900 + i, 0.2, 12, 0.0, 0.3), Color(0.1, 0.05, 0.02, 0.22 * alpha))
+	elif v < 0.7:
+		var m := face.position + Vector2(face.size.x * (0.25 + Art.srnd(i) * 0.5), face.size.y - 2)
+		var moss := Color(_color("vine", "7fae5a"), alpha)
+		for k in 3: draw_circle(m + Vector2((k - 1) * 6, -2 - (k % 2) * 3), 4.5, moss)
 
 ## 刻在石板上的月纹：凹槽暗线 + 下沿高光。
 func _rune(c: Vector2, s: float, kind: int, base: Color, alpha: float) -> void:
@@ -138,7 +180,7 @@ func _lock_badge(c: Vector2) -> void:
 	draw_arc(c + Vector2(0, -6), 7.5, PI, TAU, 10, Color("c9d3cf"), 2.6, true)
 	var body := Art.rrect(Rect2(c + Vector2(-11, -6), Vector2(22, 17)), 5, 61, 0.3)
 	Art.fill(self, body, Color("c9d3cf"), 2.5, INK)
-	draw_arc(c + Vector2(-0.5, 2.5), 4.2, PI * 0.35, PI * 1.65, 10, Color("3e6068"), 2.4, true)
+	draw_arc(c + Vector2(-0.5, 2.5), 4.2, PI * 0.35, PI * 1.65, 10, _color("locked", "3e6068"), 2.4, true)
 
 
 func _paint_scene(ci: CanvasItem, sz: Vector2) -> void:
@@ -148,6 +190,9 @@ func _paint_scene(ci: CanvasItem, sz: Vector2) -> void:
 	for k in bands:
 		var t := float(k) / bands
 		ci.draw_rect(Rect2(6, 8 + sz.y * t, sz.x - 12, sz.y / bands + 1), Color(_c("sky_top", "142636").lerp(_c("sky_bottom", "2c5a63"), t), 0.9))
+	if _cave():
+		_paint_cave(ci, sz, r)
+		return
 	# 月亮（藏在进度板后面露出一角）与星星
 	var moon := Vector2(sz.x - 70, 46)
 	for k in 3: ci.draw_circle(moon, 64 + k * 22, Color(_c("glow", "bff3f0"), 0.07))
@@ -166,6 +211,33 @@ func _paint_scene(ci: CanvasItem, sz: Vector2) -> void:
 		var h := 90 + Art.srnd(k * 5) * 110
 		var w := 26 + Art.srnd(k * 9) * 18
 		ci.draw_colored_polygon(Art.poly([Vector2(x - w / 2, base_y), Vector2(x - w / 2 + 3, base_y - h), Vector2(x - w / 2 + w * 0.4, base_y - h - 10 * Art.srnd(k)), Vector2(x + w / 2, base_y - h + 6), Vector2(x + w / 2, base_y)], 810 + k, 0.4), sil)
+	Art.outline(ci, r, 2.5, Color(INK, 0.9))
+
+## 火光洞壁：两侧火把的暖光晕、飘起的火星、顶上的钟乳石和地上的石笋。
+func _paint_cave(ci: CanvasItem, sz: Vector2, r: PackedVector2Array) -> void:
+	var glow := _c("glow", "ffd68a")
+	for side in 2:
+		var p := Vector2(150 if side == 0 else sz.x - 150, sz.y * (0.32 + side * 0.22))
+		for k in 6: ci.draw_circle(p, 140 - k * 22, Color(glow, 0.035))
+	for k in 30:
+		var p := Vector2(16 + Art.srnd(k * 3 + 1) * (sz.x - 32), 14 + Art.srnd(k * 7 + 2) * (sz.y - 28))
+		ci.draw_circle(p, 1.0 + Art.srnd(k + 11) * 1.8, Color(1, 0.7 + 0.2 * Art.srnd(k), 0.35, 0.25 + 0.3 * Art.srnd(k * 5)))
+	for k in 6:
+		var x := 30 + Art.srnd(k * 13 + 4) * (sz.x - 60)
+		var p := Vector2(x, sz.y * (0.15 + Art.srnd(k * 3) * 0.7))
+		ci.draw_circle(p, 5 + Art.srnd(k) * 4, Color(0.62, 0.2, 0.1, 0.18))
+	var sil := Color(_c("sky_top", "142636").darkened(0.45), 0.9)
+	for k in 9:
+		var x := 10 + k * (sz.x - 20) / 8.0
+		var h := 40 + Art.srnd(k * 5 + 3) * 70
+		var w := 22 + Art.srnd(k * 9) * 20
+		ci.draw_colored_polygon(Art.poly([Vector2(x - w / 2, 8), Vector2(x + w / 2, 8), Vector2(x + Art.jit(k) * 4, 8 + h)], 830 + k, 0.4), sil)
+	var base_y := sz.y - 8
+	for k in 7:
+		var x := 20 + k * (sz.x - 40) / 6.0
+		var h := 60 + Art.srnd(k * 5) * 80
+		var w := 30 + Art.srnd(k * 9) * 24
+		ci.draw_colored_polygon(Art.poly([Vector2(x - w / 2, base_y), Vector2(x - w * 0.1, base_y - h), Vector2(x + w * 0.15, base_y - h + 8), Vector2(x + w / 2, base_y)], 810 + k, 0.4), sil)
 	Art.outline(ci, r, 2.5, Color(INK, 0.9))
 
 # ---------------------------------------------------------------- 状态刷新
@@ -194,7 +266,7 @@ func _card(ci: CanvasItem, sz: Vector2, seed: int, glow: float = 0.0) -> void:
 	var r := Art.rrect(Rect2(Vector2.ZERO, sz), 18, seed, 0.6)
 	if glow > 0.0: Art.dilate(ci, r, 7.0, Color(1, 0.9, 0.5, glow))
 	Art.dilate(ci, r, 3.0, INK)
-	ci.draw_colored_polygon(r, Color("1e3842"))
+	ci.draw_colored_polygon(r, _c("card", "1e3842"))
 	Art.dashed(ci, Art.rrect(Rect2(Vector2(6, 6), sz - Vector2(12, 12)), 13, seed + 1, 0.0), 9, 6, Color(_c("glow", "bff3f0"), 0.22), 1.8)
 
 
@@ -202,7 +274,7 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 	var base := Art.rrect(Rect2(Vector2.ZERO, sz), 20, 404, 0.6)
 	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 6), sz), 20, 405, 0.0), Color(0, 0, 0, 0.3))
 	Art.dilate(ci, base, 3.0, INK)
-	ci.draw_colored_polygon(base, Color("24404a"))
+	ci.draw_colored_polygon(base, _c("track", "24404a"))
 	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(6, 6), Vector2(sz.x - 12, sz.y * 0.42)), 15, 406, 0.3), Color(1, 1, 1, 0.05))
 	Art.dashed(ci, Art.rrect(Rect2(Vector2(7, 7), sz - Vector2(14, 14)), 15, 407, 0.0), 10, 7, Color(_c("glow", "bff3f0"), 0.28), 2.0)
 
@@ -210,7 +282,7 @@ func _paint_collection(ci: CanvasItem, sz: Vector2) -> void:
 	var ledge := Art.rrect(Rect2(Vector2(0, 8), sz - Vector2(0, 8)), 16, 701, 0.6)
 	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 14), sz - Vector2(0, 8)), 16, 702, 0.0), Color(0, 0, 0, 0.3))
 	Art.dilate(ci, ledge, 3.0, INK)
-	ci.draw_colored_polygon(ledge, Color("5b787d"))
+	ci.draw_colored_polygon(ledge, _c("shelf", "5b787d"))
 	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(6, 12), Vector2(sz.x - 12, 10)), 5, 703, 0.0), Color(1, 1, 1, 0.12))
 
 func _paint_earn(ci: CanvasItem, sz: Vector2, glow := false) -> void:
@@ -235,7 +307,7 @@ func _paint_spawn(ci: CanvasItem, sz: Vector2, can := true) -> void:
 	ci.draw_arc(c + Vector2(-4, -4), 46, PI * 1.08, PI * 1.5, 14, Color(1, 1, 1, 0.85), 6, true)
 	ci.draw_circle(c + Vector2(30, -32), 5, Color(1, 1, 1, 0.8))
 	var pill := Rect2(Vector2(20, 124), Vector2(112, 36))
-	Art.fill(ci, Art.rrect(pill, 18, 623, 0.3), Color("10232a"), 2.5, INK)
+	Art.fill(ci, Art.rrect(pill, 18, 623, 0.3), _c("card", "10232a").darkened(0.3), 2.5, INK)
 	ci.draw_texture_rect(MergeEventArt.texture(str(cfg["theme"]["point_icon"])), Rect2(pill.position + Vector2(-8, -4), Vector2(44, 44)), false)
 	if can: Paint.plus_badge(ci, c + Vector2(46, 38))
 
@@ -244,7 +316,7 @@ func _paint_frame(ci: CanvasItem, sz: Vector2) -> void:
 	var outer := Art.rrect(Rect2(Vector2.ZERO, sz), 18, 501, 0.6)
 	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2(0, 8), sz), 18, 502, 0.0), Color(0, 0, 0, 0.35))
 	Art.dilate(ci, outer, 3.0, INK)
-	ci.draw_colored_polygon(outer, Color("4f6c72"))
+	ci.draw_colored_polygon(outer, _c("frame", "4f6c72"))
 	for k in 18:
 		var p := Vector2(Art.srnd(k * 3 + 7) * sz.x, (0.0 if k % 2 == 0 else sz.y - 5.0) + Art.srnd(k) * 5.0)
 		ci.draw_circle(p, 1.5 + Art.srnd(k + 9) * 2.0, Color(0, 0, 0, 0.18))

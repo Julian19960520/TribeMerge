@@ -27,54 +27,102 @@ func run() -> void:
 	var s: Dictionary = ev.state(c)
 	check(ev.available(c) and s["points"] == 0, "event opens at level 10 with zero points")
 	var cells: Array = s["cells"]
-	check(cells.size() == 96 and ev.remaining(s) == 90, "initial 16x6 board locks everything except bottom row")
-	check(ev.local_action(c,s,"spawn",{"view":9}).has("error") and s["spent"] == 0, "zero-point spawn cannot produce items")
+	check(cells.size() == 102 and ev.remaining(s) == 96, "initial 17x6 board locks everything except bottom row")
+	check(ev.local_action(c,s,"spawn",{"view":10}).has("error") and s["spent"] == 0, "zero-point spawn cannot produce items")
 	var top_tier := 0
 	var low_tier := 0
 	for k in 30: top_tier = maxi(top_tier, c["chain"].find(ev.item(c, str(cells[k]["id"]))) + 1)
-	for k in range(60, 90): low_tier = maxi(low_tier, c["chain"].find(ev.item(c, str(cells[k]["id"]))) + 1)
-	check(top_tier > low_tier and cells[84]["id"] == "moon_1" and cells[78]["id"] == "moon_1", "deeper rows hold higher relics; the first two rows start at tier 1")
+	for k in range(84, 96): low_tier = maxi(low_tier, c["chain"].find(ev.item(c, str(cells[k]["id"]))) + 1)
+	check(top_tier > low_tier and cells[90]["id"] == "glow_1" and cells[84]["id"] == "glow_1", "deeper rows hold higher relics; the first two rows start at tier 1")
 	check(ev.on_order({"items":["fruit_1"]}) == 1 and ev.on_order({"items":["fruit_5"]}) == 2 and ev.on_order({"items":["fruit_8"]}) == 3, "orders award exactly 1 to 3 based on configured difficulty")
-	var r: Dictionary = ev.local_action(c,s,"spawn",{"view":9})
+	var r: Dictionary = ev.local_action(c,s,"spawn",{"view":10})
 	check(r.get("kind") == "spawn" and s["points"] == 5, "bubble consumes one point and fills nearest free cell")
 	var from: int = r["to"]
-	r = ev.local_action(c,s,"drop",{"from":from,"to":0,"view":9})
+	r = ev.local_action(c,s,"drop",{"from":from,"to":0,"view":10})
 	check(r.has("error") and cells[0]["lock"] == 2, "cannot jump into unrevealed rows")
-	check(ev.local_action(c,s,"drop",{"from":from,"to":84,"view":9}).has("error"), "covered items cannot merge directly")
-	ev.local_action(c,s,"drop",{"from":from,"to":90,"view":9})
-	var second: Dictionary = ev.local_action(c,s,"spawn",{"view":9})
-	r = ev.local_action(c,s,"drop",{"from":second["to"],"to":90,"view":9})
-	check(r.get("kind")=="merge" and cells[84]["lock"]==1 and cells[78]["lock"]==2, "adjacent merge reveals only immediate covered neighbors and leaves items locked")
-	check(ev.local_action(c,s,"drop",{"from":90,"to":84,"view":9}).has("error"), "mismatched item cannot unlock a revealed tile")
-	var third: Dictionary = ev.local_action(c,s,"spawn",{"view":9})
-	r = ev.local_action(c,s,"drop",{"from":third["to"],"to":84,"view":9})
-	check(r.get("kind")=="merge" and cells[84]["id"]=="moon_2" and cells[84]["lock"]==0 and cells[78]["lock"]==1, "matching revealed item unlocks and uncovers next neighbors")
+	check(ev.local_action(c,s,"drop",{"from":from,"to":90,"view":10}).has("error"), "covered items cannot merge directly")
+	ev.local_action(c,s,"drop",{"from":from,"to":96,"view":10})
+	var second: Dictionary = ev.local_action(c,s,"spawn",{"view":10})
+	r = ev.local_action(c,s,"drop",{"from":second["to"],"to":96,"view":10})
+	check(r.get("kind")=="merge" and cells[90]["lock"]==1 and cells[84]["lock"]==2, "adjacent merge reveals only immediate covered neighbors and leaves items locked")
+	check(ev.local_action(c,s,"drop",{"from":96,"to":90,"view":10}).has("error"), "mismatched item cannot unlock a revealed tile")
+	var third: Dictionary = ev.local_action(c,s,"spawn",{"view":10})
+	r = ev.local_action(c,s,"drop",{"from":third["to"],"to":90,"view":10})
+	check(r.get("kind")=="merge" and cells[90]["id"]=="glow_2" and cells[90]["lock"]==0 and cells[84]["lock"]==1, "matching revealed item unlocks and uncovers next neighbors")
 	var scroll: Dictionary=s.duplicate(true)
-	for k in range(54,96):scroll["cells"][k]={"lock":0,"id":""}
-	scroll["cells"][95]["id"]="moon_3"
-	scroll["discovered"]["moon_4"]=true
+	for k in range(60,102):scroll["cells"][k]={"lock":0,"id":""}
+	scroll["cells"][101]["id"]="glow_3"
+	scroll["discovered"]["glow_4"]=true
 	ev._advance(c,scroll)
-	check(scroll["view"]==6 and scroll["cells"][95]["id"]=="" and scroll["cells"].slice(36,78).any(func(v):return v["id"]=="moon_3"), "automatic scroll carries lower items into the new visible area")
+	check(scroll["view"]==7 and scroll["cells"][101]["id"]=="" and scroll["cells"].slice(42,84).any(func(v):return v["id"]=="glow_3"), "automatic scroll carries lower items into the new visible area")
 	var stages: Dictionary=ev.fresh(c)
 	for cell in stages["cells"]: cell["lock"]=0; cell["id"]=""
-	stages["discovered"]["moon_3"]=true
+	stages["discovered"]["glow_3"]=true
 	ev._advance(c,stages)
-	check(stages["view"]==9,"clear rows alone cannot advance before tier unlock")
-	for tier in [4,5,6]:
-		stages["discovered"]["moon_%d"%tier]=true
+	check(stages["view"]==10,"clear rows alone cannot advance before tier unlock")
+	for pair in [[4,7],[6,4],[8,0]]:
+		stages["discovered"]["glow_%d"%pair[0]]=true
 		ev._advance(c,stages)
-		check(stages["view"]==9-(tier-3)*3,"tier %d advances configured three rows"%tier)
+		check(stages["view"]==pair[1],"tier %d advances configured rows"%pair[0])
 		ev._advance(c,stages)
-		check(stages["view"]==9-(tier-3)*3,"same tier cannot advance twice")
+		check(stages["view"]==pair[1],"same tier cannot advance twice")
 	var delayed: Dictionary=ev.fresh(c)
-	delayed["discovered"]["moon_4"]=true
-	for k in [88,89]: delayed["cells"][k]={"lock":0,"id":""}
+	delayed["discovered"]["glow_4"]=true
+	for k in [93,94,95]: delayed["cells"][k]={"lock":0,"id":""}
 	ev._advance(c,delayed)
-	check(delayed["view"]==8 and delayed["cells"][84]["lock"]==2,"uncleared lower cells remain reachable with pending advancement")
-	for cell in delayed["cells"].slice(72,90): cell["lock"]=0; cell["id"]=""
-	delayed["cells"][89]["id"]="moon_8"
-	ev.local_action(c,delayed,"recycle",{"cell":89,"view":8})
-	check(delayed["view"]==6,"later action spends pending advancement without a new tier")
+	check(delayed["view"]==9 and delayed["cells"][90]["lock"]==2 and delayed["cells"].slice(93,96).any(func(v):return v["id"]=="brush"),"uncleared lower cells remain reachable with pending advancement")
+	for cell in delayed["cells"].slice(78,96): cell["lock"]=0; cell["id"]=""
+	delayed["cells"][95]["id"]="glow_8"
+	ev.local_action(c,delayed,"recycle",{"cell":95,"view":9})
+	check(delayed["view"]==7,"later action spends pending advancement without a new tier")
+	# ---- 三条线：灯光掉壁画、壁画合成出奖励、画笔吃颜料画壁画
+	var t: Dictionary = ev.fresh(c)
+	var tc: Array = t["cells"]
+	check(tc[98]["id"] == "brush" and t["brush"]["charges"] == 0 and tc[88]["id"] == "paint_1" and tc[88]["lock"] == 2, "brush starts on the bottom row and paint is buried under a covered tile")
+	check(ev.local_action(c,t,"brush",{"cell":98,"view":10}).has("error") and not ev.can_brush(c,t,98), "empty brush cannot paint")
+	for k in range(84, 96): tc[k] = {"id":"", "lock":0}
+	tc[87] = {"id":"glow_1","lock":0}
+	tc[88] = {"id":"paint_1","lock":2}
+	tc[89] = {"id":"glow_1","lock":0}
+	r = ev.local_action(c,t,"drop",{"from":87,"to":89,"view":10})
+	check(r.get("kind") == "merge" and tc[88]["lock"] == 0, "revealed paint is usable at once")
+	r = ev.local_action(c,t,"drop",{"from":88,"to":98,"view":10})
+	check(r.get("kind") == "feed" and t["brush"]["charges"] == 2 and t["brush"]["fed"] == 1 and tc[88]["id"] == "", "paint dropped on the brush adds its charges")
+	check(ev.can_brush(c,t,98), "charged brush can paint")
+	r = ev.local_action(c,t,"brush",{"cell":98,"view":10},0.0)
+	check(r.get("kind") == "brush" and str(r["id"]) == "mural_1" and t["brush"]["charges"] == 1 and tc[int(r["to"])]["id"] == "mural_1", "brush paints a mural next to itself and spends one charge")
+	var m1: int = r["to"]
+	r = ev.local_action(c,t,"brush",{"cell":98,"view":10},0.99)
+	check(str(r.get("id")) == "mural_3", "brush roll follows configured tier weights")
+	tc[int(r["to"])]["id"] = "mural_1"
+	r = ev.local_action(c,t,"drop",{"from":int(r["to"]),"to":m1,"view":10})
+	check(r.get("kind") == "merge" and tc[m1]["id"] == "mural_2" and r["placed"].size() == 1 and str(r["placed"][0]["id"]) == "fire_2", "mural merge leaves its reward on the event board")
+	var fire_at: int = r["placed"][0]["to"]
+	check(not ev.is_bubble(c,"fire_2") and ev.is_bubble(c,"chest_1"), "resources collect by tap, chests show as bubbles")
+	r = ev.local_action(c,t,"collect",{"cell":fire_at,"view":10})
+	check(r.get("kind") == "collect" and tc[fire_at]["id"] == "" and r["rewards"] == [["fire_2",1,"item"]], "collecting a resource clears the cell and returns its reward")
+	# 底行压一块未揭开的格子，让后面几步都在同一视野里进行。
+	tc[101] = {"id":"glow_1","lock":2}
+	for k in 5: tc[84 + k] = {"id":"glow_5","lock":0}
+	tc[89] = {"id":"glow_5","lock":0}
+	r = ev.local_action(c,t,"drop",{"from":84,"to":85,"view":10})
+	check(r.get("kind") == "merge" and tc[85]["id"] == "glow_6" and r["placed"].size() == 1 and str(r["placed"][0]["id"]) == "mural_1", "high light merge drops a mural")
+	for k in range(60, 102):
+		if tc[k]["id"] == "" and int(tc[k]["lock"]) == 0: tc[k]["id"] = "paint_2"
+	tc[86]["id"] = "glow_5"
+	r = ev.local_action(c,t,"drop",{"from":86,"to":87,"view":10})
+	check(r.get("kind") == "merge" and r["queued"] == 0 and r["placed"].size() == 1 and str(r["placed"][0]["to"]) == "86", "drop fills the freed source cell first")
+	tc[88]["id"] = "glow_6"
+	r = ev.local_action(c,t,"drop",{"from":88,"to":87,"view":10})
+	var full: bool = r.get("kind") == "merge" and int(r.get("queued", 0)) >= 1
+	check(full and t["queue"].size() >= 1, "drops on a full board wait in the queue instead of vanishing")
+	var waiting: int = t["queue"].size()
+	r = ev.local_action(c,t,"recycle",{"cell":89,"view":10})
+	check(t["queue"].size() == waiting - 1 and r.has("flushed"), "queued drops come out when a cell frees up")
+	tc[60] = {"id":"mural_8","lock":0}
+	r = ev.local_action(c,t,"collect",{"cell":60,"view":10})
+	check(r.get("kind") == "hang" and tc[60]["id"] == "", "top-tier mural is hung on the wall")
+	check(ev.local_action(c,t,"recycle",{"cell":98,"view":10}).has("error"), "brush cannot be recycled")
 	var saved: Dictionary = g.save_dict().duplicate(true)
 	g.save_game()
 	g.merge_events = {}
@@ -84,10 +132,18 @@ func run() -> void:
 	s = ev.state(c)
 	var next: Dictionary = ev.current(float(c["ends_at"]) + 1)
 	check(next["key"] != c["key"] and ev.state(next).is_empty() and ev.fresh(next)["points"] == 0 and s["points"] == 3, "new period starts fresh without mutating the current state during a query")
+	s["cells"][100] = {"id":"fire_3","lock":0}
+	s["cells"][101] = {"id":"chest_1","lock":0}
+	var e0: int = g.energy
+	var st0: int = g.stash.count("chest_1")
+	var got_fire: Dictionary = await ev.act(c,"collect",{"cell":100,"view":10})
+	var got_chest: Dictionary = await ev.act(c,"collect",{"cell":101,"view":10})
+	check(not got_fire.has("error") and g.energy == e0 + 5, "collecting fire on the event board pays energy")
+	check(not got_chest.has("error") and g.stash.count("chest_1") == st0 + 1, "collecting a chest bubble sends it to the main board stash")
 	check((await ev.act(c,"claim")).has("error"), "cannot claim unfinished board")
 	s = ev.state(c)
 	var ms: Array = ev.milestones(c)
-	check(ms.size() >= 3 and int(ms[-1]["at"]) == ev.goal_total(c), "milestones end at the full 90-cell goal")
+	check(ms.size() >= 3 and int(ms[-1]["at"]) == ev.goal_total(c), "milestones end at the full board goal")
 	var opened := 0
 	for tile in s["cells"]:
 		if opened < int(ms[0]["at"]) and int(tile["lock"]) != 0 and tile != s["cells"][0]:

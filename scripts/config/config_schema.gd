@@ -265,6 +265,7 @@ func _progression() -> void:
 			if _fields(part, "builds.parts", {"id": TYPE_STRING, "cost": TYPE_INT, "rewards": TYPE_ARRAY}):
 				_id(part.id, "builds.parts.id", part_ids)
 				_number(part.cost, "builds.parts.cost", 0, INF, true)
+				if part.has("steps"): _number(part.steps, "builds.parts.steps", 1, 20, true)
 	for name in ["store", "daily_deals"]:
 		var deal_keys := {}
 		for row in docs[name]:
@@ -466,6 +467,23 @@ func _events() -> void:
 			if _fields(layer, at + ".board.layers", {"rows": TYPE_INT, "tiers": TYPE_ARRAY}):
 				_positive(layer.rows, at + ".board.layers.rows")
 				for tier in layer.tiers: _number(tier, at + ".board.layers.tiers", 1, season.chain.size(), true)
+		var event_ids := chain_ids.duplicate()
+		for row in season.get("mural", []):
+			if _fields(row, at + ".mural", {"id": TYPE_STRING, "name": TYPE_STRING, "rewards": TYPE_ARRAY}): _id(row.id, at + ".mural.id", event_ids)
+		for row in season.get("paints", []):
+			if _fields(row, at + ".paints", {"id": TYPE_STRING, "name": TYPE_STRING, "charges": TYPE_INT}):
+				_id(row.id, at + ".paints.id", event_ids)
+				_positive(row.charges, at + ".paints.charges")
+		if season.has("brush"):
+			_id(str(season.brush.get("id", "")), at + ".brush.id", event_ids)
+			_positive(season.brush.get("max_charges"), at + ".brush.max_charges")
+			for level in season.brush.get("levels", []):
+				for w in level.get("tiers", []): _number(w[0], at + ".brush.tiers", 1, season.get("mural", []).size(), true)
+		for row in season.chain:
+			for drop in row.get("drops", []):
+				if not event_ids.has(str(drop[0])): _error(at + ".chain.drops", "unknown event item " + str(drop[0]))
+		for sp in board.get("specials", []):
+			if not event_ids.has(str(sp.get("id", ""))): _error(at + ".board.specials", "unknown event item")
 		if not _fields(season.points, at + ".points", {"spawn_cost": TYPE_INT, "spawn_tier": TYPE_INT, "order_thresholds": TYPE_ARRAY, "order_rewards": TYPE_ARRAY}): continue
 		_positive(season.points.get("spawn_cost"), at + ".points.spawn_cost")
 		_number(season.points.get("spawn_tier"), at + ".points.spawn_tier", 1, season.chain.size(), true)

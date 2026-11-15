@@ -157,6 +157,8 @@ func _dispatch(name: String, a: Dictionary):
 				var from := int(a.get("from", -1)); var to := int(a.get("to", -1))
 				if MergeGrid.drop_kind(state["cells"], from, to, func(id): return MergeEvent.next_id(c, id)) == "merge":
 					roll = G.random_for("activity:" + str(c["key"])).randf()
+			elif str(a.get("action", "")) == "brush" and MergeEvent.can_brush(c, state, int(a.get("cell", -1))):
+				roll = G.random_for("activity_brush:" + str(c["key"])).randf()
 			var r := MergeEvent.local_action(c, state, str(a.get("action", "")), a, roll)
 			if r.has("error"): return r
 			for id in r.get("drops", []): grant([[id, 1, "physical"]])

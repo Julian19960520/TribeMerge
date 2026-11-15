@@ -153,7 +153,8 @@ static func _pool(level: int, target: float, allowed: Dictionary = {}, blocked: 
 				continue
 			var n := mini(Data.max_lv(ch), int(PriceBook.catalog.get("orders", {}).get("max_item_level", Data.max_lv(ch))))
 			# 冷却产线（狩猎）每小时能产的有限，订单只要低级猎物，免得一张单卡住整级。
-			if bool(l.get("cooldown", false)): n = mini(n, int(Data.RULES.get("cooldown_order_max_level", 3)))
+			# 副产物（如飞禽）在冷却产线上约 10 次才出 1 个 1 级，只要 1 级（cooldown_order_sub_max_level）。
+			if bool(l.get("cooldown", false)): n = mini(n, int(Data.RULES.get("cooldown_order_max_level", 3) if key == "main" else Data.RULES.get("cooldown_order_sub_max_level", 1)))
 			for lv in n:
 				var id := "%s_%d" % [ch, lv + 1]
 				if blocked.has(id): continue

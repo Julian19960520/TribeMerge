@@ -162,6 +162,8 @@ func _add_random_batch(at: int = -1) -> void:
 		if tier != "":
 			made["tier"] = tier
 			made["xp_value"] = Data.tier_xp(tier)
+			var coins := Data.order_coins(state.level, tier, context.random_for("orders"))
+			if coins > 0 and made.get("rw") is Dictionary: made["rw"]["shell"] = coins
 		made["slot"] = slot
 		if made.get("items") is Array:
 			avoid = made["items"]
@@ -329,6 +331,8 @@ func _craft_order(d: Dictionary) -> Dictionary:
 	var shell = 4
 	for id in mats:
 		shell += 4 * int(pow(2.0, float(Data.lv(str(id)) - 1)))
+	var coins := Data.order_coins(state.level, "craft", context.random_for("orders"))
+	if coins > 0: shell = coins
 	var rw = {"shell": shell}
 	if context.random_for("orders").randf() < 0.4:
 		rw["token"] = context.random_for("orders").randi_range(1, 3)

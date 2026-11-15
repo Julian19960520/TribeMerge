@@ -37,6 +37,8 @@ static var RANDOM_SLOTS: Array = [0.0, 0.3, 0.55, 1.0]
 static var ORDER_TIERS: Dictionary = {}
 ## [[等级, 难单占比], ...]，等级之间线性插值。
 static var HARD_SHARE: Array = []
+## 订单给的不那那（random_orders.json coins）；空表示沿用按难度算的旧规则
+static var ORDER_COINS: Dictionary = {}
 ## 常驻随机单里至少保留几张简单单。
 static var MIN_EASY: int = 1
 ## 链 id -> 每一级是否可进订单。下标 0 是主角 1 级。
@@ -133,6 +135,7 @@ static func _load() -> void:
 		if random.get("tiers", {}).get(key) is Dictionary: ORDER_TIERS[key] = random["tiers"][key]
 	if ORDER_TIERS.size() < 2: ORDER_TIERS = {}
 	HARD_SHARE = random.get("hard_share", {}).get("points", []) if random.get("hard_share") is Dictionary else []
+	ORDER_COINS = random.get("coins", {}) if random.get("coins") is Dictionary else {}
 	MIN_EASY = int(random.get("min_easy", 1))
 	var low := []
 	var high := []
@@ -208,6 +211,12 @@ static func hard_share(level: int) -> float:
 			return lerpf(float(prev[1]), float(point[1]), float(level - int(prev[0])) / span)
 		prev = point
 	return float(prev[1])
+
+## 一张订单给多少不那那：kind 是 easy / hard / craft；没配 coins 时返回 -1（调用方沿用旧算法）
+static func order_coins(level: int, kind: String, rng: RandomNumberGenerator) -> int:
+	if ORDER_COINS.is_empty() or not ORDER_COINS.has(kind): return -1
+	var grow := 1.0 + float(ORDER_COINS.get("per_level", 0.0)) * maxf(0.0, float(level - int(ORDER_COINS.get("from_level", 1))))
+	return maxi(1, int(round(float(ORDER_COINS[kind]) * grow)) + rng.randi_range(0, int(ORDER_COINS.get("jitter", 0))))
 
 static func tier_xp(tier: String) -> int:
 	return maxi(1, int(ORDER_TIERS.get(tier, {}).get("xp", 2 if tier == "hard" else 1)))
@@ -636,6 +645,10 @@ static func build_parts(building: Dictionary) -> Array:
 
 static func build_stages(b: Dictionary) -> int:
 	return build_parts(b).size()
+
+## 一件部件要建几次才落成（没写就是 1 次）
+static func part_steps(part) -> int:
+	return maxi(1, int(part.get("steps", 1))) if part is Dictionary else 1
 
 ## 区域开放的部落等级：写了 unlock 用 unlock，否则跟随所属产线开放。
 static func build_unlock(b: Dictionary) -> int:

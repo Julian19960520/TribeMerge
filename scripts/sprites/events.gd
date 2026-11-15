@@ -562,40 +562,50 @@ static func live_ufo_tray(ci: CanvasItem) -> void:
 	ci.draw_colored_polygon(Art.rrect(T.grow(-9), 14, 729, 0.5), Color("fff3d6"))
 	Art.dashed(ci, Art.rrect(T.grow(-15), 12, 730, 0.0), 10, 7, Color("e0c08a"), 2.0)
 
-# ================================================================ 月石遗迹（MergeEventPopup）
+# ================================================================ 合成活动面板（MergeEventPopup）
+## 每套配色登记一组同名图：月石遗迹 ev_me_*（青色月夜），火光岩画 ev_cv_*（暖褐洞穴）。
+## 面板按 theme.sprites 选前缀。
+const MERGE_PALETTES := {
+	"ev_me_": {"timer": Color(0.05, 0.12, 0.16, 0.75), "groove": Color("10232a"), "tag_on": Color("8cc63f"), "tag_off": Color("10232a"), "socket": Color("223b42"), "card": Color("24404a"), "banner": Color(0.12, 0.25, 0.3, 0.94), "node_on": Color("f2c14e"), "node_done": Color("3d6a6f"), "node_off": Color("2e5058")},
+	"ev_cv_": {"timer": Color(0.16, 0.08, 0.04, 0.78), "groove": Color("2a160c"), "tag_on": Color("e0703a"), "tag_off": Color("2a160c"), "socket": Color("3a2416"), "card": Color("4a2e1c"), "banner": Color(0.24, 0.13, 0.07, 0.94), "node_on": Color("f2c14e"), "node_done": Color("6a4a32"), "node_off": Color("5a3a24")},
+}
 
 static func _merge(out: Array) -> void:
-	out.append(_e("ev_me_timer_fill", Rect2(0, 0, 292, 36), func(ci):
-		ci.draw_colored_polygon(Art.rrect(Rect2(0, 0, 292, 36), 18, 51, 0.4), Color(0.05, 0.12, 0.16, 0.75)), 4))
+	for prefix in MERGE_PALETTES:
+		_merge_set(out, prefix, MERGE_PALETTES[prefix])
+
+static func _merge_set(out: Array, p: String, pal: Dictionary) -> void:
+	out.append(_e(p + "timer_fill", Rect2(0, 0, 292, 36), func(ci):
+		ci.draw_colored_polygon(Art.rrect(Rect2(0, 0, 292, 36), 18, 51, 0.4), pal["timer"]), 4))
 	# 描边用白色画，运行时按主题光色染
-	out.append(_e("ev_me_timer_line", Rect2(0, 0, 292, 36), func(ci):
+	out.append(_e(p + "timer_line", Rect2(0, 0, 292, 36), func(ci):
 		Art.outline(ci, Art.rrect(Rect2(0, 0, 292, 36), 18, 51, 0.4), 2.0, Color.WHITE), 4))
-	out.append(_e("ev_me_groove", Rect2(0, 0, 508, 20), func(ci):
+	out.append(_e(p + "groove", Rect2(0, 0, 508, 20), func(ci):
 		var g := Art.rrect(Rect2(0, 0, 508, 20), 10, 408, 0.3)
 		Art.dilate(ci, g, 3.0, Art.INK)
-		ci.draw_colored_polygon(g, Color("10232a")), 6, [12, 10, 12, 10]))
-	out.append(_e("ev_me_fill", Rect2(0, 0, 508, 20), func(ci):
+		ci.draw_colored_polygon(g, pal["groove"]), 6, [12, 10, 12, 10]))
+	out.append(_e(p + "fill", Rect2(0, 0, 508, 20), func(ci):
 		ci.draw_colored_polygon(Art.rrect(Rect2(0, 0, 508, 20), 10, 409, 0.2), Color.WHITE), 3, [10, 10, 10, 10]))
 	for big in [false, true]:
 		var r := 36.0 if big else 28.0
 		for st in 3:
-			out.append(_e("ev_me_node_%s_%d" % ["big" if big else "small", st], Rect2(-r, -r, r * 2, r * 2), func(ci): live_me_node(ci, Vector2.ZERO, r, st), 6))
-	out.append(_e("ev_me_tag_on", Rect2(0, 0, 62, 26), func(ci): Art.fill(ci, Art.rrect(Rect2(0, 0, 62, 26), 13, 440, 0.3), Color("8cc63f"), 2.2, Art.INK), 5))
-	out.append(_e("ev_me_tag_off", Rect2(0, 0, 54, 26), func(ci): Art.fill(ci, Art.rrect(Rect2(0, 0, 54, 26), 13, 440, 0.3), Color("10232a"), 2.2, Art.INK), 5))
-	out.append(_e("ev_me_socket", Rect2(-25, -25, 50, 50), func(ci):
+			out.append(_e(p + "node_%s_%d" % ["big" if big else "small", st], Rect2(-r, -r, r * 2, r * 2), func(ci): live_me_node(ci, Vector2.ZERO, r, st, pal), 6))
+	out.append(_e(p + "tag_on", Rect2(0, 0, 62, 26), func(ci): Art.fill(ci, Art.rrect(Rect2(0, 0, 62, 26), 13, 440, 0.3), pal["tag_on"], 2.2, Art.INK), 5))
+	out.append(_e(p + "tag_off", Rect2(0, 0, 54, 26), func(ci): Art.fill(ci, Art.rrect(Rect2(0, 0, 54, 26), 13, 440, 0.3), pal["tag_off"], 2.2, Art.INK), 5))
+	out.append(_e(p + "socket", Rect2(-25, -25, 50, 50), func(ci):
 		var socket := Art.ell(Vector2.ZERO, Vector2(25, 25), 710, 0.03, 18)
-		ci.draw_colored_polygon(socket, Color("223b42"))
+		ci.draw_colored_polygon(socket, pal["socket"])
 		Art.outline(ci, socket, 2.0, Color(0, 0, 0, 0.35)), 4))
-	out.append(_e("ev_me_reward_card", Rect2(0, 0, 170, 200), func(ci):
-		Art.fill(ci, Art.rrect(Rect2(0, 0, 170, 200), 20, 480, 0.4), Color("24404a"), 3.0, Art.INK), 6, [26, 26, 26, 26]))
-	out.append(_e("ev_me_banner", Rect2(-210, -58, 420, 116), func(ci):
-		Art.fill(ci, Art.rrect(Rect2(-210, -58, 420, 116), 26, 901, 0.4), Color(0.12, 0.25, 0.3, 0.94), 3.0, Art.INK), 6))
+	out.append(_e(p + "reward_card", Rect2(0, 0, 170, 200), func(ci):
+		Art.fill(ci, Art.rrect(Rect2(0, 0, 170, 200), 20, 480, 0.4), pal["card"], 3.0, Art.INK), 6, [26, 26, 26, 26]))
+	out.append(_e(p + "banner", Rect2(-210, -58, 420, 116), func(ci):
+		Art.fill(ci, Art.rrect(Rect2(-210, -58, 420, 116), 26, 901, 0.4), pal["banner"], 3.0, Art.INK), 6))
 
 ## 里程碑底盘（奖励图标运行时另画）。st：0 没到 / 1 可领 / 2 已领
-static func live_me_node(ci: CanvasItem, c: Vector2, r: float, st: int) -> void:
+static func live_me_node(ci: CanvasItem, c: Vector2, r: float, st: int, pal: Dictionary = MERGE_PALETTES["ev_me_"]) -> void:
 	var disc := Art.ell(c, Vector2(r, r), 420, 0.03, 22)
 	Art.dilate(ci, disc, 3.0, Art.INK)
-	ci.draw_colored_polygon(disc, Color("f2c14e") if st == 1 else (Color("3d6a6f") if st == 2 else Color("2e5058")))
+	ci.draw_colored_polygon(disc, pal["node_on"] if st == 1 else (pal["node_done"] if st == 2 else pal["node_off"]))
 	ci.draw_colored_polygon(Art.ell(c + Vector2(0, 3), Vector2(r - 6, r - 7), 430, 0.03, 20), Color(0, 0, 0, 0.18))
 
 # ================================================================ 香蕉竞速（RacePopup）

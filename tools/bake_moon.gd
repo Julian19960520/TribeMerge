@@ -1,5 +1,6 @@
 extends SceneTree
 ## Offline-only Godot renderer; generated PNGs are checked into the project.
+## 默认烘焙月石遗迹；--season=cave_mural:0 烘焙其他活动，输出到该期 theme.baked。
 var cfg: Dictionary
 var output := "res://assets/events/moon/baked"
 
@@ -33,7 +34,11 @@ func run() -> void:
 	var draw_art = load("res://scripts/Art.gd")
 	draw_art.boil = 0
 	var events = load("res://scripts/events/MergeEvent.gd")
-	cfg = events.definition("moon_relics:0")
+	var season := "moon_relics:0"
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--season="): season = arg.trim_prefix("--season=")
+	cfg = events.definition(season)
+	output = str(cfg["theme"].get("baked", output))
 	DirAccess.make_dir_recursive_absolute(output)
 	await bake("tiles", Vector2i(512, 3072), func(ci, _sz):
 		for layer in 6:
