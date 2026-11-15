@@ -66,7 +66,7 @@ static func settle(rewards: Array, delivery: Dictionary = {}) -> Dictionary:
 static func for_order(o: Dictionary) -> Array:
 	var rw: Dictionary = o.get("rw", {})
 	var out := []
-	for pair in [["shell", "shell_2"], ["xp", "xp_1"], ["token", "token_1"]]:
+	for pair in [["shell", "shell_2"], ["xp", "xp_1"], ["token", "token_1"], ["sand", "sand_2"]]:
 		if int(rw.get(pair[0], 0)) > 0: out.append([pair[1], int(rw[pair[0]])])
 	if rw.get("rewards") is Array and not rw["rewards"].is_empty(): out.append_array(Rewards.items(rw["rewards"]))
 	elif int(rw.get("pack", 0)) > 0: out.append(["pack_1", int(rw["pack"])])

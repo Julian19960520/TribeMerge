@@ -22,8 +22,19 @@ static func cleared(b: Dictionary = {}) -> bool:
 static func finished() -> bool:
 	return int(state().get("stage", 1)) >= int(config()["stages"]) and cleared()
 
+## 只在「一周」档期轮到化石时能挖到铲子。
 static func earning() -> bool:
-	return unlocked() and not finished()
+	return unlocked() and ActivitySchedule.scheduled("fossil") and window_current() and not finished()
+
+## 存档里的这一期是不是当前档期；换到新的一期会重开一套化石。
+static func window_current() -> bool:
+	return str(state().get("window", "")) == ActivitySchedule.window_key("fossil")
+
+## 档期里，或者还有没用完的铲子、没领的奖励时显示入口。
+static func visible() -> bool:
+	if not unlocked(): return false
+	if ActivitySchedule.scheduled("fossil"): return true
+	return not state().is_empty() and (int(state().get("shovels", 0)) > 0 and not cleared() or not ready_rewards().is_empty())
 
 static func ready_rewards() -> Array:
 	var s := state()
@@ -76,14 +87,20 @@ static func make_board(seed: String, stage: int) -> Dictionary:
 			return {"n": n, "pieces": pieces, "dug": []}
 	return {}
 
+## 每一期化石独立：轮到新一期时（上一期的奖励都领完或已过期）换新布局、清零进度。
 static func initialize() -> void:
-	if not G.fossil_dig.is_empty(): return
-	var seed := ((G.random_seed if G.random_seed != "" else G.player_id) + ":fossil").sha256_text().substr(0, 16)
-	G.fossil_dig = {"seed": seed, "stage": 1, "shovels": 0, "earned": 0, "spent": 0, "recovered": 0, "claimed": [], "board": make_board(seed, 1)}
+	var key := ActivitySchedule.window_key("fossil")
+	if not G.fossil_dig.is_empty():
+		if key == "" or str(G.fossil_dig.get("window", "")) == key: return
+		if not G.fossil_dig.has("window"):
+			G.fossil_dig["window"] = key
+			return
+	var seed := ((G.random_seed if G.random_seed != "" else G.player_id) + ":fossil:" + key).sha256_text().substr(0, 16)
+	G.fossil_dig = {"seed": seed, "window": key, "stage": 1, "shovels": 0, "earned": 0, "spent": 0, "recovered": 0, "claimed": [], "board": make_board(seed, 1)}
 
 static func on_order(_order: Dictionary) -> void:
+	if unlocked() and ActivitySchedule.scheduled("fossil"): initialize()
 	if not earning(): return
-	initialize()
 	var amount := int(config()["shovels_per_order"])
 	G.fossil_dig["shovels"] = int(G.fossil_dig["shovels"]) + amount
 	G.fossil_dig["earned"] = int(G.fossil_dig["earned"]) + amount

@@ -14,6 +14,12 @@ static func round_state() -> Dictionary:
 static func unlocked() -> bool:
 	return G.gm_activities or G.level >= int(config()["unlock_level"])
 
+## 档期里，或者这一局还在逃、还有没领的礼包时显示入口。
+static func visible() -> bool:
+	if not unlocked(): return false
+	var m := round_state()
+	return ActivitySchedule.scheduled("tiger") or (not m.is_empty() and (m.get("status", "") == "running" or not pending_rewards(m).is_empty()))
+
 static func _fraction(m: Dictionary, bot: int, leg: int) -> float:
 	var key := "%d:%d:%d:%d" % [int(m["id"]), int(m["start"]), bot, leg]
 	return float(key.sha256_text().substr(0, 8).hex_to_int()) / 4294967296.0
@@ -101,6 +107,8 @@ static func pending_rewards(m: Dictionary) -> Array:
 
 static func local_action(action: String, node := 0) -> Dictionary:
 	if not unlocked(): return {"error": TextCatalog.source("notice.tigerescape.72a4a2cc2623") % int(config()["unlock_level"])}
+	# 存档里还没有活动状态时（未经 ActivityRules.initialize），先建好，免得开局写进临时字典丢失。
+	if G.tiger_escape.is_empty(): G.tiger_escape = {"rounds": 0, "round": {}}
 	tick()
 	var s := state()
 	var m := round_state()
@@ -109,6 +117,7 @@ static func local_action(action: String, node := 0) -> Dictionary:
 		if not m.is_empty() and m["status"] == "running": return {"error": TextCatalog.source("notice.tigerescape.9321aa28efc0")}
 		if action == "join" and not m.is_empty(): return {"error": TextCatalog.source("notice.tigerescape.e552f18430ca")}
 		if action == "restart" and m.is_empty(): return {"error": TextCatalog.source("notice.tigerescape.6b01ffc9870f")}
+		if not ActivitySchedule.scheduled("tiger"): return {"error": ActivitySchedule.closed_message("tiger")}
 		var rewards := pending_rewards(m) if not m.is_empty() else []
 		s["rounds"] = int(s["rounds"]) + 1
 		s["round"] = {"id": s["rounds"], "start": G.now(), "stage": 0, "points": 0, "destroyed": -1,

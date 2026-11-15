@@ -45,8 +45,10 @@ func refill_orders() -> void:
 	state.dirty()
 	state.orders_changed.emit()
 
-## 经验只放在「还差几点升级」那么多张订单上（每张 ★1，按订单栏从左到右），其余订单只给不那那。
-## 已展示订单在同一级固定经验；新订单只填剩余额度，升级后才重分。
+## 每张单生成时按档位定好固定经验 xp_value（简单 1、难 2，剧情单按配置），之后不变。
+## 每一级只「开放」刚好够升级那么多经验的订单（rw.xp = xp_value，按订单栏从左到右），其余订单经验先关闭；
+## 同一级里已开放的保持开放，后补的订单只填剩余额度；升级后全部重新分配，已在场的单优先亮出经验。
+## 还差 1 点时优先开放 1 经验的单，找不到才开放 2 经验的单，多出的经验结转到下一级。
 ## 引导期间的教学单经验是固定的，不参与分配。
 func assign_xp() -> void:
 	if state.tutorial_on: return
@@ -55,8 +57,10 @@ func assign_xp() -> void:
 	var need: int = maxi(1, context.progression.xp_need() - state.xp)
 	var reset: bool = int(context.meta().get("order_xp_level", state.level)) != state.level
 	context.meta()["order_xp_level"] = state.level
+	var open_rows: Array = []
 	for o in state.orders:
 		if not (o is Dictionary) or int(o.get("tutorial", 0)) > 0: continue
+		order_xp_value(o)
 		if reset:
 			o["rw"].erase("xp")
 			o["xp_level"] = 0
@@ -64,18 +68,40 @@ func assign_xp() -> void:
 			# Existing saves retain the experience already shown on their cards.
 			o["xp_level"] = state.level
 		if int(o["xp_level"]) == state.level: need -= int(o["rw"].get("xp", 0))
-	for o in state.orders:
-		if not (o is Dictionary) or int(o.get("tutorial", 0)) > 0:
-			continue
-		if int(o.get("xp_level", 0)) == state.level: continue
-		var rw: Dictionary = o.get("rw", {})
-		if need > 0:
-			rw["xp"] = 1
-			need -= 1
-		else:
-			rw.erase("xp")
-		o["rw"] = rw
+		else: open_rows.append(o)
+	while need > 0 and not open_rows.is_empty():
+		var pick: Dictionary = open_rows[0]
+		if need == 1:
+			for o in open_rows:
+				if int(o["xp_value"]) == 1:
+					pick = o
+					break
+		open_rows.erase(pick)
+		pick["rw"]["xp"] = int(pick["xp_value"])
+		pick["xp_level"] = state.level
+		need -= int(pick["xp_value"])
+	for o in open_rows:
+		o["rw"].erase("xp")
 		o["xp_level"] = state.level
+
+## 订单固定的经验值；旧存档里没有的按订单难度补上并写回。
+func order_xp_value(o: Dictionary) -> int:
+	if not o.has("rw") or not (o["rw"] is Dictionary): o["rw"] = {}
+	if o.has("xp_value"): return int(o["xp_value"])
+	var value := 1
+	if bool(o.get("story", false)):
+		var list := Data.story_orders(int(o.get("story_level", state.level)))
+		var si := int(o.get("si", -1))
+		value = int(list[si].get("xp", 1)) if si >= 0 and si < list.size() else maxi(1, int(o["rw"].get("xp", 1)))
+	else:
+		var tier := str(o.get("tier", ""))
+		if tier == "":
+			var items: Array = o.get("mats", o.get("items", []))
+			tier = Data.tier_of_value(state.level, context.roll.total(items))
+			o["tier"] = tier
+		value = Data.tier_xp(tier)
+	o["xp_value"] = maxi(1, value)
+	return int(o["xp_value"])
 
 func _is_random_order(o: Dictionary) -> bool:
 	return not bool(o.get("story", false)) and str(o.get("kind", "")) != "craft"
@@ -119,12 +145,23 @@ func _add_random_batch(at: int = -1) -> void:
 			slot += 1
 			continue
 		var made: Dictionary
+		var tier := ""
 		if Data.random_curve_count() <= 0:
 			made = _spice(_make_order_free())
+		elif not Data.ORDER_TIERS.is_empty():
+			tier = _roll_tier()
+			var target := Data.tier_target(state.level, tier, context.random_for("orders"))
+			made = _make_order(target, avoid)
+			if made.is_empty():
+				made = _spice(_make_order_free())
+			made["diff"] = target
 		else:
 			made = _make_order(_slot_target(slot), avoid)
 			if made.is_empty():
 				made = _spice(_make_order_free())
+		if tier != "":
+			made["tier"] = tier
+			made["xp_value"] = Data.tier_xp(tier)
 		made["slot"] = slot
 		if made.get("items") is Array:
 			avoid = made["items"]
@@ -133,6 +170,14 @@ func _add_random_batch(at: int = -1) -> void:
 		taken[slot] = true
 		have += 1
 		slot += 1
+
+## 新随机单的档位：场上简单单不够 MIN_EASY 张时必出简单单，否则按等级的难单占比抽。
+func _roll_tier() -> String:
+	var easy := 0
+	for o in state.orders:
+		if o is Dictionary and _is_random_order(o) and str(o.get("tier", "")) == "easy": easy += 1
+	if easy < Data.MIN_EASY: return "easy"
+	return "hard" if context.random_for("orders").randf() < Data.hard_share(state.level) else "easy"
 
 func _insert_random(made: Dictionary, at: int) -> void:
 	made["xp_level"] = 0
@@ -287,17 +332,21 @@ func _craft_order(d: Dictionary) -> Dictionary:
 	var rw = {"shell": shell}
 	if context.random_for("orders").randf() < 0.4:
 		rw["token"] = context.random_for("orders").randi_range(1, 3)
-	var sand = Data.craft_sand(str(d["id"]))
-	if sand != "":
-		rw["rewards"] = [sand]
+	var secs := Data.craft_secs(state.level, str(d["id"]))
+	var units := Data.craft_sand_units(state.level, secs)
+	if units > 0: rw["sand"] = units
+	else:
+		var sand = Data.craft_sand(str(d["id"]), secs)
+		if sand != "": rw["rewards"] = [sand]
 	return {
 		"who": context.random_for("orders").randi() % Data.PEOPLE.size(),
 		"kind": "craft",
 		"xp_level": 0,
+		"tier": Data.tier_of_value(state.level, context.roll.total(mats)),
 		"dish": str(d["id"]),
 		"mats": mats,
 		"items": mats.duplicate(),
-		"secs": int(d["secs"]),
+		"secs": secs,
 		"rw": rw,
 		"story": false,
 		"phase": "need",
@@ -365,7 +414,7 @@ func _add_story_orders(skip: Array = [], after: int = -1) -> void:
 			for _i in int(s["pack"]):
 				packs.append("pack_1")
 			rw["rewards"] = packs
-		var row = {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true, "si": si, "story_level": state.level, "xp_level": 0}
+		var row = {"who": int(s["who"]), "items": items.duplicate(), "rw": rw, "story": true, "si": si, "story_level": state.level, "xp_level": 0, "xp_value": maxi(1, int(s["xp"]))}
 		state.order_identity(row)
 		if str(s.get("say", "")) != "":
 			row["say"] = str(s["say"])
@@ -611,7 +660,7 @@ func _sync_craft_times() -> void:
 			if not o is Dictionary or str(o.get("kind", "")) != "craft": continue
 			var id := str(o.get("dish", "")).trim_prefix("dish_")
 			if not Data.DISHES.has(id): continue
-			var target := int(Data.DISHES[id]["secs"])
+			var target := Data.craft_secs(state.level, id)
 			var phase := str(o.get("phase", "need"))
 			if phase == "need":
 				if not o.has("secs") or int(o["secs"]) > target:

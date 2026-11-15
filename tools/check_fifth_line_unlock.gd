@@ -59,20 +59,11 @@ func run() -> void:
 		check(before_boundary and not Data.product_open(23, "veg") and not Data.product_open(23, "roast"), "pre-24 rewards, story, recipes and random-order pools exclude the fifth line")
 		game.level = 24
 		check(game.rules.progression.build_open("cook") and Data.product_open(24, "veg") and Data.product_open(24, "roast"), "24-level products and building open together")
-		var count: int = game.stash.count("hearth_4")
+		var count: int = game.stash.count("hearth_5")
 		var fresh: Dictionary = replay.perform("level", {"level": 24}, replay.clock)
-		check(not fresh.has("error") and game.stash.count("hearth_4") == count + 1, "24-level reward grants exactly one level 4 generator")
+		check(not fresh.has("error") and game.stash.count("hearth_5") == count + 1, "24-level reward grants exactly one level 5 generator")
 		var duplicate: Dictionary = replay.perform("level", {"level": 24}, replay.clock)
-		check(duplicate.has("error") and game.stash.count("hearth_4") == count + 1, "24-level generator cannot be claimed twice")
-		check(not Data.gen_stats("hearth_4").is_empty(), "the granted level 4 generator can produce immediately")
-		var parts: int = 0
-		for part in Data.build_parts(Data.build_def("cook")):
-			for reward in part["rewards"]:
-				if Data.chain(str(reward[0])) == "hearth": parts += int(reward[1]) * (1 << (Data.lv(str(reward[0])) - 1))
-		var later_parts := 0
-		for lv in range(25, 29):
-			for reward in Data.level_rewards(lv):
-				if Data.chain(str(reward[0])) == "hearth": later_parts += int(reward[1]) * (1 << (Data.lv(str(reward[0])) - 1))
-		check(8 + parts < 16 and 8 + later_parts == 16 and Data.gen_stats("hearth_5")["drops"].any(func(drop): return Data.chain(str(drop["id"])) == "roast"), "新线解锁只到4级，后续四级进度的碎片足够凑5级生产烤肉")
+		check(duplicate.has("error") and game.stash.count("hearth_5") == count + 1, "24-level generator cannot be claimed twice")
+		check(Data.gen_stats("hearth_5")["drops"].any(func(drop): return Data.chain(str(drop["id"])) == "roast"), "新线解锁直接给5级，可同时生产主产物和烤肉")
 	else: quit(2); return
 	quit(0 if failures == 0 else 1)

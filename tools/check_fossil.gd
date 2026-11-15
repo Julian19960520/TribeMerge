@@ -9,12 +9,14 @@ func check(ok: bool, label: String) -> void:
 	if not ok: failures += 1
 
 func run() -> void:
+	load("res://scripts/events/ActivitySchedule.gd").bypass = true # 只测单个活动玩法，不受档期轮换影响
 	fossil = load("res://scripts/events/FossilDig.gd")
 	var g = root.get_node("G")
 	var replay = root.get_node("Replay")
 	g.set_process(false); replay.set_process(false)
 	g.new_game(); g.tutorial_on = false; g.seen_tutorial = true
 	g.random_seed = "fossil-tests"; g.random_streams = {}
+	g.level = int(fossil.config()["unlock_level"])
 	check(fossil.state().is_empty(), "viewing entry state does not mutate a save")
 	fossil.local_action("refresh")
 	var b: Dictionary = fossil.board()
@@ -88,6 +90,7 @@ func run() -> void:
 	replay.active = true; replay.authorized = true; replay.worker = false; replay.pending = []; replay.meta = {"allow_gm": true}; replay.seq = 0; replay.clock = 1794268800
 	g.new_game(); g.tutorial_on = false; g.seen_tutorial = true
 	g.random_seed = "fossil-worker"; g.random_streams = {}
+	g.level = int(fossil.config()["unlock_level"])
 	for cell in g.board.size(): g.board[cell] = {"id": "", "lock": 0}
 	for i in 9: g.board[i]["id"] = "fruit_1"
 	g.orders = [{"who": 2, "items": ["fruit_1"], "rw": {"shell": 1}, "story": false}]
@@ -101,7 +104,7 @@ func run() -> void:
 			replay.perform("fossil", {"action": "dig", "value": cell}, replay.clock)
 	replay.perform("fossil", {"action": "claim", "value": 2}, replay.clock)
 	replay.perform("fossil", {"action": "next"}, replay.clock)
-	var request := {"data": initial, "ops": replay.pending.duplicate(true)}
+	var request := {"mode": "load", "data": initial, "ops": replay.pending.duplicate(true)}
 	var input := ProjectSettings.globalize_path("user://fossil-worker-input.json")
 	var output := ProjectSettings.globalize_path("user://fossil-worker-output.json")
 	var file := FileAccess.open(input, FileAccess.WRITE); file.store_string(JSON.stringify(request)); file.close()

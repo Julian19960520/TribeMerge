@@ -5,6 +5,7 @@ func check(ok: bool, label: String) -> void:
 	print(("PASS " if ok else "FAIL ") + label)
 	if not ok: failures.append(label)
 func run() -> void:
+	load("res://scripts/events/ActivitySchedule.gd").bypass = true # 只测单个活动玩法，不受档期轮换影响
 	var g = root.get_node("G")
 	var ev = load("res://scripts/events/MergeEvent.gd")
 	var choice = load("res://scripts/events/ChoiceChest.gd")

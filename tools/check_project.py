@@ -86,6 +86,8 @@ def main() -> None:
                 ("check_cook_pacing", ["--replay-test", "--cloud-off"], "cook-pacing"),
                 ("check_early_order_mix", ["--replay-test", "--cloud-off"], "early-order-mix"),
                 ("check_order_flow", ["--replay-test", "--cloud-off"], "order-flow"),
+                ("check_order_xp", ["--replay-test", "--cloud-off"], "order-xp"),
+                ("check_activity_schedule", ["--replay-test", "--cloud-off"], "activity-schedule"),
                 ("check_chest_exit", ["--replay-test", "--cloud-off"], "chest-exit"),
                 ("check_starter_generator", ["--replay-test", "--cloud-off"], "starter-generator"),
                 ("check_craft_book_ui", ["--replay-test", "--cloud-off"], "craft-book-ui"),

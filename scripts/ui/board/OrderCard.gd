@@ -178,6 +178,7 @@ static func _chips(o: Dictionary) -> Array:
 		out.append([s, int(seen[s])])
 	if rw.has("token") and int(rw["token"]) > 0:
 		out.append([CHIP_ICON["token"], int(rw["token"])])
+	if int(rw.get("sand", 0)) > 0: out.append(["sand_2", int(rw["sand"])])
 	if FossilDig.earning(): out.append(["fossil_shovel", int(FossilDig.config()["shovels_per_order"])])
 	return out
 
@@ -296,10 +297,10 @@ func _paint_cook_time(ci: CanvasItem, sz: Vector2) -> void:
 	var text := TextCatalog.resolve(Board._sec_text(G.rules.orders.cook_left(int(order.get("cell", -1)))))
 	var font: Font = G.font_body
 	var fs := 18
-	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var tw := font.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var at := Vector2(bar.position.x + 10 + (bar.size.x - 10 - tw) * 0.5, sz.y * 0.5 + (font.get_ascent(fs) - font.get_descent(fs)) * 0.5)
-	ci.draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
-	ci.draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	ci.draw_string_outline(font, at, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
+	ci.draw_string(font, at, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
 ## 小闹钟：墨边奶白钟面，分针跟着进度转
 func _paint_clock(ci: CanvasItem, c: Vector2, r: float) -> void:

@@ -31,32 +31,39 @@ func run() -> void:
 	replay.clock = 1794240000; g.simulation_time = replay.clock
 	g.new_game(); g.tutorial_on = false; g.seen_tutorial = true
 	replay.advance(); replay.executing = false
-	var boxes := 0; var compact := true; var restrained := true
+	var boxes := 0; var compact := true; var restrained := true; var single := true
 	for lv in range(6, 41):
 		var rw: Array = Data.level_rewards(lv)
 		compact = compact and rw.size() <= 4
+		var gens := 0
 		for reward in rw:
 			if str(reward[0]) == "chest_1":
 				boxes += int(reward[1])
 				restrained = restrained and lv % 5 == 0
 			if Data.type_of(str(reward[0])) == "gen":
+				gens += int(reward[1])
 				var tier := Data.lv(str(reward[0]))
 				var line: Dictionary = Data.line_of(str(reward[0]))
-				restrained = restrained and (tier <= 3 or tier == 4 and lv == int(line["unlock"]))
-	check(boxes == 7 and compact and restrained, "6～40级仅7个节点宝箱，每级不超过4项，成熟生产器只在新产线解锁时发4级")
+				restrained = restrained and (tier <= 4 or tier == 5 and lv == int(line["unlock"]))
+		single = single and gens <= 1
+	check(boxes == 7 and compact and restrained, "6～40级仅7个节点宝箱，每级不超过4项，5级生产器只在新产线解锁时发")
+	check(single, "每个等级最多奖励一个生产器，各产线共用")
+	var first_six := 99; var first_line := ""
 	for line in Data.LINES:
-		if int(line["unlock"]) == 1: continue
 		var unlock := int(line["unlock"])
-		var starter := 0
-		for reward in Data.level_rewards(unlock):
-			if str(reward[0]) == str(line["gen"]) + "_4": starter += int(reward[1])
-		check(starter == 1 and not Data.gen_stats(str(line["gen"]) + "_4").is_empty(), "%s解锁只给一个可生产的4级" % line["name"])
-		var earliest := -1
+		if unlock > 1:
+			var starter := 0
+			for reward in Data.level_rewards(unlock):
+				if str(reward[0]) == str(line["gen"]) + "_5": starter += int(reward[1])
+			check(starter == 1 and not Data.gen_stats(str(line["gen"]) + "_5").is_empty(), "%s解锁给一个可生产主副产物的5级" % line["name"])
+		check(int(fixed_budget(unlock).get(str(line["gen"]), 0)) >= 16, "%s解锁当级固定份数够一个5级" % line["name"])
 		for lv in range(unlock, 41):
-			if int(fixed_budget(lv).get(str(line["gen"]), 0)) >= 16: earliest = lv; break
-		check(earliest == unlock + 4, "%s固定投放在解锁4级后，再过4个角色等级可凑5级（%d级）" % [line["name"], earliest])
-		check(int(fixed_budget(29).get(str(line["gen"]), 0)) < 32, "%s到29级固定奖励仍凑不出6级" % line["name"])
-	check(int(fixed_budget(28)["basket"]) == 26 and int(fixed_budget(29)["basket"]) == 31 and int(fixed_budget(34)["basket"]) == 32, "食物线28级固定26份，29级31份加少量随机碎片接近6级，零随机34级兜底")
+			if int(fixed_budget(lv).get(str(line["gen"]), 0)) >= 32:
+				if lv < first_six: first_six = lv; first_line = str(line["name"])
+				break
+		check(int(fixed_budget(27).get(str(line["gen"]), 0)) < 32, "%s到27级固定奖励凑不出6级" % line["name"])
+	check(first_six >= 30 and first_six <= 36, "不靠宝箱碎片时最早%d级凑出6级（%s）兜底，28级前后靠宝箱碎片补齐" % [first_six, first_line])
+	check(int(fixed_budget(28)["basket"]) == 30, "食物线28级固定30份，差2份一级碎片即可合出第一个6级")
 	g.level = 29
 	for tier in range(1, 6):
 		g.random_seed = "producer-pacing:%d" % tier; g.random_streams = {}
@@ -73,7 +80,7 @@ func run() -> void:
 		check(only_fragments and absf(actual - expected) < 0.005, "%d级宝箱实际产出仅一级碎片，概率%.2f%%（配置%.0f%%）" % [tier, actual * 100, expected * 100])
 	g.stash = ["basket_6"]; g.level = 6
 	var claim: Dictionary = replay.perform("level", {"level": 6}, replay.clock)
-	check(not claim.has("error") and g.stash.count("anvil_4") == 1 and g.stash.has("basket_6"), "新奖励实际到账，已拥有的6级生产器不回收")
-	check(replay.perform("level", {"level": 6}, replay.clock).has("error") and g.stash.count("anvil_4") == 1, "产线解锁奖励不能重复领取")
+	check(not claim.has("error") and g.stash.count("anvil_5") == 1 and g.stash.has("basket_6"), "新奖励实际到账，已拥有的6级生产器不回收")
+	check(replay.perform("level", {"level": 6}, replay.clock).has("error") and g.stash.count("anvil_5") == 1, "产线解锁奖励不能重复领取")
 	print("RESULT: %d failures" % failures)
 	quit(1 if failures else 0)

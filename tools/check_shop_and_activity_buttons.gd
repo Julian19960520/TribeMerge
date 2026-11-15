@@ -18,6 +18,7 @@ func tap(button) -> void:
 	button._gui_input(e)
 
 func run() -> void:
+	load("res://scripts/events/ActivitySchedule.gd").bypass = true # 只测单个活动玩法，不受档期轮换影响
 	var g = root.get_node("G")
 	var replay = root.get_node("Replay")
 	g.new_game(); g.set_process(false); replay.set_process(false)

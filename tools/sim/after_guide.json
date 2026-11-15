@@ -1,0 +1,674 @@
+{
+	"amber": 50,
+	"board": [
+		{
+			"id": "veg_7",
+			"lock": 2,
+			"rw": [
+				"fire_2",
+				20
+			]
+		},
+		{
+			"id": "bird_4",
+			"lock": 2
+		},
+		{
+			"id": "beast_3",
+			"lock": 2
+		},
+		{
+			"id": "veg_8",
+			"lock": 1,
+			"rw": [
+				"chest_1",
+				1
+			]
+		},
+		{
+			"id": "roast_6",
+			"lock": 2
+		},
+		{
+			"id": "beast_3",
+			"lock": 2
+		},
+		{
+			"id": "veg_7",
+			"lock": 2,
+			"rw": [
+				"fire_2",
+				30
+			]
+		},
+		{
+			"id": "beast_3",
+			"lock": 2
+		},
+		{
+			"id": "anvil_1",
+			"lock": 2
+		},
+		{
+			"id": "basket_2",
+			"lock": 1
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "gem_4",
+			"lock": 1
+		},
+		{
+			"id": "bird_1",
+			"lock": 2
+		},
+		{
+			"id": "beast_3",
+			"lock": 2
+		},
+		{
+			"id": "gem_3",
+			"lock": 1,
+			"rw": [
+				"fire_2",
+				15
+			]
+		},
+		{
+			"id": "cloth_5",
+			"lock": 1
+		},
+		{
+			"id": "emberpot_1",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "gem_1",
+			"lock": 1
+		},
+		{
+			"id": "cloth_6",
+			"lock": 2,
+			"rw": [
+				"amber_3",
+				10
+			]
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "fruit_1",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "gem_2",
+			"lock": 1
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "fruit_2",
+			"lock": 0
+		},
+		{
+			"id": "basket_5",
+			"lock": 0
+		},
+		{
+			"id": "shell_3",
+			"lock": 1
+		},
+		{
+			"id": "fruit_5",
+			"lock": 2
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "seed_5",
+			"lock": 0
+		},
+		{
+			"id": "fruit_4",
+			"lock": 0
+		},
+		{
+			"id": "",
+			"lock": 0
+		},
+		{
+			"id": "tool_5",
+			"lock": 1
+		},
+		{
+			"id": "seed_6",
+			"lock": 1
+		},
+		{
+			"id": "basket_1",
+			"lock": 1
+		},
+		{
+			"id": "roast_2",
+			"lock": 1
+		},
+		{
+			"id": "anvil_2",
+			"lock": 1
+		},
+		{
+			"id": "beast_3",
+			"lock": 1
+		},
+		{
+			"id": "bird_3",
+			"lock": 1
+		},
+		{
+			"id": "beast_4",
+			"lock": 2
+		},
+		{
+			"id": "cloth_5",
+			"lock": 2
+		},
+		{
+			"id": "beast_2",
+			"lock": 2
+		},
+		{
+			"id": "tool_6",
+			"lock": 2
+		},
+		{
+			"id": "veg_4",
+			"lock": 2,
+			"rw": [
+				"sand_2",
+				180
+			]
+		},
+		{
+			"id": "beast_2",
+			"lock": 2
+		},
+		{
+			"id": "cloth_4",
+			"lock": 2
+		},
+		{
+			"id": "roast_4",
+			"lock": 2
+		},
+		{
+			"id": "veg_7",
+			"lock": 2
+		},
+		{
+			"id": "beast_3",
+			"lock": 2,
+			"rw": [
+				"chest_1",
+				1
+			]
+		},
+		{
+			"id": "roast_6",
+			"lock": 2
+		},
+		{
+			"id": "veg_8",
+			"lock": 2
+		},
+		{
+			"id": "bird_4",
+			"lock": 2
+		},
+		{
+			"id": "beast_4",
+			"lock": 2,
+			"rw": [
+				"amber_3",
+				5
+			]
+		},
+		{
+			"id": "veg_7",
+			"lock": 2
+		}
+	],
+	"book_claimed": {
+
+	},
+	"boost": false,
+	"boost_gm": false,
+	"builds": {
+		"fire": 4
+	},
+	"card_stars": 0,
+	"cards": {
+
+	},
+	"deals_bought": {
+
+	},
+	"deals_day": "2026-11-10",
+	"discovered": {
+		"basket_1": true,
+		"basket_2": true,
+		"basket_3": true,
+		"basket_4": true,
+		"basket_5": true,
+		"emberpot_1": true,
+		"fire_1": true,
+		"fire_2": true,
+		"fire_3": true,
+		"fruit_1": true,
+		"fruit_2": true,
+		"fruit_3": true,
+		"fruit_4": true,
+		"fruit_5": true,
+		"fruit_6": true,
+		"fruit_7": true,
+		"fruit_8": true,
+		"fruitbasket": true,
+		"salad": true,
+		"seed_1": true,
+		"seed_2": true,
+		"seed_3": true,
+		"seed_4": true,
+		"seed_5": true,
+		"shell_1": true,
+		"shell_2": true,
+		"trailpack": true
+	},
+	"duel_race": {
+		"claimed": [],
+		"match": {
+
+		},
+		"rounds": 0,
+		"wins": 0
+	},
+	"energy": 3,
+	"energy_buys": 0,
+	"energy_stamp": 1794240000,
+	"fossil_dig": {
+		"board": {
+			"dug": [],
+			"n": 3,
+			"pieces": [
+				{
+					"found": false,
+					"h": 2,
+					"id": 0,
+					"kind": "limb",
+					"name": "趾骨",
+					"turn": 0,
+					"w": 1,
+					"x": 1,
+					"y": 1
+				},
+				{
+					"found": false,
+					"h": 1,
+					"id": 1,
+					"kind": "spine",
+					"name": "尾椎",
+					"turn": 1,
+					"w": 3,
+					"x": 0,
+					"y": 0
+				}
+			]
+		},
+		"claimed": [],
+		"earned": 0,
+		"recovered": 0,
+		"seed": "a2ec20ff769c24a0",
+		"shovels": 0,
+		"spent": 0,
+		"stage": 1,
+		"window": "week:1"
+	},
+	"gm_activities": false,
+	"hot_bought": {
+
+	},
+	"hot_revision": 0,
+	"inv": [],
+	"inv_cap": 5,
+	"inv_chests": {
+
+	},
+	"level": 5,
+	"local_race": {
+		"current": {
+
+		},
+		"results": []
+	},
+	"merge_events": {
+
+	},
+	"offers": {
+
+	},
+	"order_serial": 20,
+	"orders": [
+		{
+			"diff": 34,
+			"items": [
+				"fruit_3",
+				"fruit_6"
+			],
+			"rw": {
+				"shell": 108,
+				"xp": 1
+			},
+			"slot": 0,
+			"story": false,
+			"tier": "easy",
+			"uid": "order:20",
+			"who": 7,
+			"xp_level": 5,
+			"xp_value": 1
+		},
+		{
+			"cell": -1,
+			"dish": "cutfruit",
+			"items": [
+				"fruit_8"
+			],
+			"kind": "craft",
+			"mats": [
+				"fruit_8"
+			],
+			"phase": "need",
+			"rw": {
+				"rewards": [
+					"sand_2"
+				],
+				"shell": 516,
+				"token": 3,
+				"xp": 2
+			},
+			"secs": 20,
+			"story": false,
+			"t0": 0,
+			"tier": "hard",
+			"uid": "order:18",
+			"who": 0,
+			"xp_level": 5,
+			"xp_value": 2
+		},
+		{
+			"cell": -1,
+			"dish": "fruitbasket",
+			"items": [
+				"fruit_7"
+			],
+			"kind": "craft",
+			"mats": [
+				"fruit_7"
+			],
+			"phase": "need",
+			"rw": {
+				"rewards": [
+					"sand_2"
+				],
+				"shell": 260,
+				"xp": 1
+			},
+			"secs": 20,
+			"story": false,
+			"t0": 0,
+			"tier": "easy",
+			"uid": "order:19",
+			"who": 6,
+			"xp_level": 5,
+			"xp_value": 1
+		}
+	],
+	"pass_endless": 0,
+	"pass_free": [],
+	"pass_prem": [],
+	"pass_pts": 17,
+	"pass_season": "0",
+	"pass_super": [],
+	"pass_super_bonus": false,
+	"pass_tier": 0,
+	"pending_orders": [],
+	"player_id": "TRB35998281",
+	"replay_meta": {
+		"at": 1794240029,
+		"free_energy": true,
+		"level:2": true,
+		"level:3": true,
+		"level:4": true,
+		"level:5": true,
+		"onboarding": {
+			"baseline": 249,
+			"collected": {
+				"energy": 15,
+				"shell": 13
+			},
+			"completed": [
+				"welcome",
+				"motive",
+				"merge1",
+				"merge2",
+				"merge3",
+				"first_order",
+				"produce",
+				"make_fruit2",
+				"first_ready",
+				"submit1",
+				"produce_more",
+				"free_high",
+				"submit2",
+				"upgrade",
+				"build1",
+				"build1_wait",
+				"back1",
+				"coin",
+				"free_third",
+				"submit3",
+				"orders_start",
+				"reputation",
+				"xp_rule",
+				"xp_bar",
+				"level_open",
+				"level_rule",
+				"level_preview",
+				"level_close",
+				"free_level1",
+				"build2_wait",
+				"build2_animation",
+				"build_preview",
+				"howto",
+				"back2",
+				"stash",
+				"gen_merge3",
+				"gen_merge5",
+				"gen_tap",
+				"free_level2",
+				"recipe_open",
+				"recipe_mats",
+				"recipe_time",
+				"recipe_ready",
+				"recipe_close",
+				"free_prepare",
+				"first_cook",
+				"cook_wait",
+				"take_dish",
+				"deliver_dish",
+				"free_level3",
+				"free_energy_gift",
+				"energy_gift",
+				"free_level4",
+				"free_level5",
+				"build3_wait",
+				"build3_animation"
+			],
+			"delivered": [
+				"practice1",
+				"practice2",
+				"practice3",
+				"formal1",
+				"formal2",
+				"level2_first",
+				"seed_second",
+				"seed_last",
+				"seed_first",
+				"fruit_again",
+				"craft1",
+				"craft2",
+				"craft3",
+				"craft6",
+				"level4_last",
+				"craft7",
+				"level5_last"
+			],
+			"energy_gift": true,
+			"issued": [
+				"practice1",
+				"practice2",
+				"practice3",
+				"formal1",
+				"formal2",
+				"level2_first",
+				"seed_first",
+				"seed_second",
+				"seed_last",
+				"fruit_again",
+				"craft1",
+				"craft2",
+				"craft3",
+				"craft6",
+				"level4_last",
+				"craft7",
+				"level5_last"
+			],
+			"produced": 249,
+			"step": 56
+		},
+		"order_xp_level": 5,
+		"seq": 577,
+		"starter_generator": {
+			"cycle": 0,
+			"expires_at": 1794844805,
+			"started_at": 1794240005,
+			"used": 7
+		}
+	},
+	"replay_rng": {
+		"seed": "reference-full-playthrough",
+		"streams": {
+			"energy_produce": "1896528799857974380",
+			"merge_drops": "7382782625119200308",
+			"orders": "-1246940201075404556",
+			"produce:basket_4": "-7755948802456745035",
+			"produce:basket_5": "-4276260816894529889"
+		}
+	},
+	"rush": 480,
+	"schema": 1,
+	"seen_tutorial": true,
+	"seven_day": {
+		"claimed": {
+
+		},
+		"days": {
+			"2026-11-10": true
+		},
+		"id": "seven_day_v2",
+		"stages": {
+
+		},
+		"stats": {
+			"amber": 20,
+			"login_days": 1,
+			"merges": 246,
+			"orders": 17,
+			"shell": 404,
+			"xp": 16
+		}
+	},
+	"shell_bought": {
+
+	},
+	"shell_period": "",
+	"shells": 129,
+	"stash": [
+		"basket_1"
+	],
+	"story_done": {
+
+	},
+	"tiger_escape": {
+		"round": {
+
+		},
+		"rounds": 0
+	},
+	"token_claimed": 0,
+	"tokens": 0,
+	"tutorial_on": false,
+	"ufo_offer": {
+		"next_at": 1794240180,
+		"offer": {
+
+		}
+	},
+	"xp": 1
+}

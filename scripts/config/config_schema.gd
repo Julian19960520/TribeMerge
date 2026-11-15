@@ -36,6 +36,7 @@ func _validate() -> void:
 		"offers": {"spree": TYPE_DICTIONARY, "energy": TYPE_DICTIONARY},
 		"gift_chain": {"cycle_days": TYPE_INT, "anchor_weekday": TYPE_INT, "visible": TYPE_INT, "steps": TYPE_ARRAY},
 		"ufo_offer": {"enabled": TYPE_BOOL}, "race": {"rewards": TYPE_ARRAY, "shadow": TYPE_DICTIONARY, "names": TYPE_ARRAY},
+		"activity_schedule": {"start_utc": TYPE_STRING, "slots": TYPE_ARRAY},
 		"replay_economy": {"album_reward": TYPE_ARRAY},
 		"replay_build": {"protocol": TYPE_INT, "godot": TYPE_STRING, "code_sha256": TYPE_STRING}}
 	for name in required: _fields(docs[name], name, required[name])
@@ -422,6 +423,17 @@ func _wicker_chest(row: Dictionary, at: String) -> void:
 
 func _events() -> void:
 	for name in ["tiger_escape", "duel_race", "fossil_dig", "race"]: _positive(docs[name].get("unlock_level"), name + ".unlock_level")
+	var scheduled := {}
+	for slot in docs.activity_schedule.get("slots", []):
+		if not _fields(slot, "activity_schedule.slots", {"id": TYPE_STRING, "period_hours": TYPE_INT, "rotation": TYPE_ARRAY}): continue
+		_positive(slot.period_hours, "activity_schedule.slots.period_hours")
+		if slot.rotation.is_empty(): _error("activity_schedule.slots.rotation", "rotation cannot be empty")
+		for row in slot.rotation:
+			if not _fields(row, "activity_schedule.slots.rotation", {"activity": TYPE_STRING, "doc": TYPE_STRING}): continue
+			if not row.activity in ["race", "duel", "tiger", "merge", "fossil", "pass"]: _error("activity_schedule.slots.rotation", "unknown activity %s" % row.activity)
+			if scheduled.has(row.activity): _error("activity_schedule.slots.rotation", "%s is in more than one slot" % row.activity)
+			scheduled[row.activity] = true
+			if not docs.has(row.doc): _error("activity_schedule.slots.rotation", "unknown config %s" % row.doc)
 	var seven: Dictionary = docs.seven_day
 	if _fields(seven, "seven_day", {"id": TYPE_STRING, "days": TYPE_ARRAY, "milestones": TYPE_ARRAY}):
 		if seven.days.size() != 7: _error("seven_day.days", "expected seven days")

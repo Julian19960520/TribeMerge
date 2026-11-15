@@ -9,6 +9,7 @@ func check(ok: bool, label: String) -> void:
 	if not ok: failures += 1
 
 func run() -> void:
+	load("res://scripts/events/ActivitySchedule.gd").bypass = true # 只测单个活动玩法，不受档期轮换影响
 	var g = root.get_node("G")
 	tiger = load("res://scripts/events/TigerEscape.gd")
 	g.new_game()
@@ -89,8 +90,11 @@ func run() -> void:
 	await process_frame
 	var panel = main.open("tiger")
 	await process_frame
-	check(panel != null and panel.path != null and panel.action_button.text == "去完成订单", "escape screen renders playable trail and action")
-	check(main.board_screen._tiger_entry.visible, "activity entry appears in main-board task row")
+	check(panel != null and panel.path != null and panel.action_button.text == TextCatalog.resolve(TextCatalog.source("ui.duelpopup.245ede446986")), "escape screen renders playable trail and action")
+	var tiger_view: Control = null
+	for entry in main.board_screen._activity_row.entries:
+		if entry["id"] == "tiger": tiger_view = entry["view"]
+	check(tiger_view != null and tiger_view.visible, "activity entry appears in main-board task row")
 	panel._preview(1)
 	await process_frame
 	check(main.popup_layer.get_child_count() >= 2, "node gift opens its reward preview")

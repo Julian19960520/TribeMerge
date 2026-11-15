@@ -34,11 +34,16 @@ var lv_acc: Dictionary = {}
 var level_rows: Array = []
 var regen_pending := 0
 var in_session := true
-# 占位活动（tools/sim/placeholder_events.json）：只在演算里存在，用来预留体力预算和解锁节奏
+# 占位活动（tools/sim/placeholder_events.json）：活动还没做时用来预留体力预算。现在四个档期都有真活动，默认关闭，配置 placeholder_events 指向文件才启用
 var ph_events: Array = []
 var ph_state: Dictionary = {}
 var pass_season_seen := ""
 var _simulation_ready := false
+## 用时分解（微秒）：命令执行 / 事件记录 / 其他决策
+var prof := {"command": 0, "record": 0}
+var summary_only := false
+var before_energy := 0
+var event_count := 0
 
 func run() -> int:
 	var config_path := "res://tools/sim/config.json"
@@ -50,11 +55,12 @@ func run() -> int:
 		push_error("Invalid simulation config: " + config_path)
 		return 2
 	cfg = raw
+	summary_only = bool(cfg.get("summary_only", false))
 	# The run uses the configuration loaded at startup, even if files are edited later.
 	for file in DirAccess.get_files_at("res://data"):
 		if file.ends_with(".json"): source_hashes[file] = FileAccess.get_sha256("res://data/" + file)
 	schedule = cfg.get("schedule", {}) if cfg.get("schedule", {}) is Dictionary else {}
-	var ph_path:=str(cfg.get("placeholder_events","res://tools/sim/placeholder_events.json"))
+	var ph_path:=str(cfg.get("placeholder_events",""))
 	if ph_path!="" and FileAccess.file_exists(ph_path):
 		var ph=JSON.parse_string(FileAccess.get_file_as_string(ph_path))
 		if ph is Dictionary: ph_events=ph.get("events",[])
@@ -85,7 +91,7 @@ func run() -> int:
 		if finish_reason == "invariant_failed": return 1
 	stream.close()
 	write_report()
-	print("SIMULATION_RESULT ", JSON.stringify({"runs": summaries, "events": events.size(), "wall_seconds": (Time.get_ticks_msec()-wall_start)/1000.0, "report": ProjectSettings.globalize_path(output)}))
+	print("SIMULATION_RESULT ", JSON.stringify({"runs": summaries, "events": event_count, "wall_seconds": (Time.get_ticks_msec()-wall_start)/1000.0, "profile_sec": prof_report(), "report": ProjectSettings.globalize_path(output)}))
 	return 0
 
 func production_line_metrics() -> Array:
@@ -156,6 +162,18 @@ func snap() -> Dictionary:
 	return state
 
 func record(cat: String, title: String, _reason: String, detail: Dictionary = {}, reward_source: String = "") -> void:
+	var t0 := Time.get_ticks_usec()
+	_record(cat, title, detail, reward_source)
+	prof["record"] = int(prof["record"]) + Time.get_ticks_usec() - t0
+
+func _record(cat: String, title: String, detail: Dictionary, reward_source: String) -> void:
+	# 快速模式（summary_only）：只记按等级汇总要用的体力收支和计数，不存逐条事件和状态快照
+	if summary_only:
+		account(cat, reward_source, G.energy - before_energy, detail)
+		before_energy = G.energy
+		totals[cat] = int(totals.get(cat, 0)) + 1
+		event_count += 1
+		return
 	var after := snap()
 	var delta := {}
 	for key in after:
@@ -166,13 +184,15 @@ func record(cat: String, title: String, _reason: String, detail: Dictionary = {}
 	events.append(e)
 	stream.store_line(JSON.stringify(e))
 	totals[cat] = int(totals.get(cat, 0)) + 1
+	event_count += 1
 	before = after
+	before_energy = G.energy
 
 func record_reward(source: String, title: String, reason: String, detail: Dictionary = {}) -> void:
 	record("reward",title,reason,detail,source)
 
 func record_unlock(board_id: String, cell: int, item: String, result: String, cols: int) -> void:
-	var merge_seq:=int(events[-1]["seq"])
+	var merge_seq:=int(events[-1]["seq"]) if not events.is_empty() else event_count
 	var item_name:=Data.name_of(item) if board_id=="main" else str(MergeEvent.item(MergeEvent.current(),item).get("name",item))
 	var result_name:=Data.name_of(result) if board_id=="main" else str(MergeEvent.item(MergeEvent.current(),result).get("name",result))
 	record("unlock",("主棋盘" if board_id=="main" else "月石棋盘")+" · 解锁藤蔓","与藤蔓格内的同级物品合成，格子解除锁定",{"board":board_id,"cell":cell,"row":int(cell/cols)+1,"col":cell%cols+1,"item":item,"item_name":item_name,"result":result,"result_name":result_name,"lock_before":1,"lock_after":0,"merge_seq":merge_seq})
@@ -299,11 +319,33 @@ func tick(seconds: float, mode: String = "active") -> void:
 	var energy_before := G.energy
 	var cooked_before := G.cooked_pop.size()
 	G.simulation_time += seconds
-	command("tick")
+	advance_time()
 	regen_pending += maxi(0, G.energy - energy_before)
 	for k in range(cooked_before, G.cooked_pop.size()):
 		var at := int(G.cooked_pop[k])
 		record("craft", "制作完成 · " + Data.name_of(G.rules.board.cell_id(at)), "计时结束", {"dish": G.rules.board.cell_id(at), "cell": at})
+
+## 时间推进：和 Replay.perform("tick") 执行同一套 advance 与数值规整，但不做前后两次完整存档快照
+## （时间推进不会失败、不需要回滚；演算不写操作日志）。配置 fast_tick=false 走原来的完整命令。
+func advance_time() -> void:
+	if not bool(cfg.get("fast_tick", true)):
+		command("tick")
+		return
+	ensure_simulation()
+	var t0 := Time.get_ticks_usec()
+	var was_blocked: bool = G.is_blocking_signals()
+	G.set_block_signals(true)
+	G.clear_presentations()
+	Replay.clock = maxi(Replay.clock, int(G.simulation_time))
+	Replay.executing = true
+	Replay.advance()
+	Replay._canonicalize_live()
+	Replay.executing = false
+	G.clear_presentations()
+	G.set_block_signals(was_blocked)
+	track_resources()
+	target_dirty = true
+	prof["command"] = int(prof["command"]) + Time.get_ticks_usec() - t0
 
 func play() -> void:
 	start = float(Time.get_unix_time_from_datetime_string(str(cfg["start_utc"])))
@@ -354,6 +396,7 @@ func play() -> void:
 	main_finished=false
 	target_dirty=true
 	before = snap()
+	before_energy = G.energy
 	level_rows=[]
 	regen_pending=0
 	in_session=session_left()>0
@@ -379,19 +422,20 @@ func play() -> void:
 		if not in_session:
 			in_session=true
 			lv_acc["sessions"]=int(lv_acc["sessions"])+1
-		if upgrade_tribe(): pass
-		elif rewards(): pass
+		if timed("upgrade_tribe", upgrade_tribe): pass
+		elif timed("rewards", rewards): pass
+		elif timed("free_extras", free_extras): pass
 		elif finish_tutorial(): pass
-		elif submit_orders(): pass
+		elif timed("submit_orders", submit_orders): pass
 		else:
-			choose_target()
-			if retrieve(): pass
-			elif merge_main(): pass
-			elif events_step(false): pass
-			elif produce(): pass
+			timed("choose_target", func(): choose_target(); return false)
+			if timed("retrieve", retrieve): pass
+			elif timed("merge_main", merge_main): pass
+			elif timed("events", func(): return events_step(false)): pass
+			elif timed("produce", produce): pass
 			# 活动玩法（月石合成、占位活动抽奖）排在主棋盘生产之后：没体力、没事干时用来填空档
-			elif events_step(true): pass
-			elif make_room(): pass
+			elif timed("events_play", func(): return events_step(true)): pass
+			elif timed("make_room", make_room): pass
 			else:
 				var previous_target:=str(target)
 				target_dirty=true
@@ -402,7 +446,9 @@ func play() -> void:
 			finish_reason="target_level"
 			observe_level()
 			break
+		var tt := Time.get_ticks_usec()
 		tick(minf(float(cfg["action_seconds"]),maxf(0,float(cfg["cycle_days"])*86400-(G.now()-start))))
+		prof["tick"] = int(prof.get("tick", 0)) + Time.get_ticks_usec() - tt
 		if action_count % 1000 == 0:
 			print("SIM_PROGRESS run=", run_id, " actions=", action_count, " day=", snappedf((G.now()-start)/86400,0.01), " level=",G.level)
 			await get_tree().process_frame
@@ -416,6 +462,12 @@ func play() -> void:
 	state_file.close()
 	stream.flush()
 	write_report()
+
+func timed(key: String, f: Callable) -> bool:
+	var t0 := Time.get_ticks_usec()
+	var r: bool = f.call()
+	prof[key] = int(prof.get(key, 0)) + Time.get_ticks_usec() - t0
+	return r
 
 func valid_state() -> bool:
 	return G.energy >= 0 and G.shells >= 0 and G.amber >= 0 and G.inv.size() <= G.inv_cap and G.board.size() == G.COLS*G.ROWS and G.orders.size() <= Data.order_total(G.level)
@@ -545,6 +597,7 @@ func rewards() -> bool:
 
 func submit_orders() -> bool:
 	choose_target()
+	var needs := xp_needs()
 	for i in G.orders.size():
 		var o: Dictionary = G.orders[i]
 		if main_finished and bool(o.get("story",false)): continue
@@ -555,6 +608,8 @@ func submit_orders() -> bool:
 				record("craft", "取出制作完成的菜品", "设备已完成制作，先取出再提交", {"dish": o.get("dish", ""), "cell": at})
 				return true
 		if target_story and not bool(o.get("story",false)) and (o.get("items",[]) as Array).any(func(id):return useful(str(id))): continue
+		# 真人策略：经验单还没凑齐时，不拿同产线、不高于所缺等级的材料去交没经验的单（免得把要合上去的料吃掉）
+		if int(o.get("rw",{}).get("xp",0))<=0 and str(o.get("phase","need"))=="need" and eats_xp_material(o, needs): continue
 		if G.rules.orders.order_ready(o):
 			var rw: Dictionary = o["rw"].duplicate(true)
 			var detail := o.duplicate(true)
@@ -572,6 +627,26 @@ func submit_orders() -> bool:
 			record("craft", "开始制作 · "+Data.name_of(str(o.get("dish",""))), "材料齐全，等待制作完成",o.duplicate(true))
 			return true
 	return rush_crafts()
+
+## 开放经验、还没凑齐的订单缺哪些产线的料：产线 -> 所缺最高等级
+func xp_needs() -> Dictionary:
+	var out := {}
+	for o in G.orders:
+		if int(o.get("rw",{}).get("xp",0))<=0 or str(o.get("phase","need"))!="need": continue
+		if G.rules.orders.order_ready(o) or G.rules.orders.craft_mats_ready(o): continue
+		var used: Array=[]
+		for raw in o.get("mats", o.get("items", [])):
+			var id:=str(raw)
+			var cell: int=G.rules.orders.board_has(id,used)
+			if cell>=0: used.append(cell); continue
+			out[Data.chain(id)]=maxi(int(out.get(Data.chain(id),0)),Data.lv(id))
+	return out
+
+func eats_xp_material(o: Dictionary, needs: Dictionary) -> bool:
+	for raw in o.get("mats", o.get("items", [])):
+		var id:=str(raw)
+		if needs.has(Data.chain(id)) and Data.lv(id)<=int(needs[Data.chain(id)]): return true
+	return false
 
 func cooking_any() -> bool:
 	for i in G.board.size():
@@ -622,6 +697,20 @@ func choose_target() -> void:
 	target=[]
 	target_name=""
 	target_story=false
+	# 棋盘只扫一遍：各产线最快的生产器产出率、可用物品（产线、等级），以及棋盘上有哪些物品
+	var rate_of := {}
+	var owned: Array=[]
+	var on_board := {}
+	for j in G.board.size():
+		var cid: String=G.rules.board.cell_id(j)
+		if cid!="" and int(G.board[j]["lock"])==0: on_board[cid]=true
+		if not free_item(j): continue
+		owned.append([Data.chain(cid),Data.lv(cid)])
+		var per := {}
+		for d in Data.gen_stats(cid).get("drops",[]):
+			var dch:=Data.chain(str(d["id"]))
+			per[dch]=float(per.get(dch,0.0))+float(d["p"])*pow(2,Data.lv(str(d["id"]))-1)/100.0
+		for dch in per: rate_of[dch]=maxf(float(rate_of.get(dch,0.0)),float(per[dch]))
 	for o in G.orders:
 		if main_finished and bool(o.get("story",false)): continue
 		var ids: Array = G.rules.orders._order_need_ids(o)
@@ -630,12 +719,13 @@ func choose_target() -> void:
 		var reachable := true
 		for raw in ids:
 			var id := str(raw)
-			if G.rules.orders.board_has(id)>=0 or G.inv.has(id): continue
+			if on_board.has(id) or G.inv.has(id): continue
 			var ch := Data.chain(id)
-			var prob := production_rate(ch)
+			var prob := float(rate_of.get(ch,0.0))
 			var mass := 0.0
-			for j in G.board.size():
-				if free_item(j) and Data.chain(G.rules.board.cell_id(j))==ch and Data.lv(G.rules.board.cell_id(j))<Data.lv(id): mass+=pow(2,Data.lv(G.rules.board.cell_id(j))-1)
+			var need_lv := Data.lv(id)
+			for it in owned:
+				if it[0]==ch and int(it[1])<need_lv: mass+=pow(2,int(it[1])-1)
 			if prob<=0 and mass<pow(2,Data.lv(id)-1): reachable=false
 			cost += maxf(0,pow(2,Data.lv(id)-1)-mass)/maxf(prob,0.01)
 		if bool(o.get("story",false)) and bool(cfg.get("story_first",true)): cost-=100000
@@ -692,24 +782,44 @@ func merge_main() -> bool:
 	var b := -1
 	var reserve := {}
 	for id in target: reserve[id]=int(reserve.get(id,0))+1
-	for i in G.board.size():
-		if not free_item(i): continue
-		var id: String=G.rules.board.cell_id(i)
-		if Data.next_id(id)=="": continue
-		var available := 0
-		for j in G.board.size():
-			if free_item(j) and G.rules.board.cell_id(j)==id: available+=1
-		for j in G.board.size():
-			if i==j or G.rules.board.cell_id(j)!=id or int(G.board[j]["lock"])>=2 or G.rules.orders.cooking(j): continue
+	# 一遍扫棋盘，按物品分组：可拖动的格子数、可作为落点的格子（与逐对比较结果相同）
+	var n_cells: int=G.board.size()
+	var ids: Array=[]
+	ids.resize(n_cells)
+	var free: Array=[]
+	free.resize(n_cells)
+	var available := {}
+	var targets := {}
+	for k in n_cells:
+		var id: String=G.rules.board.cell_id(k)
+		ids[k]=id
+		if id=="": free[k]=false; continue
+		var cooking: bool=G.rules.orders.cooking(k)
+		free[k]=G.rules.board.is_free(k) and not cooking
+		if free[k]: available[id]=int(available.get(id,0))+1
+		if int(G.board[k]["lock"])<2 and not cooking:
+			if not targets.has(id): targets[id]=[]
+			targets[id].append(k)
+	var scored := {}
+	for i in n_cells:
+		if not free[i]: continue
+		var id: String=ids[i]
+		if not targets.has(id) or Data.next_id(id)=="": continue
+		for j in targets[id]:
+			if i==j: continue
 			var locked := int(G.board[j]["lock"])==1
-			if not locked and available-int(reserve.get(id,0))<2: continue
-			var score := 0.0
-			if locked: score+=1000
-			if Data.type_of(id)=="gen": score+=500
-			if useful(Data.next_id(id)): score+=200
-			for n in MergeGrid.neighbors(j,G.COLS,G.board.size()):
-				if int(G.board[n]["lock"])==2: score+=60
-			score-=Data.lv(id)
+			if not locked and int(available.get(id,0))-int(reserve.get(id,0))<2: continue
+			var score: float
+			if scored.has(j): score=scored[j]
+			else:
+				score=0.0
+				if locked: score+=1000
+				if Data.type_of(id)=="gen": score+=500
+				if useful(Data.next_id(id)): score+=200
+				for n in MergeGrid.neighbors(j,G.COLS,n_cells):
+					if int(G.board[n]["lock"])==2: score+=60
+				score-=Data.lv(id)
+				scored[j]=score
 			if score>best: best=score; a=i; b=j
 	if a<0: return false
 	var id: String=G.rules.board.cell_id(a)
@@ -742,7 +852,7 @@ func produce() -> bool:
 		var id:=str(raw)
 		var cell: int=G.rules.orders.board_has(id,used)
 		if cell>=0: used.append(cell)
-		else: missing[Data.chain(id)]=true
+		else: missing[Data.chain(id)]=maxi(int(missing.get(Data.chain(id),0)),Data.lv(id))
 	var best := 0.0
 	var chosen := -1
 	for i in G.board.size():
@@ -754,12 +864,23 @@ func produce() -> bool:
 			if missing.has(Data.chain(str(d["id"]))): score+=float(d["p"])*pow(2,Data.lv(str(d["id"]))-1)
 		if score>best: best=score; chosen=i
 	if chosen<0: return false
+	set_boost_for(chosen, missing)
 	var result := command("tap", {"cell": chosen})
 	if result.has("error"): return false
 	var id := str(result.get("id", ""))
 	ph_gain("per_energy", G.rules.board.gen_cost())
 	record("produce", "生产 " + Data.name_of(id), target_name, {"generator": G.rules.board.cell_id(chosen), "item": id})
 	return true
+
+## 双倍体力：解锁后，只要缺的目标物品比这台生产器的产物高，就开着（2 体力出高 1 级，省一半点击和第一层合成）
+func set_boost_for(cell: int, missing: Dictionary) -> void:
+	if not bool(cfg.get("use_boost", true)) or not G.rules.board.boost_open(): return
+	var want := false
+	if G.energy >= 2:
+		for d in Data.gen_stats(G.rules.board.cell_id(cell)).get("drops", []):
+			var id := str(d["id"])
+			if int(missing.get(Data.chain(id), 0)) > Data.lv(id): want = true; break
+	if want != G.boost: command("boost", {"on": want})
 
 func make_room() -> bool:
 	if G.rules.board.empty_count()>1: return false
@@ -872,10 +993,13 @@ func events_step(play: bool) -> bool:
 			command("duel", {"action": "claim"})
 			record_reward("duel_match","双人竞速胜利" if result["status"]=="won" else "双人竞速落败","先达到配置目标积分的一方获胜",{"match":result,"wins":duel["wins"]})
 			return true
-		if match_state.is_empty() or match_state.get("claimed",false):
-			command("duel", {"action": "join"})
-			record("event","参加双人竞速","完成主棋盘订单获得积分")
-			return true
+		if (match_state.is_empty() or match_state.get("claimed",false)) and ActivitySchedule.scheduled("duel"):
+			var joined := command("duel", {"action": "join"})
+			if not joined.has("error"):
+				record("event","参加双人竞速","完成主棋盘订单获得积分")
+				return true
+	if tiger_step(): return true
+	if fossil_step(play): return true
 	var race:=LocalRace.state()
 	if not race.get("results",[]).is_empty():
 		var r: Dictionary=race["results"][0]
@@ -883,7 +1007,7 @@ func events_step(play: bool) -> bool:
 		if result.has("error"): return false
 		record_reward("banana","香蕉竞速结算","比赛结束，领取排名奖励",{"place":r["me"].get("place",0)})
 		return true
-	if race.get("current",{}).is_empty() and G.level>=int(LocalRace.rules().get("unlock_level",12)):
+	if race.get("current",{}).is_empty() and G.level>=int(LocalRace.rules().get("unlock_level",12)) and ActivitySchedule.scheduled("race"):
 		var result := command("race_join")
 		if result.has("error"): return false
 		record("event","参加香蕉竞速","已解锁，主棋盘订单同步增加香蕉")
@@ -896,10 +1020,41 @@ func events_step(play: bool) -> bool:
 		var result := command("activity", {"season": c["key"], "action": "claim"})
 		record_reward("moon","月石里程碑奖励","解锁格子数达到阶段目标",result)
 		return true
-	if not play: return false
 	var cells: Array=s["cells"]
 	var lo:=int(s["view"])*int(c["board"]["cols"])
 	var hi:=lo+int(c["board"]["cols"])*int(c["board"]["visible_rows"])
+	# 火光岩画这类多产线活动（有画、颜料、画笔）才有收取和画笔；规则函数按名字动态调用，旧版活动规则里没有它们
+	var multi: bool = c.has("mural") or c.has("brush")
+	var me: Variant = MergeEvent
+	# 收走活动棋盘上的奖励和合到顶的画（不占操作体力，先做）
+	for i in range(lo,hi):
+		if not multi: break
+		if int(cells[i]["lock"])!=0 or str(cells[i]["id"])=="": continue
+		var k:=str(me.kind(c,str(cells[i]["id"])))
+		if k=="reward" or (k in ["light","mural"] and MergeEvent.next_id(c,str(cells[i]["id"]))==""):
+			var got := command("activity", {"season": c["key"], "action": "collect", "cell": i})
+			if got.has("error"): continue
+			record_reward("moon","收取活动棋盘物品","奖励或合到顶的作品",got)
+			return true
+	if not play: return false
+	# 画笔：颜料拖上去充能，有颜料就画
+	if multi and s.has("brush"):
+		var brush_at:=-1
+		for i in range(lo,hi):
+			if int(cells[i]["lock"])==0 and str(me.kind(c,str(cells[i]["id"])))=="brush": brush_at=i; break
+		if brush_at>=0:
+			if int(s["brush"]["charges"])<int(c["brush"].get("max_charges",8)):
+				for i in range(lo,hi):
+					if int(cells[i]["lock"])==0 and str(me.kind(c,str(cells[i]["id"])))=="paint":
+						var fed := command("activity", {"season": c["key"], "action": "drop", "from": i, "to": brush_at})
+						if fed.has("error"): break
+						record("event","颜料充画笔","把挖出的颜料拖到画笔上",fed)
+						return true
+			if bool(me.can_brush(c,s,brush_at)):
+				var drew := command("activity", {"season": c["key"], "action": "brush", "cell": brush_at})
+				if not drew.has("error"):
+					record("event","画笔作画","花一次颜料在旁边画出一幅",drew)
+					return true
 	var best:=-INF
 	var a:=-1
 	var b:=-1
@@ -928,10 +1083,96 @@ func events_step(play: bool) -> bool:
 			return true
 		# Recycle a completed highest-tier relic only when the event board is full.
 		for i in range(lo,hi):
-			if int(cells[i]["lock"])==0 and str(cells[i]["id"])!="" and MergeEvent.next_id(c,str(cells[i]["id"]))=="":
+			if int(cells[i]["lock"])==0 and str(cells[i]["id"])!="" and (not multi or str(me.kind(c,str(cells[i]["id"]))) in ["light","mural"]) and MergeEvent.next_id(c,str(cells[i]["id"]))=="":
 				command("activity", {"season": c["key"], "action": "recycle", "cell": i})
 				record("event","整理月石棋盘","满级遗物无法继续合并，腾出空间")
 				return true
+	return false
+
+## 剑齿虎：档期里开局；每过一关领一次礼包；一局结束后（逃脱或被追上）重开时会补发没领的礼包
+func tiger_step() -> bool:
+	if not TigerEscape.unlocked(): return false
+	TigerEscape.tick()
+	var m: Dictionary = TigerEscape.round_state()
+	if not m.is_empty():
+		for n in range(1, int(m["stage"]) + 1):
+			if n in m["claimed"]: continue
+			var got := command("tiger", {"action": "claim", "node": n})
+			if got.has("error"): break
+			record_reward("tiger", "剑齿虎第 %d 关礼包" % n, "已逃过这一关", {"node": n, "rewards": got.get("rewards", []), "received": reward_summary(got.get("rewards", []))})
+			return true
+	if not ActivitySchedule.scheduled("tiger"): return false
+	if m.is_empty() or str(m["status"]) != "running":
+		var action := "join" if m.is_empty() else "restart"
+		var r := command("tiger", {"action": action})
+		if r.has("error"): return false
+		record("event", "参加逃离剑齿虎", "交订单攒积分逃离剑齿虎", {"previous": m.get("status", "")})
+		return true
+	return false
+
+## 化石：一周档期轮到化石时交单攒铲子。挖法按真人：先顺着已露出的骨头往四周挖，没线索时随机挖
+func fossil_step(play: bool) -> bool:
+	if not FossilDig.unlocked() or FossilDig.state().is_empty(): return false
+	for row in FossilDig.ready_rewards():
+		var got := command("fossil", {"action": "claim", "value": int(row["bones"])})
+		if got.has("error"): return false
+		record_reward("fossil", "化石里程碑奖励", "挖出 %d 块骨头" % int(row["bones"]), {"rewards": got.get("rewards", []), "received": reward_summary(got.get("rewards", []))})
+		return true
+	if not FossilDig.window_current(): return false
+	if FossilDig.cleared():
+		if FossilDig.finished(): return false
+		if not command("fossil", {"action": "next"}).has("error"):
+			record("event", "化石下一层", "这一层骨头都挖出来了")
+			return true
+		return false
+	if not play or int(FossilDig.state().get("shovels", 0)) < int(FossilDig.config()["dig_cost"]): return false
+	var b: Dictionary = FossilDig.board()
+	var n := int(b["n"])
+	var hint: Array = []
+	for p in b["pieces"]:
+		if bool(p["found"]): continue
+		var cells: Array = FossilDig.piece_cells(p, n)
+		if not cells.any(func(c): return c in b["dug"]): continue
+		for c in b["dug"]:
+			if not c in cells: continue
+			for nb in [c - n, c + n, c - 1 if c % n > 0 else -1, c + 1 if c % n < n - 1 else -1]:
+				if nb >= 0 and nb < n * n and not nb in b["dug"] and not nb in hint: hint.append(nb)
+	var pool: Array = hint
+	if pool.is_empty():
+		for c in n * n:
+			if not c in b["dug"]: pool.append(c)
+	if pool.is_empty(): return false
+	var cell := int(pool[randi() % pool.size()])
+	var r := command("fossil", {"action": "dig", "value": cell})
+	if r.has("error"): return false
+	record("event", "挖化石", "顺着露出的骨头挖" if not hint.is_empty() else "没有线索，随便挖一格", {"cell": cell, "found": r.get("found", []).size()})
+	return true
+
+## 免费小福利：每周礼包链的免费步、卡星兑换卡包、集齐卡册奖励、第一次免费补体力
+func free_extras() -> bool:
+	var gift: Dictionary = Replay.gift_view()
+	if bool(gift.get("free_ready", false)):
+		var got := command("gift", {"step": int(gift["step"])})
+		if not got.has("error"):
+			record_reward("gift", "礼包链免费步", "免费，直接领", {"rewards": got.get("rewards", []), "received": reward_summary(got.get("rewards", []))})
+			return true
+	if G.rules.progression.feature_unlocked(Data.CARD_LEVEL):
+		var offers: Array = CardPacks.config()["star_exchange"].duplicate()
+		offers.sort_custom(func(a, b): return int(a["cost"]) > int(b["cost"]))
+		for offer in offers:
+			if G.card_stars >= int(offer["cost"]):
+				if command("card_star_exchange", {"cost": int(offer["cost"])}).has("error"): break
+				record_reward("cards", "卡星兑换卡包", "卡星够换最好的一档", {"cost": offer["cost"], "pack": offer["pack"]})
+				return true
+		for album in Data.ALBUMS.size():
+			if G.rules.progression.album_count(album) == Data.ALBUMS[album]["cards"].size() and not bool(Replay.meta.get("album:%d" % album, false)):
+				if not command("album_claim", {"album": album}).has("error"):
+					record_reward("album", "集齐卡册奖励", "卡册集齐", {"album": album})
+					return true
+	if G.energy < 1 and not bool(Replay.meta.get("free_energy", false)):
+		if not command("energy").has("error"):
+			record_reward("free_energy", "第一次免费补体力", "第一次补体力不花琥珀")
+			return true
 	return false
 
 func wait_next() -> void:
@@ -961,7 +1202,17 @@ func wait_next() -> void:
 		warned_stall=true
 		record("bottleneck","连续一天未完成订单","记录策略或配置阻塞，不赠送资源绕过",{"target":target,"board":G.board.duplicate(true),"inventory":G.inv.duplicate(),"orders":G.orders.duplicate(true)})
 
+func prof_report() -> Dictionary:
+	var out := {}
+	for k in prof: out[k] = snappedf(float(prof[k]) / 1e6, 0.01)
+	return out
+
 func write_report() -> void:
+	var tw := Time.get_ticks_usec()
+	_write_report()
+	prof["write_report"] = int(prof.get("write_report", 0)) + Time.get_ticks_usec() - tw
+
+func _write_report() -> void:
 	var report:={"schema":1,"config":cfg,"main_story_max_level":main_limit,"source_hashes":source_hashes,"production_counting":"level1_equivalent","resource_counting":"credited_gains_excluding_initial","production_lines":production_line_metrics(),"runs":summaries,"events":events,"wall_seconds":(Time.get_ticks_msec()-wall_start)/1000.0,"notes":["通过共享规则命令执行；不访问线上账号，不写入玩家日志。","各产线生产器折合一级份数：1 级计 1、2 级计 2、3 级计 4，之后每级翻倍（含低级部件），统计已解锁棋盘、储物洞和暂存区，不含锁定格及未购买气泡。","生产器最高等级统计当前已拥有的棋盘、储物洞和暂存区物品；琥珀、沙漏累计获得仅计本轮实际到账，排除初始资源，消耗不回减。","藤蔓解锁与触发合成记录在同一时间点，不额外消耗操作时间。","连续在线、零付费、跳过广告与引导手势；每个决策消耗配置的游戏内秒数。","时间快进会执行体力恢复、制作完成、跨日和活动结算。","到时长或动作上限即重开；不等同于通关。策略是可复现启发式，并非最优解。"]}
 	var f:=FileAccess.open(output,FileAccess.WRITE)
 	f.store_string(JSON.stringify(report))
@@ -983,8 +1234,10 @@ func ensure_simulation() -> void:
 
 func command(name: String, args: Dictionary = {}) -> Dictionary:
 	ensure_simulation()
+	var t0 := Time.get_ticks_usec()
 	var result = Replay.perform(name, args)
 	track_resources()
+	prof["command"] = int(prof["command"]) + Time.get_ticks_usec() - t0
 	if name in ["order", "craft", "rush", "build", "level", "tick", "tutorial_finish"]:
 		target_dirty = true
 	return result if result is Dictionary else {}

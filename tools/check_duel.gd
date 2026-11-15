@@ -5,6 +5,7 @@ func check(ok: bool,label: String) -> void:
 	print(("PASS " if ok else "FAIL ")+label)
 	if not ok: failures+=1
 func run() -> void:
+	load("res://scripts/events/ActivitySchedule.gd").bypass = true # 只测单个活动玩法，不受档期轮换影响
 	var g=root.get_node("G")
 	var duel=load("res://scripts/events/DuelRace.gd")
 	g.set_process(false)

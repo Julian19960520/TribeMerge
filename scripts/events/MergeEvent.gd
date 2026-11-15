@@ -31,8 +31,10 @@ static func definition(key: String) -> Dictionary:
 			return c
 	return {}
 
+## 赛季开放、等级够，且这一季落在「一周」档期里轮到月石遗迹。
 static func available(c: Dictionary) -> bool:
-	return not c.is_empty() and (G.gm_activities or G.level >= int(c.get("unlock_level", 1)))
+	if c.is_empty() or not (G.gm_activities or G.level >= int(c.get("unlock_level", 1))): return false
+	return ActivitySchedule.scheduled("merge", float(c.get("ends_at", G.now() + 1.0)) - 1.0)
 
 static func active(c: Dictionary) -> bool:
 	return available(c) and str(current().get("key", "")) == str(c.get("key", ""))

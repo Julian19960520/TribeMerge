@@ -33,6 +33,12 @@ static var DISHES: Dictionary = {}
 static var RANDOM_CURVES: Array = []
 ## 常驻随机订单每张在「下限～上限」之间的位置，0 是下限（简单单），1 是上限（难单）。
 static var RANDOM_SLOTS: Array = [0.0, 0.3, 0.55, 1.0]
+## 随机单档位：{"easy": {"curve", "xp", "spread"}, "hard": {...}}。为空时退回按 RANDOM_SLOTS 插值的旧出单。
+static var ORDER_TIERS: Dictionary = {}
+## [[等级, 难单占比], ...]，等级之间线性插值。
+static var HARD_SHARE: Array = []
+## 常驻随机单里至少保留几张简单单。
+static var MIN_EASY: int = 1
 ## 链 id -> 每一级是否可进订单。下标 0 是主角 1 级。
 static var UNLOCK_ROWS: Dictionary = {}
 ## 典藏卡册是后期活动。这一级之前不发卡包，主页也不露出卡册。
@@ -122,6 +128,12 @@ static func _load() -> void:
 	for row in ConfigFiles.shared(ConfigFiles.DISHES): DISHES[row["id"]] = row
 	var random: Dictionary = ConfigFiles.shared(ConfigFiles.RANDOM_ORDERS)
 	RANDOM_SLOTS = random["slots"]
+	ORDER_TIERS = {}
+	for key in ["easy", "hard"]:
+		if random.get("tiers", {}).get(key) is Dictionary: ORDER_TIERS[key] = random["tiers"][key]
+	if ORDER_TIERS.size() < 2: ORDER_TIERS = {}
+	HARD_SHARE = random.get("hard_share", {}).get("points", []) if random.get("hard_share") is Dictionary else []
+	MIN_EASY = int(random.get("min_easy", 1))
 	var low := []
 	var high := []
 	var count := 0
@@ -160,6 +172,8 @@ static func story_orders(level: int) -> Array:
 static func xp_need(level: int) -> int:
 	var early: Array = RULES.get("xp_by_level", [])
 	if level >= 1 and level <= early.size(): return maxi(1, int(early[level - 1]))
+	# 表外等级沿用表里最后一级的需求；只有没配表时才退回公式。
+	if not early.is_empty() and level > early.size(): return maxi(1, int(early[early.size() - 1]))
 	var base := int(RULES.get("xp_base", 3))
 	var div := maxi(1, int(RULES.get("xp_div", 2)))
 	return maxi(1, base + (maxi(level, 1) - 1) / div)
@@ -182,6 +196,57 @@ static func random_slot_target(level: int, slot: int) -> int:
 		return b.x
 	var t: float = RANDOM_SLOTS[posmod(slot, RANDOM_SLOTS.size())]
 	return maxi(1, int(round(lerpf(float(b.x), float(b.y), t))))
+
+## 这个等级下新随机单抽到难单的概率。
+static func hard_share(level: int) -> float:
+	if HARD_SHARE.is_empty(): return 0.4
+	var prev: Array = HARD_SHARE[0]
+	if level <= int(prev[0]): return float(prev[1])
+	for point in HARD_SHARE:
+		if level <= int(point[0]):
+			var span := maxf(1.0, float(int(point[0]) - int(prev[0])))
+			return lerpf(float(prev[1]), float(point[1]), float(level - int(prev[0])) / span)
+		prev = point
+	return float(prev[1])
+
+static func tier_xp(tier: String) -> int:
+	return maxi(1, int(ORDER_TIERS.get(tier, {}).get("xp", 2 if tier == "hard" else 1)))
+
+static func _tier_spread(tier: String) -> Vector2:
+	var spread: Array = ORDER_TIERS.get(tier, {}).get("spread", [1.0, 1.0])
+	return Vector2(float(spread[0]), float(spread[1]))
+
+static func tier_base(level: int, tier: String) -> float:
+	return float(random_diff(level, int(ORDER_TIERS.get(tier, {}).get("curve", 1 if tier == "hard" else 0))))
+
+## 这一档在这个等级上允许的难度范围；简单单上限不超过难单下限。
+static func tier_range(level: int, tier: String) -> Vector2:
+	var easy := tier_base(level, "easy") * _tier_spread("easy")
+	var hard := tier_base(level, "hard") * _tier_spread("hard")
+	if easy.y > hard.x: easy.y = hard.x
+	if easy.x > easy.y: easy.x = easy.y
+	return hard if tier == "hard" else easy
+
+## 在档位范围里抽一个目标难度：三角分布，靠近基准的多，两头少。
+static func tier_target(level: int, tier: String, rng: RandomNumberGenerator) -> int:
+	var r := tier_range(level, tier)
+	var base := clampf(tier_base(level, tier), r.x, r.y)
+	var u := rng.randf()
+	var span_lo := base - r.x
+	var span_hi := r.y - base
+	var total := maxf(0.0001, span_lo + span_hi)
+	var cut := span_lo / total
+	var v := base
+	if u < cut: v = r.x + sqrt(u * total * span_lo)
+	else: v = r.y - sqrt((1.0 - u) * total * span_hi)
+	return maxi(1, int(round(v)))
+
+## 已有难度值属于哪一档（制作单、旧存档订单用）：落在难单范围就算难单。
+static func tier_of_value(level: int, value: float) -> String:
+	if ORDER_TIERS.is_empty():
+		var b := random_bounds(level)
+		return "hard" if value >= (b.x + b.y) * 0.5 else "easy"
+	return "hard" if value >= tier_range(level, "hard").x else "easy"
 
 ## 第 curve 条线在这个主角等级上的火苗。0 是下限，1 是上限。等级从 1 计。
 static func random_diff(level: int, curve: int) -> int:
@@ -646,16 +711,67 @@ static func rush_sec() -> int:
 static func craft_cap(level: int) -> int:
 	return _cap_at("craft_cap_at", [int(RULES.get("craft_level", 3))], level, 9)
 
-## 制作订单附送的沙漏：按菜的制作秒数取 craft_sand 里最后一个够得着的档 [[最少秒数, 物品], ...]。
-static func craft_sand(dish_id: String) -> String:
+## 制作订单附送的沙漏：按这张单实际的制作秒数取 craft_sand 里最后一个够得着的档 [[最少秒数, 物品], ...]。
+static func craft_sand(dish_id: String, secs: int = -1) -> String:
 	if not DISHES.has(dish_id):
 		return ""
-	var secs := int(DISHES[dish_id].get("secs", 0))
+	if secs < 0: secs = int(DISHES[dish_id].get("secs", 0))
 	var out := ""
 	for t in RULES.get("craft_sand", []):
 		if t is Array and t.size() >= 2 and secs >= int(t[0]):
 			out = str(t[1])
 	return out
+
+## 制作单返还多少份沙漏（每份 rush_sec 秒）：制作秒数 × craft_sand_cover 在该等级的覆盖率。没配时返回 -1，沿用 craft_sand 物品档。
+static func craft_sand_units(level: int, secs: int) -> int:
+	var cfg: Variant = RULES.get("craft_sand_cover", {})
+	if not cfg is Dictionary or (cfg.get("points", []) as Array).is_empty(): return -1
+	var points: Array = cfg["points"]
+	var cover := float(points[points.size() - 1][1])
+	if level <= int(points[0][0]): cover = float(points[0][1])
+	else:
+		for i in range(1, points.size()):
+			if level <= int(points[i][0]):
+				var a: Array = points[i - 1]
+				var b: Array = points[i]
+				cover = lerpf(float(a[1]), float(b[1]), float(level - int(a[0])) / maxf(1.0, float(int(b[0]) - int(a[0]))))
+				break
+	return maxi(1, int(ceil(float(secs) * cover / float(rush_sec()))))
+
+## 这个主角等级下做这道菜要多少秒：rules.craft_time.by_level 给出该等级的基准秒数（等级之间线性插值），
+## 再按这道菜在当前可做菜里的难度（配置秒数的对数排位）乘 spread 区间的系数。没配 craft_time 时用菜自己的秒数。
+static func craft_secs(level: int, dish_id: String) -> int:
+	if not DISHES.has(dish_id): return 1
+	var own := maxi(1, int(DISHES[dish_id].get("secs", 1)))
+	var cfg: Variant = RULES.get("craft_time", {})
+	if not cfg is Dictionary or (cfg.get("by_level", []) as Array).is_empty(): return own
+	var points: Array = cfg["by_level"]
+	var base := float(points[0][1])
+	if level > int(points[0][0]):
+		base = float(points[points.size() - 1][1])
+		for i in range(1, points.size()):
+			if level <= int(points[i][0]):
+				var a: Array = points[i - 1]
+				var b: Array = points[i]
+				base = lerpf(float(a[1]), float(b[1]), float(level - int(a[0])) / maxf(1.0, float(int(b[0]) - int(a[0]))))
+				break
+	var lo := own
+	var hi := own
+	for d in dishes_for(maxi(level, int(DISHES[dish_id].get("unlock", 1)))):
+		lo = mini(lo, maxi(1, int(d["secs"])))
+		hi = maxi(hi, maxi(1, int(d["secs"])))
+	var t := 0.5
+	if hi > lo: t = clampf(log(float(own) / float(lo)) / log(float(hi) / float(lo)), 0.0, 1.0)
+	var spread: Array = cfg.get("spread", [1.0, 1.0])
+	return maxi(1, int(round(base * lerpf(float(spread[0]), float(spread[1]), t))))
+
+## 制作时长的文字：x秒 / x分 / x分x秒 / x小时 / x小时x分。
+static func secs_text(secs: int) -> String:
+	if secs >= 3600:
+		return TextCatalog.source("notice.data.f24d0c399e61") % (secs / 3600) if secs % 3600 == 0 else TextCatalog.source("notice.data.f6dc3c925a2d") % [secs / 3600, secs % 3600 / 60]
+	if secs >= 60:
+		return TextCatalog.source("notice.data.441275a944fb") % (secs / 60) if secs % 60 == 0 else TextCatalog.source("notice.data.14bf9175170a") % [secs / 60, secs % 60]
+	return TextCatalog.source("notice.data.517926f2a953") % secs
 
 ## 每次合成最多掉一件资源；按顺序占用概率区间，剩余概率不掉落。
 static func resource_drop(scope: String, roll: float, level: int, merged: String = "") -> String:

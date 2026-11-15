@@ -14,6 +14,17 @@ python tools/sim/run.py --godot /path/to/godot --runs 1 --days 7 --publish-repor
 python tools/sim/run.py --godot /path/to/godot --forever
 ```
 
+调节奏时用快速模式，几个配置、几个种子并排跑：
+
+```bash
+python tools/sim/run.py --godot /path/to/godot --config tools/sim/config_heavy.json tools/sim/config_light.json --fast
+python tools/sim/run.py --godot /path/to/godot --config tools/sim/config_heavy.json --seeds 4 --fast
+```
+
+- `--fast`：只出按等级汇总（`levels.md`），不存逐条事件，没有可视时间轴；规则和决策与完整模式完全相同，汇总表一致。不能与 `--publish-report` 同用。
+- `--config` 可给多个；`--seeds N` 每个配置用连续 N 个种子各跑一份。它们各开一个 Godot 进程并排跑（`--jobs` 限制并行数，默认不超过 CPU 核数），每份有自己的存档文件，跑完打印一行一份的概览（到几级、20/25/30 级在第几天、28～32 级每天几级）。
+- `engine.log` 末尾的 `profile_sec` 是用时分解（秒），用来查慢在哪。
+
 默认每次只运行 1 轮，达到 40 级即停止，不再继续跑到时长上限。`--forever` 会在每轮结束后不断从初始棋盘重开，种子递增；Ctrl+C 停止。每批结果独立保存到 `tools/sim/results/batch-*/`。完成的轮次以及当前批的 JSONL 已执行动作日志都保留。配置默认 `tools/sim/config.json`，也可用 `--config` 指向另一份。
 
 | 配置 | 含义 |
@@ -24,13 +35,17 @@ python tools/sim/run.py --godot /path/to/godot --forever
 | start_utc | 每轮相同的起始时间，决定跨日及活动期次 |
 | main_story_max_level | 0 自动取 story.json 的最后配置等级；完成后只做副线 |
 | story_first | 优先可生产的主线；保护其材料，避免被副线抢用 |
-| play_events | 参与月石、香蕉和双人竞速 |
+| play_events | 参与当前档期的活动：篝火/双人竞速、剑齿虎、月石遗迹或火光岩画（含颜料、画笔、收取）、化石、通行证；不在档期的活动不报名 |
+| fast_tick | 默认 true：每个动作之后的时间推进直接执行和正式「推进时间」命令相同的规则，省掉前后两次完整存档快照（演算不写操作日志、推进时间不会失败）。结果与 false 逐条一致 |
+| summary_only | 默认 false；`--fast` 会打开：只记按等级汇总 |
+| use_boost | 默认 true：18 级解锁双倍体力后，缺的目标物品比生产器产物高时开着（2 体力出高 1 级，省点击） |
+| placeholder_events | 默认空（关闭）。活动没做时用来预留体力的占位活动文件 `tools/sim/placeholder_events.json`；现在各档期都有真活动，不再默认启用 |
 | use_storage | 满盘时优先保留高价值闲置物品到储物洞 |
 | expand_storage / max_storage | 是否允许花已有琥珀扩容 / 容量上限 |
 | delete_max_level | 只丢弃不属于当前目标产线、等级不超过此值的普通物品，按生产成本从低到高选择；默认 10，生产器始终保留 |
 | wait_energy_batch | 没体力时计划恢复多少点再继续；更近的计时事件可提前唤醒 |
 | stop_level | 默认 40，达到后立即结束本轮；大于 0 时为等级终点 |
-| start_snapshot | 可选：从共享规则生成的真实快照接着演算。起始时间和角色等级采用快照值，仍按配置 seed 使用独立随机流；不补发已经领取的等级奖励。用于将完整界面新手回归的结果继续演算到中后期。 |
+| start_snapshot | 默认 `res://tools/sim/after_guide.json`（新手引导结束时的快照；新版引导需要界面操作，自动玩家从这里开始）。可选：从共享规则生成的真实快照接着演算。起始时间和角色等级采用快照值，仍按配置 seed 使用独立随机流；不补发已经领取的等级奖励。用于将完整界面新手回归的结果继续演算到中后期。 |
 | stop_generator | 可选的生产器终点，如 `{"chain":"basket","level":6}`，拥有指定等级时结束；与 stop_level 任一满足即可停止，用于校准首次合出生产器的进度。 |
 | schedule.days | 每天的在线时段，北京时间 `["HH:MM", 分钟]`；第 N 天用第 N 项，超出后一直用最后一项。不配 schedule 就是 24 小时连续在线 |
 | schedule.quit_idle_minutes | 在线时没事可做、需要空等超过这么久（或等到时段结束），就记一次「卡住」并下线到下一段 |
@@ -71,7 +86,7 @@ python tools/sim/run.py --godot /path/to/godot --forever
 
 ## 决策顺序
 
-不那那足够就独立升级部落 → 可领奖励 → 教学完成检查 → 已完成目标订单 / 制作料理 → 选择主线或副线目标 → 取回储物洞材料 → 合成与揭开覆盖 → 活动合成及领奖 → 按产物概率选择生产器 → 存储 / 删除 → 等待资源或计时事件。
+不那那足够就独立升级部落 → 可领奖励 → 免费小福利（礼包链免费步、卡星换卡包、集齐卡册、第一次免费补体力）→ 教学完成检查 → 已完成目标订单 / 制作料理 → 选择主线或副线目标 → 取回储物洞材料 → 合成与揭开覆盖 → 活动合成及领奖 → 按产物概率选择生产器 → 存储 / 删除 → 等待资源或计时事件。
 
 目标选择优先可生产的带经验订单，再考虑主线和低成本制作，适配同一级中经验固定在原订单上的规则，避免反复交便宜的无经验订单而无法升级。手动取菜订单先点击设备取出，再提交。
 

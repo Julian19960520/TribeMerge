@@ -1,0 +1,34 @@
+{
+  "seed": 20261107,
+  "runs": 1,
+  "cycle_days": 60,
+  "max_actions": 150000,
+  "action_seconds": 3,
+  "start_utc": "2026-11-02T00:00:00",
+  "story_first": true,
+  "play_events": true,
+  "use_storage": true,
+  "expand_storage": false,
+  "max_storage": 20,
+  "wait_energy_batch": 10,
+  "delete_max_level": 10,
+  "stop_level": 33,
+  "main_story_max_level": 0,
+  "schedule": {
+    "quit_idle_minutes": 5,
+    "days": [
+      [
+        [
+          "08:00",
+          30
+        ],
+        [
+          "21:00",
+          30
+        ]
+      ]
+    ]
+  },
+  "_说明": "低强度玩家：早晚各上来一次（每次最多 30 分钟）清体力，其余时间体力满了就浪费。参加活动，不花钱。",
+  "start_snapshot": "res://tools/sim/after_guide.json"
+}

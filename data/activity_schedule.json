@@ -1,0 +1,45 @@
+{
+	"_说明": "活动档期：每档同一时间只开一个活动，从 start_utc 起每 period_hours 小时按 rotation 轮换一次。同档活动可以随时换皮替换，奖励预算按档统一（budget 是这一档每期奖励的价值上限，服务端按它缩放该档所有活动的奖励）。切走时进行中的一局可以打完、没领的奖励可以领，但不能开新局。不在任何档里的活动（七日任务、通行证以外的常驻内容）不受档期影响。",
+	"start_utc": "2026-11-02T00:00:00",
+	"slots": [
+		{
+			"id": "short",
+			"name": "§content.activity_schedule.600cee5d1747§",
+			"_说明": "完成目标立刻结算，马上开下一局；每天换一种玩法。",
+			"period_hours": 24,
+			"budget": 2200,
+			"rotation": [
+				{"activity": "race", "doc": "race"},
+				{"activity": "duel", "doc": "duel_race"}
+			]
+		},
+		{
+			"id": "medium",
+			"name": "§content.activity_schedule.0e5a8d237738§",
+			"period_hours": 48,
+			"budget": 1200,
+			"rotation": [
+				{"activity": "tiger", "doc": "tiger_escape"}
+			]
+		},
+		{
+			"id": "week",
+			"name": "§content.activity_schedule.d94daba31605§",
+			"period_hours": 168,
+			"budget": 6000,
+			"rotation": [
+				{"activity": "merge", "doc": "merge_events"},
+				{"activity": "fossil", "doc": "fossil_dig"}
+			]
+		},
+		{
+			"id": "month",
+			"name": "§content.activity_schedule.2bbabc6f3641§",
+			"_说明": "通行证自带赛季（pass.json season），这里登记档位，以后的月度换皮活动加在 rotation 里。",
+			"period_hours": 840,
+			"rotation": [
+				{"activity": "pass", "doc": "pass"}
+			]
+		}
+	]
+}

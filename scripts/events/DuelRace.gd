@@ -8,6 +8,11 @@ static func state() -> Dictionary:
 	return G.duel_race if not G.duel_race.is_empty() else {"wins": 0, "rounds": 0, "claimed": [], "match": {}}
 
 static func unlocked() -> bool: return G.gm_activities or G.level>=int(config()["unlock_level"])
+## 档期里，或者这一局还没打完/没领奖、有没领的里程碑时显示入口。
+static func visible() -> bool:
+	if not unlocked(): return false
+	var m: Dictionary = state().get("match", {})
+	return ActivitySchedule.scheduled("duel") or (not m.is_empty() and (m.get("status", "") == "running" or not m.get("claimed", false))) or not ready_milestones().is_empty()
 static func order_points(order: Dictionary) -> int:
 	var score:=1
 	for id in order.get("items",[]): score=maxi(score,Data.lv(str(id)))
@@ -61,6 +66,8 @@ static func act(action: String, milestone := 0) -> Dictionary:
 
 static func local_action(action: String, milestone:=0) -> Dictionary:
 	if not unlocked(): return {"error":TextCatalog.source("notice.duelrace.2821c8ca32bd")%int(config()["unlock_level"])}
+	# 存档里还没有活动状态时先建好，免得开局写进临时字典丢失。
+	if G.duel_race.is_empty(): G.duel_race={"wins": 0, "rounds": 0, "claimed": [], "match": {}}
 	tick()
 	var s:=state()
 	var m: Dictionary=s["match"]
@@ -68,6 +75,7 @@ static func local_action(action: String, milestone:=0) -> Dictionary:
 		"refresh": return {}
 		"join":
 			if not m.is_empty() and (m["status"]=="running" or not m.get("claimed",false)): return {"error":TextCatalog.source("notice.duelrace.285eedc7ae25")}
+			if not ActivitySchedule.scheduled("duel"): return {"error":ActivitySchedule.closed_message("duel")}
 			var target:=int(config()["target"])
 			var seconds: Array=config()["opponent_seconds"]
 			var duration:=G.random_for("duel").randf_range(float(seconds[0]),float(seconds[1]))

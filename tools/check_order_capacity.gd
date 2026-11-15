@@ -16,13 +16,15 @@ func run() -> void:
 	g.orders=[]
 	g.rules.orders.refill_orders()
 	check(g.orders.size()==data.order_total(g.level),"refill reaches shared total cap")
-	check(g.orders.filter(func(o):return int(o["rw"].get("xp",0))>0).size()==mini(data.story_orders(g.level).size(),data.order_total(g.level)),"configured experience orders take every available slot")
+	var opened:int=g.orders.reduce(func(a,o):return a+int(o["rw"].get("xp",0)),0)
+	var possible:int=g.orders.reduce(func(a,o):return a+int(o.get("xp_value",0)),0)
+	check(opened>=mini(data.xp_need(g.level),possible) and opened<=data.xp_need(g.level)+1,"experience opens just enough orders to level up")
 	var first: Dictionary=g.orders[0].duplicate(true)
 	g.board=[]
 	for i in g.COLS*g.ROWS: g.board.append({"id":"","lock":0})
 	for i in first["items"].size():g.board[i]["id"]=first["items"][i]
 	g.complete_order(0)
-	check(not g.orders.any(func(o):return o.get("si",-1)==first["si"]),"completed experience row never respawns before XP settlement")
+	check(not g.orders.any(func(o):return str(o.get("uid",""))==str(first.get("uid","-"))),"completed order never respawns")
 	check(g.orders.size()<=data.order_total(g.level),"delivery refills without exceeding cap")
 	# Mark current experience catalog complete: remaining slots are regular/crafting orders.
 	for si in data.story_orders(g.level).size():g.story_done["%d:%d"%[g.level,si]]=true
@@ -36,7 +38,9 @@ func run() -> void:
 	g.level=11
 	g.rules.orders.refill_orders()
 	check(g.orders.has(craft) and g.orders.size()==data.order_total(g.level),"cooking order survives level transition within cap")
-	check(g.orders.filter(func(o):return o.get("story",false)).size()==data.order_total(g.level)-1,"experience replaces random orders at level transition")
+	var reopened:int=g.orders.reduce(func(a,o):return a+int(o["rw"].get("xp",0)),0)
+	var avail:int=g.orders.reduce(func(a,o):return a+int(o.get("xp_value",0)),0)
+	check(reopened>=mini(data.xp_need(g.level)-g.xp,avail),"experience is reassigned at level transition")
 	# Legacy overfull experience orders are deferred, not lost.
 	g.level=4
 	g.orders=[]

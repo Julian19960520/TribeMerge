@@ -199,7 +199,16 @@ def build(market: str = "CN", data_dir: str | Path | None = None) -> dict:
         elif isinstance(node, dict):
             for child in node.values():
                 yield from reward_lists(child)
-    for activity, budget in p["reward_budgets"].items():
+    # Activities sharing a schedule slot share one budget, so a reskin in the
+    # same slot can replace another without changing the reward pace.
+    budgets = dict(p["reward_budgets"])
+    slot_of = {}
+    for slot in docs.get("activity_schedule", {}).get("slots", []):
+        for row in slot.get("rotation", []):
+            if "budget" in slot and row["doc"] in budgets:
+                budgets[row["doc"]] = slot["budget"]
+                slot_of[row["doc"]] = slot["id"]
+    for activity, budget in budgets.items():
         rows = list(reward_lists(docs.get(activity, {})))
         total = sum(reward_value(r) for r in rows)
         scale = min(1, budget / total) if total else 1
@@ -216,7 +225,7 @@ def build(market: str = "CN", data_dir: str | Path | None = None) -> dict:
                 if quantity:
                     final.append([rw[0], quantity, *rw[2:]])
             rows_list[:] = final
-        audits[activity] = {"budget": budget, "before": round(total, 3), "after": round(sum(reward_value(r) for r in rows), 3), "generator_units": p["generator_reward_units_per_activity"] - generator_remaining}
+        audits[activity] = {"slot": slot_of.get(activity, ""), "budget": budget, "before": round(total, 3), "after": round(sum(reward_value(r) for r in rows), 3), "generator_units": p["generator_reward_units_per_activity"] - generator_remaining}
 
     products = {}
     for i, row in enumerate(docs["amber_packs"]):

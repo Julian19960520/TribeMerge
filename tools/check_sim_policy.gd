@@ -13,7 +13,7 @@ func run() -> void:
 	g.level=2
 	g.shells=1000
 	g.tutorial_on=false
-	g.orders=[{"who":1,"items":["fruit_1"],"rw":{"shell":1},"story":false}]
+	g.orders=[{"who":1,"items":["fruit_1"],"rw":{"shell":1,"xp":1},"story":false}]
 	for cell in g.board: cell["id"]=""; cell["lock"]=0
 	g.board[0]["id"]="fruit_1"
 	var bot=load("res://tools/sim/PlayerBot.gd").new()

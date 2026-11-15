@@ -13,11 +13,11 @@ static func registry() -> Array:
 			{"id": "merge", "initialize": _initialize_merge, "order": MergeEvent.on_order,
 				"visible": func(): return MergeEvent.available(MergeEvent.current()), "entry_order": 1},
 			{"id": "duel", "field": "duel_race", "initial": func(): return {"wins": 0, "rounds": 0, "claimed": [], "match": {}},
-				"tick": DuelRace.tick, "tick_order": 1, "order": DuelRace.on_order, "visible": DuelRace.unlocked, "entry_order": 3},
+				"tick": DuelRace.tick, "tick_order": 1, "order": DuelRace.on_order, "visible": DuelRace.visible, "entry_order": 3},
 			{"id": "tiger", "field": "tiger_escape", "initial": func(): return {"rounds": 0, "round": {}},
-				"tick": TigerEscape.tick, "tick_order": 0, "order": TigerEscape.on_order, "visible": TigerEscape.unlocked, "entry_order": 4},
+				"tick": TigerEscape.tick, "tick_order": 0, "order": TigerEscape.on_order, "visible": TigerEscape.visible, "entry_order": 4},
 			{"id": "fossil", "initialize": FossilDig.initialize, "order": FossilDig.on_order,
-				"visible": FossilDig.unlocked, "entry_order": 5},
+				"visible": FossilDig.visible, "entry_order": 5},
 			{"id": "ufo", "field": "ufo_offer", "initial": UfoOffer.initial_state},
 			{"id": "race", "field": "local_race", "initial": func(): return {"current": {}, "results": []},
 				"tick": LocalRace.tick, "tick_order": 2, "order": func(o): LocalRace.order(o.get("items", [])),
@@ -57,5 +57,7 @@ static func board_entries() -> Array:
 	registry()
 	return _entries
 
+## 篝火竞速：在档期里，或者上一局还没比完/没领奖时显示。
 static func _race_visible() -> bool:
-	return G.rules.progression.feature_unlocked(int(LocalRace.rules().get("unlock_level", 12)))
+	if not G.rules.progression.feature_unlocked(int(LocalRace.rules().get("unlock_level", 12))): return false
+	return ActivitySchedule.scheduled("race") or LocalRace.busy()

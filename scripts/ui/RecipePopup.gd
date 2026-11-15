@@ -46,7 +46,12 @@ static func create(id: String) -> PopupBase:
 			var slot := _slot_rect(k, mats.size())
 			Paint.check_mark(ci, slot.end - Vector2(20, 20), 0.8), false)
 	Popups.live(checks, G.board_changed, checks.queue_redraw)
-	var seconds := int(d["secs"])
+	# 场上有这道菜的制作单就显示那张单的时长，否则按当前等级算。
+	var seconds := Data.craft_secs(G.level, key)
+	for o in G.orders:
+		if o is Dictionary and str(o.get("kind", "")) == "craft" and str(o.get("dish", "")).trim_prefix("dish_") == key:
+			seconds = int(o.get("secs", seconds))
+			break
 	var tl := UI.lbl(p.box, TextCatalog.source("ui.recipepopup.c18455486abf") % [seconds / 60, seconds % 60], Rect2(time_rect.position.x + 84, time_rect.position.y, time_rect.size.x - 100, time_rect.size.y), 28, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
 	tl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	p.set_meta("recipe", rect)

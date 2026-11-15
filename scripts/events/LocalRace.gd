@@ -114,6 +114,8 @@ static func join() -> Dictionary:
 	var cur: Dictionary = s.get("current", {})
 	if not cur.is_empty() and cur.get("group", {}).get("state", "") != "ended":
 		return {"ok": true}  # 这一局还没比完：还是这一局
+	if not ActivitySchedule.scheduled("race"):
+		return {"ok": false, "message": ActivitySchedule.closed_message("race")}
 	var rng := G.random_for("banana")
 	var now := G.now()
 	var dur := float(rl.get("duration_sec", 14400))
@@ -141,6 +143,15 @@ static func join() -> Dictionary:
 		"state": "running", "members": ms}, "me": {"score": 0.0}}
 	G.save_game()
 	return {"ok": true}
+
+## 这一局还没比完，或者比完了还有结果没领。
+static func busy() -> bool:
+	var s := state()
+	var g: Dictionary = s.get("current", {}).get("group", {})
+	if not g.is_empty() and str(g.get("state", "")) != "ended": return true
+	for r in s.get("results", []):
+		if r is Dictionary and not bool(r.get("claimed", false)) and not (r.get("me", {}).get("reward", []) as Array).is_empty(): return true
+	return false
 
 static func order(items: Array) -> void:
 	tick()
