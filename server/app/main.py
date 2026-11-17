@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from . import api_auth, api_economy, api_payments, api_public, api_save, errors, logs
+from . import api_auth, api_economy, api_payments, api_public, api_save, api_tiger, errors, logs
 from .config import get_settings
 from .db import init_engine
 from .errors import body
@@ -68,6 +68,7 @@ def create_app() -> FastAPI:
     app.include_router(api_payments.router)
     app.include_router(api_auth.router)
     app.include_router(api_public.router)
+    app.include_router(api_tiger.router)
     return app
 
 

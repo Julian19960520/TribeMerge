@@ -4,6 +4,6 @@
 	{"id": "cloth", "name": "§names.lines.3a28422f1f71§", "gen": "loom", "main": "cloth", "sub": "armor", "unlock": 8},
 	{"id": "hunt", "name": "§cards.album.5572a0ff6d7b§", "gen": "trap", "main": "beast", "sub": "bird", "unlock": 16, "cooldown": true},
 	{"id": "fire", "name": "§names.lines.714da10d4e05§", "gen": "hearth", "main": "veg", "sub": "roast", "unlock": 24},
-	{"id": "wood", "name": "§names.lines.6321f842d43a§", "gen": "carve", "main": "furn", "sub": "craft", "unlock": 26},
-	{"id": "pot", "name": "§names.lines.558c951ef6bc§", "gen": "kiln", "main": "pot", "sub": "ware", "unlock": 31}
+	{"id": "wood", "name": "§names.lines.6321f842d43a§", "gen": "carve", "main": "furn", "sub": "craft", "unlock": 34},
+	{"id": "pot", "name": "§names.lines.558c951ef6bc§", "gen": "kiln", "main": "pot", "sub": "ware", "unlock": 44}
 ]

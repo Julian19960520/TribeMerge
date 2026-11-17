@@ -177,7 +177,9 @@ func reset_session_views() -> void:
 
 func open(name: String, arg = null) -> PopupBase:
 	var p := PopupRegistry.create(name, arg)
-	if p != null: _attach_popup(p)
+	if p != null:
+		p.set_meta("popup_name", name)
+		_attach_popup(p)
 	return p
 
 ## 展示已提交的奖励；到账只由玩法命令负责。
@@ -251,6 +253,20 @@ func _on_presentation(kind: String, payload: Dictionary) -> void:
 		"overflow":
 			var count := int(payload.get("count", 0))
 			if count > 0: toast(TextCatalog.source("ui.main.d75c2da7d3ed") % count)
+		"tiger_open":
+			_open_tiger_panel(str(payload.get("reason", "")))
+
+func _open_tiger_panel(reason: String) -> void:
+	for p in popup_layer._stack:
+		if is_instance_valid(p) and str(p.get_meta("popup_name", "")) == "tiger":
+			return
+	if reason == "stage_up":
+		await get_tree().create_timer(0.35).timeout
+		if not is_inside_tree(): return
+		for p in popup_layer._stack:
+			if is_instance_valid(p) and str(p.get_meta("popup_name", "")) == "tiger":
+				return
+	open("tiger")
 
 ## 升级的订单宝箱（丰收圣筐全屏动画）播完的时刻
 var _chest_until := 0

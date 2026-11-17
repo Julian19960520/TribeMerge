@@ -96,6 +96,7 @@ func _ready() -> void:
 	G.board_changed.connect(_redraw_cells)
 	G.changed.connect(_redraw_cells)
 	G.board_changed.connect(queue_redraw)
+	G.orders_changed.connect(_redraw_cells)
 	G.orders_changed.connect(queue_redraw)
 	call_deferred("_grant_loose_rewards")
 
@@ -803,6 +804,8 @@ func _draw_cell(i: int, ci: CanvasItem = null) -> void:
 			if G.energy >= G.rules.board.gen_cost():
 				# 双倍火种模式：右下角换成紫火
 				Sprites.at(ci, "board_bolt_boost" if G.rules.board.boost_on() else "board_bolt", r.position + Vector2(80, 78))
+	if c["lock"] == 0 and reveal > 0.65 and G.rules.orders.cell_has_craft_xp(i):
+		_draw_craft_xp_badge(ctr + nudge, sc, ci)
 
 ## 不那那、琥珀、沙漏、火种合到最高级后不能再合，右下角显示皇冠标志
 const MAX_BADGE_CHAINS := ["shell", "amber", "sand", "fire"]
@@ -820,6 +823,11 @@ func _draw_max_badge(r: Rect2, ci: CanvasItem = null) -> void:
 	ci.draw_texture_rect(MAX_CROWN, Rect2(-23, -18, 46, 36), false)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+## 带经验的制作订单完成后，在棋盘物品右上角显示经验图标
+func _draw_craft_xp_badge(ctr: Vector2, sc: float = 1.0, ci: CanvasItem = null) -> void:
+	if ci == null: ci = self
+	Art.item(ci, "xp_1", ctr + Vector2(26, -26) * sc, 32.0 * sc)
+
 static func _sec_text(sec: int) -> String:
 	sec = maxi(sec, 0)
 	if sec >= 3600:
@@ -834,6 +842,8 @@ func _draw_cook(i: int, r: Rect2, ck: Dictionary, ci: CanvasItem = null) -> void
 	if bool(ck.get("finished", false)):
 		Art.item(ci, str(ck["dish"]), r.get_center(), ITEM)
 		_draw_egen_pill(r, i, TextCatalog.source("ui.board.a16245306e4e"), Art.MOSS, ci)
+		if G.rules.orders.cell_has_craft_xp(i):
+			_draw_craft_xp_badge(r.get_center(), 1.0, ci)
 		return
 	var seed: int = i
 	if str(ck.get("uid", "")) != "":

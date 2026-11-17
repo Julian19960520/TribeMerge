@@ -471,6 +471,37 @@ func order_ready(o: Dictionary) -> bool:
 		return str(o.get("phase", "")) == "ready" and board_has(str(o.get("dish", ""))) >= 0
 	return order_cells(o).size() == o["items"].size()
 
+## 棋盘上该格是否为带经验的制作订单已完成的产物
+func cell_has_craft_xp(i: int) -> bool:
+	if i < 0 or i >= state.board.size():
+		return false
+	var c: Dictionary = state.board[i]
+	var ck = c.get("ck")
+	if typeof(ck) == TYPE_DICTIONARY:
+		if not bool(ck.get("finished", false)):
+			return false
+		var uid := str(ck.get("uid", ""))
+		for o in state.orders:
+			if not (o is Dictionary) or str(o.get("kind", "")) != "craft" or str(o.get("uid", "")) != uid:
+				continue
+			var rw = o.get("rw")
+			if rw is Dictionary and int(rw.get("xp", 0)) > 0:
+				return true
+		return false
+	if int(c.get("lock", 2)) != 0 or str(c.get("id", "")) == "":
+		return false
+	for o in state.orders:
+		if not (o is Dictionary) or str(o.get("kind", "")) != "craft":
+			continue
+		if str(o.get("phase", "")) != "ready":
+			continue
+		var rw = o.get("rw")
+		if not (rw is Dictionary) or int(rw.get("xp", 0)) <= 0:
+			continue
+		if i in order_cells(o):
+			return true
+	return false
+
 func craft_mats_ready(o: Dictionary) -> bool:
 	if str(o.get("kind", "")) != "craft" or str(o.get("phase", "need")) != "need":
 		return false

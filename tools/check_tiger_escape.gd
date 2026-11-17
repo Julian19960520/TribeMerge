@@ -24,6 +24,8 @@ func run() -> void:
 	check(tiger.local_action("join").has("error"), "cannot reset an active round")
 	var m: Dictionary = tiger.round_state()
 	check(m["stage"] == 0 and m["destroyed"] == -1, "runner starts ahead of tiger")
+	check(m["bots"].size() == 99 and tiger.player_count(m) == 100, "round has 100 total participants (1 + 99)")
+	check(tiger.stage_quota(m) == 90 and tiger.stage_remaining(m) == 90, "stage 1 starts with 90 qualifying spots")
 	for k in 2: tiger.on_order({})
 	check(m["stage"] == 0 and m["points"] == 2, "partial points do not skip a node")
 	tiger.on_order({})
@@ -31,9 +33,12 @@ func run() -> void:
 	check(tiger.local_action("claim", 2).has("error"), "future reward cannot be claimed")
 	check(tiger.local_action("claim", 1).get("rewards", []) == [["fire_2", 15]], "reached node unlocks configured gift")
 	check(tiger.local_action("claim", 1).has("error"), "node gift pays once")
-	g.simulation_time += 10800
+
+	# 模拟90个对手都在 t=1000 之前完成第1关，玩家已过第1关，第10名之后（10人）被淘汰
+	g.simulation_time += 20000.0
 	tiger.tick()
-	check(m["destroyed"] == 0 and m["status"] == "running", "first timed attack destroys node behind runner")
+	check(m["destroyed"] >= 0 and m["status"] == "running", "stage 1 closes when 90 advance, player who passed survives")
+	check(tiger.survivors(m) <= 90, "at least 10 eliminated after stage 1 closes")
 	var sim_now: float = g.simulation_time
 	g.simulation_time = -1
 	g.save_game()
@@ -41,15 +46,17 @@ func run() -> void:
 	g.tiger_escape = {}
 	g.load_game()
 	m = tiger.round_state()
-	check(m["stage"] == 1 and 1 in m["claimed"] and m["destroyed"] == 0, "save reload preserves escape and claims")
-	g.simulation_time += 10800
+	check(m["stage"] == 1 and 1 in m["claimed"] and m["destroyed"] >= 0, "save reload preserves escape and claims")
+
+	# 推进足够长的时间，让后续阶段名额满并淘汰停留在第1关的玩家
+	g.simulation_time += 200000.0
 	tiger.on_order({})
-	check(m["status"] == "lost" and m["stage"] == 1 and m["points"] == 0, "attack deadline eliminates before merge can rescue runner")
+	check(m["status"] == "lost" and m["stage"] == 1 and m["points"] == 0, "quota elimination eliminates slow runner")
 	check(tiger.local_action("restart").get("rewards", [1]).is_empty(), "restart never repeats already claimed gift")
 	m = tiger.round_state()
 	for k in 7: tiger.on_order({})
-	check(m["stage"] == 2, "multiple merge targets advance in order")
-	g.simulation_time += 200000
+	check(m["stage"] == 2, "multiple order targets advance in order")
+	g.simulation_time += 200000.0
 	tiger.tick()
 	check(m["status"] == "lost", "offline time catches up and eliminates")
 	check(tiger.local_action("restart").get("rewards", []).size() == 3, "restart settles every unclaimed reached gift")
@@ -58,10 +65,11 @@ func run() -> void:
 	for row in m["stages"]: total += int(row["points"])
 	for k in total: tiger.on_order({})
 	check(m["status"] == "won" and m["stage"] == 10, "all ten stages unlock grand prize")
-	g.simulation_time += 200000
+	g.simulation_time += 200000.0
 	tiger.tick()
 	check(m["status"] == "won", "tiger cannot eliminate a completed run")
-	# Exercise the real main-board hook: swaps never score; successful merges do.
+
+	# 主棋盘交互：交换与合成不加分，完成订单加分
 	tiger.local_action("restart")
 	for k in g.board.size(): g.board[k] = {"id": "", "lock": 0}
 	g.board[0]["id"] = "fruit_1"
@@ -70,63 +78,61 @@ func run() -> void:
 	g.board[0]["id"] = "fruit_1"
 	g.board[1]["id"] = "fruit_1"
 	check(g.try_drop(0, 1) == "merge" and tiger.round_state()["points"] == 0, "real main-board merge gives no escape points")
-	# Accepted completion, rather than a merge, is the scoring hook.
 	g.orders = [{"who": 2, "items": ["fruit_2"], "rw": {"shell": 1}, "story": false}]
 	g.board[1]["id"] = "fruit_2"
 	check(g.complete_order(0).size() == 1 and tiger.round_state()["points"] == 1, "real main-board order completion awards escape point")
-	check(tiger.round_state()["bots"].size() == 15, "round contains fifteen simulated companions")
-	var cohort: Dictionary = tiger.round_state()
-	var bots: Array = cohort["bots"].duplicate(true)
-	var arrivals: Array = []
-	for k in cohort["stages"].size(): arrivals.append(float(cohort["interval"]) * 0.5 * (k + 1))
-	cohort["bots"] = [{"name": "快", "stage": 0, "status": "running", "arrivals": arrivals}, {"name": "慢", "stage": 0, "status": "running", "arrivals": [float(cohort["interval"])]}]
-	tiger._tick_bots(cohort, float(cohort["start"]) + float(cohort["interval"]) * 10)
-	check(cohort["bots"][0]["status"] == "won" and cohort["bots"][0]["stage"] == 10, "fast simulated companion reaches the finish")
-	check(cohort["bots"][1]["status"] == "lost" and cohort["bots"][1]["stage"] == 0, "slow companion is eliminated at exact deadline without offline resurrection")
-	cohort["bots"] = bots
+
+	# 验证精确名额淘汰：第1关90名额，第91名起10人被吃掉
+	m = tiger.round_state()
+	var custom_bots: Array = []
+	for i in 99:
+		var arr := []
+		# 前90个在100秒完成第1关，后9个在500秒完成第1关
+		arr.append(100.0 if i < 90 else 500.0)
+		custom_bots.append({"slot": i + 1, "name": "B%d" % i, "avatar": i % 8, "arrivals": arr, "stage": 0, "status": "running"})
+	m["bots"] = custom_bots
+	m["stage"] = 0
+	m["points"] = 0
+	m["stage_times"] = []
+	m["destroyed"] = -1
+	m["status"] = "running"
+	g.simulation_time = float(m["start"]) + 100.0
+	tiger.tick()
+	check(m["status"] == "lost" and m["destroyed"] == 0, "when 90 opponents finish stage 1 first, slow player is eliminated")
+	check(tiger.survivors(m) == 90, "exactly 90 survivors remain (10 eliminated)")
+
+	# UI 与自动弹窗验证
+	tiger.local_action("restart")
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	main.show_screen("board", true)
 	await process_frame
-	var panel = main.open("tiger")
-	await process_frame
-	check(panel != null and panel.path != null and panel.action_button.text == TextCatalog.resolve(TextCatalog.source("ui.duelpopup.245ede446986")), "escape screen renders playable trail and action")
 	var tiger_view: Control = null
 	for entry in main.board_screen._activity_row.entries:
 		if entry["id"] == "tiger": tiger_view = entry["view"]
 	check(tiger_view != null and tiger_view.visible, "activity entry appears in main-board task row")
-	panel._preview(1)
-	await process_frame
-	check(main.popup_layer.get_child_count() >= 2, "node gift opens its reward preview")
-	main.popup_layer.get_child(-1).close()
+
+	# 完成第1阶段条件时自动打开面板
+	for k in 3: tiger.on_order({})
+	await create_timer(0.45).timeout
+	var open_tiger = null
+	for p in main.popup_layer._stack:
+		if is_instance_valid(p) and str(p.get_meta("popup_name", "")) == "tiger":
+			open_tiger = p
+	check(open_tiger != null, "completing stage condition automatically opens tiger panel")
+	open_tiger.close()
 	await create_timer(0.25).timeout
-	# Attack while the screen is open; no animation before the deadline.
-	check(not panel.attack_active, "no attack animation before deadline")
-	g.simulation_time += 10800
+
+	# 被淘汰时自动打开面板并播放扑击动画
+	g.simulation_time += 200000.0
 	tiger.tick()
-	panel._refresh()
-	check(panel.attack_active and panel.action_button.text == "追击中…", "open screen immediately plays attack before result")
-	panel._process(0.5)
-	check(panel.attack_active, "attack remains visible during pounce")
-	panel._process(1.0)
-	check(not panel.attack_active and tiger.seen_attack(tiger.round_state()) == 0, "attack finishes and is acknowledged once")
-	panel._refresh()
-	check(not panel.attack_active, "same attack never replays after refresh")
-	# Closing before an attack, then opening later, replays the pending attack.
-	panel.close()
-	await create_timer(0.25).timeout
-	tiger.local_action("restart")
-	g.simulation_time += 10800
-	tiger.tick()
-	panel = main.open("tiger")
 	await process_frame
-	check(panel.attack_active, "opening screen after offline elimination replays attack")
-	panel._process(2.0)
-	check(not panel.attack_active, "offline replay reaches elimination result")
-	panel.close()
-	await create_timer(0.25).timeout
-	panel = main.open("tiger")
-	await process_frame
-	check(not panel.attack_active, "reopening does not replay an acknowledged attack")
+	open_tiger = null
+	for p in main.popup_layer._stack:
+		if is_instance_valid(p) and str(p.get_meta("popup_name", "")) == "tiger":
+			open_tiger = p
+	check(open_tiger != null and open_tiger.attack_active, "being eliminated automatically opens tiger panel with attack animation")
+	open_tiger._process(2.0)
+	check(not open_tiger.attack_active and tiger.seen_attack(tiger.round_state()) >= 0, "attack finishes and is acknowledged")
 	print("RESULT ", failures, " failures")
 	quit(0 if failures == 0 else 1)

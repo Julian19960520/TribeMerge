@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import (JSON, BigInteger, Boolean, DateTime, ForeignKey, Index, Integer, LargeBinary, String, Text)
+from sqlalchemy import (JSON, BigInteger, Boolean, DateTime, Float, ForeignKey, Index, Integer, LargeBinary, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
@@ -145,3 +145,38 @@ class Grant(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     delivered_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class TigerCohort(Base):
+    """逃离剑齿虎 100 人异步联机房间。"""
+
+    __tablename__ = "tiger_cohorts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    account_id: Mapped[str] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), index=True)
+    start_at: Mapped[float] = mapped_column(Float, default=0.0)
+    player_count: Mapped[int] = mapped_column(Integer, default=100)
+    quotas: Mapped[list] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(16), default="running")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class TigerEntry(Base):
+    """逃离剑齿虎房间内的参赛者（slot 0 为本人，其余优先匹配真实玩家历史异步曲线，不足由影子补位）。"""
+
+    __tablename__ = "tiger_entries"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    cohort_id: Mapped[str] = mapped_column(ForeignKey("tiger_cohorts.id", ondelete="CASCADE"), index=True)
+    slot: Mapped[int] = mapped_column(Integer, default=0)
+    account_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    source_entry_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_bot: Mapped[bool] = mapped_column(Boolean, default=False)
+    name: Mapped[str] = mapped_column(String(64), default="")
+    avatar: Mapped[int] = mapped_column(Integer, default=0)
+    stage: Mapped[int] = mapped_column(Integer, default=0)
+    points: Mapped[int] = mapped_column(Integer, default=0)
+    stage_times: Mapped[list] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(16), default="running")
+    eliminated_stage: Mapped[int] = mapped_column(Integer, default=-1)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    __table_args__ = (Index("ix_tiger_entries_cohort_slot", "cohort_id", "slot", unique=True),)

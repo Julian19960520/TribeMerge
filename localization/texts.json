@@ -21129,6 +21129,19 @@
       "scope": "runtime",
       "placeholders": []
     },
+    "ui.tigerescapeentry.spots": {
+      "category": "ui",
+      "source": "剩%d名",
+      "zh_CN": "剩%d名",
+      "en_US": "",
+      "refs": [
+        "scripts/ui/TigerEscapeEntry.gd:24"
+      ],
+      "scope": "runtime",
+      "placeholders": [
+        "d"
+      ]
+    },
     "ui.tigerescapepopup.01369dbca918": {
       "category": "ui",
       "source": "已摧毁",
@@ -21202,16 +21215,14 @@
     },
     "ui.tigerescapepopup.422bc1b9ceb0": {
       "category": "ui",
-      "source": "每次追击间隔\n%s",
-      "zh_CN": "每次追击间隔\n%s",
+      "source": "100人逃生\n每关淘汰10人",
+      "zh_CN": "100人逃生\n每关淘汰10人",
       "en_US": "",
       "refs": [
         "scripts/ui/TigerEscapePopup.gd:106"
       ],
       "scope": "runtime",
-      "placeholders": [
-        "s"
-      ]
+      "placeholders": []
     },
     "ui.tigerescapepopup.43d137967524": {
       "category": "ui",
@@ -21286,16 +21297,14 @@
     },
     "ui.tigerescapepopup.66b9b632537c": {
       "category": "ui",
-      "source": "帮族人实现心愿获得积分，攒满就向前跳。\n\n剑齿虎每%s摧毁后方一处落脚点。\n你还站在那一处，就会被淘汰。\n\n抵达的礼包随时可领，出局也不丢失。\n离开游戏后，追击仍会继续。\n同场同行者为模拟角色，也会前进与淘汰。",
-      "zh_CN": "帮族人实现心愿获得积分，攒满就向前跳。\n\n剑齿虎每%s摧毁后方一处落脚点。\n你还站在那一处，就会被淘汰。\n\n抵达的礼包随时可领，出局也不丢失。\n离开游戏后，追击仍会继续。\n同场同行者为模拟角色，也会前进与淘汰。",
+      "source": "一共100位族人同场逃生，共分10个阶段。\n完成主棋盘订单获得积分，攒满即可晋级下一阶段。\n\n每个阶段名额有限，最后10名未完成者将被剑齿虎吃掉淘汰！\n\n抵达的礼包随时可领，出局也不丢失。\n离开游戏后，其他族人的进度仍会继续。",
+      "zh_CN": "一共100位族人同场逃生，共分10个阶段。\n完成主棋盘订单获得积分，攒满即可晋级下一阶段。\n\n每个阶段名额有限，最后10名未完成者将被剑齿虎吃掉淘汰！\n\n抵达的礼包随时可领，出局也不丢失。\n离开游戏后，其他族人的进度仍会继续。",
       "en_US": "",
       "refs": [
         "scripts/ui/TigerEscapePopup.gd:185"
       ],
       "scope": "runtime",
-      "placeholders": [
-        "s"
-      ]
+      "placeholders": []
     },
     "ui.tigerescapepopup.68a50bbc84e2": {
       "category": "ui",
@@ -21441,15 +21450,16 @@
     },
     "ui.tigerescapepopup.edc4bd8226a5": {
       "category": "ui",
-      "source": "下次扑击\n%s",
-      "zh_CN": "下次扑击\n%s",
+      "source": "本阶段名额\n剩 %d / %d",
+      "zh_CN": "本阶段名额\n剩 %d / %d",
       "en_US": "",
       "refs": [
         "scripts/ui/TigerEscapePopup.gd:106"
       ],
       "scope": "runtime",
       "placeholders": [
-        "s"
+        "d",
+        "d"
       ]
     },
     "ui.tigerescapepopup.f00b5535bc10": {

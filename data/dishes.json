@@ -206,7 +206,7 @@
 			"fruit_6"
 		],
 		"secs": 600,
-		"unlock": 26
+		"unlock": 34
 	},
 	{
 		"id": "mask",
@@ -217,7 +217,7 @@
 			"gem_3"
 		],
 		"secs": 600,
-		"unlock": 28
+		"unlock": 36
 	},
 	{
 		"id": "chiefseat",
@@ -228,7 +228,7 @@
 			"cloth_5"
 		],
 		"secs": 720,
-		"unlock": 30
+		"unlock": 38
 	},
 	{
 		"id": "potstew",
@@ -239,7 +239,7 @@
 			"veg_4"
 		],
 		"secs": 900,
-		"unlock": 31
+		"unlock": 44
 	},
 	{
 		"id": "drumset",
@@ -250,7 +250,7 @@
 			"furn_4"
 		],
 		"secs": 1200,
-		"unlock": 33
+		"unlock": 46
 	},
 	{
 		"id": "grandfeast",
@@ -262,7 +262,7 @@
 			"bird_1"
 		],
 		"secs": 1800,
-		"unlock": 36
+		"unlock": 48
 	},
 	{
 		"id": "chiefgift",
@@ -274,6 +274,6 @@
 			"cloth_6"
 		],
 		"secs": 2400,
-		"unlock": 39
+		"unlock": 50
 	}
 ]

@@ -1,6 +1,7 @@
 extends Control
 var button: TButton
 var elapsed := 0.0
+var _sync_elapsed := 0.0
 
 func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_IGNORE
@@ -10,6 +11,12 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	elapsed += delta
+	_sync_elapsed += delta
+	if _sync_elapsed >= 20.0:
+		_sync_elapsed = 0.0
+		var m := TigerEscape.round_state()
+		if not m.is_empty() and str(m.get("status", "")) == "running" and Cloud.can_talk():
+			TigerEscape.refresh_from_server()
 	if elapsed >= 1:
 		elapsed = 0
 		button.queue_redraw()
@@ -20,7 +27,7 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	var style := "go"
 	if not m.is_empty():
 		if m["status"] == "running":
-			text = "%d / %d" % [int(m["stage"]), m["stages"].size()]
+			text = TextCatalog.source("ui.tigerescapeentry.spots") % TigerEscape.stage_remaining(m)
 			style = "time"
 		else: text = TextCatalog.source("ui.raceentry.0e4062a72843")
 	# 和其他活动入口同一套：贴纸主题图 + 状态小牌 + 名字（scripts/sprites/events.gd 的 _en_tiger）

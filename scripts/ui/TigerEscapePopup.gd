@@ -56,6 +56,8 @@ func _ready() -> void:
 	UI.lbl(box, TextCatalog.source("ui.tigerescapepopup.c5d9596cdc4e") % int(TigerEscape.config()["points_per_order"]), Rect2(130, 1418, 460, 35), 23, Color("bbceb1"))
 	visual_stage = float(TigerEscape.round_state().get("stage", 0))
 	_refresh(true)
+	if Cloud.can_talk() and not TigerEscape.round_state().is_empty():
+		TigerEscape.refresh_from_server()
 
 func _process(delta: float) -> void:
 	if _closing: return
@@ -101,13 +103,13 @@ func _refresh(first := false) -> void:
 		attack_active = true
 		_focus(attack_node, not first)
 	if attack_active: status = "attacking"
-	cohort_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.57bfcf49487f") % [TigerEscape.survivors(m), m.get("bots", []).size() + 1 if not m.is_empty() else int(TigerEscape.config()["bots"]["count"]) + 1])
+	cohort_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.57bfcf49487f") % [TigerEscape.survivors(m), TigerEscape.player_count(m)])
 	stage_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.68a50bbc84e2") % [stage, count])
-	clock_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.edc4bd8226a5") % G.fmt_time(TigerEscape.attack_left()) if status == "running" else TextCatalog.source("ui.tigerescapepopup.422bc1b9ceb0") % G.fmt_time(int(TigerEscape.config()["attack_interval_sec"])))
+	clock_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.edc4bd8226a5") % [TigerEscape.stage_remaining(m), TigerEscape.stage_quota(m)] if status == "running" else TextCatalog.source("ui.tigerescapepopup.422bc1b9ceb0"))
 	if status == "won": clock_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.630a53f031a3"))
 	elif status == "lost": clock_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.3fe387e551de"))
 	if attack_active: clock_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.96394ca97644"))
-	clock_label.modulate = Color("ff9585") if status == "running" and stage <= int(m.get("destroyed", -1)) + 1 else Color.WHITE
+	clock_label.modulate = Color("ff9585") if status == "running" and TigerEscape.stage_remaining(m) <= 10 else Color.WHITE
 	var rows: Array = m.get("stages", TigerEscape.config()["stages"])
 	var need := int(rows[mini(stage, count - 1)]["points"])
 	score_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.cf517f7ce05b") % [int(m.get("points", 0)), need] if status == "running" else TextCatalog.source("ui.tigerescapepopup.8dbac4d2006c"))
@@ -137,6 +139,8 @@ func _primary() -> void:
 		return
 	working = true
 	var result: Dictionary = await TigerEscape.act("join" if m.is_empty() else "restart")
+	if not result.has("error") and Cloud.can_talk():
+		await TigerEscape.sync_join_server()
 	working = false
 	if not is_inside_tree() or _closing: return
 	if result.has("error"): G.main.toast(str(result["error"]))
@@ -181,8 +185,7 @@ func _preview(n: int) -> void:
 func _instructions() -> void:
 	var p := PopupBase.new()
 	Popups.frame(p, Rect2(68, 400, 584, 610), TextCatalog.source("ui.tigerescapepopup.f92098f45c5a"), Art.OCHRE)
-	var interval := int(TigerEscape.config()["attack_interval_sec"])
-	var text := TextCatalog.source("ui.tigerescapepopup.66b9b632537c") % G.fmt_time(interval)
+	var text := TextCatalog.source("ui.tigerescapepopup.66b9b632537c")
 	var label := UI.lbl(p.box, text, Rect2(108, 508, 504, 390), 26, Art.INK)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	UI.btn(p.box, Rect2(225, 914, 270, 64), TextCatalog.source("ui.tigerescapepopup.e2508646d82f"), "green", p.close, 30)

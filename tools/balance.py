@@ -23,12 +23,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
 
 KNOBS = {
-    "levels": 40,
+    "levels": 50,
     # 每级总共花多少火种（点击），含升级送的火种。(到这一级为止, 点击数)
     # 目标节奏：第 1 天（约 3.5 小时）1→12 级一直有事干；第 2 天 13→15 级偶尔卡体力；
     # 16 级第四产线约第 3 天；之后越来越慢，40 级约第 40 天。
     # 演算校准（2026-11-07，含占位活动）：自动玩家实际花的体力 ≈ 前期 0.52×、后期 0.55× 这里的点击数
-    "taps": [(1, 75), (4, 200), (8, 260), (12, 380), (15, 820), (20, 1050), (25, 1400), (30, 2050), (35, 2450), (40, 2950)],
+    "taps": [(1, 75), (4, 200), (8, 260), (12, 380), (15, 820), (20, 1050), (25, 1400), (30, 2050), (35, 2450), (40, 2950), (45, 3450), (50, 3950)],
     # 第 3 天起每天折合多少点击（体力约 750/天 ÷ 演算校准 0.55），只用来估算天数
     "day_taps": 1350,
     # 每级点击里有多少花在经验订单上，其余给随机单 / 制作单（换不那那）
@@ -269,8 +269,10 @@ def simulate(costs, level_gens):
                         eq[ch] += n * 2 ** (int(lv) - 1)
         lo_t = K["easy_a"] + K["easy_b"] * L
         hi_t = K["hard_a"] + K["hard_b"] * L
-        old_lo = OLD_RANDOM["curves"][0]["diff"][L - 1]
-        old_hi = OLD_RANDOM["curves"][1]["diff"][L - 1]
+        old_lo_arr = OLD_RANDOM["curves"][0]["diff"]
+        old_hi_arr = OLD_RANDOM["curves"][1]["diff"]
+        old_lo = old_lo_arr[min(L - 1, len(old_lo_arr) - 1)]
+        old_hi = old_hi_arr[min(L - 1, len(old_hi_arr) - 1)]
         rows.append({
             "level": L,
             "days": days_of(L),
@@ -646,7 +648,7 @@ if __name__ == "__main__":
     r = out["rows"]
     print("旧设计声望断供等级:", out["old_stuck_level"])
     print("建造总价 旧 %d → 新 %d" % (out["old_total_build"], out["total_build"]))
-    print("到 Lv40 预计天数: %.1f" % r[-1]["cum_days"])
+    print("到 Lv%d 预计天数: %.1f" % (KNOBS["levels"], r[-1]["cum_days"]))
     for x in r[::3] + [r[-1]]:
         print("Lv%2d 效率%.2f 简单%3.0f下 难%4.0f下 | 旧均值%4.0f下 | 剧情%s下 | 收入%5d 累计收%6d 累计建%6d | 生产器%s" % (
             x["level"], x["eff"], x["easy_taps"], x["hard_taps"], x["old_avg_taps"], x["story_order_taps"],
