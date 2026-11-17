@@ -57,9 +57,14 @@ func run() -> void:
 		for rw in t["rewards"]: rewards_ok = rewards_ok and load("res://scripts/Data.gd").is_known(str(rw[0])) and int(rw[1]) > 0
 	check(rewards_ok,"every reward id is a real item")
 	tasks.record("orders",75)
-	check(tasks.done(tasks.find_entry("d7_2",false)),"seventh page completes early without date gate")
+	check(tasks.done(tasks.find_entry("d7_2",false)),"seventh page progress counts early")
 	var d7_pts := int(tasks.find_entry("d7_2",false)["points"])
-	check((await tasks.claim("d7_2")).get("ok",false) and tasks.points() == d7_pts,"individual later-page claim grants points")
+	var pts_before: int = tasks.points()
+	check((await tasks.claim("d7_2")).has("error") and tasks.points() == pts_before and not tasks.ready(6),"seventh page cannot be claimed before the seventh login day")
+	for day_number in range(10,17): tasks.login("2026-10-%02d" % day_number)
+	check(tasks.day_open(6) and tasks.ready(6),"seventh page opens after seven login days")
+	check((await tasks.claim("d7_2")).get("ok",false) and tasks.points() == pts_before + d7_pts,"individual later-page claim grants points")
+	d7_pts = pts_before + d7_pts
 	check((await tasks.claim("d7_2")).has("error") and tasks.points() == d7_pts,"duplicate claim blocked")
 	check((await tasks.claim("p120",true)).has("error"),"unreached milestone blocked")
 	for metric in ["orders","merges","xp","cards","shell","amber","amber_spent"]: tasks.record(metric,10000)

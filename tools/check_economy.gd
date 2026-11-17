@@ -16,7 +16,7 @@ func run() -> void:
 	replay.active = true; replay.authorized = true; replay.meta["free_energy"] = true
 	g.rules.clock._check_day()
 	g.amber = 1000; g.energy = 0; g.energy_buys = 0
-	for expected in [10,20,40,80,80]:
+	for expected in [20,30,40,50,60,60]:
 		check(g.rules.progression.energy_price() == expected, "energy tier %d" % expected)
 		var before: int = g.amber
 		check(g.rules.progression.buy_energy() and g.amber == before-expected, "exact energy charge")
@@ -25,7 +25,7 @@ func run() -> void:
 	check(not g.rules.progression.buy_energy() and g.energy_buys == count, "failed purchase retains tier")
 	g.simulation_time += 86400
 	g.rules.clock._check_day()
-	check(g.energy_buys == 0 and g.rules.progression.energy_price() == 10, "daily tier reset")
+	check(g.energy_buys == 0 and g.rules.progression.energy_price() == 20, "daily tier reset")
 	g.amber = 100
 	var before_sand: int = g.rush
 	var result: Dictionary = replay.perform("resource_buy", {"product":"sand:3"})

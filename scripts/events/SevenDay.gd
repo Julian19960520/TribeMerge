@@ -1,6 +1,7 @@
 class_name SevenDay
 extends RefCounted
-## All seven pages share lifetime counters; page numbers never gate progress.
+## All seven pages share lifetime counters (progress is never gated),
+## but page N's tasks can only be claimed after logging in on N different days.
 static func config() -> Dictionary:
 	return Data.ConfigFiles.shared("res://data/seven_day.json")
 
@@ -45,6 +46,16 @@ static func claimed_count() -> int:
 		for task in day["tasks"]:
 			if got(task): n += 1
 	return n
+## 第 k 页（从 0 起）是否已开放：累计登录天数超过 k
+static func day_open(k: int) -> bool:
+	return int(state()["stats"].get("login_days", 0)) > k
+## 任务在第几页（从 0 起），找不到返回 -1
+static func task_day(id: String) -> int:
+	var days: Array = config()["days"]
+	for k in days.size():
+		for task in days[k]["tasks"]:
+			if str(task["id"]) == id: return k
+	return -1
 static func stage_got(stage: Dictionary) -> bool: return state()["stages"].has(str(stage["id"]))
 static func stage_ready(stage: Dictionary) -> bool: return points() >= int(stage["points"]) and not stage_got(stage)
 static func day_done(day: int) -> bool:
@@ -55,6 +66,7 @@ static func ready(day := -1) -> bool:
 	var days: Array = config()["days"]
 	for k in days.size():
 		if day >= 0 and day != k: continue
+		if not day_open(k): continue
 		for task in days[k]["tasks"]:
 			if done(task) and not got(task): return true
 	if day < 0:
@@ -77,6 +89,9 @@ static func claim(id: String, stage := false) -> Dictionary:
 	var s := state()
 	var book: Dictionary = s["stages"] if stage else s["claimed"]
 	if book.has(id): return {"error": TextCatalog.source("notice.sevenday.426e458a4124")}
+	if not stage:
+		var k := task_day(id)
+		if k >= 0 and not day_open(k): return {"error": TextCatalog.source("notice.sevenday.f5a5ba1c57f7") % (k + 1)}
 	if (points() < int(entry["points"]) if stage else not done(entry)): return {"error": TextCatalog.source("notice.sevenday.042811378798")}
 	book[id] = true
 	Rewards.settle(entry["rewards"])

@@ -1,7 +1,7 @@
 {
 	"cols": 7,
 	"rows": 9,
-	"max_energy": 100,
+	"max_energy": 200,
 	"regen_sec": 120,
 	"random_orders": 4,
 	"order_cap_at": [
@@ -55,7 +55,7 @@
 		3,
 		16
 	],
-	"rush_sec": 60,
+	"rush_sec": 6,
 	"cooldown_order_max_level": 3,
 	"cooldown_order_sub_max_level": 1,
 	"craft_sand_cover": {

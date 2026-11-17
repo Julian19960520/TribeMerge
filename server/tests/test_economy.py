@@ -7,7 +7,7 @@ from app import clock, config, economy
 from conftest import snapshot
 
 
-def buy(player, product="energy", price=10, key=None, **extra):
+def buy(player, product="energy", price=20, key=None, **extra):
     body = {"product": product, "version": economy.current()["version"], "expected_price": price, **extra}
     return player.c.post("/v1/economy/purchases", json=body, headers={**player.h(), "Idempotency-Key": key or uuid.uuid4().hex})
 
@@ -31,13 +31,13 @@ def test_catalog_values_and_regional_prices(client):
 
 def test_energy_price_tiers_and_daily_reset(player):
     assert player.upload(snapshot(amber=1000), 0).status_code == 200
-    for price in (10,20,40,80,80,80):
+    for price in (20,30,40,50,60,60):
         response = buy(player, price=price)
         assert response.status_code == 200, response.text
         assert response.json()["price"] == price
         assert response.json()["grant"]["content"]["rewards"] == [["fire_2",100]]
     clock.offset += 86400
-    assert buy(player, price=10).status_code == 200
+    assert buy(player, price=20).status_code == 200
 
 
 def test_virtual_idempotency_and_reserved_balance(player):
@@ -48,7 +48,7 @@ def test_virtual_idempotency_and_reserved_balance(player):
     assert first.status_code == again.status_code == 200
     assert first.json()["grant"]["id"] == again.json()["grant"]["id"]
     # Undelivered grants reserve their cost; a second call cannot overspend.
-    refused = buy(player, price=20)
+    refused = buy(player, price=30)
     assert refused.status_code == 409 and refused.json()["error"] == "not_enough_amber"
     changed = buy(player, product="shell", price=20, key=key)
     assert changed.status_code == 409 and changed.json()["error"] == "idempotency_key_reused"
@@ -59,7 +59,7 @@ def test_wrong_price_version_and_unknown_product_do_not_consume_tier(player):
     assert buy(player, price=1).json()["error"] == "price_changed"
     assert buy(player, version="old").json()["error"] == "catalog_changed"
     assert buy(player, product="sand:999", price=1).status_code == 404
-    assert buy(player, price=10).status_code == 200
+    assert buy(player, price=20).status_code == 200
 
 
 def test_hourglass_uses_actual_six_second_units(player):

@@ -83,7 +83,7 @@ func run() -> void:
 	check(not r.has("error") and bool(r.get("free", false)) and game.energy == 100 and game.amber == amber, "第一次补体力免费，补满 100")
 	game.energy = 0
 	r = replay.perform("energy", {}, replay.clock)
-	check(not r.has("error") and not r.has("free") and game.amber == amber - 10 and game.energy == 100, "第二次补体力按原价花琥珀")
+	check(not r.has("error") and not r.has("free") and game.amber == amber - 20 and game.energy == 100, "第二次补体力按原价花琥珀")
 
 	_fresh(replay, game, 1)
 	for i in game.board.size():

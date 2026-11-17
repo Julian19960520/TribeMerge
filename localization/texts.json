@@ -6,12 +6,12 @@
     "en_US"
   ],
   "stats": {
-    "unique_texts": 1873,
-    "references": 2496,
+    "unique_texts": 1876,
+    "references": 2615,
     "scopes": {
       "developer": 203,
       "legacy_story": 31,
-      "runtime": 1639
+      "runtime": 1642
     },
     "categories": {
       "cards": 241,
@@ -20,12 +20,12 @@
       "dialogue": 60,
       "legacy_story": 31,
       "names": 385,
-      "notice": 201,
+      "notice": 202,
       "server_notice": 55,
-      "ui": 523
+      "ui": 525
     },
     "translated": {
-      "zh_CN": 1873,
+      "zh_CN": 1876,
       "en_US": 0
     }
   },
@@ -6576,7 +6576,7 @@
       "en_US": "",
       "refs": [
         "addons/tribe_config/editors/pass_editor.gd:12",
-        "scripts/ui/SevenDayPopup.gd:209",
+        "scripts/ui/SevenDayPopup.gd:211",
         "scripts/ui/config/ConfigGrowthPage.gd:287"
       ],
       "scope": "runtime",
@@ -7696,19 +7696,26 @@
       "zh_CN": "这木头纹路真好看。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/25/orders/1/say",
-        "data/story.json#/levels/25/orders/3/say",
-        "data/story.json#/levels/26/orders/0/say",
-        "data/story.json#/levels/26/orders/6/say",
-        "data/story.json#/levels/27/orders/2/say",
-        "data/story.json#/levels/27/orders/5/say",
-        "data/story.json#/levels/28/orders/7/say",
-        "data/story.json#/levels/32/orders/4/say",
         "data/story.json#/levels/33/orders/2/say",
+        "data/story.json#/levels/33/orders/4/say",
         "data/story.json#/levels/34/orders/3/say",
-        "data/story.json#/levels/35/orders/6/say",
-        "data/story.json#/levels/36/orders/7/say",
-        "data/story.json#/levels/37/orders/9/say"
+        "data/story.json#/levels/34/orders/5/say",
+        "data/story.json#/levels/34/orders/6/say",
+        "data/story.json#/levels/35/orders/2/say",
+        "data/story.json#/levels/35/orders/3/say",
+        "data/story.json#/levels/35/orders/4/say",
+        "data/story.json#/levels/35/orders/7/say",
+        "data/story.json#/levels/36/orders/9/say",
+        "data/story.json#/levels/37/orders/0/say",
+        "data/story.json#/levels/38/orders/6/say",
+        "data/story.json#/levels/39/orders/0/say",
+        "data/story.json#/levels/40/orders/8/say",
+        "data/story.json#/levels/41/orders/7/say",
+        "data/story.json#/levels/43/orders/5/say",
+        "data/story.json#/levels/44/orders/3/say",
+        "data/story.json#/levels/46/orders/2/say",
+        "data/story.json#/levels/48/orders/5/say",
+        "data/story.json#/levels/49/orders/9/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7721,12 +7728,15 @@
       "refs": [
         "data/story.json#/levels/1/orders/0/say",
         "data/story.json#/levels/10/orders/2/say",
-        "data/story.json#/levels/13/orders/4/say",
-        "data/story.json#/levels/27/orders/1/say",
-        "data/story.json#/levels/30/orders/2/say",
-        "data/story.json#/levels/33/orders/7/say",
-        "data/story.json#/levels/38/orders/2/say",
-        "data/story.json#/levels/4/orders/3/say"
+        "data/story.json#/levels/12/orders/0/say",
+        "data/story.json#/levels/16/orders/5/say",
+        "data/story.json#/levels/28/orders/5/say",
+        "data/story.json#/levels/31/orders/7/say",
+        "data/story.json#/levels/34/orders/0/say",
+        "data/story.json#/levels/37/orders/2/say",
+        "data/story.json#/levels/4/orders/3/say",
+        "data/story.json#/levels/41/orders/10/say",
+        "data/story.json#/levels/47/orders/1/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7737,7 +7747,7 @@
       "zh_CN": "第一只陶罐烧好了，真结实。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/30/orders/0/say"
+        "data/story.json#/levels/43/orders/0/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7748,12 +7758,20 @@
       "zh_CN": "陶罐能装好多水。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/30/orders/1/say",
-        "data/story.json#/levels/31/orders/3/say",
-        "data/story.json#/levels/32/orders/5/say",
-        "data/story.json#/levels/33/orders/3/say",
-        "data/story.json#/levels/36/orders/3/say",
-        "data/story.json#/levels/38/orders/6/say"
+        "data/story.json#/levels/43/orders/4/say",
+        "data/story.json#/levels/43/orders/8/say",
+        "data/story.json#/levels/44/orders/1/say",
+        "data/story.json#/levels/44/orders/11/say",
+        "data/story.json#/levels/44/orders/4/say",
+        "data/story.json#/levels/44/orders/5/say",
+        "data/story.json#/levels/44/orders/6/say",
+        "data/story.json#/levels/44/orders/7/say",
+        "data/story.json#/levels/45/orders/4/say",
+        "data/story.json#/levels/45/orders/7/say",
+        "data/story.json#/levels/46/orders/10/say",
+        "data/story.json#/levels/46/orders/9/say",
+        "data/story.json#/levels/48/orders/0/say",
+        "data/story.json#/levels/49/orders/10/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7764,22 +7782,27 @@
       "zh_CN": "这把石器真顺手！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/11/orders/1/say",
-        "data/story.json#/levels/12/orders/4/say",
-        "data/story.json#/levels/13/orders/3/say",
-        "data/story.json#/levels/15/orders/1/say",
-        "data/story.json#/levels/18/orders/2/say",
-        "data/story.json#/levels/19/orders/2/say",
-        "data/story.json#/levels/24/orders/6/say",
-        "data/story.json#/levels/26/orders/5/say",
-        "data/story.json#/levels/28/orders/1/say",
-        "data/story.json#/levels/30/orders/3/say",
-        "data/story.json#/levels/32/orders/2/say",
-        "data/story.json#/levels/36/orders/2/say",
-        "data/story.json#/levels/37/orders/8/say",
-        "data/story.json#/levels/39/orders/2/say",
-        "data/story.json#/levels/5/orders/1/say",
-        "data/story.json#/levels/6/orders/2/say",
+        "data/story.json#/levels/11/orders/0/say",
+        "data/story.json#/levels/16/orders/2/say",
+        "data/story.json#/levels/18/orders/1/say",
+        "data/story.json#/levels/19/orders/3/say",
+        "data/story.json#/levels/21/orders/5/say",
+        "data/story.json#/levels/24/orders/4/say",
+        "data/story.json#/levels/28/orders/2/say",
+        "data/story.json#/levels/30/orders/5/say",
+        "data/story.json#/levels/31/orders/5/say",
+        "data/story.json#/levels/31/orders/6/say",
+        "data/story.json#/levels/32/orders/7/say",
+        "data/story.json#/levels/33/orders/8/say",
+        "data/story.json#/levels/35/orders/1/say",
+        "data/story.json#/levels/37/orders/4/say",
+        "data/story.json#/levels/38/orders/9/say",
+        "data/story.json#/levels/40/orders/0/say",
+        "data/story.json#/levels/41/orders/8/say",
+        "data/story.json#/levels/46/orders/3/say",
+        "data/story.json#/levels/49/orders/0/say",
+        "data/story.json#/levels/5/orders/2/say",
+        "data/story.json#/levels/6/orders/3/say",
         "data/story.json#/levels/7/orders/1/say",
         "data/story.json#/levels/9/orders/1/say"
       ],
@@ -7792,18 +7815,27 @@
       "zh_CN": "新衣服好软！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/10/orders/3/say",
-        "data/story.json#/levels/12/orders/2/say",
-        "data/story.json#/levels/14/orders/2/say",
-        "data/story.json#/levels/16/orders/2/say",
-        "data/story.json#/levels/18/orders/4/say",
-        "data/story.json#/levels/21/orders/4/say",
-        "data/story.json#/levels/23/orders/0/say",
-        "data/story.json#/levels/24/orders/5/say",
-        "data/story.json#/levels/28/orders/4/say",
-        "data/story.json#/levels/33/orders/8/say",
-        "data/story.json#/levels/35/orders/1/say",
-        "data/story.json#/levels/37/orders/2/say",
+        "data/story.json#/levels/11/orders/1/say",
+        "data/story.json#/levels/13/orders/1/say",
+        "data/story.json#/levels/14/orders/1/say",
+        "data/story.json#/levels/15/orders/4/say",
+        "data/story.json#/levels/19/orders/4/say",
+        "data/story.json#/levels/21/orders/1/say",
+        "data/story.json#/levels/22/orders/5/say",
+        "data/story.json#/levels/26/orders/1/say",
+        "data/story.json#/levels/26/orders/7/say",
+        "data/story.json#/levels/27/orders/3/say",
+        "data/story.json#/levels/30/orders/0/say",
+        "data/story.json#/levels/31/orders/4/say",
+        "data/story.json#/levels/32/orders/6/say",
+        "data/story.json#/levels/37/orders/1/say",
+        "data/story.json#/levels/38/orders/1/say",
+        "data/story.json#/levels/40/orders/2/say",
+        "data/story.json#/levels/42/orders/5/say",
+        "data/story.json#/levels/46/orders/11/say",
+        "data/story.json#/levels/47/orders/6/say",
+        "data/story.json#/levels/47/orders/7/say",
+        "data/story.json#/levels/48/orders/10/say",
         "data/story.json#/levels/8/orders/0/say",
         "data/story.json#/levels/9/orders/2/say"
       ],
@@ -7816,18 +7848,22 @@
       "zh_CN": "够全部落吃三天。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/15/orders/2/say",
-        "data/story.json#/levels/16/orders/1/say",
-        "data/story.json#/levels/16/orders/4/say",
-        "data/story.json#/levels/17/orders/4/say",
+        "data/story.json#/levels/15/orders/3/say",
+        "data/story.json#/levels/17/orders/0/say",
+        "data/story.json#/levels/17/orders/5/say",
         "data/story.json#/levels/19/orders/5/say",
-        "data/story.json#/levels/20/orders/5/say",
-        "data/story.json#/levels/22/orders/3/say",
-        "data/story.json#/levels/29/orders/3/say",
-        "data/story.json#/levels/31/orders/6/say",
-        "data/story.json#/levels/34/orders/8/say",
-        "data/story.json#/levels/36/orders/4/say",
-        "data/story.json#/levels/38/orders/3/say"
+        "data/story.json#/levels/20/orders/4/say",
+        "data/story.json#/levels/21/orders/4/say",
+        "data/story.json#/levels/23/orders/2/say",
+        "data/story.json#/levels/26/orders/2/say",
+        "data/story.json#/levels/28/orders/1/say",
+        "data/story.json#/levels/29/orders/5/say",
+        "data/story.json#/levels/33/orders/6/say",
+        "data/story.json#/levels/35/orders/6/say",
+        "data/story.json#/levels/36/orders/8/say",
+        "data/story.json#/levels/38/orders/8/say",
+        "data/story.json#/levels/46/orders/8/say",
+        "data/story.json#/levels/49/orders/3/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7849,15 +7885,12 @@
       "zh_CN": "丰收的季节到了。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/11/orders/3/say",
         "data/story.json#/levels/2/orders/0/say",
-        "data/story.json#/levels/21/orders/0/say",
+        "data/story.json#/levels/23/orders/5/say",
         "data/story.json#/levels/25/orders/4/say",
-        "data/story.json#/levels/35/orders/5/say",
-        "data/story.json#/levels/37/orders/7/say",
-        "data/story.json#/levels/39/orders/6/say",
-        "data/story.json#/levels/4/orders/1/say",
-        "data/story.json#/levels/6/orders/0/say"
+        "data/story.json#/levels/28/orders/0/say",
+        "data/story.json#/levels/39/orders/1/say",
+        "data/story.json#/levels/4/orders/1/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7868,15 +7901,18 @@
       "zh_CN": "我也想捏一个！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/30/orders/6/say",
-        "data/story.json#/levels/31/orders/0/say",
-        "data/story.json#/levels/31/orders/4/say",
-        "data/story.json#/levels/31/orders/5/say",
-        "data/story.json#/levels/32/orders/0/say",
-        "data/story.json#/levels/32/orders/7/say",
-        "data/story.json#/levels/34/orders/0/say",
-        "data/story.json#/levels/36/orders/9/say",
-        "data/story.json#/levels/37/orders/3/say"
+        "data/story.json#/levels/43/orders/10/say",
+        "data/story.json#/levels/43/orders/3/say",
+        "data/story.json#/levels/44/orders/10/say",
+        "data/story.json#/levels/44/orders/2/say",
+        "data/story.json#/levels/44/orders/9/say",
+        "data/story.json#/levels/45/orders/2/say",
+        "data/story.json#/levels/45/orders/9/say",
+        "data/story.json#/levels/46/orders/7/say",
+        "data/story.json#/levels/47/orders/8/say",
+        "data/story.json#/levels/48/orders/4/say",
+        "data/story.json#/levels/48/orders/6/say",
+        "data/story.json#/levels/49/orders/7/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7887,12 +7923,16 @@
       "zh_CN": "我一口气吃了三个！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/13/orders/2/say",
         "data/story.json#/levels/2/orders/2/say",
-        "data/story.json#/levels/29/orders/6/say",
-        "data/story.json#/levels/36/orders/1/say",
-        "data/story.json#/levels/38/orders/7/say",
-        "data/story.json#/levels/4/orders/2/say"
+        "data/story.json#/levels/20/orders/5/say",
+        "data/story.json#/levels/22/orders/2/say",
+        "data/story.json#/levels/27/orders/0/say",
+        "data/story.json#/levels/29/orders/1/say",
+        "data/story.json#/levels/35/orders/8/say",
+        "data/story.json#/levels/4/orders/2/say",
+        "data/story.json#/levels/40/orders/10/say",
+        "data/story.json#/levels/42/orders/2/say",
+        "data/story.json#/levels/47/orders/0/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7904,13 +7944,18 @@
       "en_US": "",
       "refs": [
         "data/story.json#/levels/0/orders/1/say",
-        "data/story.json#/levels/11/orders/2/say",
+        "data/story.json#/levels/10/orders/3/say",
+        "data/story.json#/levels/16/orders/0/say",
         "data/story.json#/levels/19/orders/1/say",
-        "data/story.json#/levels/24/orders/4/say",
-        "data/story.json#/levels/29/orders/7/say",
+        "data/story.json#/levels/27/orders/1/say",
         "data/story.json#/levels/3/orders/0/say",
-        "data/story.json#/levels/34/orders/1/say",
-        "data/story.json#/levels/5/orders/3/say"
+        "data/story.json#/levels/30/orders/2/say",
+        "data/story.json#/levels/36/orders/5/say",
+        "data/story.json#/levels/39/orders/3/say",
+        "data/story.json#/levels/41/orders/2/say",
+        "data/story.json#/levels/47/orders/11/say",
+        "data/story.json#/levels/49/orders/4/say",
+        "data/story.json#/levels/5/orders/1/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7921,15 +7966,19 @@
       "zh_CN": "烤得真香！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/20/orders/6/say",
-        "data/story.json#/levels/21/orders/6/say",
-        "data/story.json#/levels/22/orders/4/say",
-        "data/story.json#/levels/22/orders/5/say",
-        "data/story.json#/levels/29/orders/4/say",
-        "data/story.json#/levels/33/orders/4/say",
-        "data/story.json#/levels/35/orders/2/say",
-        "data/story.json#/levels/37/orders/5/say",
-        "data/story.json#/levels/39/orders/0/say"
+        "data/story.json#/levels/23/orders/1/say",
+        "data/story.json#/levels/24/orders/2/say",
+        "data/story.json#/levels/24/orders/3/say",
+        "data/story.json#/levels/24/orders/7/say",
+        "data/story.json#/levels/26/orders/4/say",
+        "data/story.json#/levels/29/orders/6/say",
+        "data/story.json#/levels/32/orders/0/say",
+        "data/story.json#/levels/34/orders/4/say",
+        "data/story.json#/levels/39/orders/5/say",
+        "data/story.json#/levels/41/orders/3/say",
+        "data/story.json#/levels/43/orders/1/say",
+        "data/story.json#/levels/46/orders/1/say",
+        "data/story.json#/levels/48/orders/8/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7940,18 +7989,24 @@
       "zh_CN": "好工具才有好猎手。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/11/orders/0/say",
-        "data/story.json#/levels/13/orders/1/say",
-        "data/story.json#/levels/19/orders/0/say",
-        "data/story.json#/levels/23/orders/3/say",
-        "data/story.json#/levels/24/orders/7/say",
-        "data/story.json#/levels/28/orders/5/say",
-        "data/story.json#/levels/30/orders/4/say",
-        "data/story.json#/levels/34/orders/6/say",
-        "data/story.json#/levels/37/orders/6/say",
-        "data/story.json#/levels/38/orders/1/say",
-        "data/story.json#/levels/5/orders/2/say",
-        "data/story.json#/levels/6/orders/3/say",
+        "data/story.json#/levels/10/orders/0/say",
+        "data/story.json#/levels/12/orders/2/say",
+        "data/story.json#/levels/14/orders/3/say",
+        "data/story.json#/levels/19/orders/2/say",
+        "data/story.json#/levels/20/orders/6/say",
+        "data/story.json#/levels/22/orders/4/say",
+        "data/story.json#/levels/27/orders/4/say",
+        "data/story.json#/levels/29/orders/7/say",
+        "data/story.json#/levels/31/orders/1/say",
+        "data/story.json#/levels/32/orders/2/say",
+        "data/story.json#/levels/36/orders/6/say",
+        "data/story.json#/levels/37/orders/5/say",
+        "data/story.json#/levels/39/orders/9/say",
+        "data/story.json#/levels/41/orders/1/say",
+        "data/story.json#/levels/42/orders/6/say",
+        "data/story.json#/levels/47/orders/10/say",
+        "data/story.json#/levels/49/orders/11/say",
+        "data/story.json#/levels/6/orders/2/say",
         "data/story.json#/levels/7/orders/2/say"
       ],
       "scope": "legacy_story",
@@ -7963,19 +8018,18 @@
       "zh_CN": "阿石叔叔好厉害！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/15/orders/3/say",
-        "data/story.json#/levels/16/orders/3/say",
-        "data/story.json#/levels/17/orders/3/say",
-        "data/story.json#/levels/20/orders/2/say",
-        "data/story.json#/levels/22/orders/2/say",
-        "data/story.json#/levels/24/orders/2/say",
-        "data/story.json#/levels/26/orders/1/say",
-        "data/story.json#/levels/28/orders/0/say",
-        "data/story.json#/levels/29/orders/5/say",
-        "data/story.json#/levels/33/orders/6/say",
-        "data/story.json#/levels/35/orders/3/say",
-        "data/story.json#/levels/37/orders/1/say",
-        "data/story.json#/levels/39/orders/5/say"
+        "data/story.json#/levels/15/orders/2/say",
+        "data/story.json#/levels/17/orders/2/say",
+        "data/story.json#/levels/17/orders/4/say",
+        "data/story.json#/levels/18/orders/0/say",
+        "data/story.json#/levels/20/orders/3/say",
+        "data/story.json#/levels/22/orders/6/say",
+        "data/story.json#/levels/28/orders/3/say",
+        "data/story.json#/levels/36/orders/2/say",
+        "data/story.json#/levels/37/orders/8/say",
+        "data/story.json#/levels/39/orders/8/say",
+        "data/story.json#/levels/43/orders/9/say",
+        "data/story.json#/levels/46/orders/6/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -7986,18 +8040,24 @@
       "zh_CN": "磨得真快，能削木头了。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/10/orders/0/say",
-        "data/story.json#/levels/12/orders/0/say",
-        "data/story.json#/levels/14/orders/4/say",
-        "data/story.json#/levels/18/orders/1/say",
-        "data/story.json#/levels/19/orders/3/say",
+        "data/story.json#/levels/11/orders/3/say",
+        "data/story.json#/levels/12/orders/3/say",
+        "data/story.json#/levels/14/orders/0/say",
+        "data/story.json#/levels/19/orders/0/say",
         "data/story.json#/levels/21/orders/2/say",
-        "data/story.json#/levels/23/orders/1/say",
-        "data/story.json#/levels/28/orders/6/say",
-        "data/story.json#/levels/31/orders/1/say",
-        "data/story.json#/levels/35/orders/0/say",
-        "data/story.json#/levels/37/orders/4/say",
-        "data/story.json#/levels/39/orders/9/say",
+        "data/story.json#/levels/23/orders/3/say",
+        "data/story.json#/levels/25/orders/1/say",
+        "data/story.json#/levels/29/orders/4/say",
+        "data/story.json#/levels/30/orders/7/say",
+        "data/story.json#/levels/31/orders/3/say",
+        "data/story.json#/levels/32/orders/3/say",
+        "data/story.json#/levels/34/orders/2/say",
+        "data/story.json#/levels/36/orders/1/say",
+        "data/story.json#/levels/38/orders/2/say",
+        "data/story.json#/levels/40/orders/3/say",
+        "data/story.json#/levels/42/orders/3/say",
+        "data/story.json#/levels/45/orders/6/say",
+        "data/story.json#/levels/48/orders/3/say",
         "data/story.json#/levels/6/orders/1/say",
         "data/story.json#/levels/7/orders/3/say"
       ],
@@ -8010,7 +8070,7 @@
       "zh_CN": "火塘生起来了，烤得真香！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/20/orders/0/say"
+        "data/story.json#/levels/23/orders/0/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -8022,11 +8082,15 @@
       "en_US": "",
       "refs": [
         "data/story.json#/levels/1/orders/1/say",
-        "data/story.json#/levels/10/orders/1/say",
-        "data/story.json#/levels/17/orders/0/say",
-        "data/story.json#/levels/29/orders/1/say",
+        "data/story.json#/levels/13/orders/4/say",
+        "data/story.json#/levels/18/orders/2/say",
+        "data/story.json#/levels/22/orders/1/say",
+        "data/story.json#/levels/25/orders/2/say",
         "data/story.json#/levels/3/orders/1/say",
-        "data/story.json#/levels/35/orders/4/say"
+        "data/story.json#/levels/30/orders/3/say",
+        "data/story.json#/levels/40/orders/4/say",
+        "data/story.json#/levels/49/orders/1/say",
+        "data/story.json#/levels/6/orders/0/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -8037,16 +8101,25 @@
       "zh_CN": "老骨头总算暖和了。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/12/orders/3/say",
-        "data/story.json#/levels/14/orders/0/say",
+        "data/story.json#/levels/13/orders/2/say",
+        "data/story.json#/levels/14/orders/2/say",
+        "data/story.json#/levels/16/orders/4/say",
         "data/story.json#/levels/18/orders/5/say",
-        "data/story.json#/levels/23/orders/2/say",
-        "data/story.json#/levels/26/orders/7/say",
-        "data/story.json#/levels/30/orders/5/say",
+        "data/story.json#/levels/20/orders/2/say",
+        "data/story.json#/levels/21/orders/3/say",
+        "data/story.json#/levels/22/orders/0/say",
+        "data/story.json#/levels/26/orders/0/say",
+        "data/story.json#/levels/30/orders/1/say",
+        "data/story.json#/levels/31/orders/0/say",
         "data/story.json#/levels/32/orders/1/say",
-        "data/story.json#/levels/34/orders/2/say",
-        "data/story.json#/levels/36/orders/8/say",
-        "data/story.json#/levels/39/orders/1/say",
+        "data/story.json#/levels/36/orders/7/say",
+        "data/story.json#/levels/37/orders/7/say",
+        "data/story.json#/levels/38/orders/0/say",
+        "data/story.json#/levels/40/orders/1/say",
+        "data/story.json#/levels/41/orders/5/say",
+        "data/story.json#/levels/42/orders/9/say",
+        "data/story.json#/levels/46/orders/4/say",
+        "data/story.json#/levels/47/orders/2/say",
         "data/story.json#/levels/8/orders/1/say",
         "data/story.json#/levels/8/orders/3/say",
         "data/story.json#/levels/9/orders/3/say"
@@ -8060,10 +8133,17 @@
       "zh_CN": "有了陶罐，粮食不怕潮了。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/30/orders/7/say",
-        "data/story.json#/levels/31/orders/2/say",
-        "data/story.json#/levels/32/orders/6/say",
-        "data/story.json#/levels/37/orders/0/say"
+        "data/story.json#/levels/43/orders/2/say",
+        "data/story.json#/levels/43/orders/6/say",
+        "data/story.json#/levels/44/orders/0/say",
+        "data/story.json#/levels/44/orders/8/say",
+        "data/story.json#/levels/45/orders/10/say",
+        "data/story.json#/levels/45/orders/11/say",
+        "data/story.json#/levels/45/orders/5/say",
+        "data/story.json#/levels/45/orders/8/say",
+        "data/story.json#/levels/46/orders/5/say",
+        "data/story.json#/levels/48/orders/1/say",
+        "data/story.json#/levels/49/orders/8/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -8074,16 +8154,20 @@
       "zh_CN": "热乎的吃了不生病。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/20/orders/3/say",
-        "data/story.json#/levels/21/orders/1/say",
-        "data/story.json#/levels/22/orders/1/say",
-        "data/story.json#/levels/22/orders/6/say",
-        "data/story.json#/levels/24/orders/1/say",
-        "data/story.json#/levels/29/orders/2/say",
-        "data/story.json#/levels/31/orders/7/say",
-        "data/story.json#/levels/33/orders/0/say",
-        "data/story.json#/levels/35/orders/8/say",
-        "data/story.json#/levels/39/orders/4/say"
+        "data/story.json#/levels/24/orders/0/say",
+        "data/story.json#/levels/24/orders/5/say",
+        "data/story.json#/levels/24/orders/6/say",
+        "data/story.json#/levels/25/orders/3/say",
+        "data/story.json#/levels/26/orders/6/say",
+        "data/story.json#/levels/27/orders/6/say",
+        "data/story.json#/levels/29/orders/3/say",
+        "data/story.json#/levels/32/orders/8/say",
+        "data/story.json#/levels/34/orders/8/say",
+        "data/story.json#/levels/39/orders/4/say",
+        "data/story.json#/levels/41/orders/9/say",
+        "data/story.json#/levels/42/orders/4/say",
+        "data/story.json#/levels/47/orders/9/say",
+        "data/story.json#/levels/49/orders/2/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -8094,7 +8178,7 @@
       "zh_CN": "木工场开工了，部落要盖大屋了！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/25/orders/0/say"
+        "data/story.json#/levels/33/orders/0/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -8116,16 +8200,18 @@
       "zh_CN": "火塘边香喷喷的。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/20/orders/1/say",
-        "data/story.json#/levels/21/orders/3/say",
-        "data/story.json#/levels/22/orders/0/say",
-        "data/story.json#/levels/24/orders/3/say",
-        "data/story.json#/levels/28/orders/3/say",
+        "data/story.json#/levels/23/orders/4/say",
+        "data/story.json#/levels/24/orders/1/say",
+        "data/story.json#/levels/25/orders/7/say",
+        "data/story.json#/levels/26/orders/5/say",
+        "data/story.json#/levels/28/orders/6/say",
+        "data/story.json#/levels/30/orders/6/say",
+        "data/story.json#/levels/32/orders/4/say",
         "data/story.json#/levels/33/orders/5/say",
-        "data/story.json#/levels/34/orders/7/say",
-        "data/story.json#/levels/36/orders/5/say",
-        "data/story.json#/levels/39/orders/3/say",
-        "data/story.json#/levels/39/orders/7/say"
+        "data/story.json#/levels/39/orders/6/say",
+        "data/story.json#/levels/42/orders/0/say",
+        "data/story.json#/levels/48/orders/2/say",
+        "data/story.json#/levels/49/orders/6/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -8136,20 +8222,21 @@
       "zh_CN": "今天收获不错！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/15/orders/4/say",
-        "data/story.json#/levels/16/orders/0/say",
-        "data/story.json#/levels/16/orders/5/say",
-        "data/story.json#/levels/17/orders/2/say",
-        "data/story.json#/levels/17/orders/5/say",
-        "data/story.json#/levels/18/orders/0/say",
-        "data/story.json#/levels/20/orders/4/say",
-        "data/story.json#/levels/23/orders/5/say",
-        "data/story.json#/levels/26/orders/4/say",
-        "data/story.json#/levels/29/orders/0/say",
-        "data/story.json#/levels/34/orders/5/say",
-        "data/story.json#/levels/36/orders/6/say",
-        "data/story.json#/levels/38/orders/9/say",
-        "data/story.json#/levels/39/orders/8/say"
+        "data/story.json#/levels/16/orders/3/say",
+        "data/story.json#/levels/17/orders/3/say",
+        "data/story.json#/levels/18/orders/4/say",
+        "data/story.json#/levels/20/orders/0/say",
+        "data/story.json#/levels/22/orders/3/say",
+        "data/story.json#/levels/25/orders/6/say",
+        "data/story.json#/levels/27/orders/2/say",
+        "data/story.json#/levels/28/orders/4/say",
+        "data/story.json#/levels/28/orders/7/say",
+        "data/story.json#/levels/36/orders/4/say",
+        "data/story.json#/levels/37/orders/6/say",
+        "data/story.json#/levels/39/orders/2/say",
+        "data/story.json#/levels/41/orders/0/say",
+        "data/story.json#/levels/45/orders/0/say",
+        "data/story.json#/levels/47/orders/3/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -8160,14 +8247,17 @@
       "zh_CN": "甜甜的，还想要！",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/13/orders/0/say",
-        "data/story.json#/levels/17/orders/1/say",
-        "data/story.json#/levels/19/orders/4/say",
+        "data/story.json#/levels/12/orders/4/say",
         "data/story.json#/levels/2/orders/1/say",
-        "data/story.json#/levels/24/orders/0/say",
-        "data/story.json#/levels/32/orders/3/say",
-        "data/story.json#/levels/38/orders/4/say",
-        "data/story.json#/levels/4/orders/0/say"
+        "data/story.json#/levels/20/orders/1/say",
+        "data/story.json#/levels/27/orders/5/say",
+        "data/story.json#/levels/29/orders/2/say",
+        "data/story.json#/levels/32/orders/5/say",
+        "data/story.json#/levels/38/orders/3/say",
+        "data/story.json#/levels/4/orders/0/say",
+        "data/story.json#/levels/40/orders/6/say",
+        "data/story.json#/levels/45/orders/3/say",
+        "data/story.json#/levels/49/orders/5/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -8190,10 +8280,20 @@
       "en_US": "",
       "refs": [
         "data/story.json#/levels/1/orders/2/say",
-        "data/story.json#/levels/12/orders/1/say",
-        "data/story.json#/levels/23/orders/6/say",
+        "data/story.json#/levels/11/orders/2/say",
+        "data/story.json#/levels/13/orders/0/say",
+        "data/story.json#/levels/15/orders/1/say",
+        "data/story.json#/levels/17/orders/1/say",
+        "data/story.json#/levels/25/orders/0/say",
+        "data/story.json#/levels/27/orders/7/say",
+        "data/story.json#/levels/29/orders/0/say",
         "data/story.json#/levels/3/orders/2/say",
-        "data/story.json#/levels/38/orders/5/say"
+        "data/story.json#/levels/36/orders/0/say",
+        "data/story.json#/levels/38/orders/4/say",
+        "data/story.json#/levels/40/orders/9/say",
+        "data/story.json#/levels/42/orders/7/say",
+        "data/story.json#/levels/48/orders/9/say",
+        "data/story.json#/levels/5/orders/3/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -8204,15 +8304,28 @@
       "zh_CN": "冬天不怕冷了。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/14/orders/1/say",
-        "data/story.json#/levels/14/orders/3/say",
+        "data/story.json#/levels/10/orders/1/say",
+        "data/story.json#/levels/12/orders/1/say",
+        "data/story.json#/levels/13/orders/3/say",
+        "data/story.json#/levels/14/orders/4/say",
+        "data/story.json#/levels/16/orders/1/say",
         "data/story.json#/levels/18/orders/3/say",
-        "data/story.json#/levels/21/orders/5/say",
-        "data/story.json#/levels/23/orders/4/say",
-        "data/story.json#/levels/27/orders/0/say",
-        "data/story.json#/levels/32/orders/8/say",
-        "data/story.json#/levels/35/orders/7/say",
-        "data/story.json#/levels/38/orders/0/say",
+        "data/story.json#/levels/21/orders/0/say",
+        "data/story.json#/levels/21/orders/6/say",
+        "data/story.json#/levels/23/orders/6/say",
+        "data/story.json#/levels/25/orders/5/say",
+        "data/story.json#/levels/26/orders/3/say",
+        "data/story.json#/levels/30/orders/4/say",
+        "data/story.json#/levels/31/orders/2/say",
+        "data/story.json#/levels/37/orders/3/say",
+        "data/story.json#/levels/39/orders/7/say",
+        "data/story.json#/levels/40/orders/5/say",
+        "data/story.json#/levels/41/orders/6/say",
+        "data/story.json#/levels/42/orders/10/say",
+        "data/story.json#/levels/42/orders/8/say",
+        "data/story.json#/levels/46/orders/0/say",
+        "data/story.json#/levels/47/orders/5/say",
+        "data/story.json#/levels/48/orders/11/say",
         "data/story.json#/levels/8/orders/2/say",
         "data/story.json#/levels/9/orders/0/say"
       ],
@@ -8225,21 +8338,24 @@
       "zh_CN": "大屋里终于有凳子坐了。",
       "en_US": "",
       "refs": [
-        "data/story.json#/levels/25/orders/2/say",
-        "data/story.json#/levels/25/orders/5/say",
-        "data/story.json#/levels/25/orders/6/say",
-        "data/story.json#/levels/25/orders/7/say",
-        "data/story.json#/levels/26/orders/2/say",
-        "data/story.json#/levels/26/orders/3/say",
-        "data/story.json#/levels/27/orders/3/say",
-        "data/story.json#/levels/27/orders/4/say",
-        "data/story.json#/levels/27/orders/6/say",
-        "data/story.json#/levels/27/orders/7/say",
-        "data/story.json#/levels/28/orders/2/say",
         "data/story.json#/levels/33/orders/1/say",
-        "data/story.json#/levels/34/orders/4/say",
-        "data/story.json#/levels/36/orders/0/say",
-        "data/story.json#/levels/38/orders/8/say"
+        "data/story.json#/levels/33/orders/3/say",
+        "data/story.json#/levels/33/orders/7/say",
+        "data/story.json#/levels/34/orders/1/say",
+        "data/story.json#/levels/34/orders/7/say",
+        "data/story.json#/levels/35/orders/0/say",
+        "data/story.json#/levels/35/orders/5/say",
+        "data/story.json#/levels/36/orders/3/say",
+        "data/story.json#/levels/37/orders/9/say",
+        "data/story.json#/levels/38/orders/5/say",
+        "data/story.json#/levels/38/orders/7/say",
+        "data/story.json#/levels/40/orders/7/say",
+        "data/story.json#/levels/41/orders/4/say",
+        "data/story.json#/levels/42/orders/1/say",
+        "data/story.json#/levels/43/orders/7/say",
+        "data/story.json#/levels/45/orders/1/say",
+        "data/story.json#/levels/47/orders/4/say",
+        "data/story.json#/levels/48/orders/7/say"
       ],
       "scope": "legacy_story",
       "placeholders": []
@@ -12527,8 +12643,8 @@
       "zh_CN": "棋盘满了，先腾出一个空格",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:366",
-        "scripts/domain/BoardRules.gd:377"
+        "scripts/domain/BoardRules.gd:368",
+        "scripts/domain/BoardRules.gd:379"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12551,7 +12667,7 @@
       "zh_CN": "族人要的东西都齐了，先送过去吧",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:379"
+        "scripts/domain/BoardRules.gd:381"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12562,7 +12678,7 @@
       "zh_CN": "宝箱正在打开",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:361"
+        "scripts/domain/BoardRules.gd:363"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12590,8 +12706,8 @@
       "zh_CN": "宝箱已不在原位置",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:360",
-        "scripts/domain/BoardRules.gd:371",
+        "scripts/domain/BoardRules.gd:362",
+        "scripts/domain/BoardRules.gd:373",
         "scripts/events/ChoiceChest.gd:9"
       ],
       "scope": "runtime",
@@ -12603,7 +12719,7 @@
       "zh_CN": "族人要的东西都齐了，先送过去再开吧",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:363"
+        "scripts/domain/BoardRules.gd:365"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12614,7 +12730,7 @@
       "zh_CN": "宝箱现在打不开",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:370"
+        "scripts/domain/BoardRules.gd:372"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13455,7 +13571,7 @@
         "scripts/events/DuelRace.gd:96",
         "scripts/events/FossilDig.gd:111",
         "scripts/events/MergeEvent.gd:396",
-        "scripts/events/TigerEscape.gd:132"
+        "scripts/events/TigerEscape.gd:296"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13593,7 +13709,7 @@
       "en_US": "",
       "refs": [
         "scripts/Game.gd:455",
-        "scripts/ui/Board.gd:828",
+        "scripts/ui/Board.gd:836",
         "scripts/ui/MergeEventEntry.gd:37"
       ],
       "scope": "runtime",
@@ -13917,7 +14033,7 @@
       "zh_CN": "还没做好",
       "en_US": "",
       "refs": [
-        "scripts/domain/OrderRules.gd:762"
+        "scripts/domain/OrderRules.gd:793"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14769,7 +14885,7 @@
       "zh_CN": "尚未完成",
       "en_US": "",
       "refs": [
-        "scripts/events/SevenDay.gd:80"
+        "scripts/events/SevenDay.gd:95"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14780,16 +14896,16 @@
       "zh_CN": "已领取",
       "en_US": "",
       "refs": [
-        "scripts/events/SevenDay.gd:79",
+        "scripts/events/SevenDay.gd:91",
         "scripts/replay/Reducer.gd:136",
         "scripts/ui/DuelPopup.gd:318",
         "scripts/ui/FossilDigPopup.gd:306",
         "scripts/ui/MergeEventPopup.gd:288",
         "scripts/ui/PassPopup.gd:279",
-        "scripts/ui/SevenDayPopup.gd:226",
-        "scripts/ui/SevenDayPopup.gd:257",
-        "scripts/ui/TigerEscapePopup.gd:162",
-        "scripts/ui/TigerEscapePopup.gd:237",
+        "scripts/ui/SevenDayPopup.gd:228",
+        "scripts/ui/SevenDayPopup.gd:266",
+        "scripts/ui/TigerEscapePopup.gd:166",
+        "scripts/ui/TigerEscapePopup.gd:240",
         "scripts/ui/popups/CollectionPopups.gd:111",
         "scripts/ui/popups/ShopPopups.gd:292",
         "scripts/ui/popups/ShopPopups.gd:435"
@@ -14803,10 +14919,23 @@
       "zh_CN": "任务不存在",
       "en_US": "",
       "refs": [
-        "scripts/events/SevenDay.gd:76"
+        "scripts/events/SevenDay.gd:88"
       ],
       "scope": "runtime",
       "placeholders": []
+    },
+    "notice.sevenday.f5a5ba1c57f7": {
+      "category": "notice",
+      "source": "第%d天开放",
+      "zh_CN": "第%d天开放",
+      "en_US": "",
+      "refs": [
+        "scripts/events/SevenDay.gd:94"
+      ],
+      "scope": "runtime",
+      "placeholders": [
+        "d"
+      ]
     },
     "notice.sprites.371a27c749c2": {
       "category": "notice",
@@ -14827,8 +14956,8 @@
       "zh_CN": "同行者",
       "en_US": "",
       "refs": [
-        "scripts/events/TigerEscape.gd:29",
-        "scripts/events/TigerEscape.gd:38"
+        "scripts/events/TigerEscape.gd:44",
+        "scripts/events/TigerEscape.gd:54"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14839,7 +14968,7 @@
       "zh_CN": "请先开始逃生",
       "en_US": "",
       "refs": [
-        "scripts/events/TigerEscape.gd:119"
+        "scripts/events/TigerEscape.gd:263"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14850,7 +14979,7 @@
       "zh_CN": "%d级解锁逃离剑齿虎",
       "en_US": "",
       "refs": [
-        "scripts/events/TigerEscape.gd:109"
+        "scripts/events/TigerEscape.gd:253"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -14863,7 +14992,7 @@
       "zh_CN": "这局逃生还没结束",
       "en_US": "",
       "refs": [
-        "scripts/events/TigerEscape.gd:117"
+        "scripts/events/TigerEscape.gd:261"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14874,7 +15003,7 @@
       "zh_CN": "礼包尚未到达或已领取",
       "en_US": "",
       "refs": [
-        "scripts/events/TigerEscape.gd:129"
+        "scripts/events/TigerEscape.gd:293"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14885,7 +15014,7 @@
       "zh_CN": "请结算后再出发",
       "en_US": "",
       "refs": [
-        "scripts/events/TigerEscape.gd:118"
+        "scripts/events/TigerEscape.gd:262"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -15958,7 +16087,7 @@
       "zh_CN": "还在制作，还要 %s",
       "en_US": "",
       "refs": [
-        "scripts/ui/Board.gd:542"
+        "scripts/ui/Board.gd:543"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -15971,7 +16100,7 @@
       "zh_CN": "%d秒",
       "en_US": "",
       "refs": [
-        "scripts/ui/Board.gd:829"
+        "scripts/ui/Board.gd:837"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -15984,7 +16113,7 @@
       "zh_CN": "点击取菜",
       "en_US": "",
       "refs": [
-        "scripts/ui/Board.gd:836"
+        "scripts/ui/Board.gd:844"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -15995,7 +16124,7 @@
       "zh_CN": "%d时%02d分",
       "en_US": "",
       "refs": [
-        "scripts/ui/Board.gd:826",
+        "scripts/ui/Board.gd:834",
         "scripts/ui/MergeEventEntry.gd:37"
       ],
       "scope": "runtime",
@@ -17090,7 +17219,7 @@
         "scripts/ui/FossilDigPopup.gd:187",
         "scripts/ui/MergeEventPopup.gd:171",
         "scripts/ui/RacePopup.gd:189",
-        "scripts/ui/TigerEscapePopup.gd:115"
+        "scripts/ui/TigerEscapePopup.gd:117"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -17216,8 +17345,8 @@
         "scripts/ui/MergeEventPopup.gd:120",
         "scripts/ui/PassPopup.gd:274",
         "scripts/ui/RacePopup.gd:380",
-        "scripts/ui/SevenDayPopup.gd:239",
-        "scripts/ui/TigerEscapePopup.gd:162",
+        "scripts/ui/SevenDayPopup.gd:248",
+        "scripts/ui/TigerEscapePopup.gd:166",
         "scripts/ui/popups/CollectionPopups.gd:111",
         "scripts/ui/popups/ShopPopups.gd:296"
       ],
@@ -17282,7 +17411,7 @@
         "scripts/ui/DuelPopup.gd:171",
         "scripts/ui/DuelPopup.gd:195",
         "scripts/ui/DuelPopup.gd:260",
-        "scripts/ui/TigerEscapePopup.gd:266"
+        "scripts/ui/TigerEscapePopup.gd:269"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -18520,7 +18649,7 @@
       "zh_CN": "族人要的 %d 件东西放进了暂存区",
       "en_US": "",
       "refs": [
-        "scripts/Main.gd:276"
+        "scripts/Main.gd:292"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -18533,7 +18662,7 @@
       "zh_CN": "放不下的 %d 个物品进了暂存区",
       "en_US": "",
       "refs": [
-        "scripts/Main.gd:253"
+        "scripts/Main.gd:255"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -18883,7 +19012,7 @@
       "refs": [
         "scripts/ui/MergeEventPopup.gd:299",
         "scripts/ui/RacePopup.gd:380",
-        "scripts/ui/SevenDayPopup.gd:265"
+        "scripts/ui/SevenDayPopup.gd:274"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -19590,7 +19719,7 @@
       "en_US": "",
       "refs": [
         "scripts/ui/RaceEntry.gd:85",
-        "scripts/ui/TigerEscapeEntry.gd:25"
+        "scripts/ui/TigerEscapeEntry.gd:32"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20536,7 +20665,7 @@
       "zh_CN": "阶段奖励",
       "en_US": "",
       "refs": [
-        "scripts/ui/SevenDayPopup.gd:255"
+        "scripts/ui/SevenDayPopup.gd:264"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20547,7 +20676,7 @@
       "zh_CN": "大奖",
       "en_US": "",
       "refs": [
-        "scripts/ui/SevenDayPopup.gd:180"
+        "scripts/ui/SevenDayPopup.gd:181"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20558,7 +20687,7 @@
       "zh_CN": "可领取",
       "en_US": "",
       "refs": [
-        "scripts/ui/SevenDayPopup.gd:231"
+        "scripts/ui/SevenDayPopup.gd:233"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -20595,11 +20724,24 @@
       "zh_CN": "累计 %d 积分可领（还差 %d）",
       "en_US": "",
       "refs": [
-        "scripts/ui/SevenDayPopup.gd:257"
+        "scripts/ui/SevenDayPopup.gd:266"
       ],
       "scope": "runtime",
       "placeholders": [
         "d",
+        "d"
+      ]
+    },
+    "ui.sevendaypopup.ab306ba1f62d": {
+      "category": "ui",
+      "source": "第%d天领",
+      "zh_CN": "第%d天领",
+      "en_US": "",
+      "refs": [
+        "scripts/ui/SevenDayPopup.gd:241"
+      ],
+      "scope": "runtime",
+      "placeholders": [
         "d"
       ]
     },
@@ -20633,7 +20775,7 @@
       "zh_CN": "进行中",
       "en_US": "",
       "refs": [
-        "scripts/ui/SevenDayPopup.gd:237"
+        "scripts/ui/SevenDayPopup.gd:246"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21113,7 +21255,7 @@
       "zh_CN": "剑齿虎逃生",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapeEntry.gd:27"
+        "scripts/ui/TigerEscapeEntry.gd:34"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21124,7 +21266,7 @@
       "zh_CN": "出发",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapeEntry.gd:19"
+        "scripts/ui/TigerEscapeEntry.gd:26"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21135,7 +21277,7 @@
       "zh_CN": "剩%d名",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapeEntry.gd:24"
+        "scripts/ui/TigerEscapeEntry.gd:30"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -21148,7 +21290,7 @@
       "zh_CN": "已摧毁",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:227"
+        "scripts/ui/TigerEscapePopup.gd:230"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21159,8 +21301,8 @@
       "zh_CN": "领取并再逃一次",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:115",
-        "scripts/ui/TigerEscapePopup.gd:118"
+        "scripts/ui/TigerEscapePopup.gd:117",
+        "scripts/ui/TigerEscapePopup.gd:120"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21171,7 +21313,7 @@
       "zh_CN": "已通过%d处落脚点，本局补给已保留",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:117"
+        "scripts/ui/TigerEscapePopup.gd:119"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -21184,7 +21326,7 @@
       "zh_CN": "成功逃脱！终点大奖已解锁",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:114"
+        "scripts/ui/TigerEscapePopup.gd:116"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21195,7 +21337,7 @@
       "zh_CN": "本局已出局\n再试一次",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:108"
+        "scripts/ui/TigerEscapePopup.gd:110"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21206,7 +21348,7 @@
       "zh_CN": "第%d处补给",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:157"
+        "scripts/ui/TigerEscapePopup.gd:161"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -21219,7 +21361,7 @@
       "zh_CN": "100人逃生\n每关淘汰10人",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:106"
+        "scripts/ui/TigerEscapePopup.gd:108"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21230,7 +21372,7 @@
       "zh_CN": "补给",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:237"
+        "scripts/ui/TigerEscapePopup.gd:240"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21241,8 +21383,8 @@
       "zh_CN": "再逃一次",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:115",
-        "scripts/ui/TigerEscapePopup.gd:118"
+        "scripts/ui/TigerEscapePopup.gd:117",
+        "scripts/ui/TigerEscapePopup.gd:120"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21265,7 +21407,7 @@
       "zh_CN": "追击中…",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:115"
+        "scripts/ui/TigerEscapePopup.gd:117"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21276,7 +21418,7 @@
       "zh_CN": "同行存活 %d / %d",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:104"
+        "scripts/ui/TigerEscapePopup.gd:106"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -21290,7 +21432,7 @@
       "zh_CN": "终点已抵达\n成功逃脱",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:107"
+        "scripts/ui/TigerEscapePopup.gd:109"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21301,7 +21443,7 @@
       "zh_CN": "一共100位族人同场逃生，共分10个阶段。\n完成主棋盘订单获得积分，攒满即可晋级下一阶段。\n\n每个阶段名额有限，最后10名未完成者将被剑齿虎吃掉淘汰！\n\n抵达的礼包随时可领，出局也不丢失。\n离开游戏后，其他族人的进度仍会继续。",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:185"
+        "scripts/ui/TigerEscapePopup.gd:188"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21312,7 +21454,7 @@
       "zh_CN": "已逃离\n%d / %d",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:105"
+        "scripts/ui/TigerEscapePopup.gd:107"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -21326,7 +21468,7 @@
       "zh_CN": "抵达后领取",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:162"
+        "scripts/ui/TigerEscapePopup.gd:166"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21337,7 +21479,7 @@
       "zh_CN": "被追上了！已到达的礼包仍可领取",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:114"
+        "scripts/ui/TigerEscapePopup.gd:116"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21348,7 +21490,7 @@
       "zh_CN": "帮族人实现心愿攒满进度，就能向前跳",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:113"
+        "scripts/ui/TigerEscapePopup.gd:115"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21359,7 +21501,7 @@
       "zh_CN": "剑齿虎\n扑过来了！",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:109"
+        "scripts/ui/TigerEscapePopup.gd:111"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21370,7 +21512,7 @@
       "zh_CN": "开始逃生",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:115",
+        "scripts/ui/TigerEscapePopup.gd:117",
         "scripts/ui/TigerEscapePopup.gd:53"
       ],
       "scope": "runtime",
@@ -21395,7 +21537,7 @@
       "zh_CN": "剑齿虎发起攻击！",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:114"
+        "scripts/ui/TigerEscapePopup.gd:116"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21406,7 +21548,7 @@
       "zh_CN": "下一跳  %d / %d",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:113"
+        "scripts/ui/TigerEscapePopup.gd:115"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -21420,7 +21562,7 @@
       "zh_CN": "别停下，剑齿虎正在靠近！",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:114"
+        "scripts/ui/TigerEscapePopup.gd:116"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21431,7 +21573,7 @@
       "zh_CN": "出发点",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:238"
+        "scripts/ui/TigerEscapePopup.gd:241"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -21442,7 +21584,7 @@
       "zh_CN": "明白了",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:188",
+        "scripts/ui/TigerEscapePopup.gd:191",
         "scripts/ui/popups/ShopPopups.gd:109"
       ],
       "scope": "runtime",
@@ -21454,7 +21596,7 @@
       "zh_CN": "本阶段名额\n剩 %d / %d",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:106"
+        "scripts/ui/TigerEscapePopup.gd:108"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -21468,7 +21610,7 @@
       "zh_CN": "抵达终点，赢取逃生大奖",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:114",
+        "scripts/ui/TigerEscapePopup.gd:116",
         "scripts/ui/TigerEscapePopup.gd:40"
       ],
       "scope": "runtime",
@@ -21480,7 +21622,7 @@
       "zh_CN": "逃生法则",
       "en_US": "",
       "refs": [
-        "scripts/ui/TigerEscapePopup.gd:183"
+        "scripts/ui/TigerEscapePopup.gd:187"
       ],
       "scope": "runtime",
       "placeholders": []

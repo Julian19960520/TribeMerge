@@ -46,7 +46,7 @@ func run() -> void:
 		substantial = substantial and OrderRoll.total(recipe["mats"]) >= 32 and int(recipe["secs"]) <= 10
 	check(substantial and seen.size() == 3 and seen.has("cutfruit") and not seen.has("berrybowl") and not seen.has("nutmix"), "5级新制作单使用较高级食材，入门菜退出新订单池，仍10秒内完成")
 	check(Data.DISHES["cutfruit"]["unlock"] == 5 and Data.DISHES["cutfruit"]["mats"] == ["fruit_8"], "5级解锁需要石榴的新制作单")
-	check(Data.random_bounds(5) == Vector2i(32, 96) and Data.random_bounds(6).x >= 32 and Data.random_bounds(6).y >= 96, "5级普通单难度由14～77提高到32～96，后续等级不回落")
+	check(Data.random_bounds(5) == Vector2i(37, 110) and Data.random_bounds(6).x >= 37 and Data.random_bounds(6).y >= 110, "5级普通单难度提高到37～110，后续等级不回落")
 	var acceptable := true
 	for _i in 50:
 		var order: Dictionary = g.rules.orders._make_order(Data.random_slot_target(5, 0))

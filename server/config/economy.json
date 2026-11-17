@@ -29,10 +29,11 @@
   "energy": {
     "amount": 100,
     "prices": [
-      10,
       20,
+      30,
       40,
-      80
+      50,
+      60
     ],
     "reset_utc_offset_hours": 8
   },

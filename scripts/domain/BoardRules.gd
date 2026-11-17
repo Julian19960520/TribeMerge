@@ -130,7 +130,8 @@ func place(i: int, id: String) -> void:
 	state.dirty()
 
 func book_prize(id: String) -> bool:
-	return id != "" and state.discovered.has(id) and not state.book_claimed.has(id)
+	# 1 级物品太多、太好拿，不发图鉴体力（菜没有等级，照发）
+	return id != "" and state.discovered.has(id) and not state.book_claimed.has(id) and (Data.lv(id) != 1 or Data.is_dish(id))
 
 func book_prize_count() -> int:
 	var n = 0
@@ -154,7 +155,8 @@ func claim_book(id: String) -> int:
 	state.book_claimed[id] = true
 	state.dirty()
 	state.changed.emit()
-	return maxi(1, Data.lv(id))
+	# 图鉴体力：低级物品只给 1，高级的接近等级（前期新物品多，不能一下送太多体力）
+	return 1 if Data.lv(id) <= 4 else Data.lv(id) - 3
 
 func discover(id: String) -> bool:
 	if Data.is_numeric_resource(id): return false

@@ -2,7 +2,7 @@ extends PopupBase
 ## 七日任务面板。
 ## 上：成长积分 + 七档阶段奖励轨道（每档一个奖励泡泡，火光沿绳子烧到当前积分；最后一档是大奖）。
 ## 中：当前页五项任务，可领的排最前、已领的沉到最后；左边的积分牌越难越大越鲜艳。
-## 下：七个页签。页签只是「预计第几天能做完」，所有页同时累计、可以提前完成。
+## 下：七个页签。所有页的进度同时累计、可以提前做完，但第 N 页的奖励要累计登录 N 天才能领（没开放的页签挂锁）。
 
 const PANEL := Rect2(28, 180, 664, 1200)
 const TRACK := Rect2(44, 318, 632, 206)
@@ -105,6 +105,7 @@ func _refresh() -> void:
 				ci.draw_circle(Vector2(sz.x - 16, sz.y - 16), 12, Art.MOSS_D)
 				ci.draw_polyline(PackedVector2Array([Vector2(sz.x - 23, sz.y - 16), Vector2(sz.x - 18, sz.y - 11), Vector2(sz.x - 9, sz.y - 22)]), Color.WHITE, 3.5, true)
 			elif SevenDay.ready(k): Paint.badge_num(ci, Vector2(sz.x - 9, 9), 6, 9)
+			elif not SevenDay.day_open(k): Paint.glyph(ci, "lock", Vector2(sz.x - 14, 14), 0.5)
 		tabs[k].queue_redraw()
 
 # ---------------------------------------------------------------- 阶段奖励轨道
@@ -196,7 +197,8 @@ func _task(task: Dictionary, y: float, k: int) -> void:
 	var progress := "%d/%d" % [current, target]
 	if paid: progress = "¥%d/%d" % [current / 100, target / 100]
 	var tier_key: int = pts if TIER.has(pts) else (30 if pts > 30 else 10)
-	var ready := done and not claimed
+	var locked := not SevenDay.day_open(SevenDay.task_day(str(task["id"])))
+	var ready := done and not claimed and not locked
 	UI.box(tasks_root, Rect2(48, y, 624, ROW_H), func(ci, sz):
 		if ready:
 			# 可领：外圈呼吸金光 + 亮黄底 + 绿描边
@@ -231,6 +233,13 @@ func _task(task: Dictionary, y: float, k: int) -> void:
 			EventEntryArt.text(ci, TextCatalog.source("ui.sevendaypopup.54cd6730d6f4"), rib.get_center() + Vector2(0, 7), 18, Color.WHITE, 4))
 	UI.lbl(tasks_root, str(task["title"]), Rect2(160, y + 12, 330, 44), 25, Color("8a7a66") if claimed else Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
 	if claimed: return
+	if done and locked:
+		# 做完了但这一页还没开放：第 N 天登录后才能领
+		var day := SevenDay.task_day(str(task["id"])) + 1
+		UI.box(tasks_root, Rect2(530, y + 34, 128, 56), func(ci, sz):
+			Sprites.draw(ci, "ev_sd_wip", Rect2(Vector2.ZERO, sz))
+			EventEntryArt.text(ci, TextCatalog.source("ui.sevendaypopup.ab306ba1f62d") % day, Vector2(sz.x * 0.5, sz.y * 0.5 + 8), 22, Color("9a8a70"), 0), false)
+		return
 	if not done:
 		UI.box(tasks_root, Rect2(530, y + 34, 128, 56), func(ci, sz):
 			Sprites.draw(ci, "ev_sd_wip", Rect2(Vector2.ZERO, sz))

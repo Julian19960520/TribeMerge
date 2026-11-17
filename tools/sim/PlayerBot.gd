@@ -512,7 +512,7 @@ func rewards() -> bool:
 			return true
 	for day in SevenDay.config()["days"]:
 		for task in day["tasks"]:
-			if SevenDay.done(task) and not SevenDay.got(task):
+			if SevenDay.done(task) and not SevenDay.got(task) and SevenDay.day_open(SevenDay.task_day(str(task["id"]))):
 				command("seven", {"id": str(task["id"]), "stage": false})
 				record_reward("seven_day_task", "七日任务奖励", "任务已完成", {"task":task})
 				return true
