@@ -30,6 +30,9 @@ static func entries() -> Array:
 		"draw": func(ci, r): live_badge_num(ci, r.get_center())})
 	out.append({"key": "check_mark", "w": 34, "h": 34, "pad": 4,
 		"draw": func(ci, r): live_check_mark(ci, r.get_center())})
+	# 订单卡上的「已拥有」：只有一个绿色对勾，没有圆底，免得看着像按钮
+	out.append({"key": "check_tick", "w": 34, "h": 30, "pad": 4,
+		"draw": func(ci, r): live_check_tick(ci, r.get_center())})
 	out.append({"key": "level_badge", "w": 250, "h": 270, "pad": 10,
 		"draw": func(ci, r): live_level_badge(ci, r.get_center(), 220.0)})
 	out.append({"key": "bar_bg", "w": 200, "h": 36, "pad": 6, "nine": [18, 17, 18, 17],
@@ -270,6 +273,14 @@ static func live_check_mark(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	ci.draw_colored_polygon(b, Art.MOSS)
 	ci.draw_polyline(PackedVector2Array([c + Vector2(-6, 0) * s, c + Vector2(-1, 5) * s, c + Vector2(7, -5) * s]), Color.WHITE, 3.5 * s, true)
 
+static func live_check_tick(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
+	var path := PackedVector2Array([c + Vector2(-10, 0) * s, c + Vector2(-3, 7) * s, c + Vector2(11, -8) * s])
+	for w in [11.0, 6.0]:
+		var cl: Color = Art.INK if w > 7.0 else Art.MOSS
+		ci.draw_polyline(path, cl, w * s, true)
+		for p in [path[0], path[2]]: ci.draw_circle(p, w * s * 0.5, cl)
+		ci.draw_circle(path[1], w * s * 0.5, cl)
+
 ## 引导气泡。point_left 时尾巴朝左。
 static func live_speech(ci: CanvasItem, r: Rect2, point_left: bool, seed: int = 8) -> void:
 	var tail_y := r.position.y + r.size.y * 0.56
@@ -310,9 +321,12 @@ static func live_speech_tail(ci: CanvasItem, base: Vector2, point_left: bool) ->
 	var b := base + Vector2(0, 22)
 	var tail := PackedVector2Array([a, tip, b])
 	ci.draw_colored_polygon(tail, Art.BONE)
-	ci.draw_polyline(PackedVector2Array([a + Vector2(0, -1.5), tip, b + Vector2(0, 1.5)]), Art.INK, 3.0, true)
 	var x0 := base.x - 12.0 if point_left else base.x + 12.0
 	var inner := 1.0 if point_left else -1.0
+	# 描边从气泡边上起笔：两条边各自从根部那条竖线（x0）连到尖角，不伸进气泡里面留小黑勾
+	var ea := a.lerp(tip, (a.x - x0) / (a.x - tip.x))
+	var eb := b.lerp(tip, (b.x - x0) / (b.x - tip.x))
+	ci.draw_polyline(PackedVector2Array([ea + Vector2(0, -1.0), tip, eb + Vector2(0, 1.0)]), Art.INK, 3.0, true)
 	# 盖住身子在尾巴根部的描边，让尾巴和身子连成一片
 	ci.draw_colored_polygon(PackedVector2Array([
 		Vector2(x0 - 4.0 * inner, a.y + 3), Vector2(x0 + 8.0 * inner, a.y + 3),

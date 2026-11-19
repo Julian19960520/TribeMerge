@@ -52,6 +52,13 @@ static func tick() -> void:
 static func on_order(order: Dictionary) -> void:
 	for definition in registry():
 		if definition.has("order"): definition["order"].call(order)
+	var gains: Array = ActivityPoints.grant(ActivityPoints.order_points(order))
+	if not gains.is_empty(): G.present("activity_points", {"source": "order", "gains": gains})
+
+## 合成：合出高级物品给活动积分，界面从这一格冒分飞进活动入口。
+static func on_merge(id: String, cell: int) -> void:
+	var gains: Array = ActivityPoints.grant(ActivityPoints.merge_points(id))
+	if not gains.is_empty(): G.present("activity_points", {"source": "merge", "cell": cell, "gains": gains})
 
 static func board_entries() -> Array:
 	registry()

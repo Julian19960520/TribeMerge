@@ -360,7 +360,7 @@ static func new_generator(id: String) -> PopupBase:
 
 	# 名字 + 等级签
 	var name_lbl := UI.lbl(p.box, Data.name_of(id), Rect2(60, hero.y + hero_slot * 0.5 + 18, 600, 56), 42, CREAM, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
-	var chip_text := (TextCatalog.source("ui.rewardpopups.b1f621272c9a") if upgrade else TextCatalog.source("ui.rewardpopups.7e0e60a0eb15")) % lvl
+	var chip_text := TextCatalog.fill(TextCatalog.source("ui.rewardpopups.b1f621272c9a") if upgrade else TextCatalog.source("ui.rewardpopups.7e0e60a0eb15"), lvl)
 	var chip_fs := 26
 	var chip_w := float(chip_text.length()) * chip_fs
 	if G.font_title:
@@ -437,52 +437,123 @@ static func _pop_product(parent: Control, id: String, at: Vector2, slot: float, 
 		bob.tween_property(icon, "position:y", base_y - 5.0, period).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		bob.tween_property(icon, "position:y", base_y + 2.0, period).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT))
 
+## 主角等级面板（版式，从上往下）：
+##   面板顶上压一条标题横幅，横幅上方是当前等级星；
+##   插画铺满面板宽度（只留面板边框），阿焰站在部落前面，下沿把他的下半身裁掉；
+##   插画下面直接在面板底色上：两行说明 → 进度条（左边大经验星，右边下一级星，绿箭头贴星的右下角）；
+##   「下一级奖励」小标题 → 一条矮奖励栏，里面一排图标。
+## （新手引导时说明和进度条那块会被引导框圈出来，面板自己不再加底色）
+const LI_PANEL := Rect2(36, 260, 648, 910)
+const LI_ART_H := 480.0
+const LI_INFO_H := 120.0
+const LI_STRIP_H := 132.0
+const LI_XP_STAR := 100.0
+const LI_NEXT_BADGE := 80.0
+
+static func _li_art() -> Rect2:
+	return Rect2(LI_PANEL.position.x + 18, LI_PANEL.position.y + 18, LI_PANEL.size.x - 36, LI_ART_H)
+
+## 说明 + 进度条那块（引导高亮用的也是它）
+static func _li_card() -> Rect2:
+	var art := _li_art()
+	return Rect2(LI_PANEL.position.x + 34, art.end.y + 8, LI_PANEL.size.x - 68, LI_INFO_H)
+
+## 奖励栏：小标题在它上面 46px 处，留开不压边
+static func _li_strip() -> Rect2:
+	var card := _li_card()
+	return Rect2(card.position.x + 20, card.end.y + 72, card.size.x - 40, LI_STRIP_H)
+
+## 插画：清晨的天、太阳和云，两层远山，一排林梢，草地；左边草屋，右边棕榈。位置都按画框比例算。
+static func _level_scene(ci: CanvasItem, art: Rect2) -> void:
+	var w := art.size.x
+	var h := art.size.y
+	var o := art.position
+	Paint.vgrad(ci, art, Color("94d3e0"), Color("fde3ac"))
+	var sun := o + Vector2(w * 0.72, h * 0.2)
+	for k in 3:
+		ci.draw_circle(sun, 96.0 - 20.0 * k, Color(1.0, 0.95, 0.75, 0.16 + 0.1 * k))
+	ci.draw_circle(sun, 44.0, Color("fff3c4"))
+	for cl in [[o + Vector2(w * 0.2, h * 0.16), 1.1], [o + Vector2(w * 0.9, h * 0.1), 0.9], [o + Vector2(w * 0.5, h * 0.07), 0.7]]:
+		var c: Vector2 = cl[0]
+		var k: float = cl[1]
+		for bb in [[Vector2(-34, 6), 26.0], [Vector2(0, -6), 32.0], [Vector2(36, 6), 24.0], [Vector2(4, 12), 28.0]]:
+			ci.draw_colored_polygon(Art.ell(c + (bb[0] as Vector2) * k, Vector2(float(bb[1]) * 1.25, float(bb[1]) * 0.8) * k, 41, 0.05, 16), Color(1, 1, 1, 0.88))
+	Paint.far_range(ci, o.y + h * 0.5, 720, h * 0.16, 3, Color("b3d5c6"), art.end.y)
+	Paint.far_range(ci, o.y + h * 0.57, 720, h * 0.1, 8, Color("8fbe94"), art.end.y)
+	Paint.treeline(ci, o.y + h * 0.64, 720, 5, Color("5b9353"), art.end.y)
+	var field := PackedVector2Array()
+	for k in 25:
+		field.append(Vector2(o.x - 10.0 + (w + 20.0) * float(k) / 24.0, o.y + h * 0.63 + 7.0 * sin(float(k) * 0.9)))
+	field.append(Vector2(art.end.x + 10, art.end.y + 10))
+	field.append(Vector2(o.x - 10, art.end.y + 10))
+	ci.draw_colored_polygon(field, Color("a5c96c"))
+	ci.draw_colored_polygon(Art.ell(o + Vector2(w * 0.5, h * 0.9), Vector2(w * 0.42, h * 0.12), 52, 0.04, 28), Color("dcbc7c"))
+	for t in [[o + Vector2(w * 0.05, h * 0.74), 1.1], [o + Vector2(w * 0.8, h * 0.7), 0.9]]:
+		var c: Vector2 = t[0]
+		var k: float = t[1]
+		Art.fill(ci, Art.ell(c, Vector2(40, 26) * k, 61, 0.12, 16), Color("4f8f45"), 2.5)
+		Art.fill(ci, Art.ell(c + Vector2(24, 8) * k, Vector2(28, 18) * k, 62, 0.12, 14), Color("62a352"), 2.5)
+	Paint.palm(ci, o + Vector2(w * 0.93, h * 0.84), h * 0.6, 3, Color("4a8a4a"))
+	Paint._spot_hut(ci, o + Vector2(w * 0.22, h * 0.58), 9)
+
 static func level_info() -> PopupBase:
 	var p := PopupBase.new()
-	var r := Rect2(40, 250, 640, 1010)
+	var r := LI_PANEL
+	var art := _li_art()
+	var card := _li_card()
+	var strip := _li_strip()
+	var cx := r.get_center().x
+	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz): Paint.panel(ci, r))
+	# 插画（裁剪框套一层；画法内部会重设变换，所以里面那层挪回屏幕原点，照屏幕坐标画）
+	var clip := Control.new()
+	clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	clip.position = art.position
+	clip.size = art.size
+	clip.clip_contents = true
+	p.box.add_child(clip)
+	UI.box(clip, Rect2(-art.position, Vector2(720, 1480)), func(ci, _sz):
+		_level_scene(ci, art)
+		Paint.heroine(ci, art.position + Vector2(art.size.x * 0.56, art.size.y * 0.62), 165), false)
+	# 插画四边一圈压暗的内描边，横幅、等级星、说明卡、奖励栏
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
-		Paint.panel(ci, r)
-		var br := Rect2(r.get_center().x - 220, r.position.y + 30, 440, 80)
-		Paint.banner(ci, br, Art.TEAL)
-		Paint.level_badge(ci, Vector2(r.get_center().x, r.position.y - 14), 120)
-		var art := PS.LI_ART
-		Sprites.draw(ci, "pop_li_art_base", art)
-		Paint.vgrad(ci, art.grow(-3), Color("8fd0d4"), Color("f0deb0"))
-		Sprites.draw(ci, "pop_li_ground", art)
-		Paint._spot_hut(ci, Vector2(art.position.x + 120, art.position.y + 250), 6)
-		Paint.palm(ci, Vector2(art.end.x - 40, art.end.y - 6), 170, 3, Color("4a8a4a"))
-		Paint.heroine(ci, Vector2(art.get_center().x + 50, art.position.y + 160), 120)
-		Paint.book(ci, Vector2(art.get_center().x + 50, art.position.y + 236), 1.1)
-		Sprites.draw(ci, "pop_li_art_line", art)
-		var bar := Rect2(r.position.x + 70, r.position.y + 560, 400, 44)
+		ci.draw_rect(art, Color(0.3, 0.18, 0.08, 0.6), false, 4.0)
+		Paint.banner(ci, Rect2(cx - 230, r.position.y - 30, 460, 84), Art.TEAL)
+		Paint.level_badge(ci, Vector2(cx, r.position.y - 70), 112)
+		var bar := _li_bar()
 		Paint.bar(ci, bar, float(G.xp) / float(G.rules.progression.xp_need()), Art.MOSS)
-		Art.item(ci, "xp_1", bar.position + Vector2(0, 22), 64)
-		Paint.level_badge(ci, Vector2(bar.end.x + 70, bar.get_center().y), 92)
-		Sprites.draw(ci, "pop_li_arrow", PS.LI_ARROW)
-		ShopPopups._slot(ci, Rect2(r.position.x + 40, r.position.y + 680, r.size.x - 80, 280), Color("ecd9b3"), Color(0.6, 0.4, 0.2, 0.4), true))
-	UI.title(p.box, TextCatalog.source("developer.story_editor.34243df4d613"), Rect2(r.get_center().x - 200, r.position.y + 50, 400, 60), 38, Color.WHITE)
-	UI.lbl(p.box, str(G.level), Rect2(r.get_center().x - 60, r.position.y - 54, 120, 80), 44, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
-	var tip := UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.818a128bfe58"), Rect2(r.position.x + 40, r.position.y + 446, r.size.x - 80, 90), 25, Color("6b4a2a"))
+		Art.item(ci, "xp_1", Vector2(bar.position.x - 4, bar.get_center().y), LI_XP_STAR)
+		var next_c := Vector2(bar.end.x + 12, bar.get_center().y)
+		Paint.level_badge(ci, next_c, LI_NEXT_BADGE)
+		Sprites.draw(ci, "pop_li_arrow", Rect2(next_c + Vector2(10, 2), Vector2(36, 36)))
+		ShopPopups._slot(ci, strip, Color("ecd9b3"), Color(0.6, 0.4, 0.2, 0.4), true), false)
+	UI.title(p.box, TextCatalog.source("developer.story_editor.34243df4d613"), Rect2(cx - 200, r.position.y - 20, 400, 60), 36, Color.WHITE)
+	UI.lbl(p.box, str(G.level), Rect2(cx - 60, r.position.y - 112, 120, 80), 42, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+	var tip := UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.818a128bfe58"), Rect2(card.position.x + 24, card.position.y + 6, card.size.x - 48, 44), 25, Color("6b4a2a"))
 	tip.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
-	UI.lbl(p.box, "%d/%d" % [G.xp, G.rules.progression.xp_need()], Rect2(r.position.x + 70, r.position.y + 560, 400, 44), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(p.box, str(G.level + 1), Rect2(r.position.x + 500, r.position.y + 552, 80, 60), 32, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
-	p.set_meta("level_progress", Rect2(80, 790, 560, 100))
-	p.set_meta("level_rewards", Rect2(80, 920, 560, 280))
+	var bar := _li_bar()
+	UI.lbl(p.box, "%d/%d" % [G.xp, G.rules.progression.xp_need()], bar, 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(p.box, str(G.level + 1), Rect2(bar.end.x + 12 - 40, bar.get_center().y - 22, 80, 46), 28, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
+	p.set_meta("level_progress", card)
+	p.set_meta("level_rewards", strip)
 	p.set_meta("onboarding_close", Rect2(r.end.x - 52, r.position.y - 24, 70, 70))
-	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.60b51c111d6e"), Rect2(80, 1160, 560, 38), 21, Color("7a5a3a"))
-	Popups.section(p.box, TextCatalog.source("ui.rewardpopups.18228135bddc"), r.position.y + 640, Color("8a5a30"))
+	Popups.section(p.box, TextCatalog.source("ui.rewardpopups.18228135bddc"), strip.position.y - 46, Color("8a5a30"))
 	var rw := Data.level_rewards(G.level + 1)
 	for k in rw.size():
-		var cx := ItemPopups._spread_x(k, rw.size(), r.get_center().x, 136.0)
-		var cy := r.position.y + 790
-		UI.icon(p.box, rw[k][0], Vector2(cx, cy), 110)
-		UI.lbl(p.box, "×%d" % rw[k][1], Rect2(cx - 60, cy + 54, 120, 40), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
+		var ix := ItemPopups._spread_x(k, rw.size(), cx, 150.0)
+		var iy := strip.position.y + 56
+		UI.icon(p.box, rw[k][0], Vector2(ix, iy), 96)
+		UI.lbl(p.box, "×%d" % rw[k][1], Rect2(ix - 60, iy + 34, 120, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
 		var id: String = rw[k][0]
-		var ib := UI.hit(p.box, Rect2(cx + 22, cy - 72, 44, 44), func(): G.main.open("item_info", id))
+		var ib := UI.hit(p.box, Rect2(ix + 16, iy - 50, 38, 38), func(): G.main.open("item_info", id))
 		ib.extra = func(ci, sz): Paint.glyph(ci, "info", sz * 0.5, 1.0)
 	var x := UI.hit(p.box, Rect2(r.end.x - 52, r.position.y - 24, 70, 70), p.close)
 	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
 	return p
+
+## 说明卡里的进度条：左右各让出经验星和下一级星的位置
+static func _li_bar() -> Rect2:
+	var card := _li_card()
+	return Rect2(card.position.x + 84, card.position.y + 64, card.size.x - 178, 44)
 
 # ---------------------------------------------------------------- 丰收祭活动
 

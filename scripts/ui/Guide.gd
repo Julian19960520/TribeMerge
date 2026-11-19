@@ -235,8 +235,28 @@ func _hole(rect: Rect2, interactive: bool) -> void:
 	_holes.append(rect)
 	if interactive: _pass.append(rect.grow(5))
 
+## 正文按气泡宽度折行后的高度（字号 25）
+func _text_height(width: float) -> float:
+	var font: Font = G.font_body
+	var plain := _label.get_parsed_text()
+	if font == null or plain == "":
+		return 25.0
+	var lines := 0
+	for para in plain.split("
+"):
+		var w := font.get_string_size(para, HORIZONTAL_ALIGNMENT_LEFT, -1, 25).x
+		lines += maxi(1, int(ceil(w / maxf(1.0, width - 4.0))))
+	return font.get_height(25) * lines + 4.0 * (lines - 1)
+
+const FORMULA_ICON := 84.0
+const FORMULA_STEP := 150.0
+const FORMULA_H := 100.0
+
 func _place() -> void:
-	var h := 210.0 if not _formula_ids.is_empty() else 148.0
+	# 气泡高度跟着字走（带配方图的那种固定高）；正文在「点击继续」上方竖直居中
+	var text_h := _text_height(478.0)
+	var row_h := FORMULA_H + 10.0 if not _formula_ids.is_empty() else 0.0
+	var h := maxf(112.0, 18.0 + text_h + row_h + 4.0 + 28.0 + 14.0)
 	var y := 1110.0
 	if _target.size.x > 0:
 		y = _target.end.y + 28
@@ -244,16 +264,19 @@ func _place() -> void:
 	# Keep narration away from the cells and the operation button.
 	y = clampf(y, 154, 1430 - h)
 	_bust.position = Vector2(26, y + (h - 112) * 0.5)
-	_bubble.position = Vector2(148, y)
-	_bubble.size = Vector2(546, h)
-	_label.position = Vector2(174, y + 14)
-	_label.size = Vector2(494, 86)
-	_cont.position = Vector2(174, y + h - 37)
-	_cont.size = Vector2(494, 30)
+	# 气泡离头像留出尾巴的长度（尾巴伸出左边约 26px），免得尖角被头像盖住
+	_bubble.position = Vector2(164, y)
+	_bubble.size = Vector2(530, h)
+	# 从上往下：正文 → 配方一行（有的话）→ 「点击继续」；正文在剩下的空里竖直居中
+	var body_h := h - 18.0 - 14.0 - 32.0 - row_h
+	_label.position = Vector2(190, y + 18.0 + (body_h - text_h) * 0.5 - 2.0)
+	_label.size = Vector2(478, text_h + 8.0)
+	_cont.position = Vector2(190, y + h - 14.0 - 28.0)
+	_cont.size = Vector2(478, 28)
 	_cont.text = TextCatalog.resolve(TextCatalog.source("ui.guide.b0daab78b94a") if _mode in ["dialog", "banner"] else (TextCatalog.source("ui.guide.a5fcfcc6068c") if _mode == "merge" else TextCatalog.source("ui.guide.946b258d1513")))
 	_formula.visible = not _formula_ids.is_empty()
-	_formula.position = Vector2(250, y + 100)
-	_formula.size = Vector2(310, 66)
+	_formula.position = Vector2(190, y + 18.0 + body_h + 6.0)
+	_formula.size = Vector2(478, FORMULA_H)
 	_formula.queue_redraw()
 	_bubble.queue_redraw()
 
@@ -303,10 +326,20 @@ func _order_index() -> int:
 		if _mode == "submit" and G.rules.orders.order_ready(o): return i
 	return -1
 
-func _paint_formula(ci: CanvasItem, _sz: Vector2) -> void:
-	for i in _formula_ids.size():
-		Art.item(ci, str(_formula_ids[i]), Vector2(24 + i * 112, 32), 52)
-		if i < 2: ci.draw_string(G.font_body, Vector2(64 + i * 112, 42), TextCatalog.resolve("+" if i == 0 else "→"), HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Art.INK)
+## 配方一行：物品 + 物品 → 结果，在气泡里横向居中、等距排开，底下垫一条浅色底
+func _paint_formula(ci: CanvasItem, sz: Vector2) -> void:
+	var n := _formula_ids.size()
+	if n == 0: return
+	ci.draw_colored_polygon(Art.rrect(Rect2(Vector2.ZERO, sz), 20, 951, 0.0), Color(0.55, 0.38, 0.2, 0.1))
+	var mid := sz.x * 0.5
+	var cy := sz.y * 0.5
+	for i in n:
+		var cx := mid + (float(i) - float(n - 1) * 0.5) * FORMULA_STEP
+		Art.item(ci, str(_formula_ids[i]), Vector2(cx, cy), FORMULA_ICON)
+		if i < n - 1:
+			var ox := cx + FORMULA_STEP * 0.5
+			var op := TextCatalog.resolve("+" if i < n - 2 else "→")
+			ci.draw_string(G.font_title, Vector2(ox - 30, cy + 14), op, HORIZONTAL_ALIGNMENT_CENTER, 60, 40, Art.INK)
 
 func _paint_pointer(ci: CanvasItem, _sz: Vector2) -> void:
 	if _holes.is_empty(): return

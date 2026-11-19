@@ -106,7 +106,7 @@ static func album(a: int) -> PopupBase:
 		var collected := G.rules.progression.album_count(a)
 		var claimed := bool(Replay.meta.get("album:%d" % a, false))
 		var ready := collected == 9 and not claimed
-		count.text = TextCatalog.resolve((TextCatalog.source("ui.collectionpopups.8d9ddf754607") if collected == 9 else TextCatalog.source("ui.collectionpopups.c6e157de7d16")) % collected)
+		count.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.collectionpopups.8d9ddf754607") if collected == 9 else TextCatalog.source("ui.collectionpopups.c6e157de7d16"), collected))
 		reward_state.text = TextCatalog.resolve(TextCatalog.source("notice.reducer.583d60e4570b") if claimed else TextCatalog.source("ui.collectionpopups.a0bec1ceacfd"))
 		claim.text = TextCatalog.resolve(TextCatalog.source("notice.sevenday.426e458a4124") if claimed else (TextCatalog.source("ui.duelpopup.844ab9477225") if ready else TextCatalog.source("ui.collectionpopups.db1e7af988f3")))
 		claim.enabled = ready

@@ -14,7 +14,16 @@ const VINE3 := 23
 ## 头像 + 气泡贴在亮着的区域旁边（默认下方，放不下就上方；没有亮处时放底部）
 const AVATAR := 120.0
 const TALK_W := 620.0
-const TALK_H := 140.0
+## 气泡高度跟着字走：上边距 + 正文 + 间隔 + 「点击继续」一行 + 下边距，最矮和头像一样高
+const TALK_MIN_H := 112.0
+## 头像和气泡之间留的空：气泡尾巴伸出左边约 26px，头像圆右边到格子边还剩 7px，留够尾巴才不会被头像盖住
+const TAIL_GAP := 26.0
+const PAD_TOP := 18.0
+const PAD_BOTTOM := 14.0
+const HINT_H := 28.0
+const HINT_GAP := 4.0
+const TEXT_SIZE := 26
+const LINE_GAP := 6
 
 var _key := ""
 var _target := Callable()
@@ -69,10 +78,10 @@ func _ready() -> void:
 	_label.mouse_filter = MOUSE_FILTER_IGNORE
 	_label.add_theme_font_override("normal_font", G.font_body)
 	_label.add_theme_font_override("bold_font", G.font_body)
-	_label.add_theme_font_size_override("normal_font_size", 26)
+	_label.add_theme_font_size_override("normal_font_size", TEXT_SIZE)
 	_label.add_theme_color_override("default_color", Art.INK)
 	add_child(_label)
-	_label.add_theme_constant_override("line_spacing", 6)
+	_label.add_theme_constant_override("line_spacing", LINE_GAP)
 	_cont = UI.lbl(self, TextCatalog.source("ui.guide.b0daab78b94a"), Rect2(), 22, Color("4f9a3a"), HORIZONTAL_ALIGNMENT_RIGHT)
 
 func seen(key: String) -> bool:
@@ -204,6 +213,20 @@ func _target_rects() -> Array[Rect2]:
 		out.append(seen_part)
 	return out
 
+## 正文按气泡宽度折行后的高度
+func _text_height(width: float) -> float:
+	var font: Font = G.font_body
+	var plain := _label.get_parsed_text()
+	if font == null or plain == "":
+		return float(TEXT_SIZE)
+	var lines := 0
+	for para in plain.split("
+"):
+		var w := font.get_string_size(para, HORIZONTAL_ALIGNMENT_LEFT, -1, TEXT_SIZE).x
+		lines += maxi(1, int(ceil(w / maxf(1.0, width - 4.0))))
+	var line_h := font.get_height(TEXT_SIZE)
+	return line_h * lines + LINE_GAP * (lines - 1)
+
 func _layout() -> void:
 	_holes = _target_rects()
 	var arr := PackedVector4Array()
@@ -219,23 +242,29 @@ func _layout() -> void:
 	_mat.set_shader_parameter("screen_px", size)
 	_mat.set_shader_parameter("dim_a", 0.76)
 	_cont.text = TextCatalog.resolve("" if _drag else (TextCatalog.source("ui.guide.946b258d1513") if n > 0 else TextCatalog.source("ui.guide.b0daab78b94a")))
+	var text_w := TALK_W - AVATAR - TAIL_GAP - 56.0
+	var text_h := _text_height(text_w)
+	var hint_h := HINT_GAP + HINT_H if _cont.text != "" else 0.0
+	var talk_h := maxf(TALK_MIN_H, PAD_TOP + text_h + hint_h + PAD_BOTTOM)
 	var x := (size.x - TALK_W) * 0.5
 	var y := 1120.0
 	if n > 0:
 		x = clampf(span.get_center().x - TALK_W * 0.5, 16.0, size.x - 16.0 - TALK_W)
 		y = span.end.y + 22.0
-		if y + TALK_H > size.y - 30.0:
-			y = span.position.y - 22.0 - TALK_H
-		y = clampf(y, 90.0, size.y - TALK_H - 30.0)
-	_bust_home = Vector2(x, y + (TALK_H - AVATAR) * 0.5)
+		if y + talk_h > size.y - 30.0:
+			y = span.position.y - 22.0 - talk_h
+		y = clampf(y, 90.0, size.y - talk_h - 30.0)
+	_bust_home = Vector2(x, y + (talk_h - AVATAR) * 0.5)
 	_bust.position = _bust_home
-	var br := Rect2(x + AVATAR + 8.0, y, TALK_W - AVATAR - 8.0, TALK_H)
+	var br := Rect2(x + AVATAR + TAIL_GAP, y, TALK_W - AVATAR - TAIL_GAP, talk_h)
 	_bubble.position = br.position
 	_bubble.size = br.size
-	_label.position = br.position + Vector2(28, 10)
-	_label.size = br.size - Vector2(56, 42)
-	_cont.position = Vector2(br.position.x + 28, br.end.y - 40)
-	_cont.size = Vector2(br.size.x - 56, 32)
+	# 正文在「点击继续」上方那块里竖直居中；只有一行时整块气泡也就一行高
+	var body_h := talk_h - PAD_TOP - PAD_BOTTOM - hint_h
+	_label.position = br.position + Vector2(28, PAD_TOP + (body_h - text_h) * 0.5 - 2.0)
+	_label.size = Vector2(text_w, text_h + 8.0)
+	_cont.position = Vector2(br.position.x + 28, br.end.y - PAD_BOTTOM - HINT_H)
+	_cont.size = Vector2(text_w, HINT_H)
 	_frames.queue_redraw()
 	_bubble.queue_redraw()
 

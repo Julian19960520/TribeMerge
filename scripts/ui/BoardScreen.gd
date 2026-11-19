@@ -42,6 +42,8 @@ var _orders_pending := false
 var _clock_elapsed := 0.0
 var _order_shovel_visible := false
 var _activity_row: BoardActivityRow
+## 交单时那张订单卡的中心（全局），活动积分从这里冒出来
+var _points_origin := Vector2.ZERO
 var _order_scroll: Tween
 
 func stash_pos() -> Vector2:
@@ -242,25 +244,6 @@ func _build_orders() -> void:
 	(_cards_root as OrderStrip).refresh()
 	_cards = (_cards_root as OrderStrip).cards_by_index
 	_activity_row.refresh()
-	# 等着去建造时，订单位上立一张和订单卡同款的空卡：小锤子 + 茅屋，下面写提示
-	var hint: Control = _cards_root.get_node_or_null("build_hint")
-	if hint == null:
-		hint = UI.box(_cards_root, Rect2(272, 0, 300, 216), func(ci, sz):
-			var r := Rect2(4, 20, sz.x - 8, sz.y - 24)
-			Sprites.draw(ci, "board_card_base", r)
-			Sprites.draw(ci, "board_card_fill", r, Color("fbf0d6"))
-			Sprites.draw(ci, "board_card_dash", r)
-			var hut := Sprites.size_of("paint_spot_hut_3")
-			var k := minf(180.0 / maxf(hut.x, 1.0), 128.0 / maxf(hut.y, 1.0))
-			Sprites.at(ci, "pop_spot_shadow", Vector2(sz.x * 0.5 - 8, 114), 1.7, 0.0, Color(0, 0, 0, 0.12))
-			Sprites.at(ci, "paint_spot_hut_3", Vector2(sz.x * 0.5 - 8, 76), k)
-			var hm := Sprites.size_of("paint_hammer")
-			Sprites.at(ci, "paint_hammer", Vector2(sz.x * 0.5 + 62, 64), 58.0 / maxf(hm.y, 1.0), 0.35), false)
-		hint.name = "build_hint"
-		var text := UI.lbl(hint, TextCatalog.source("ui.boardscreen.e6a2bcabaa6c"), Rect2(20, 128, 260, 70), 22, Color("6b4a2a"))
-		text.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
-		text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	hint.visible = G.rules.onboarding.waiting_for_build()
 
 func _on_craft(oi: int) -> void:
 	if oi < 0 or oi >= G.orders.size():
@@ -281,6 +264,9 @@ func _on_deliver(oi: int) -> void:
 	if oi < 0 or oi >= G.orders.size() or oi >= _cards.size():
 		return
 	var card_pos := _cards[oi].get_global_rect().get_center()
+	# 头像顶端（OrderCard 里头像中心在 (46,37)，边长 74）
+	var head_top: Vector2 = _cards[oi].get_global_transform() * Vector2(46, 2)
+	_points_origin = card_pos
 	var fossil_earned := FossilDig.earning()
 	var result: Dictionary = Replay.perform("order", {"cell": oi})
 	if not result.get("ok", false):
@@ -290,10 +276,50 @@ func _on_deliver(oi: int) -> void:
 	board.select(-1)
 	Sfx.play("coin")
 	await get_tree().create_timer(0.35).timeout
-	var who := int(result["who"])
 	var say := str(result["say"])
-	G.main.toast(TextCatalog.fill(TextCatalog.source("ui.boardscreen.dccb2f9e37d1"), [Meme.customer_name(who, true), say if say != "" else Meme.line()]))
+	_say_bubble(head_top, say if say != "" else Meme.line())
 	RewardPresenter.present(result["rewards"], func(_k): return card_pos)
+
+## 交单后族人说的话：从订单头像顶上冒出来的小气泡，尾巴朝下指着头像
+func _say_bubble(tip: Vector2, text: String) -> void:
+	text = UI.resource_text(text)
+	var layer: Control = G.main.fx_layer
+	var fs := 22
+	var max_text := 300.0
+	var tw: float = G.font_body.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var lines := 1 if tw <= max_text else 2
+	var w: float = minf(tw, max_text) + 44.0
+	var h: float = 30.0 * lines + 28.0
+	var tail_h := 16.0
+	var screen_w: float = layer.size.x if layer.size.x > 0.0 else 720.0
+	var x: float = clampf(tip.x - 34.0, 10.0, screen_w - 10.0 - w)
+	var bubble := Control.new()
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bubble.size = Vector2(w, h + tail_h)
+	bubble.position = Vector2(x, maxf(4.0, tip.y - h - tail_h))
+	bubble.pivot_offset = tip - bubble.position
+	layer.add_child(bubble)
+	var tip_local: Vector2 = tip - bubble.position
+	tip_local.x = clampf(tip_local.x, 22.0, w - 22.0)
+	var painter := func(ci: CanvasItem, _sz: Vector2) -> void:
+		Sprites.draw(ci, "speech_body", Rect2(0, 0, w, h))
+		var by := h - 4.0
+		var tail := PackedVector2Array([Vector2(tip_local.x - 11.0, by), Vector2(tip_local.x + 11.0, by), Vector2(tip_local.x, by + tail_h + 2.0)])
+		ci.draw_colored_polygon(tail, Art.BONE)
+		ci.draw_polyline(PackedVector2Array([tail[0] + Vector2(-1.5, 0), tail[2], tail[1] + Vector2(1.5, 0)]), Art.INK, 3.0, true)
+		# 盖住气泡身子在尾巴根部的描边，让尾巴和身子连成一片
+		ci.draw_rect(Rect2(tip_local.x - 9.5, by - 6.0, 19.0, 7.0), Art.BONE)
+	UI.box(bubble, Rect2(Vector2.ZERO, bubble.size), painter, false)
+	var l := UI.lbl(bubble, text, Rect2(16, 8, w - 32, h - 22), fs, Art.INK)
+	if lines > 1: l.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	bubble.scale = Vector2(0.4, 0.4)
+	bubble.modulate.a = 0.0
+	var t := bubble.create_tween()
+	t.tween_property(bubble, "modulate:a", 1.0, 0.12)
+	t.parallel().tween_property(bubble, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_interval(1.8)
+	t.tween_property(bubble, "modulate:a", 0.0, 0.3)
+	t.tween_callback(bubble.queue_free)
 
 # ---------------------------------------------------------------- 交互
 
@@ -596,6 +622,19 @@ func _on_activate(i: int) -> void:
 	else:
 		board.burst(i)
 		board.select(-1)
+
+## 活动积分（Main 收到 activity_points 呈现时调用）：合成从那一格、交单从那张订单卡冒出来，飞进活动入口
+func show_activity_points(payload: Dictionary) -> void:
+	var gains: Array = payload.get("gains", [])
+	if gains.is_empty():
+		return
+	if str(payload.get("source", "")) == "merge" and int(payload.get("cell", -1)) >= 0:
+		_activity_row.points_fly(board.cell_global(int(payload["cell"])), gains)
+		return
+	var origin := _points_origin
+	if origin == Vector2.ZERO:
+		origin = get_global_rect().position + Vector2(360, ROW_RECT.get_center().y)
+	_activity_row.points_fly(origin, gains, 150.0)
 
 func _present_chest_drop(i: int, result: Dictionary) -> void:
 	if result.has("error"):

@@ -1,6 +1,8 @@
 extends Control
 var btn: TButton
 var clock:=0.0
+## 活动积分飞进来时图片弹一下（ActivityPointsFx 设成 1）
+var _bump:=0.0
 func _ready() -> void:
 	mouse_filter=MOUSE_FILTER_IGNORE
 	btn=UI.hit(self,Rect2(Vector2.ZERO,size),func():
@@ -9,6 +11,9 @@ func _ready() -> void:
 	btn.name="duel_entry"
 	btn.extra=_paint
 func _process(delta: float) -> void:
+	if _bump>0.0:
+		_bump=maxf(0.0,_bump-delta*3.0)
+		btn.queue_redraw()
 	clock+=delta
 	if clock>=1:
 		clock=0
@@ -23,4 +28,4 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 		var me:=int(m.get("me",0))
 		var op:=int(m.get("opponent",0))
 		badge={"text":"%d:%d"%[me,op],"style":"gold" if me>op else ("bronze" if me<op else "num")}
-	EventEntryArt.paint(ci,sz,"duel",TextCatalog.source("notice.data.33c9c97e48ba"),badge,not DuelRace.unlocked(),DuelRace.pending())
+	EventEntryArt.paint(ci,sz,"duel",TextCatalog.source("notice.data.33c9c97e48ba"),badge,not DuelRace.unlocked(),DuelRace.pending(),_bump)

@@ -152,7 +152,7 @@ func replay_input() -> bool:
 func _init() -> void:
 	rules = RuleContext.new(self, now, random_for, _clock_is_ready, {
 		"record": SevenDay.record, "login": SevenDay.login,
-		"order": ActivityRules.on_order, "settle": Rewards.settle, "meta": _rule_meta})
+		"order": ActivityRules.on_order, "merge": ActivityRules.on_merge, "settle": Rewards.settle, "meta": _rule_meta})
 
 func _clock_is_ready() -> bool:
 	if simulation_time >= 0: return true

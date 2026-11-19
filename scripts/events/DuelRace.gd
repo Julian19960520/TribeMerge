@@ -1,6 +1,7 @@
 class_name DuelRace
 extends RefCounted
 ## First-to-target practice race, with lifetime win milestones. Server owns state when enabled.
+const CURVE_STEPS := 40
 static func config() -> Dictionary:
 	return Data.ConfigFiles.shared("res://data/duel_race.json")
 
@@ -40,13 +41,25 @@ static func tick() -> void:
 		if int(m["opponent"])>=int(m["target"]):
 			_finish(false,float(m["start"])+float(p[0]))
 			break
+## 老版本的局（没有 pv）还按每单 1~4 分算；新局的分走 ActivityPoints.add_points。
 static func on_order(order: Dictionary) -> void:
 	tick()
 	var m: Dictionary=state()["match"]
 	if m.is_empty() or m["status"]!="running": return
+	if int(m.get("pv",1))>=ActivityPoints.VERSION: return
 	m["me"]=mini(int(m["target"]),int(m["me"])+order_points(order))
 	if int(m["me"])>=int(m["target"]): _finish(true,G.now())
 	G.dirty()
+## 活动积分（交单、合成高级物品）。只记新版的局，记上了返回 true。
+static func add_points(n: int) -> bool:
+	if G.duel_race.is_empty(): return false
+	tick()
+	var m: Dictionary=state()["match"]
+	if m.is_empty() or m["status"]!="running" or int(m.get("pv",1))<ActivityPoints.VERSION: return false
+	m["me"]=mini(int(m["target"]),int(m["me"])+n)
+	if int(m["me"])>=int(m["target"]): _finish(true,G.now())
+	G.dirty()
+	return true
 static func ready_milestones() -> Array:
 	var s:=state()
 	var out:=[]
@@ -79,10 +92,14 @@ static func local_action(action: String, milestone:=0) -> Dictionary:
 			var target:=int(config()["target"])
 			var seconds: Array=config()["opponent_seconds"]
 			var duration:=G.random_for("duel").randf_range(float(seconds[0]),float(seconds[1]))
+			# 对手分数按 CURVE_STEPS 段涨上去（分数是几千的量级，不再一分一个点）
 			var curve:=[]
-			for score in range(1,target+1): curve.append([duration*(float(score)-G.random_for("duel").randf_range(0,0.4))/target,score])
+			var steps:=mini(CURVE_STEPS,target)
+			for k in range(1,steps+1):
+				var score:=int(round(float(target)*k/steps))
+				curve.append([duration*(float(k)-G.random_for("duel").randf_range(0,0.4))/steps,score])
 			s["rounds"]=int(s["rounds"])+1
-			s["match"]={"id":int(s["rounds"]),"start":G.now(),"target":target,"me":0,"opponent":0,"status":"running","claimed":false,"opponent_curve":curve}
+			s["match"]={"id":int(s["rounds"]),"start":G.now(),"target":target,"me":0,"opponent":0,"status":"running","claimed":false,"opponent_curve":curve,"pv":ActivityPoints.VERSION}
 			return {}
 		"claim":
 			if m.is_empty() or m["status"]=="running" or m.get("claimed",false): return {"error":TextCatalog.source("notice.duelrace.4aefe032c871")}

@@ -197,6 +197,7 @@ func try_drop(a: int, b: int) -> String:
 		state.opened = unlock_around(b)
 		_maybe_spawn_bubble(nx, b)
 		_merge_coin(nx, b)
+		context.on_merge(nx, b)
 	state.dirty()
 	state.board_changed.emit()
 	return result

@@ -26,9 +26,9 @@ func run() -> void:
 	check(m["stage"] == 0 and m["destroyed"] == -1, "runner starts ahead of tiger")
 	check(m["bots"].size() == 99 and tiger.player_count(m) == 100, "round has 100 total participants (1 + 99)")
 	check(tiger.stage_quota(m) == 90 and tiger.stage_remaining(m) == 90, "stage 1 starts with 90 qualifying spots")
-	for k in 2: tiger.on_order({})
-	check(m["stage"] == 0 and m["points"] == 2, "partial points do not skip a node")
-	tiger.on_order({})
+	for k in 2: tiger.add_points(600)
+	check(m["stage"] == 0 and m["points"] == 1200, "partial points do not skip a node")
+	tiger.add_points(600)
 	check(m["stage"] == 1 and m["points"] == 0, "full progress jumps to next node")
 	check(tiger.local_action("claim", 2).has("error"), "future reward cannot be claimed")
 	check(tiger.local_action("claim", 1).get("rewards", []) == [["fire_2", 15]], "reached node unlocks configured gift")
@@ -50,11 +50,11 @@ func run() -> void:
 
 	# 推进足够长的时间，让后续阶段名额满并淘汰停留在第1关的玩家
 	g.simulation_time += 200000.0
-	tiger.on_order({})
+	tiger.add_points(600)
 	check(m["status"] == "lost" and m["stage"] == 1 and m["points"] == 0, "quota elimination eliminates slow runner")
 	check(tiger.local_action("restart").get("rewards", [1]).is_empty(), "restart never repeats already claimed gift")
 	m = tiger.round_state()
-	for k in 7: tiger.on_order({})
+	for k in 7: tiger.add_points(600)
 	check(m["stage"] == 2, "multiple order targets advance in order")
 	g.simulation_time += 200000.0
 	tiger.tick()
@@ -63,13 +63,18 @@ func run() -> void:
 	m = tiger.round_state()
 	var total := 0
 	for row in m["stages"]: total += int(row["points"])
-	for k in total: tiger.on_order({})
+	for k in int(ceil(total / 600.0)): tiger.add_points(600)
 	check(m["status"] == "won" and m["stage"] == 10, "all ten stages unlock grand prize")
 	g.simulation_time += 200000.0
 	tiger.tick()
 	check(m["status"] == "won", "tiger cannot eliminate a completed run")
 
-	# 主棋盘交互：交换与合成不加分，完成订单加分
+	# 主棋盘交互：交换和低级合成不加分，合出 7 级以上加活动积分，完成订单按难度加 200~600
+	# 老入口（按单 +1）对新局不再加分
+	tiger.local_action("restart")
+	var before_legacy: int = int(tiger.round_state()["points"])
+	tiger.on_order({})
+	check(int(tiger.round_state()["points"]) == before_legacy, "new rounds ignore legacy per-order points")
 	tiger.local_action("restart")
 	for k in g.board.size(): g.board[k] = {"id": "", "lock": 0}
 	g.board[0]["id"] = "fruit_1"
@@ -77,10 +82,16 @@ func run() -> void:
 	check(g.try_drop(0, 1) == "swap" and tiger.round_state()["points"] == 0, "swapping main-board items gives no score")
 	g.board[0]["id"] = "fruit_1"
 	g.board[1]["id"] = "fruit_1"
-	check(g.try_drop(0, 1) == "merge" and tiger.round_state()["points"] == 0, "real main-board merge gives no escape points")
+	check(g.try_drop(0, 1) == "merge" and tiger.round_state()["points"] == 0, "low-level main-board merge gives no escape points")
 	g.orders = [{"who": 2, "items": ["fruit_2"], "rw": {"shell": 1}, "story": false}]
 	g.board[1]["id"] = "fruit_2"
-	check(g.complete_order(0).size() == 1 and tiger.round_state()["points"] == 1, "real main-board order completion awards escape point")
+	var got_order: bool = g.complete_order(0).size() == 1
+	var pts: int = int(tiger.round_state()["points"])
+	check(got_order and pts >= 200 and pts <= 600, "real main-board order completion awards 200~600 escape points (%d)" % pts)
+	g.board[0]["id"] = "fruit_7"
+	g.board[1]["id"] = "fruit_7"
+	var before_merge: int = int(tiger.round_state()["points"])
+	check(g.try_drop(0, 1) == "merge" and int(tiger.round_state()["points"]) - before_merge == 300, "merging to level 8 awards 300 escape points")
 
 	# 验证精确名额淘汰：第1关90名额，第91名起10人被吃掉
 	m = tiger.round_state()
@@ -113,7 +124,7 @@ func run() -> void:
 	check(tiger_view != null and tiger_view.visible, "activity entry appears in main-board task row")
 
 	# 完成第1阶段条件时自动打开面板
-	for k in 3: tiger.on_order({})
+	for k in 3: tiger.add_points(600)
 	await create_timer(0.45).timeout
 	var open_tiger = null
 	for p in main.popup_layer._stack:

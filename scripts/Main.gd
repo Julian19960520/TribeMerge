@@ -255,6 +255,8 @@ func _on_presentation(kind: String, payload: Dictionary) -> void:
 			if count > 0: toast(TextCatalog.fill(TextCatalog.source("ui.main.d75c2da7d3ed"), count))
 		"tiger_open":
 			_open_tiger_panel(str(payload.get("reason", "")))
+		"activity_points":
+			if screen == "board" and is_instance_valid(board_screen): board_screen.show_activity_points(payload)
 
 func _open_tiger_panel(reason: String) -> void:
 	for p in popup_layer._stack:

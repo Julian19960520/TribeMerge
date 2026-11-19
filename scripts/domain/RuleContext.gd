@@ -54,6 +54,9 @@ func login() -> void:
 func on_order(order: Dictionary) -> void:
 	_effects["order"].call(order)
 
+func on_merge(id: String, cell: int) -> void:
+	if _effects.has("merge"): _effects["merge"].call(id, cell)
+
 func settle(rewards: Array, delivery: Dictionary = {}) -> Dictionary:
 	return _effects["settle"].call(rewards, delivery)
 

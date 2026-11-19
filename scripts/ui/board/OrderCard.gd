@@ -260,7 +260,7 @@ func _paint_order(ci: CanvasItem, sz: Vector2) -> void:
 		if show_mats:
 			_formula_arrow(ci, dc - Vector2(dish_s * 0.5 + 18, 0))
 		if phase == "ready":
-			Paint.check_mark(ci, dc + Vector2(dish_s * 0.32, dish_s * 0.26), 0.7)
+			Paint.check_tick(ci, dc + Vector2(dish_s * 0.36, dish_s * 0.28), 0.8)
 	else:
 		var spots: Array = _order_item_spots(o, sz.x)
 		var boards := []
@@ -374,9 +374,9 @@ static func _formula_span(o: Dictionary) -> float:
 	var icon: float = 50.0 if n >= 4 else 58.0
 	return icon + float(maxi(n - 1, 0)) * icon * 0.62 + 36.0 + DISH_ICON_SIDE
 
-## 材料已在棋盘上：绿色对勾在物品下沿正中。
+## 材料已在棋盘上：单独一个绿色对勾，在物品右下角。
 static func _ready_mark(ci: CanvasItem, c: Vector2, item_s: float, scale: float) -> void:
-	Paint.check_mark(ci, Vector2(c.x, c.y + item_s * 0.5 - 6.0 * scale), scale)
+	Paint.check_tick(ci, Vector2(c.x + item_s * 0.32, c.y + item_s * 0.5 - 8.0 * scale), scale)
 
 static func _spot_shadow(ci: CanvasItem, c: Vector2, s: float) -> void:
 	Sprites.draw(ci, "board_spot_shadow", Rect2(c - Vector2(s * 0.5, s * 0.42), Vector2(s, s * 0.84)))

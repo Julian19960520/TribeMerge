@@ -237,9 +237,6 @@ func unlimited_generator(id: String) -> bool:
 	# This tutorial takes minutes. A 12-minute cooldown would block the early loop.
 	return active() and id in [str(config()["generator"]), str(config()["upgraded_generator"])]
 
-func waiting_for_build() -> bool:
-	return active() and state.orders.is_empty() and str(stage().get("key", "")) in ["build2_wait", "build3_wait"]
-
 func _check_rescue() -> void:
 	var d: Dictionary = config()["rescue"]
 	if state.level < int(d["min_level"]) or state.level > int(d["max_level"]) or state.energy > 0 or not context.meta().get("free_energy", false): return

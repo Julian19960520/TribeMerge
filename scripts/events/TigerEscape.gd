@@ -186,12 +186,26 @@ static func _notify_open(reason: String, extra := {}) -> void:
 		payload[k] = extra[k]
 	G.present("tiger_open", payload)
 
+## 老版本的局（没有 pv）还按每单 points_per_order 分算；新局的分走 ActivityPoints.add_points。
 static func on_order(_order: Dictionary) -> void:
 	tick()
 	var m := round_state()
 	if m.is_empty() or m["status"] != "running": return
+	if int(m.get("pv", 1)) >= ActivityPoints.VERSION: return
+	_add(m, int(m["points_per_order"]))
+
+## 活动积分（交单、合成高级物品）。只记新版的局，记上了返回 true。
+static func add_points(n: int) -> bool:
+	if G.tiger_escape.is_empty(): return false
+	tick()
+	var m := round_state()
+	if m.is_empty() or m["status"] != "running" or int(m.get("pv", 1)) < ActivityPoints.VERSION: return false
+	_add(m, n)
+	return true
+
+static func _add(m: Dictionary, n: int) -> void:
 	var prev_stage := int(m["stage"])
-	m["points"] = int(m["points"]) + int(m["points_per_order"])
+	m["points"] = int(m["points"]) + n
 	if not m.has("stage_times") or not (m["stage_times"] is Array):
 		m["stage_times"] = []
 	var elapsed := maxf(0.0, G.now() - float(m.get("start", G.now())))
@@ -285,6 +299,7 @@ static func local_action(action: String, node := 0) -> Dictionary:
 			"points_per_order": maxi(1, int(config()["points_per_order"])),
 			"cohort_id": "",
 			"rule_version": 3,
+			"pv": ActivityPoints.VERSION,
 		}
 		s["round"]["bots"] = _create_bots(s["round"])
 		_notified_lost_round = -1

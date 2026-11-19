@@ -14,16 +14,20 @@ func run() -> void:
 	g.rng.seed=41
 	check(duel.local_action("join").has("error"),"locked player cannot join")
 	g.level=int(JSON.parse_string(FileAccess.get_file_as_string("res://data/duel_race.json"))["unlock_level"])
-	check(duel.order_points({"items":["fruit_1"]})==1 and duel.order_points({"items":["fruit_8"]})==4,"difficulty uses configured order points")
+	check(duel.order_points({"items":["fruit_1"]})==1 and duel.order_points({"items":["fruit_8"]})==4,"legacy rounds: difficulty uses configured order points")
 	check(duel.local_action("milestone",2).has("error"),"cannot claim wins in advance")
 	for round_id in 12:
 		check(not (await duel.act("join")).has("error"),"join round %d"%(round_id+1))
 		check(duel.local_action("join").has("error"),"active round cannot be overwritten")
 		check(duel.local_action("claim").has("error"),"unfinished round cannot pay")
-		for i in 8: duel.on_order({"items":["fruit_8"]})
+		# 新局记活动积分（ActivityPoints）：直接按单记分的老入口不再加分
+		duel.on_order({"items":["fruit_8"]})
+		check(int(duel.state()["match"]["me"])==0,"new rounds ignore legacy per-order points")
+		var target:=int(duel.state()["match"]["target"])
+		for i in int(ceil(target/600.0)): duel.add_points(600)
 		var s: Dictionary=duel.state()
 		check(s["match"]["status"]=="won" and int(s["wins"])==round_id+1,"first to target wins exactly once")
-		duel.on_order({"items":["fruit_8"]})
+		check(not duel.add_points(600),"settled match takes no more points")
 		duel.tick()
 		check(int(s["wins"])==round_id+1,"settled match cannot add another win")
 		var before: int=g.shells
@@ -36,7 +40,7 @@ func run() -> void:
 		check((await duel.act("milestone",at)).has("error"),"milestone only once")
 	await duel.act("join")
 	g.simulation_time+=4000
-	duel.on_order({"items":["fruit_8"]})
+	duel.add_points(600)
 	check(duel.state()["match"]["status"]=="lost" and duel.state()["wins"]==12,"elapsed opponent finish wins before late player order")
 	var coins: int=g.shells
 	await duel.act("claim")

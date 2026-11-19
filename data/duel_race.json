@@ -1,6 +1,7 @@
 {
   "unlock_level": 9,
-  "target": 30,
+  "_target": "活动积分（交单 200~600 + 合成 7 级以上 200~600，一单约 650）；约 8 张单打满。order_thresholds / order_points 只给老存档里没打完的那局用",
+  "target": 5400,
   "order_thresholds": [3, 5, 7],
   "order_points": [1, 2, 3, 4],
   "opponent_seconds": [1800, 3600],

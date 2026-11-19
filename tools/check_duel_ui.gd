@@ -5,6 +5,7 @@ func check(ok: bool,label: String) -> void:
 	print(("PASS " if ok else "FAIL ")+label)
 	if not ok: failures+=1
 func run() -> void:
+	load("res://scripts/events/ActivitySchedule.gd").bypass = true # 只测面板，不受档期轮换影响
 	var g=root.get_node("G")
 	g.new_game()
 	g.set_process(false)
@@ -13,6 +14,9 @@ func run() -> void:
 	g.tutorial_on=false
 	g.simulation_time=1793577600
 	var duel=load("res://scripts/events/DuelRace.gd")
+	# 正式流程里活动状态由 Replay 的 ActivityRules.initialize 建好；这里不走 Replay，先建上，
+	# 否则 duel.state() 每次返回一份新的默认字典，下面改的 wins 根本进不了游戏状态
+	if g.duel_race.is_empty(): g.duel_race={"wins":0,"rounds":0,"claimed":[],"match":{}}
 	var s: Dictionary=duel.state()
 	s["wins"]=5
 	s["claimed"]=["2"]
@@ -69,7 +73,8 @@ func run() -> void:
 	p=main.open("duel")
 	p.set_process(false)
 	check(p.phase=="progress" and s["rounds"]==rounds,"returning from orders resumes the current race")
-	for i in 8: duel.on_order({"items":["fruit_8"]})
+	# 新局记活动积分：一次 600，凑满目标
+	for i in int(ceil(int(s["match"]["target"])/600.0)): duel.add_points(600)
 	p._refresh()
 	check(p.phase=="result" and p.find_child("duel_banana_pile_0",true,false)==null,"finishing opens result without race or milestone content")
 	var coins: int=g.shells
@@ -91,8 +96,8 @@ func run() -> void:
 	var store=main.open("store")
 	var order: Dictionary={}
 	for label in store.find_children("*","Label",true,false):
-		if label.text in ["每日特惠","不那那小摊","热卖","琥珀"]: order[label.text]=label.global_position.y
-	check(order.size()==4 and order["每日特惠"]<order["不那那小摊"] and order["不那那小摊"]<order["热卖"] and order["热卖"]<order["琥珀"],"store order: daily, shell, hot, amber")
+		if label.text in ["每日特惠","「不那那」小摊","热卖","琥珀"]: order[label.text]=label.global_position.y
+	check(order.size()==4 and order["每日特惠"]<order["「不那那」小摊"] and order["「不那那」小摊"]<order["热卖"] and order["热卖"]<order["琥珀"],"store order: daily, shell, hot, amber")
 	main.close_all()
 	await create_timer(0.3).timeout
 	main.queue_free()

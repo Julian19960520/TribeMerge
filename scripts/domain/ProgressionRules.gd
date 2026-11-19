@@ -167,26 +167,59 @@ func add_xp(n: int) -> bool:
 	state.changed.emit()
 	return up
 
-## 升级时的「订单宝箱」：新订单还缺的材料（最多 ORDER_CHEST 件）立刻放到棋盘上，放不下的进暂存区。
-## 界面先依次播放落到棋盘的动画，再弹升级面板。
+## 升级时的「订单宝箱」：新订单还缺的材料（最多 ORDER_CHEST 件），每件降一级再送——玩家还得自己再合一次，
+## 不会一升级就直接交单。要的是 1 级的不送；降一级后正好是哪张订单原样要的，就再往下降到没人要的那级，
+## 每一级都有订单要就这件不送（这次升级可能一件都不送）；送出后会让哪张订单直接能交的那件也不送。
+## 立刻放到棋盘上，放不下的进暂存区。界面先依次播放落到棋盘的动画，再弹升级面板。
 const ORDER_CHEST := 3
 
 func _order_chest() -> void:
-	var help: Array = context.orders.missing_order_items(ORDER_CHEST)
+	# 所有订单此刻原样缺的东西：降一级后正好是别的订单要的，也不送（那就等于直接给了订单物品）
+	var lacking := {}
+	for raw in context.orders.missing_order_items(99):
+		lacking[str(raw)] = true
+	# 每件先试低一级；那一级正好是哪张订单原样要的，就再往下找一级没人要的；都被要了这件就不送
+	var help: Array = []
+	for raw in context.orders.missing_order_items(ORDER_CHEST):
+		var id := str(raw)
+		if Data.lv(id) <= 1:
+			continue
+		var pick := ""
+		for l in range(Data.lv(id) - 1, 0, -1):
+			var gift := "%s_%d" % [Data.chain(id), l]
+			if not lacking.has(gift) and not help.has(gift):
+				pick = gift
+				break
+		if pick != "": help.append(pick)
 	if help.is_empty(): return
 	var placed: Array = []
 	var stashed := 0
 	for id in help:
+		var ready_before := _ready_orders()
 		var to: int = context.board.find_empty_near(state.board.size() / 2)
 		if to >= 0:
 			state.board[to]["id"] = str(id)
+			if _ready_orders() > ready_before:
+				state.board[to]["id"] = ""
+				continue
 			context.board.discover(str(id))
 			placed.append({"to": to, "id": str(id)})
 		else:
 			state.stash.append(str(id))
+			if _ready_orders() > ready_before:
+				state.stash.pop_back()
+				continue
 			stashed += 1
+	if placed.is_empty() and stashed == 0: return
 	state.board_changed.emit()
 	state.present("order_chest", {"items": placed, "stashed": stashed})
+
+## 现在能直接交（或能开始制作）的订单张数
+func _ready_orders() -> int:
+	var n := 0
+	for o in state.orders:
+		if o is Dictionary and context.orders._order_filled(o): n += 1
+	return n
 
 func add_tokens(n: int) -> int:
 	state.tokens += n

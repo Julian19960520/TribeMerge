@@ -6,6 +6,7 @@ const STASH_RECT := Rect2(6, 38, 118, 226)
 const BASE_RECT := Rect2(126, 38, 142, 226)
 const HAMMER_W := 130.0
 const ENTRY_W := 104.0
+const ActivityPointsFx := preload("res://scripts/ui/board/ActivityPointsFx.gd")
 var host: Control
 var orders: Scroller
 var stash: Control
@@ -85,7 +86,23 @@ func _scale(control: Control, open: bool) -> void:
 	_row_tween.tween_property(control, "scale", Vector2.ONE if open else Vector2.ZERO, 0.22 if open else 0.16).set_trans(Tween.TRANS_BACK if open else Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT if open else Tween.EASE_IN)
 
 func order_delivered(origin: Vector2, fossil_earned: bool) -> void:
+	# 新版篝火竞速记的是活动积分，香蕉不再飞，改由 points_fly 飞分数
+	var race_points := int(LocalRace.state().get("current", {}).get("group", {}).get("pv", 1)) >= ActivityPoints.VERSION
 	for entry in entries:
 		var id: String = entry["id"]
-		if id in ["race", "merge"] or (id == "fossil" and fossil_earned):
+		if (id == "race" and not race_points) or id == "merge" or (id == "fossil" and fossil_earned):
 			entry["view"].fly_from(origin)
+
+## 活动积分：每个拿到分的活动各飞一份「图标 +分数」，错开一点出发。
+## rise：先弹到冒出点上方（负）还是下方（正）；订单卡在顶上，交单的分往下弹到棋盘上。
+func points_fly(origin: Vector2, gains: Array, rise := -64.0) -> void:
+	var k := 0
+	for gain in gains:
+		for entry in entries:
+			if entry["id"] != str(gain["id"]):
+				continue
+			var dx := 104.0 * (float(k) - float(gains.size() - 1) * 0.5)
+			var at := origin
+			at.x = clampf(at.x, 60.0 + 104.0 * float(gains.size() - 1) * 0.5, 660.0 - 104.0 * float(gains.size() - 1) * 0.5)
+			ActivityPointsFx.play(G.main.fx_layer, origin, entry["view"], str(gain["id"]), int(gain["n"]), 0.1 * k, at - origin + Vector2(dx, rise))
+			k += 1

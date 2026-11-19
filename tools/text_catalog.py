@@ -343,23 +343,45 @@ def stored_entry(entry: dict) -> dict:
     return stored
 
 
+def reference_order(path: Path) -> dict[str, int]:
+    order = {}
+    def walk(value):
+        if isinstance(value, str):
+            match = REF.fullmatch(value)
+            if match:
+                order.setdefault(match.group(1), len(order))
+        elif isinstance(value, dict):
+            for child in value.values():
+                walk(child)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child)
+    walk(json.loads(path.read_text(encoding="utf-8")))
+    return order
+
+
 def onboarding_stage(key: str) -> int:
     if not hasattr(onboarding_stage, "order"):
-        order = {}
-        document = json.loads((ROOT / "data/onboarding.json").read_text(encoding="utf-8"))
-        for index, stage in enumerate(document.get("stages", [])):
-            match = REF.fullmatch(str(stage.get("text", "")))
-            if match:
-                order.setdefault(match.group(1), index)
-        onboarding_stage.order = order
+        onboarding_stage.order = reference_order(ROOT / "data/onboarding.json")
     return onboarding_stage.order.get(key, 10**9)
 
 
+def hero_voice_stage(key: str) -> int:
+    if not hasattr(hero_voice_stage, "order"):
+        hero_voice_stage.order = reference_order(ROOT / "assets/characters/hero_voice.json")
+    return hero_voice_stage.order.get(key, 10**9)
+
+
 def ordered_entries(category_name: str, feature: str, entries: dict) -> dict:
-    if (category_name, feature) != ("content", "onboarding"):
+    stage = None
+    if (category_name, feature) == ("content", "onboarding"):
+        stage = onboarding_stage
+    elif (category_name, feature) == ("dialogue", "hero_voice"):
+        stage = hero_voice_stage
+    if stage is None:
         ordered = sorted(entries.items())
     else:
-        ordered = sorted(entries.items(), key=lambda item: (onboarding_stage(item[0]), item[0]))
+        ordered = sorted(entries.items(), key=lambda item: (stage(item[0]), item[0]))
     return {own_key(category_name, feature, key): stored_entry(entry) for key, entry in ordered}
 
 

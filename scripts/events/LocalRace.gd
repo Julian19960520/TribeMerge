@@ -140,7 +140,7 @@ static func join() -> Dictionary:
 			"avatar": av, "level": lv, "score": 0.0, "finished_at": null, "place": null, "points": gen_curve(rng, lv, dur, tg)})
 	var gid := "banana_" + str(int(now)) + "_" + str(rng.randi_range(1000, 9999))
 	s["current"] = {"group": {"id": gid, "start": now, "end": now + dur, "ended_at": null, "target": tg, "size": 5,
-		"state": "running", "members": ms}, "me": {"score": 0.0}}
+		"state": "running", "members": ms, "pv": ActivityPoints.VERSION}, "me": {"score": 0.0}}
 	G.save_game()
 	return {"ok": true}
 
@@ -153,13 +153,29 @@ static func busy() -> bool:
 		if r is Dictionary and not bool(r.get("claimed", false)) and not (r.get("me", {}).get("reward", []) as Array).is_empty(): return true
 	return false
 
+## 老版本的局（没有 pv）还按订单火苗数算；新局的分走 add_points。
 static func order(items: Array) -> void:
 	tick()
 	var g: Dictionary = state()["current"].get("group", {})
 	if g.is_empty() or g["state"] == "ended":
 		return
+	if int(g.get("pv", 1)) >= ActivityPoints.VERSION:
+		return
+	_add(g, OrderRoll.total(items))
+
+## 活动积分（交单、合成高级物品）。只记新版的局，记上了返回 true。
+static func add_points(n: int) -> bool:
+	if G.local_race.is_empty(): return false
+	tick()
+	var g: Dictionary = state()["current"].get("group", {})
+	if g.is_empty() or g["state"] == "ended" or int(g.get("pv", 1)) < ActivityPoints.VERSION:
+		return false
+	_add(g, float(n))
+	return true
+
+static func _add(g: Dictionary, n: float) -> void:
 	var m: Dictionary = g["members"][0]
-	m["score"] = minf(float(g["target"]), float(m["score"]) + OrderRoll.total(items))
+	m["score"] = minf(float(g["target"]), float(m["score"]) + n)
 	if float(m["score"]) >= float(g["target"]) and m.get("finished_at") == null:
 		m["finished_at"] = G.now()
 	tick()

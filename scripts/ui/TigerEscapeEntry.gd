@@ -2,6 +2,8 @@ extends Control
 var button: TButton
 var elapsed := 0.0
 var _sync_elapsed := 0.0
+## 活动积分飞进来时图片弹一下（ActivityPointsFx 设成 1）
+var _bump := 0.0
 
 func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_IGNORE
@@ -10,6 +12,9 @@ func _ready() -> void:
 	button.extra = _paint
 
 func _process(delta: float) -> void:
+	if _bump > 0.0:
+		_bump = maxf(0.0, _bump - delta * 3.0)
+		button.queue_redraw()
 	elapsed += delta
 	_sync_elapsed += delta
 	if _sync_elapsed >= 20.0:
@@ -31,4 +36,4 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 			style = "time"
 		else: text = TextCatalog.source("ui.raceentry.0e4062a72843")
 	# 和其他活动入口同一套：贴纸主题图 + 状态小牌 + 名字（scripts/sprites/events.gd 的 _en_tiger）
-	EventEntryArt.paint(ci, sz, "tiger", TextCatalog.source("ui.tigerescapeentry.5e7c1a9e58e6"), {"text": text, "style": style}, false, not TigerEscape.pending_rewards(m).is_empty())
+	EventEntryArt.paint(ci, sz, "tiger", TextCatalog.source("ui.tigerescapeentry.5e7c1a9e58e6"), {"text": text, "style": style}, false, not TigerEscape.pending_rewards(m).is_empty(), _bump)

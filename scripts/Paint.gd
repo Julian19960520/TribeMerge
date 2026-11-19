@@ -69,6 +69,10 @@ static func cell_bracket(ci: CanvasItem, r: Rect2, col: Color = Color("ffd23f"))
 static func check_mark(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	Sprites.at(ci, "check_mark", c, s)
 
+## 不带圆底的绿色对勾，用在只表示状态、不能点的地方
+static func check_tick(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
+	Sprites.at(ci, "check_tick", c, s)
+
 # ---------------------------------------------------------------- 小图标（按钮内）
 
 ## 图按 2 倍生成；可染色的画成白色，按 col 染

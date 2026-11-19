@@ -1,5 +1,5 @@
 extends SceneTree
-## 参考竞品的分阶段新手流程：练习单不带经验、首次补体力免费、升级送订单材料、4 级送火种罐、提示只出一次。
+## 参考竞品的分阶段新手流程：练习单不带经验、首次补体力免费、升级送订单材料（低一级，还得自己合）、4 级送火种罐、提示只出一次。
 ## godot --headless --path . --script tools/check_onboarding_stages.gd -- --replay-test --cloud-off
 var failures := 0
 func _initialize() -> void: run.call_deferred()
@@ -106,12 +106,29 @@ func run() -> void:
 	var got: Array = []
 	for e in chest_events:
 		for it in e.get("items", []): got.append(str(it["id"]))
-	check(not got.is_empty() and got.size() <= 3, "升级那一刻订单宝箱送出了材料（%s）" % [got])
+	check(got.size() <= 3, "升级那一刻订单宝箱最多送 3 件（%s）" % [got])
 	var on_board := true
 	for it in (chest_events[0].get("items", []) if not chest_events.is_empty() else []):
 		if str(game.board[int(it["to"])]["id"]) != str(it["id"]): on_board = false
 	check(on_board, "这些材料已经放在棋盘上，界面按格子依次播落下动画")
-	check(want.size() < got.size() or want.is_empty(), "送完以后订单缺的材料变少了")
+	# 送的是订单要的东西低一级的：还得自己再合一次，升级那一下不会有订单直接能交
+	var lacking: Array = game.rules.orders.missing_order_items(99)
+	var below := true
+	for id in got:
+		var hit := false
+		for need in lacking:
+			if Data.chain(str(need)) == Data.chain(id) and Data.lv(str(need)) > Data.lv(id): hit = true
+		if not hit: below = false
+	check(below, "送的每件都比订单要的低（送 %s，订单还缺 %s）" % [got, lacking])
+	var exact := false
+	for id in got:
+		for o in game.orders:
+			if (o.get("items", []) as Array).has(id): exact = true
+	check(not exact, "送的东西没有一件正好是哪张订单要的")
+	var ready_now := 0
+	for o in game.orders:
+		if game.rules.orders._order_filled(o): ready_now += 1
+	check(ready_now == 0, "升级送完材料后没有订单直接能交")
 	var before := {}
 	for id in got: before[id] = _count(game, id)
 	r = replay.perform("level", {"level": 2}, replay.clock)
