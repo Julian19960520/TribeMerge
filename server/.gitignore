@@ -6,3 +6,5 @@ rank.db-journal
 .env
 .pytest_cache/
 __pycache__/
+.venv/
+server.log
