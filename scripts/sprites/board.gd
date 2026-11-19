@@ -22,6 +22,8 @@ static func entries() -> Array:
 		"draw": func(ci, r): live_bolt(ci, r.get_center(), 0.3, Art.BOLT)})
 	out.append({"key": "board_bolt_boost", "w": 16, "h": 18, "pad": 5,
 		"draw": func(ci, r): live_bolt(ci, r.get_center(), 0.3, Art.FIRE_BOOST)})
+	out.append({"key": "board_bolt_boost_4", "w": 16, "h": 18, "pad": 5,
+		"draw": func(ci, r): live_bolt(ci, r.get_center(), 0.3, Art.FIRE_BOOST_4)})
 	# 合成时扬起的一团尘土（白色，运行时染色）
 	out.append({"key": "board_puff", "w": 40, "h": 34, "pad": 4,
 		"draw": func(ci, r): live_puff(ci, r)})
@@ -89,6 +91,8 @@ static func entries() -> Array:
 		"draw": func(ci, r): live_aim_arrow(ci, Vector2(r.position.x, r.get_center().y), Vector2(r.end.x, r.get_center().y))})
 	out.append({"key": "board_boost_on", "w": 36, "h": 42, "pad": 5,
 		"draw": func(ci, r): live_boost(ci, r.get_center(), true)})
+	out.append({"key": "board_boost_4", "w": 36, "h": 42, "pad": 5,
+		"draw": func(ci, r): live_boost_4(ci, r.get_center())})
 	out.append({"key": "board_boost_off", "w": 36, "h": 42, "pad": 5,
 		"draw": func(ci, r): live_boost(ci, r.get_center(), false)})
 	# 泡泡购买卡：底层（阴影 + 墨边）、尾巴墨边、面层（底色 + 虚线）、尾巴底色
@@ -367,6 +371,15 @@ static func live_boost(ci: CanvasItem, c: Vector2, on: bool) -> void:
 			ci.draw_colored_polygon(Art.star_pts(c + v, 5, 1.8, 4, int(v.x)), Color(1, 0.95, 1))
 	else:
 		live_bolt(ci, c, 0.6, Art.BOLT)
+
+## 4倍体力开关：金红光晕 + 三道炽焰闪电 + 星芒
+static func live_boost_4(ci: CanvasItem, c: Vector2) -> void:
+	ci.draw_circle(c, 21, Color(1.0, 0.85, 0.25, 0.36))
+	live_bolt(ci, c + Vector2(-10, 3), 0.46, Art.FIRE_BOOST_4, -0.2)
+	live_bolt(ci, c + Vector2(10, 3), 0.46, Art.FIRE_BOOST_4.lightened(0.1), 0.2)
+	live_bolt(ci, c + Vector2(0, -3), 0.54, Art.BOLT, 0.0)
+	for v in [Vector2(-16, -15), Vector2(16, -14), Vector2(16, 15)]:
+		ci.draw_colored_polygon(Art.star_pts(c + v, 5.2, 1.8, 4, int(v.x + v.y)), Color(1.0, 0.97, 0.82))
 
 ## 一小团尘土云
 static func live_puff(ci: CanvasItem, r: Rect2) -> void:

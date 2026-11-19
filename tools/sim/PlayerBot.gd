@@ -872,15 +872,20 @@ func produce() -> bool:
 	record("produce", "生产 " + Data.name_of(id), target_name, {"generator": G.rules.board.cell_id(chosen), "item": id})
 	return true
 
-## 双倍体力：解锁后，只要缺的目标物品比这台生产器的产物高，就开着（2 体力出高 1 级，省一半点击和第一层合成）
+## 多倍体力：解锁后，按缺的目标物品高出生产器产物的级数自动切 ×2（高 1 级）或 ×4（高 2 级）
 func set_boost_for(cell: int, missing: Dictionary) -> void:
 	if not bool(cfg.get("use_boost", true)) or not G.rules.board.boost_open(): return
-	var want := false
-	if G.energy >= 2:
-		for d in Data.gen_stats(G.rules.board.cell_id(cell)).get("drops", []):
+	var want := 1
+	var drops: Array = Data.gen_stats(G.rules.board.cell_id(cell)).get("drops", [])
+	if G.rules.board.boost_4_open() and G.energy >= 4:
+		for d in drops:
 			var id := str(d["id"])
-			if int(missing.get(Data.chain(id), 0)) > Data.lv(id): want = true; break
-	if want != G.boost: command("boost", {"on": want})
+			if int(missing.get(Data.chain(id), 0)) >= Data.lv(id) + 2: want = 4; break
+	if want == 1 and G.energy >= 2:
+		for d in drops:
+			var id := str(d["id"])
+			if int(missing.get(Data.chain(id), 0)) > Data.lv(id): want = 2; break
+	if want != G.rules.board.boost_mult(): command("boost", {"mult": want})
 
 func make_room() -> bool:
 	if G.rules.board.empty_count()>1: return false

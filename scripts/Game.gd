@@ -56,9 +56,9 @@ var shells := 320
 var amber := 140
 var rush := 0
 var energy_stamp := 0.0
-## 双倍体力模式开关（Data.BOOST_LEVEL 级解锁）
-var boost := false
-## GM 按钮提前解锁了双倍体力（不看等级）
+## 多倍体力模式倍率（1=关闭，2=Data.BOOST_LEVEL 级解锁，4=Data.BOOST_4_LEVEL 级解锁）
+var boost := 1
+## GM 按钮提前解锁了多倍体力（不看等级）
 var boost_gm := false
 var board: Array = []
 ## 最近一次合成解开的巨石格子，给崩坏动画用
@@ -262,7 +262,7 @@ func new_game() -> void:
 	amber = int(Data.ConfigFiles.shared("res://data/onboarding.json").get("initial_amber", 30))
 	rush = 0
 	energy_stamp = now()
-	boost = false
+	boost = 1
 	boost_gm = false
 	inv = []
 	inv_chests = {}
@@ -385,8 +385,11 @@ func try_drop(a: int, b: int) -> String:
 	return rules.board.try_drop(a, b)
 
 func set_boost(on: bool) -> void:
-	if replay_input(): Replay.perform("boost", {"on": on}); return
-	rules.board.set_boost(on)
+	set_boost_mult(2 if on else 1)
+
+func set_boost_mult(mult: int) -> void:
+	if replay_input(): Replay.perform("boost", {"mult": mult}); return
+	rules.board.set_boost_mult(mult)
 
 func dispense_chest(i: int) -> Dictionary:
 	if replay_input(): return Replay.perform("tap", {"cell": i})

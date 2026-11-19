@@ -32,6 +32,8 @@ const FIRE := Color("ff7b22")
 const FIRE2 := Color("ffd23f")
 ## 双倍火种模式下生产器右下角的紫火
 const FIRE_BOOST := Color("b45cff")
+## 4倍火种模式下生产器右下角的赤金闪电
+const FIRE_BOOST_4 := Color("ff4d2e")
 const SHELL := Color("f8d9bc")
 const SHELL_D := Color("e7a98a")
 const AMBER := Color("f39a1f")

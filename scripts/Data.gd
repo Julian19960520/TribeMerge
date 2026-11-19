@@ -66,6 +66,8 @@ static func activity_levels() -> Dictionary:
 
 ## 双倍火种（生产器加速）：这一级解锁。开启后生产器每次耗 2 火种，产物高 1 级。
 const BOOST_LEVEL := 18
+## 4倍火种（生产器加速）：这一级解锁。开启后生产器每次耗 4 火种，产物高 2 级。
+const BOOST_4_LEVEL := 42
 ## 储物洞每排格数：界面布局与扩容计价共用。
 const STORAGE_COLS := 5
 
@@ -342,6 +344,8 @@ static func level_unlocks(level: int) -> Array:
 		if int(acts[name]) == level and level > 1: out.append(TextCatalog.source("notice.data.a3fe574ac2c6") % name)
 	if level == BOOST_LEVEL:
 		out.append(TextCatalog.source("notice.data.651ad0fee6e4"))
+	if level == BOOST_4_LEVEL:
+		out.append(TextCatalog.source("notice.data.e3408ef57afa"))
 	return out
 
 static func is_dish(id: String) -> bool:

@@ -22,7 +22,7 @@ var _info_visual: ItemActionPanel
 var _info_action := {}
 var _info_btn: TButton
 var _del_btn: TButton
-## 双倍体力开关（Data.BOOST_LEVEL 级解锁，圆钮，在顶栏集市小屋下面）
+## 多倍体力开关（Data.BOOST_LEVEL 级解锁 ×2，Data.BOOST_4_LEVEL 级解锁 ×4，圆钮，在顶栏集市小屋下面）
 var _boost_btn: TButton
 var _del_lbl: Label
 var _undo_cell := -1
@@ -528,27 +528,36 @@ func _clear_undo() -> void:
 func _sync_boost() -> void:
 	var open := G.rules.board.boost_open()
 	_boost_btn.visible = open
-	_boost_btn.style = "purple" if G.rules.board.boost_on() else "grey"
+	var mult := G.rules.board.boost_mult()
+	_boost_btn.style = "red" if mult == 4 else ("purple" if mult == 2 else "grey")
 	_boost_btn.queue_redraw()
 
 func _on_boost() -> void:
 	if not G.rules.board.boost_open():
 		G.main.toast(TextCatalog.source("ui.boardscreen.ea512726aa70") % Data.BOOST_LEVEL)
 		return
-	G.set_boost(not G.boost)
-	if G.boost:
+	var prev := G.rules.board.boost_mult()
+	G.set_boost_mult(G.rules.board.next_boost_mult())
+	var cur := G.rules.board.boost_mult()
+	if cur == 4:
+		G.main.toast(TextCatalog.source("ui.boardscreen.47d902984493"))
+	elif cur == 2:
 		G.main.toast(TextCatalog.source("ui.boardscreen.f061db8304df"))
+	elif prev == 4:
+		G.main.toast(TextCatalog.source("ui.boardscreen.329a0eff6f52"))
 	else:
 		G.main.toast(TextCatalog.source("ui.boardscreen.bcbf2f6b7883"))
 
-## 开关上画：火苗 + ×2，开着是紫火
+## 开关上画：闪电 + 倍率（×1 黄，×2 紫，×4 赤金）
 func _paint_boost(ci: CanvasItem, sz: Vector2) -> void:
-	var on := G.rules.board.boost_on()
+	var mult := G.rules.board.boost_mult()
 	var c := sz * 0.5 + Vector2(0, -6)
-	Sprites.at(ci, "board_boost_on" if on else "board_boost_off", c)
+	var sprite := "board_boost_4" if mult == 4 else ("board_boost_on" if mult == 2 else "board_boost_off")
+	Sprites.at(ci, sprite, c)
 	var at := Vector2(0, sz.y - 10)
-	ci.draw_string_outline(G.font_title, at, TextCatalog.resolve("×2" if on else "×1"), HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, 6, Art.INK)
-	ci.draw_string(G.font_title, at, TextCatalog.resolve("×2" if on else "×1"), HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, Color.WHITE)
+	var tag := "×%d" % mult
+	ci.draw_string_outline(G.font_title, at, TextCatalog.resolve(tag), HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, 6, Art.INK)
+	ci.draw_string(G.font_title, at, TextCatalog.resolve(tag), HORIZONTAL_ALIGNMENT_CENTER, sz.x, 24, Color.WHITE)
 
 func _on_activate(i: int) -> void:
 	if i < 0 or i >= G.board.size() or int(G.board[i]["lock"]) != 0: return

@@ -29,7 +29,7 @@ func run() -> void:
 	replay.executing = true
 	replay.meta = {}; replay.seq = 0; replay.base = 0; replay.pending = []; replay.inflight = {}
 	replay.clock = 1794240000; g.simulation_time = replay.clock
-	g.new_game(); g.tutorial_on = false; g.boost = false; g.energy = 25000
+	g.new_game(); g.tutorial_on = false; g.boost = 1; g.energy = 25000
 	g.random_seed = "generator-six-growth"; g.random_streams = {}
 	for i in g.board.size(): g.board[i] = {"id": "", "lock": 0}
 	g.board[0]["id"] = "basket_6"

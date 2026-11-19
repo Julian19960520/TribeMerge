@@ -53,6 +53,7 @@ static func validate(game: Node, state: Dictionary) -> bool:
 		return false
 	migrate_ids(state)
 	migrate_card_stars(state)
+	migrate_boost(state)
 	var random_state: Dictionary = state["replay_rng"]
 	if not random_state.get("seed") is String or not random_state.get("streams") is Dictionary:
 		return false
@@ -87,7 +88,12 @@ static func validate(game: Node, state: Dictionary) -> bool:
 	for container in [state["inv"], state["stash"]]:
 		for item in container:
 			if not item is String or not Data.is_known(item) or Data.is_numeric_resource(item): return false
-	return int(state["level"]) >= 1 and int(state["inv_cap"]) >= 1 and int(state["card_stars"]) >= 0
+	return int(state["level"]) >= 1 and int(state["inv_cap"]) >= 1 and int(state["card_stars"]) >= 0 and int(state["boost"]) in [1, 2, 4]
+
+## 旧存档里 boost 是布尔值（false=1倍，true=2倍），迁移为倍率整数（1 / 2 / 4）。
+static func migrate_boost(state: Dictionary) -> void:
+	if state.has("boost") and state["boost"] is bool:
+		state["boost"] = 2 if state["boost"] else 1
 
 ## Older saves kept duplicate copies. Convert only when adding the new wallet,
 ## so reloading a checkpoint can never pay those copies twice.

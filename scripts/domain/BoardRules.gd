@@ -301,26 +301,62 @@ func gen_wait(i: int) -> int:
 	var st = Data.gen_stats(state.board[i]["id"])
 	return maxi(1, int(float(st["refill"]) * 60.0 - (context.now() - float(state.board[i]["gm"]["t"]))))
 
-func boost_on() -> bool:
-	return state.boost and boost_open()
-
 func boost_open() -> bool:
 	return state.boost_gm or context.progression.feature_unlocked(Data.BOOST_LEVEL)
 
-func gen_cost() -> int:
-	return 2 if boost_on() else 1
+func boost_4_open() -> bool:
+	return state.boost_gm or context.progression.feature_unlocked(Data.BOOST_4_LEVEL)
 
-func set_boost(on: bool) -> void:
-	state.boost = on and boost_open()
+func boost_mult() -> int:
+	var m := int(state.boost)
+	if m == 4 and boost_4_open():
+		return 4
+	if m >= 2 and boost_open():
+		return 2
+	return 1
+
+func boost_on() -> bool:
+	return boost_mult() > 1
+
+func gen_cost() -> int:
+	return boost_mult()
+
+func next_boost_mult() -> int:
+	var cur := boost_mult()
+	if cur == 1:
+		return 2 if boost_open() else 1
+	if cur == 2:
+		return 4 if boost_4_open() else 1
+	return 1
+
+func set_boost_mult(mult: int) -> void:
+	if mult == 4 and boost_4_open():
+		state.boost = 4
+	elif mult == 2 and boost_open():
+		state.boost = 2
+	elif mult == 1:
+		state.boost = 1
+	else:
+		state.boost = boost_mult()
 	state.dirty()
 	state.changed.emit()
 	state.board_changed.emit()
 
+func set_boost(on: bool) -> void:
+	set_boost_mult(2 if on else 1)
+
 func boost_drop(id: String) -> String:
-	if not boost_on() or Data.is_dish(id):
+	var m := boost_mult()
+	if m <= 1 or Data.is_dish(id):
 		return id
-	var nxt = Data.next_id(id)
-	return nxt if nxt != "" else id
+	var steps := 2 if m >= 4 else 1
+	var cur := id
+	for _k in steps:
+		var nxt := Data.next_id(cur)
+		if nxt == "":
+			break
+		cur = nxt
+	return cur
 
 func gen_use(i: int) -> void:
 	if context.starter.is_item(str(state.board[i]["id"])):

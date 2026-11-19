@@ -83,7 +83,10 @@ func _dispatch(name: String, a: Dictionary):
 		"rush":
 			if not valid_cell(i) or not G.rules.orders.cooking(i): return {"error": TextCatalog.source("notice.reducer.488309ef578d")}
 			return {"used": G.rush_cook(i)}
-		"boost": G.set_boost(bool(a.get("on", false))); return {}
+		"boost":
+			var mult := int(a["mult"]) if a.has("mult") else (2 if bool(a.get("on", false)) else 1)
+			G.set_boost_mult(mult)
+			return {}
 		"energy":
 			# 第一次补体力免费，之后才花琥珀。
 			if not meta.get("free_energy", false):

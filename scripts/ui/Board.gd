@@ -802,8 +802,10 @@ func _draw_cell(i: int, ci: CanvasItem = null) -> void:
 			if G.rules.board.gen_left(i) >= 0:
 				_draw_egen_pill(r, i, "×%d" % G.rules.board.gen_left(i), Art.CLAY, ci)
 			if G.energy >= G.rules.board.gen_cost():
-				# 双倍火种模式：右下角换成紫火
-				Sprites.at(ci, "board_bolt_boost" if G.rules.board.boost_on() else "board_bolt", r.position + Vector2(80, 78))
+				# 1倍黄闪电、2倍紫闪电、4倍赤金闪电
+				var mult := G.rules.board.boost_mult()
+				var bolt := "board_bolt_boost_4" if mult == 4 else ("board_bolt_boost" if mult == 2 else "board_bolt")
+				Sprites.at(ci, bolt, r.position + Vector2(80, 78))
 	if c["lock"] == 0 and reveal > 0.65 and G.rules.orders.cell_has_craft_xp(i):
 		_draw_craft_xp_badge(ctr + nudge, sc, ci)
 

@@ -24,6 +24,18 @@
 			"pad": 5.0,
 			"w": 16.0
 		},
+		"board_bolt_boost_4": {
+			"frames": 4,
+			"h": 18,
+			"pad": 5,
+			"w": 16
+		},
+		"board_boost_4": {
+			"frames": 4,
+			"h": 42,
+			"pad": 5,
+			"w": 36
+		},
 		"board_boost_off": {
 			"frames": 4.0,
 			"h": 42.0,
@@ -193,10 +205,10 @@
 			"w": 76.0
 		},
 		"board_hero_card": {
-			"frames": 4,
-			"h": 226,
-			"pad": 6,
-			"w": 142
+			"frames": 4.0,
+			"h": 226.0,
+			"pad": 6.0,
+			"w": 142.0
 		},
 		"board_info_panel": {
 			"frames": 4.0,

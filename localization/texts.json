@@ -6,12 +6,12 @@
     "en_US"
   ],
   "stats": {
-    "unique_texts": 1876,
-    "references": 2615,
+    "unique_texts": 1879,
+    "references": 2618,
     "scopes": {
       "developer": 203,
       "legacy_story": 31,
-      "runtime": 1642
+      "runtime": 1645
     },
     "categories": {
       "cards": 241,
@@ -20,12 +20,12 @@
       "dialogue": 60,
       "legacy_story": 31,
       "names": 385,
-      "notice": 202,
+      "notice": 203,
       "server_notice": 55,
-      "ui": 525
+      "ui": 527
     },
     "translated": {
-      "zh_CN": 1876,
+      "zh_CN": 1879,
       "en_US": 0
     }
   },
@@ -12643,8 +12643,8 @@
       "zh_CN": "棋盘满了，先腾出一个空格",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:368",
-        "scripts/domain/BoardRules.gd:379"
+        "scripts/domain/BoardRules.gd:404",
+        "scripts/domain/BoardRules.gd:415"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12656,7 +12656,7 @@
       "en_US": "",
       "refs": [
         "scripts/domain/BoardRules.gd:66",
-        "scripts/replay/Reducer.gd:131"
+        "scripts/replay/Reducer.gd:134"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12667,7 +12667,7 @@
       "zh_CN": "族人要的东西都齐了，先送过去吧",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:381"
+        "scripts/domain/BoardRules.gd:417"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12678,7 +12678,7 @@
       "zh_CN": "宝箱正在打开",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:363"
+        "scripts/domain/BoardRules.gd:399"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12692,8 +12692,8 @@
         "scripts/domain/BoardRules.gd:73",
         "scripts/domain/ProgressionRules.gd:137",
         "scripts/domain/ProgressionRules.gd:548",
-        "scripts/replay/Reducer.gd:124",
-        "scripts/replay/Reducer.gd:92",
+        "scripts/replay/Reducer.gd:127",
+        "scripts/replay/Reducer.gd:95",
         "scripts/ui/popups/ItemPopups.gd:432",
         "scripts/ui/popups/ShopPopups.gd:52"
       ],
@@ -12706,8 +12706,8 @@
       "zh_CN": "宝箱已不在原位置",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:362",
-        "scripts/domain/BoardRules.gd:373",
+        "scripts/domain/BoardRules.gd:398",
+        "scripts/domain/BoardRules.gd:409",
         "scripts/events/ChoiceChest.gd:9"
       ],
       "scope": "runtime",
@@ -12719,7 +12719,7 @@
       "zh_CN": "族人要的东西都齐了，先送过去再开吧",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:365"
+        "scripts/domain/BoardRules.gd:401"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12730,7 +12730,7 @@
       "zh_CN": "宝箱现在打不开",
       "en_US": "",
       "refs": [
-        "scripts/domain/BoardRules.gd:372"
+        "scripts/domain/BoardRules.gd:408"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12862,7 +12862,7 @@
       "en_US": "",
       "refs": [
         "scripts/events/DailyShop.gd:21",
-        "scripts/replay/Reducer.gd:147"
+        "scripts/replay/Reducer.gd:150"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -12884,7 +12884,7 @@
       "zh_CN": "免费产出体力物品，每批%d次，恢复时间%s。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:608"
+        "scripts/Data.gd:612"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -12898,7 +12898,7 @@
       "zh_CN": "还不能生产，合成到 %d 级才能点击。%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:594"
+        "scripts/Data.gd:598"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -12912,7 +12912,7 @@
       "zh_CN": "%d级自选宝箱，点开三选一，选中的物品会留在这一格。没打开前还能合成升级。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:628"
+        "scripts/Data.gd:632"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -12925,7 +12925,7 @@
       "zh_CN": "丰收祭的活动积分，每攒 %d 个换一个兽皮卡包。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:634"
+        "scripts/Data.gd:638"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -12938,8 +12938,8 @@
       "zh_CN": "%d 分 %d 秒",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:582",
-        "scripts/Data.gd:786"
+        "scripts/Data.gd:586",
+        "scripts/Data.gd:790"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -12953,7 +12953,7 @@
       "zh_CN": "%d级卡包，每包%d张卡片。%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:632"
+        "scripts/Data.gd:636"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -12968,7 +12968,7 @@
       "zh_CN": "新菜谱：%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:335"
+        "scripts/Data.gd:337"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -12992,7 +12992,7 @@
       "zh_CN": "族人开始想要%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:329"
+        "scripts/Data.gd:331"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13006,7 +13006,7 @@
       "en_US": "",
       "refs": [
         "data/random_orders.json#/curves/0/name",
-        "scripts/Data.gd:153",
+        "scripts/Data.gd:155",
         "scripts/ui/OrderCurvePad.gd:789",
         "scripts/ui/OrderCurvePad.gd:824",
         "scripts/ui/OrderCurvePad.gd:832"
@@ -13020,7 +13020,7 @@
       "zh_CN": "%d级新人奖励，领取后有效%d天。每%s恢复%d次，免费产出2～4级体力物品。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:607"
+        "scripts/Data.gd:611"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13049,7 +13049,7 @@
       "zh_CN": "能做%s了",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:326"
+        "scripts/Data.gd:328"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13062,7 +13062,7 @@
       "zh_CN": "从%s里拿到的。%s%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:614"
+        "scripts/Data.gd:618"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13077,10 +13077,10 @@
       "zh_CN": "%d 分钟",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:582",
-        "scripts/Data.gd:604",
-        "scripts/Data.gd:717",
-        "scripts/Data.gd:786"
+        "scripts/Data.gd:586",
+        "scripts/Data.gd:608",
+        "scripts/Data.gd:721",
+        "scripts/Data.gd:790"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13093,7 +13093,7 @@
       "zh_CN": "还不能生产。%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:593"
+        "scripts/Data.gd:597"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13106,7 +13106,7 @@
       "zh_CN": "点击收取 %d 不那那。%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:622"
+        "scripts/Data.gd:626"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13120,9 +13120,9 @@
       "zh_CN": "%d 秒",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:578",
-        "scripts/Data.gd:717",
-        "scripts/Data.gd:787"
+        "scripts/Data.gd:582",
+        "scripts/Data.gd:721",
+        "scripts/Data.gd:791"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13135,7 +13135,7 @@
       "zh_CN": "%d级体力宝箱，选中后再点取物，共%d件、%d点体力。打开后不能合成，取出的体力可合成。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:570"
+        "scripts/Data.gd:574"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13150,7 +13150,7 @@
       "zh_CN": "点一下能拿到%s。%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:598"
+        "scripts/Data.gd:602"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13164,7 +13164,7 @@
       "zh_CN": "新玩法：族人想吃饭啦（要下锅做）",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:331"
+        "scripts/Data.gd:333"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13175,7 +13175,7 @@
       "zh_CN": "新玩法：双倍体力（宝物变出的东西高 1 级）",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:344"
+        "scripts/Data.gd:346"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13198,7 +13198,7 @@
       "zh_CN": "主角经验。实现带 ★ 的心愿就能获得，攒满就升级。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:636"
+        "scripts/Data.gd:640"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13209,7 +13209,7 @@
       "zh_CN": "%d级高级宝箱，选中后再点取物，共%d件体力或琥珀。未打开可合成，打开后不能合成。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:566"
+        "scripts/Data.gd:570"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13223,7 +13223,7 @@
       "zh_CN": "选中后再次点击取物。打开后不能合成，最后物品落到其他空格后宝箱消失。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:630"
+        "scripts/Data.gd:634"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13234,7 +13234,7 @@
       "zh_CN": "拖到可升级物品上，使其提升1级，使用后消失。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:563"
+        "scripts/Data.gd:567"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13246,7 +13246,7 @@
       "en_US": "",
       "refs": [
         "data/random_orders.json#/curves/1/name",
-        "scripts/Data.gd:153",
+        "scripts/Data.gd:155",
         "scripts/ui/OrderCurvePad.gd:789",
         "scripts/ui/OrderCurvePad.gd:824",
         "scripts/ui/OrderCurvePad.gd:832"
@@ -13260,7 +13260,7 @@
       "zh_CN": "已经是最高级！",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:586"
+        "scripts/Data.gd:590"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13271,7 +13271,7 @@
       "zh_CN": "新活动：%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:342"
+        "scripts/Data.gd:344"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13284,7 +13284,7 @@
       "zh_CN": "丢掉可以换回 %d 不那那。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:612"
+        "scripts/Data.gd:616"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13308,7 +13308,7 @@
       "zh_CN": "拖到2级及以上物品上，拆成两个低一级物品，使用后消失。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:564"
+        "scripts/Data.gd:568"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13319,7 +13319,7 @@
       "zh_CN": "点击收取 %d 点体力。%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:620"
+        "scripts/Data.gd:624"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13344,7 +13344,7 @@
       "zh_CN": "选中后再点，取出族人正想要的东西，共%d次。未打开可合成，打开后不能合成。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:565"
+        "scripts/Data.gd:569"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13357,7 +13357,7 @@
       "zh_CN": "同时许愿的族人 +%d，现在 %d 位",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:337"
+        "scripts/Data.gd:339"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13371,7 +13371,7 @@
       "zh_CN": "点击收取 %d 琥珀。%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:624"
+        "scripts/Data.gd:628"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13385,7 +13385,7 @@
       "zh_CN": "合成到 2 级才能收取。%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:618"
+        "scripts/Data.gd:622"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13398,7 +13398,18 @@
       "zh_CN": "还不能生产。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:602"
+        "scripts/Data.gd:606"
+      ],
+      "scope": "runtime",
+      "placeholders": []
+    },
+    "notice.data.e3408ef57afa": {
+      "category": "notice",
+      "source": "新玩法：4倍体力（宝物变出的东西高 2 级）",
+      "zh_CN": "新玩法：4倍体力（宝物变出的东西高 2 级）",
+      "en_US": "",
+      "refs": [
+        "scripts/Data.gd:348"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13409,7 +13420,7 @@
       "zh_CN": "点击收取 %d 份沙漏。每份能让正在制作的成品快 %s。%s",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:626"
+        "scripts/Data.gd:630"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13424,7 +13435,7 @@
       "zh_CN": "丰收祭卡册开放",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:339"
+        "scripts/Data.gd:341"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -13449,9 +13460,9 @@
       "zh_CN": "%d 小时",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:580",
-        "scripts/Data.gd:604",
-        "scripts/Data.gd:784"
+        "scripts/Data.gd:584",
+        "scripts/Data.gd:608",
+        "scripts/Data.gd:788"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13464,7 +13475,7 @@
       "zh_CN": "%d级藤编宝箱，选中后再点取物，共%d件资源或宝物。未打开可合成，打开后不能合成。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:571"
+        "scripts/Data.gd:575"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13478,8 +13489,8 @@
       "zh_CN": "%d 小时 %d 分钟",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:580",
-        "scripts/Data.gd:784"
+        "scripts/Data.gd:584",
+        "scripts/Data.gd:788"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13493,7 +13504,7 @@
       "zh_CN": "合成可得：%s。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:586"
+        "scripts/Data.gd:590"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13506,7 +13517,7 @@
       "zh_CN": "用%s做成。制作需要 %s，可以用沙漏加速。%d 级解锁。",
       "en_US": "",
       "refs": [
-        "scripts/Data.gd:583"
+        "scripts/Data.gd:587"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13694,7 +13705,7 @@
       "zh_CN": "%d时%d分",
       "en_US": "",
       "refs": [
-        "scripts/Game.gd:454"
+        "scripts/Game.gd:457"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -13708,8 +13719,8 @@
       "zh_CN": "%d分%02d秒",
       "en_US": "",
       "refs": [
-        "scripts/Game.gd:455",
-        "scripts/ui/Board.gd:836",
+        "scripts/Game.gd:458",
+        "scripts/ui/Board.gd:838",
         "scripts/ui/MergeEventEntry.gd:37"
       ],
       "scope": "runtime",
@@ -13724,7 +13735,7 @@
       "zh_CN": "%d天%d时",
       "en_US": "",
       "refs": [
-        "scripts/Game.gd:452"
+        "scripts/Game.gd:455"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -14102,8 +14113,8 @@
         "scripts/domain/ProgressionRules.gd:464",
         "scripts/domain/ProgressionRules.gd:488",
         "scripts/domain/ProgressionRules.gd:512",
-        "scripts/replay/Reducer.gd:296",
-        "scripts/replay/Reducer.gd:310"
+        "scripts/replay/Reducer.gd:299",
+        "scripts/replay/Reducer.gd:313"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14307,7 +14318,7 @@
       "zh_CN": "请先解锁卡册",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:336"
+        "scripts/replay/Reducer.gd:339"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14318,8 +14329,8 @@
       "zh_CN": "卡册不存在",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:311",
-        "scripts/replay/Reducer.gd:338"
+        "scripts/replay/Reducer.gd:314",
+        "scripts/replay/Reducer.gd:341"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14342,7 +14353,7 @@
       "zh_CN": "点开卡包看看吧",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:288"
+        "scripts/replay/Reducer.gd:291"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14353,7 +14364,7 @@
       "zh_CN": "还不能领取",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:144"
+        "scripts/replay/Reducer.gd:147"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14375,7 +14386,7 @@
       "zh_CN": "还没解锁",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:134"
+        "scripts/replay/Reducer.gd:137"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14386,7 +14397,7 @@
       "zh_CN": "现在还不能建造",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:97"
+        "scripts/replay/Reducer.gd:100"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14397,7 +14408,7 @@
       "zh_CN": "拖它去合成吧",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:282"
+        "scripts/replay/Reducer.gd:285"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14408,7 +14419,7 @@
       "zh_CN": "体力不够了",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:269"
+        "scripts/replay/Reducer.gd:272"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14419,7 +14430,7 @@
       "zh_CN": "活动还没开始",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:153"
+        "scripts/replay/Reducer.gd:156"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14452,7 +14463,7 @@
       "zh_CN": "合成到 2 级才能收取",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:278"
+        "scripts/replay/Reducer.gd:281"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14463,7 +14474,7 @@
       "zh_CN": "已经领过了",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:101"
+        "scripts/replay/Reducer.gd:104"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14485,7 +14496,7 @@
       "zh_CN": "奖励已领取",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:313",
+        "scripts/replay/Reducer.gd:316",
         "scripts/ui/popups/CollectionPopups.gd:110"
       ],
       "scope": "runtime",
@@ -14497,7 +14508,7 @@
       "zh_CN": "这份礼包还不能领",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:188"
+        "scripts/replay/Reducer.gd:191"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14508,7 +14519,7 @@
       "zh_CN": "未知 GM 操作",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:335"
+        "scripts/replay/Reducer.gd:338"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14519,7 +14530,7 @@
       "zh_CN": "暂时不能这样做",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:204"
+        "scripts/replay/Reducer.gd:207"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14530,8 +14541,8 @@
       "zh_CN": "引导尚未完成",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:200",
-        "scripts/replay/Reducer.gd:202"
+        "scripts/replay/Reducer.gd:203",
+        "scripts/replay/Reducer.gd:205"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14553,7 +14564,7 @@
       "zh_CN": "请先完成当前引导",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:198"
+        "scripts/replay/Reducer.gd:201"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14564,7 +14575,7 @@
       "zh_CN": "这份升级奖励已经领过了",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:106"
+        "scripts/replay/Reducer.gd:109"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14575,7 +14586,7 @@
       "zh_CN": "卡册还没集齐",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:314"
+        "scripts/replay/Reducer.gd:317"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14586,7 +14597,7 @@
       "zh_CN": "当前环境未开放 GM",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:329"
+        "scripts/replay/Reducer.gd:332"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14597,7 +14608,7 @@
       "zh_CN": "它累了，歇一会儿再来",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:266"
+        "scripts/replay/Reducer.gd:269"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14608,7 +14619,7 @@
       "zh_CN": "权益数据无效",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:209"
+        "scripts/replay/Reducer.gd:212"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14619,7 +14630,7 @@
       "zh_CN": "已经到账",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:211"
+        "scripts/replay/Reducer.gd:214"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14630,7 +14641,7 @@
       "zh_CN": "选一个能用的物品",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:261"
+        "scripts/replay/Reducer.gd:264"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14652,7 +14663,7 @@
       "zh_CN": "这件东西已经没有了",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:285"
+        "scripts/replay/Reducer.gd:288"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14663,9 +14674,9 @@
       "zh_CN": "棋盘满啦，先腾出空位",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:268",
-        "scripts/replay/Reducer.gd:292",
-        "scripts/ui/BoardScreen.gd:566"
+        "scripts/replay/Reducer.gd:271",
+        "scripts/replay/Reducer.gd:295",
+        "scripts/ui/BoardScreen.gd:575"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14676,7 +14687,7 @@
       "zh_CN": "没有可获取的卡片",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:349"
+        "scripts/replay/Reducer.gd:352"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14687,7 +14698,7 @@
       "zh_CN": "还没有卡包",
       "en_US": "",
       "refs": [
-        "scripts/replay/Reducer.gd:298"
+        "scripts/replay/Reducer.gd:301"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -14897,7 +14908,7 @@
       "en_US": "",
       "refs": [
         "scripts/events/SevenDay.gd:91",
-        "scripts/replay/Reducer.gd:136",
+        "scripts/replay/Reducer.gd:139",
         "scripts/ui/DuelPopup.gd:318",
         "scripts/ui/FossilDigPopup.gd:306",
         "scripts/ui/MergeEventPopup.gd:288",
@@ -15037,7 +15048,7 @@
       "en_US": "",
       "refs": [
         "scripts/events/UfoOffer.gd:97",
-        "scripts/ui/BoardScreen.gd:797",
+        "scripts/ui/BoardScreen.gd:806",
         "scripts/ui/PassPopup.gd:470",
         "scripts/ui/UfoPopup.gd:187",
         "scripts/ui/popups/ShopPopups.gd:382"
@@ -16100,7 +16111,7 @@
       "zh_CN": "%d秒",
       "en_US": "",
       "refs": [
-        "scripts/ui/Board.gd:837"
+        "scripts/ui/Board.gd:839"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16113,7 +16124,7 @@
       "zh_CN": "点击取菜",
       "en_US": "",
       "refs": [
-        "scripts/ui/Board.gd:844"
+        "scripts/ui/Board.gd:846"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16124,7 +16135,7 @@
       "zh_CN": "%d时%02d分",
       "en_US": "",
       "refs": [
-        "scripts/ui/Board.gd:834",
+        "scripts/ui/Board.gd:836",
         "scripts/ui/MergeEventEntry.gd:37"
       ],
       "scope": "runtime",
@@ -16162,7 +16173,7 @@
       "zh_CN": "%d级解锁收藏卡。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:872"
+        "scripts/ui/BoardScreen.gd:881"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16175,12 +16186,23 @@
       "zh_CN": "%d 秒后消失",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:841"
+        "scripts/ui/BoardScreen.gd:850"
       ],
       "scope": "runtime",
       "placeholders": [
         "d"
       ]
+    },
+    "ui.boardscreen.329a0eff6f52": {
+      "category": "ui",
+      "source": "4倍体力已关闭",
+      "zh_CN": "4倍体力已关闭",
+      "en_US": "",
+      "refs": [
+        "scripts/ui/BoardScreen.gd:547"
+      ],
+      "scope": "runtime",
+      "placeholders": []
     },
     "ui.boardscreen.432dec8292e1": {
       "category": "ui",
@@ -16189,6 +16211,17 @@
       "en_US": "",
       "refs": [
         "scripts/ui/BoardScreen.gd:501"
+      ],
+      "scope": "runtime",
+      "placeholders": []
+    },
+    "ui.boardscreen.47d902984493": {
+      "category": "ui",
+      "source": "4倍体力已开启：宝物每次耗 4 点体力，变出的东西高 2 级",
+      "zh_CN": "4倍体力已开启：宝物每次耗 4 点体力，变出的东西高 2 级",
+      "en_US": "",
+      "refs": [
+        "scripts/ui/BoardScreen.gd:543"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16223,7 +16256,7 @@
       "zh_CN": "奖励、买到的东西和放不下的物品都会先放在这里",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:618"
+        "scripts/ui/BoardScreen.gd:627"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16234,7 +16267,7 @@
       "zh_CN": "卡包已保留，%d级开启",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:622"
+        "scripts/ui/BoardScreen.gd:631"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16271,7 +16304,7 @@
       "zh_CN": "剩余%d件。%s",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:870"
+        "scripts/ui/BoardScreen.gd:879"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16305,7 +16338,7 @@
         "scripts/ui/BoardScreen.gd:382",
         "scripts/ui/BoardScreen.gd:390",
         "scripts/ui/BoardScreen.gd:403",
-        "scripts/ui/BoardScreen.gd:830"
+        "scripts/ui/BoardScreen.gd:839"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16389,7 +16422,7 @@
       "zh_CN": "双倍体力已关闭",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:542"
+        "scripts/ui/BoardScreen.gd:549"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16400,7 +16433,7 @@
       "zh_CN": "%d  买下",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:832"
+        "scripts/ui/BoardScreen.gd:841"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16413,7 +16446,7 @@
       "zh_CN": "点击打开，三件物品里挑一件。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:866"
+        "scripts/ui/BoardScreen.gd:875"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16438,7 +16471,7 @@
       "zh_CN": "做好啦！菜在棋盘上，点对勾端给族人",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:595"
+        "scripts/ui/BoardScreen.gd:604"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16460,7 +16493,7 @@
       "zh_CN": "点一下取出一件物品，取完宝箱就没了。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:869"
+        "scripts/ui/BoardScreen.gd:878"
       ],
       "scope": "runtime",
       "placeholders": []
@@ -16471,7 +16504,7 @@
       "zh_CN": "%d级卡包，每包%d张卡片，点击查看星级概率。",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:872"
+        "scripts/ui/BoardScreen.gd:881"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16509,7 +16542,7 @@
       "zh_CN": "%d级解锁双倍体力",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:536"
+        "scripts/ui/BoardScreen.gd:537"
       ],
       "scope": "runtime",
       "placeholders": [
@@ -16536,7 +16569,7 @@
       "zh_CN": "双倍体力已开启：宝物每次耗 2 点体力，变出的东西高 1 级",
       "en_US": "",
       "refs": [
-        "scripts/ui/BoardScreen.gd:540"
+        "scripts/ui/BoardScreen.gd:545"
       ],
       "scope": "runtime",
       "placeholders": []
