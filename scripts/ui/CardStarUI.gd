@@ -54,10 +54,10 @@ static func shop() -> PopupBase:
 			Art.dashed(ci, Art.rrect(rect.grow(-7), 16, 53, 0.0), 7, 5, Color("b99765"), 2.0), false)
 		UI.icon(p.box, pack_id, Vector2(146, y + 84), 130)
 		UI.lbl(p.box, Data.name_of(pack_id), Rect2(222, y + 20, 252, 44), 31, Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
-		UI.lbl(p.box, TextCatalog.source("ui.cardstarui.125390dec69a") % int(CardPacks.config()["cards_per_pack"]), Rect2(226, y + 68, 210, 34), 23, Color("805934"), HORIZONTAL_ALIGNMENT_LEFT)
+		UI.lbl(p.box, TextCatalog.fill(TextCatalog.source("ui.cardstarui.125390dec69a"), int(CardPacks.config()["cards_per_pack"])), Rect2(226, y + 68, 210, 34), 23, Color("805934"), HORIZONTAL_ALIGNMENT_LEFT)
 		var highest: int = CardPacks.definition(pack_id)["weights"].size()
 		while highest > 0 and float(CardPacks.definition(pack_id)["weights"][highest - 1]) == 0.0: highest -= 1
-		UI.lbl(p.box, TextCatalog.source("ui.cardstarui.121456da6c67") % highest, Rect2(226, y + 108, 210, 34), 24, Color("a05a22"), HORIZONTAL_ALIGNMENT_LEFT)
+		UI.lbl(p.box, TextCatalog.fill(TextCatalog.source("ui.cardstarui.121456da6c67"), highest), Rect2(226, y + 108, 210, 34), 24, Color("a05a22"), HORIZONTAL_ALIGNMENT_LEFT)
 		var buy := UI.btn(p.box, Rect2(480, y + 34, 148, 82), str(cost), "green", func():
 			var result: Dictionary = Replay.perform("card_star_exchange", {"cost": cost})
 			if result.has("error"):
@@ -75,7 +75,7 @@ static func shop() -> PopupBase:
 			var cost := int(offers[k]["cost"])
 			buttons[k].enabled = G.card_stars >= cost
 			buttons[k].queue_redraw()
-			deficits[k].text = TextCatalog.resolve(TextCatalog.source("ui.cardstarui.8e479923b89a") % (cost - G.card_stars) if G.card_stars < cost else "")
+			deficits[k].text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.cardstarui.8e479923b89a"), (cost - G.card_stars)) if G.card_stars < cost else "")
 	refresh.call()
 	Popups.live(p, G.changed, refresh)
 	return p

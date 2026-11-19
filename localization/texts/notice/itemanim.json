@@ -1,0 +1,8 @@
+{
+  "feature": "itemanim",
+  "entries": {
+    "5dd3ad32f0af": {
+      "zh_CN": "物品 ${0} 没有预绘制图片，请运行「生成物品图.bat」。"
+    }
+  }
+}

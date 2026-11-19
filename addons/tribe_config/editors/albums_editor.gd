@@ -27,5 +27,5 @@ func validate() -> String:
 		if str(a.get("name", "")).strip_edges() == "":
 			return TextCatalog.source("developer.albums_editor.c947d38e8923")
 		if a["cards"].size() != 9:
-			return TextCatalog.source("developer.albums_editor.a4e8336112c5") % [a["name"], a["cards"].size()]
+			return TextCatalog.fill(TextCatalog.source("developer.albums_editor.a4e8336112c5"), [a["name"], a["cards"].size()])
 	return ""

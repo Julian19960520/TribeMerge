@@ -68,6 +68,13 @@ static func activity_levels() -> Dictionary:
 const BOOST_LEVEL := 18
 ## 4倍火种（生产器加速）：这一级解锁。开启后生产器每次耗 4 火种，产物高 2 级。
 const BOOST_4_LEVEL := 42
+## 好运爆发：这一级解锁。手头订单全都差得远时，点生产器有小概率直接出高 LUCKY_STEPS_MIN~LUCKY_STEPS_MAX 级（随机）的物品。
+const LUCKY_LEVEL := 25
+const LUCKY_CHANCE := 0.05
+const LUCKY_STEPS_MIN := 2
+const LUCKY_STEPS_MAX := 4
+## 订单要的东西比手头同链最高的（不超过要的那级）还高这么多级，才算「难」。
+const LUCKY_HARD_GAP := 3
 ## 储物洞每排格数：界面布局与扩容计价共用。
 const STORAGE_COLS := 5
 
@@ -325,27 +332,29 @@ static func level_unlocks(level: int) -> Array:
 	var out: Array = []
 	for l in LINES:
 		if int(l.get("unlock", 0)) == level and level > 1:
-			out.append(TextCatalog.source("notice.data.3c0db30d775a") % str(l.get("name", "")))
+			out.append(TextCatalog.fill(TextCatalog.source("notice.data.3c0db30d775a"), str(l.get("name", ""))))
 		var sub := str(l.get("sub", ""))
 		if sub != "" and level > 1 and product_open(level, sub) and not product_open(level - 1, sub):
-			out.append(TextCatalog.source("notice.data.1f0a007ab89d") % str(CHAINS.get(str(l["sub"]), {}).get("name", "")))
+			out.append(TextCatalog.fill(TextCatalog.source("notice.data.1f0a007ab89d"), str(CHAINS.get(str(l["sub"]), {}).get("name", ""))))
 	if level == int(RULES.get("craft_level", 3)):
 		out.append(TextCatalog.source("notice.data.60f991a1a015"))
 	for id in DISHES:
 		var d: Dictionary = DISHES[id]
 		if int(d["unlock"]) == level and level > int(RULES.get("craft_level", 3)):
-			out.append(TextCatalog.source("notice.data.1b4046c64e71") % str(d["name"]))
+			out.append(TextCatalog.fill(TextCatalog.source("notice.data.1b4046c64e71"), str(d["name"])))
 	if level > 1 and order_total(level) > order_total(level - 1):
-		out.append(TextCatalog.source("notice.data.cceb0cae7767") % [order_total(level) - order_total(level - 1), order_total(level)])
+		out.append(TextCatalog.fill(TextCatalog.source("notice.data.cceb0cae7767"), [order_total(level) - order_total(level - 1), order_total(level)]))
 	if level == CARD_LEVEL:
 		out.append(TextCatalog.source("notice.data.f0ffe31b59db"))
 	var acts := activity_levels()
 	for name in acts:
-		if int(acts[name]) == level and level > 1: out.append(TextCatalog.source("notice.data.a3fe574ac2c6") % name)
+		if int(acts[name]) == level and level > 1: out.append(TextCatalog.fill(TextCatalog.source("notice.data.a3fe574ac2c6"), name))
 	if level == BOOST_LEVEL:
 		out.append(TextCatalog.source("notice.data.651ad0fee6e4"))
 	if level == BOOST_4_LEVEL:
 		out.append(TextCatalog.source("notice.data.e3408ef57afa"))
+	if level == LUCKY_LEVEL:
+		out.append(TextCatalog.source("notice.data.5b622fa09c65"))
 	return out
 
 static func is_dish(id: String) -> bool:
@@ -474,6 +483,68 @@ static func product_open(level: int, chain_id: String) -> bool:
 			return sub_unlock_level(int(l.get("unlock", 1))) <= level
 	return true
 
+## 通行证奖励里的棋盘物品：这条链当前等级还没开，就换成已开放产线里同等级的物品。资源、宝箱、卡包保持原样。
+static func for_pass(level: int, rewards: Array) -> Array:
+	var out: Array = []
+	for rw in rewards:
+		if not rw is Array or rw.size() < 2:
+			continue
+		var id := opened_reward(level, str(rw[0]))
+		if id == "":
+			continue
+		var copy: Array = rw.duplicate()
+		copy[0] = id
+		out.append(copy)
+	return out
+
+static func opened_reward(level: int, id: String) -> String:
+	if is_numeric_resource(id) or not is_board_item(id):
+		return id
+	var kind := type_of(id)
+	if kind == "item":
+		if product_open(level, chain(id)):
+			return id
+		return _stand_in_item(level, id)
+	if kind == "gen":
+		if _gen_open(level, chain(id)):
+			return id
+		return _stand_in_gen(level, id)
+	if kind == "dish":
+		return id if int(DISHES[id].get("unlock", 1)) <= level else ""
+	return id
+
+static func _gen_open(level: int, chain_id: String) -> bool:
+	for l in LINES:
+		if str(l.get("gen", "")) == chain_id:
+			return int(l.get("unlock", 1)) <= level
+	return true
+
+static func _stand_in_item(level: int, id: String) -> String:
+	var pools := _open_chains(level, "sub" if draw_role(chain(id)) == "S" else "main")
+	if pools.is_empty():
+		pools = _open_chains(level, "main")
+	if pools.is_empty():
+		return ""
+	var ch := str(pools[0])
+	return "%s_%d" % [ch, clampi(lv(id), 1, max_lv(ch))]
+
+static func _stand_in_gen(level: int, id: String) -> String:
+	var lines := unlocked_lines(level)
+	if lines.is_empty():
+		return ""
+	var ch := str(lines[0].get("gen", ""))
+	if ch == "" or max_lv(ch) < 1:
+		return ""
+	return "%s_%d" % [ch, clampi(lv(id), 1, max_lv(ch))]
+
+static func _open_chains(level: int, field: String) -> Array:
+	var out: Array = []
+	for l in unlocked_lines(level):
+		var ch := str(l.get(field, ""))
+		if ch != "" and product_open(level, ch):
+			out.append(ch)
+	return out
+
 ## 副产物解锁等级：从产线开放等级往后，第一个个位是 3 或 8 的等级。
 static func sub_unlock_level(line_unlock: int) -> int:
 	var lv := maxi(1, line_unlock)
@@ -566,76 +637,76 @@ static func describe(id: String) -> String:
 	if is_numeric_resource(id): return str(REWARD_RESOURCES[id]["description"])
 	if type_of(id) == "upgrade": return TextCatalog.source("notice.data.83eb30deb5bb")
 	if type_of(id) == "scissors": return TextCatalog.source("notice.data.befb6f57c800")
-	if Data.chain(id) == "orderbox": return TextCatalog.source("notice.data.c14a2bd6dafb") % int(SpecialChests.order_definition(id)["count"])
-	if Data.chain(id) == "premiumbox": return TextCatalog.source("notice.data.7c86baa46882") % [lv(id), SpecialChests.count(id)]
+	if Data.chain(id) == "orderbox": return TextCatalog.fill(TextCatalog.source("notice.data.c14a2bd6dafb"), int(SpecialChests.order_definition(id)["count"]))
+	if Data.chain(id) == "premiumbox": return TextCatalog.fill(TextCatalog.source("notice.data.7c86baa46882"), [lv(id), SpecialChests.count(id)])
 	if Data.chain(id) == "energybox":
 		var total := 0
 		for item in SpecialChests.definition(id)["items"]: total += value_of(str(item))
-		return TextCatalog.source("notice.data.57a9680ca8c6") % [lv(id), SpecialChests.count(id), total]
-	if Data.chain(id) == "chest": return TextCatalog.source("notice.data.f531c7922f96") % [lv(id), SpecialChests.count(id)]
+		return TextCatalog.fill(TextCatalog.source("notice.data.57a9680ca8c6"), [lv(id), SpecialChests.count(id), total])
+	if Data.chain(id) == "chest": return TextCatalog.fill(TextCatalog.source("notice.data.f531c7922f96"), [lv(id), SpecialChests.count(id)])
 	if DISHES.has(id):
 		var d: Dictionary = DISHES[id]
 		var bits: PackedStringArray = []
 		for m in d["mats"]:
 			bits.append(name_of(str(m)))
 		var secs := int(d["secs"])
-		var clock := TextCatalog.source("notice.data.517926f2a953") % secs
+		var clock := TextCatalog.fill(TextCatalog.source("notice.data.517926f2a953"), secs)
 		if secs >= 3600:
-			clock = TextCatalog.source("notice.data.f24d0c399e61") % (secs / 3600) if secs % 3600 == 0 else TextCatalog.source("notice.data.f6dc3c925a2d") % [secs / 3600, secs % 3600 / 60]
+			clock = TextCatalog.fill(TextCatalog.source("notice.data.f24d0c399e61"), (secs / 3600)) if secs % 3600 == 0 else TextCatalog.fill(TextCatalog.source("notice.data.f6dc3c925a2d"), [secs / 3600, secs % 3600 / 60])
 		elif secs >= 60:
-			clock = TextCatalog.source("notice.data.441275a944fb") % (secs / 60) if secs % 60 == 0 else TextCatalog.source("notice.data.14bf9175170a") % [secs / 60, secs % 60]
-		return TextCatalog.source("notice.data.fabf3c04d980") % ["、".join(bits), clock, int(d["unlock"])]
+			clock = TextCatalog.fill(TextCatalog.source("notice.data.441275a944fb"), (secs / 60)) if secs % 60 == 0 else TextCatalog.fill(TextCatalog.source("notice.data.14bf9175170a"), [secs / 60, secs % 60])
+		return TextCatalog.fill(TextCatalog.source("notice.data.fabf3c04d980"), ["、".join(bits), clock, int(d["unlock"])])
 	var t := type_of(id)
 	var nx := next_id(id)
-	var tail := TextCatalog.source("notice.data.f706e677fd73") % name_of(nx) if nx != "" else TextCatalog.source("notice.data.994bd700ac50")
+	var tail := TextCatalog.fill(TextCatalog.source("notice.data.f706e677fd73"), name_of(nx)) if nx != "" else TextCatalog.source("notice.data.994bd700ac50")
 	match t:
 		"gen":
 			var st := gen_stats(id)
 			if st.is_empty():
 				var n := first_prod_lv(chain(id))
 				if n <= 0:
-					return TextCatalog.source("notice.data.4901cf0da721") % tail
-				return TextCatalog.source("notice.data.0c5c3fdb9314") % [n, tail]
+					return TextCatalog.fill(TextCatalog.source("notice.data.4901cf0da721"), tail)
+				return TextCatalog.fill(TextCatalog.source("notice.data.0c5c3fdb9314"), [n, tail])
 			var bits: PackedStringArray = []
 			for d in st["drops"]:
 				bits.append("%s %d" % [name_of(str(d["id"])), int(d["p"])])
-			return TextCatalog.source("notice.data.5cb11c71f59f") % ["、".join(bits), tail]
+			return TextCatalog.fill(TextCatalog.source("notice.data.5cb11c71f59f"), ["、".join(bits), tail])
 		"egen":
 			var st := gen_stats(id)
 			if st.is_empty():
 				return TextCatalog.source("notice.data.da558152175b")
 			var rest := int(st["refill"])
-			var rest_text := TextCatalog.source("notice.data.f24d0c399e61") % (rest / 60) if rest % 60 == 0 else TextCatalog.source("notice.data.441275a944fb") % rest
+			var rest_text := TextCatalog.fill(TextCatalog.source("notice.data.f24d0c399e61"), (rest / 60)) if rest % 60 == 0 else TextCatalog.fill(TextCatalog.source("notice.data.441275a944fb"), rest)
 			var starter: Dictionary = RULES.get("starter_generator", {})
 			if id == str(starter.get("item", "")):
-				return TextCatalog.source("notice.data.2e905efaff17") % [int(starter["reward_level"]), int(starter["lifetime_sec"]) / 86400, rest_text, int(st["charges"])]
-			return TextCatalog.source("notice.data.08c4e6ad065d") % [int(st["charges"]), rest_text]
+				return TextCatalog.fill(TextCatalog.source("notice.data.2e905efaff17"), [int(starter["reward_level"]), int(starter["lifetime_sec"]) / 86400, rest_text, int(st["charges"])])
+			return TextCatalog.fill(TextCatalog.source("notice.data.08c4e6ad065d"), [int(st["charges"]), rest_text])
 		"item":
 			var l := line_of(id)
 			var sell := value_of(id)
-			var back := TextCatalog.source("notice.data.b797c33cee7e") % sell if sell > 0 else ""
+			var back := TextCatalog.fill(TextCatalog.source("notice.data.b797c33cee7e"), sell) if sell > 0 else ""
 			if not l.is_empty():
-				return TextCatalog.source("notice.data.3d317673a560") % [CHAINS[l["gen"]]["name"], back, tail]
+				return TextCatalog.fill(TextCatalog.source("notice.data.3d317673a560"), [CHAINS[l["gen"]]["name"], back, tail])
 			if back != "":
 				return back + tail
 		"energy", "shell", "amber", "sand" when value_of(id) <= 0:
-			return TextCatalog.source("notice.data.d63394fd4de9") % tail
+			return TextCatalog.fill(TextCatalog.source("notice.data.d63394fd4de9"), tail)
 		"energy":
-			return TextCatalog.source("notice.data.bfcc2a59e43c") % [value_of(id), tail]
+			return TextCatalog.fill(TextCatalog.source("notice.data.bfcc2a59e43c"), [value_of(id), tail])
 		"shell":
-			return TextCatalog.source("notice.data.4e95c9c43291") % [value_of(id), tail]
+			return TextCatalog.fill(TextCatalog.source("notice.data.4e95c9c43291"), [value_of(id), tail])
 		"amber":
-			return TextCatalog.source("notice.data.ce2d2f368aea") % [value_of(id), tail]
+			return TextCatalog.fill(TextCatalog.source("notice.data.ce2d2f368aea"), [value_of(id), tail])
 		"sand":
-			return TextCatalog.source("notice.data.e6c372cc495b") % [value_of(id), rush_text(), tail]
+			return TextCatalog.fill(TextCatalog.source("notice.data.e6c372cc495b"), [value_of(id), rush_text(), tail])
 		"choice":
-			return TextCatalog.source("notice.data.10ea43411057") % lv(id)
+			return TextCatalog.fill(TextCatalog.source("notice.data.10ea43411057"), lv(id))
 		"chest":
 			return TextCatalog.source("notice.data.83a2fa3dc002")
 		"pack":
-			return TextCatalog.source("notice.data.15eca9cf6383") % [lv(id), int(CardPacks.config()["cards_per_pack"]), CardPacks.probability_text(id)]
+			return TextCatalog.fill(TextCatalog.source("notice.data.15eca9cf6383"), [lv(id), int(CardPacks.config()["cards_per_pack"]), CardPacks.probability_text(id)])
 		"token":
-			return TextCatalog.source("notice.data.14617eddea71") % int(RULES.get("token_step", 10))
+			return TextCatalog.fill(TextCatalog.source("notice.data.14617eddea71"), int(RULES.get("token_step", 10)))
 		"xp":
 			return TextCatalog.source("notice.data.78a6f00684d0")
 	return tail
@@ -718,7 +789,7 @@ static func merge_sand_chance() -> float:
 
 static func rush_text() -> String:
 	var s := rush_sec()
-	return TextCatalog.source("notice.data.441275a944fb") % (s / 60) if s % 60 == 0 else TextCatalog.source("notice.data.517926f2a953") % s
+	return TextCatalog.fill(TextCatalog.source("notice.data.441275a944fb"), (s / 60)) if s % 60 == 0 else TextCatalog.fill(TextCatalog.source("notice.data.517926f2a953"), s)
 
 ## 一份沙漏让制作快多少秒（rules.json rush_sec）。
 static func rush_sec() -> int:
@@ -785,10 +856,10 @@ static func craft_secs(level: int, dish_id: String) -> int:
 ## 制作时长的文字：x秒 / x分 / x分x秒 / x小时 / x小时x分。
 static func secs_text(secs: int) -> String:
 	if secs >= 3600:
-		return TextCatalog.source("notice.data.f24d0c399e61") % (secs / 3600) if secs % 3600 == 0 else TextCatalog.source("notice.data.f6dc3c925a2d") % [secs / 3600, secs % 3600 / 60]
+		return TextCatalog.fill(TextCatalog.source("notice.data.f24d0c399e61"), (secs / 3600)) if secs % 3600 == 0 else TextCatalog.fill(TextCatalog.source("notice.data.f6dc3c925a2d"), [secs / 3600, secs % 3600 / 60])
 	if secs >= 60:
-		return TextCatalog.source("notice.data.441275a944fb") % (secs / 60) if secs % 60 == 0 else TextCatalog.source("notice.data.14bf9175170a") % [secs / 60, secs % 60]
-	return TextCatalog.source("notice.data.517926f2a953") % secs
+		return TextCatalog.fill(TextCatalog.source("notice.data.441275a944fb"), (secs / 60)) if secs % 60 == 0 else TextCatalog.fill(TextCatalog.source("notice.data.14bf9175170a"), [secs / 60, secs % 60])
+	return TextCatalog.fill(TextCatalog.source("notice.data.517926f2a953"), secs)
 
 ## 每次合成最多掉一件资源；按顺序占用概率区间，剩余概率不掉落。
 static func resource_drop(scope: String, roll: float, level: int, merged: String = "") -> String:

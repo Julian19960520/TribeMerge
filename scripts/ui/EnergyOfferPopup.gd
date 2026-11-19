@@ -67,7 +67,7 @@ func _card(k: int) -> void:
 	var r := Rect2(float(CARD_X[k]), CARD_Y, CARD_W, CARD_H)
 	# 卡身（条纹、叶子小花、内衬）是预生成贴图，配色见 scripts/sprites/events.gd 的 EN_HEAD / EN_BODY
 	UI.box(box, r, func(ci, sz): Sprites.draw(ci, "ev_energy_card_%d" % k, Rect2(Vector2.ZERO, sz)))
-	UI.lbl(box, TextCatalog.source("ui.energyofferpopup.781168738ca7") % int(t.get("value_pct", 100)), Rect2(r.position.x, r.position.y + 34, r.size.x, 50), 30, Color("ffe14a"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	UI.lbl(box, TextCatalog.fill(TextCatalog.source("ui.energyofferpopup.781168738ca7"), int(t.get("value_pct", 100))), Rect2(r.position.x, r.position.y + 34, r.size.x, 50), 30, Color("ffe14a"), HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	var rw: Array = t.get("rewards", [])
 	for j in mini(rw.size(), 3):
 		var row: Array = rw[j]
@@ -110,7 +110,7 @@ func _refresh() -> void:
 	var left := G.rules.clock.energy_full_left()
 	var s := left
 	var hms := "%02d:%02d:%02d" % [s / 3600, (s % 3600) / 60, s % 60]
-	wait_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.energyofferpopup.528cc454ebd6") if left == 0 else TextCatalog.source("ui.energyofferpopup.3658f40ca5a1") % [hms, G.MAX_ENERGY])
+	wait_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.energyofferpopup.528cc454ebd6") if left == 0 else TextCatalog.fill(TextCatalog.source("ui.energyofferpopup.3658f40ca5a1"), [hms, G.MAX_ENERGY]))
 
 func _buy(k: int) -> void:
 	if _busy: return

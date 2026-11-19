@@ -452,10 +452,10 @@ func business_snapshot() -> Dictionary:
 
 static func fmt_time(sec: int) -> String:
 	if sec >= 86400:
-		return TextCatalog.source("notice.game.a65fe21f06e8") % [sec / 86400, (sec % 86400) / 3600]
+		return TextCatalog.fill(TextCatalog.source("notice.game.a65fe21f06e8"), [sec / 86400, (sec % 86400) / 3600])
 	if sec >= 3600:
-		return TextCatalog.source("notice.game.17575740b271") % [sec / 3600, (sec % 3600) / 60]
-	return TextCatalog.source("notice.game.30c88ef0108b") % [sec / 60, sec % 60]
+		return TextCatalog.fill(TextCatalog.source("notice.game.17575740b271"), [sec / 3600, (sec % 3600) / 60])
+	return TextCatalog.fill(TextCatalog.source("notice.game.30c88ef0108b"), [sec / 60, str(int(sec % 60)).pad_zeros(2)])
 
 
 func present(kind: String, payload: Dictionary) -> void:

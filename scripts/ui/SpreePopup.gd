@@ -117,7 +117,7 @@ func _refresh() -> void:
 	var live := Offers.active(KIND)
 	var n := Offers.left(KIND, TIER)
 	clock.text = TextCatalog.resolve(clock_text(Offers.remaining(KIND)) if live else TextCatalog.source("ui.energyofferpopup.d79b1d0e5c61"))
-	left_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.spreepopup.5580ae282554") % n)
+	left_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.spreepopup.5580ae282554"), n))
 	buy_btn.enabled = live and n > 0 and not _busy
 	buy_btn.text = TextCatalog.resolve(Offers.price_text(KIND, TIER) if live and n > 0 else (TextCatalog.source("ui.spreepopup.468e8fb0701e") if n <= 0 else TextCatalog.source("ui.spreepopup.35dabb9b716f")))
 	buy_btn.queue_redraw()

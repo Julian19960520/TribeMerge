@@ -125,13 +125,13 @@ func _save() -> void:
 	var path: String = catalog[current]["path"]
 	var err := Files.write(path, pages[path])
 	if err != OK:
-		set_status(TextCatalog.source("developer.host.1f7c56ff5cdb") % error_string(err), true)
+		set_status(TextCatalog.fill(TextCatalog.source("developer.host.1f7c56ff5cdb"), error_string(err)), true)
 		return
 	var fs := EditorInterface.get_resource_filesystem()
 	if fs:
 		fs.update_file(path)
 	dirty.erase(path)
-	set_status(TextCatalog.source("developer.host.da351f64b0f5") % path)
+	set_status(TextCatalog.fill(TextCatalog.source("developer.host.da351f64b0f5"), path))
 
 func _reload_pressed() -> void:
 	var path: String = catalog[current]["path"]

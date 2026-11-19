@@ -1,0 +1,14 @@
+{
+  "feature": "onboardingrules",
+  "entries": {
+    "6fae244b7f53": {
+      "zh_CN": "先完成当前操作"
+    },
+    "957ba00eb791": {
+      "zh_CN": "这份奖励还不能领取"
+    },
+    "ccea20ccace0": {
+      "zh_CN": "引导步骤已经变化"
+    }
+  }
+}

@@ -79,6 +79,7 @@ func run() -> void:
 	await process_frame
 	card = main.board_screen._cards[0]
 	check(card._rewards_layer.visible and not card._time_bar.visible and card.cooking_progress() == 0, "未制作时保留奖励列表")
+	check(card._make_host.visible and card.get_child(-1) == card._make_host and card._make_host.size == Vector2(112, 52), "材料齐后制作按钮画在奖励上面，宽度不变")
 	var started: Dictionary = replay.perform("craft", {"cell": 0}, START)
 	g.simulation_time = START + 1; replay.perform("tick", {}, START + 1)
 	await process_frame
@@ -88,7 +89,9 @@ func run() -> void:
 	# 制作时长随等级和菜的难度算（rules.craft_time），这里按订单上实际写入的秒数校验
 	var cook_cell := int(g.orders[0].get("cell", 0))
 	var secs := int(g.orders[0].get("secs", 0))
-	check(secs > 2 and card._skip_cost.text == str(g.rules.orders.rush_need(cook_cell)) and card._skip_cost.position.x > card._skip_button.size.x * 0.5 + 24 and card._skip_cost.position.y > 20, "沙漏消耗数字位于图标右下角，费用使用真实倒计时")
+	var skip_icon: Control = card._skip_button.get_child(0)
+	var skip_text: Control = card._skip_button.get_child(2)
+	check(secs > 2 and card._skip_cost.text == str(g.rules.orders.rush_need(cook_cell)) and skip_icon.position.x + skip_icon.size.x <= skip_text.position.x + 4 and card._skip_cost.position.x > skip_icon.position.x + skip_icon.size.x * 0.4 and card._skip_cost.position.y > 20, "跳过按钮沙漏在左、文字在右，消耗数字位于图标右下角")
 	var t0 := int(float(g.orders[0].get("t0", START)))
 	var half := t0 + int(secs / 2)
 	g.simulation_time = half; replay.perform("tick", {}, half)

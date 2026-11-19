@@ -44,7 +44,7 @@ func _ready() -> void:
 	UI.box(body, Rect2(96, 1240, 528, 54), func(ci, sz):
 		Paint.pill(ci, Rect2(Vector2.ZERO, sz))
 		FossilArt.shovel(ci, Vector2(44, 24), 60, -0.35)
-		var text := TextCatalog.source("ui.fossildigpopup.67ec7d900d6e") % int(FossilDig.config()["dig_cost"])
+		var text := TextCatalog.fill(TextCatalog.source("ui.fossildigpopup.67ec7d900d6e"), int(FossilDig.config()["dig_cost"]))
 		ci.draw_string(G.font_body, Vector2(300, 36), TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("826243")), false)
 	count_label = UI.lbl(body, TextCatalog.source("ui.fossildigpopup.0bcb1019f397"), Rect2(168, 1240, 220, 54), 30, Color("5d422c"), HORIZONTAL_ALIGNMENT_LEFT)
 	primary = UI.btn(body, Rect2(164, 1304, 392, 72), TextCatalog.source("ui.dailyadpopup.871be2654869"), "green", _primary, 34)
@@ -180,9 +180,9 @@ func _refresh() -> void:
 	if sig == signature: return
 	signature = sig
 	var found: int = b["pieces"].filter(func(p): return bool(p["found"])).size()
-	stage_label.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.97b088c2cfbd") % [int(s["stage"]), found, b["pieces"].size()])
-	progress_label.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.6a972fc7ba62") % [int(s["recovered"]), int(FossilDig.config()["milestones"][-1]["bones"])])
-	count_label.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.3b29294beeaf") % int(s["shovels"]))
+	stage_label.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.fossildigpopup.97b088c2cfbd"), [int(s["stage"]), found, b["pieces"].size()]))
+	progress_label.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.fossildigpopup.6a972fc7ba62"), [int(s["recovered"]), int(FossilDig.config()["milestones"][-1]["bones"])]))
+	count_label.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.fossildigpopup.3b29294beeaf"), int(s["shovels"])))
 	primary.enabled = not working and flies.is_empty()
 	primary.text = TextCatalog.resolve(TextCatalog.source("ui.duelpopup.245ede446986"))
 	if FossilDig.cleared():
@@ -190,9 +190,9 @@ func _refresh() -> void:
 		elif FossilDig.finished():
 			primary.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.9e8c0224ec4a") if not FossilDig.ready_rewards().is_empty() else TextCatalog.source("ui.fossildigpopup.e4010c8ebd66"))
 			primary.enabled = not working and not FossilDig.ready_rewards().is_empty()
-		else: primary.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.1f2d6ed0765b") % [int(b["n"]) + 1, int(b["n"]) + 1])
+		else: primary.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.fossildigpopup.1f2d6ed0765b"), [int(b["n"]) + 1, int(b["n"]) + 1]))
 		hint.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.ab372d456390") if not FossilDig.finished() else TextCatalog.source("ui.fossildigpopup.7d857497b7f8"))
-	elif int(s["shovels"]) < int(FossilDig.config()["dig_cost"]): hint.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.c49331d01397") % int(FossilDig.config()["shovels_per_order"]))
+	elif int(s["shovels"]) < int(FossilDig.config()["dig_cost"]): hint.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.fossildigpopup.c49331d01397"), int(FossilDig.config()["shovels_per_order"])))
 	else: hint.text = TextCatalog.resolve(TextCatalog.source("ui.fossildigpopup.f41f260c32af"))
 	primary.queue_redraw()
 	var bsig := str([s["stage"], b["n"]])
@@ -295,7 +295,7 @@ func _preview(need: int) -> void:
 	var p := PopupBase.new()
 	p.name = "fossil_reward_preview"
 	Popups.frame(p, Rect2(70, 446, 580, 474), TextCatalog.source("ui.fossildigpopup.41da965e32ae"), Color("7b6842"))
-	UI.lbl(p.box, TextCatalog.source("ui.fossildigpopup.bef19248e614") % need, Rect2(100, 514, 520, 44), 28, Color("785536"))
+	UI.lbl(p.box, TextCatalog.fill(TextCatalog.source("ui.fossildigpopup.bef19248e614"), need), Rect2(100, 514, 520, 44), 28, Color("785536"))
 	var rewards: Array = row["rewards"]
 	for i in rewards.size():
 		var x := 360.0 + (i - (rewards.size() - 1) * 0.5) * 148
@@ -303,7 +303,7 @@ func _preview(need: int) -> void:
 		UI.lbl(p.box, "×%d" % int(rewards[i][1]), Rect2(x - 60, 698, 120, 40), 28, Art.INK)
 	var got: bool = need in FossilDig.state().get("claimed", [])
 	var ready := int(FossilDig.state().get("recovered", 0)) >= need and not got
-	var b := UI.btn(p.box, Rect2(190, 804, 340, 76), TextCatalog.source("ui.duelpopup.844ab9477225") if ready else (TextCatalog.source("notice.sevenday.426e458a4124") if got else TextCatalog.source("ui.fossildigpopup.e0bfed600a2f") % [int(FossilDig.state().get("recovered", 0)), need]), "green" if ready else "grey", Callable(), 32)
+	var b := UI.btn(p.box, Rect2(190, 804, 340, 76), TextCatalog.source("ui.duelpopup.844ab9477225") if ready else (TextCatalog.source("notice.sevenday.426e458a4124") if got else TextCatalog.fill(TextCatalog.source("ui.fossildigpopup.e0bfed600a2f"), [int(FossilDig.state().get("recovered", 0)), need])), "green" if ready else "grey", Callable(), 32)
 	b.name = "fossil_claim_%d" % need
 	b.enabled = ready
 	b.pressed.connect(func():
@@ -324,7 +324,7 @@ func _preview(need: int) -> void:
 func _instructions() -> void:
 	var p := PopupBase.new()
 	Popups.frame(p, Rect2(66, 392, 588, 680), TextCatalog.source("ui.fossildigpopup.d66596337523"), Color("7b6842"))
-	var text := TextCatalog.source("ui.fossildigpopup.f23168670bc9") % [int(FossilDig.config()["shovels_per_order"]), int(FossilDig.config()["dig_cost"])]
+	var text := TextCatalog.fill(TextCatalog.source("ui.fossildigpopup.f23168670bc9"), [int(FossilDig.config()["shovels_per_order"]), int(FossilDig.config()["dig_cost"])])
 	var label := UI.lbl(p.box, text, Rect2(108, 474, 504, 456), 26, Art.INK)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	UI.btn(p.box, Rect2(208, 964, 304, 74), TextCatalog.source("ui.fossildigpopup.eed702a9c46f"), "green", p.close, 32)

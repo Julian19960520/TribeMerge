@@ -133,10 +133,9 @@ func check() -> void:
 			return
 	print("PASS: six painted characters, five compatible customer identities and avatar crops exported; legacy portraits excluded")
 	var voice = load("res://scripts/ui/HeroVoice.gd")
-	var text_catalog: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://localization/texts.json"))
+	var text_catalog: Dictionary = TextCatalog.document()
 	var claim_copy: Dictionary = text_catalog.get("entries", {}).get("ui.duelpopup.844ab9477225", {})
 	var expected_claim := str(claim_copy.get("zh_CN", ""))
-	if expected_claim.is_empty(): expected_claim = str(claim_copy.get("source", ""))
 	if text_catalog.get("stats", {}).get("unique_texts", 0) != text_catalog.get("entries", {}).size() or TextCatalog.resolve("§ui.duelpopup.844ab9477225§") != expected_claim:
 		push_error("Missing or invalid exported text catalogue")
 		quit(1)

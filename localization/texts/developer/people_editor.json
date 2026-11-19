@@ -1,0 +1,14 @@
+{
+  "feature": "people_editor",
+  "entries": {
+    "17aeadb3ddeb": {
+      "zh_CN": "订单上的人物。剧情订单用序号引用，0 是第一个。"
+    },
+    "8d7aff5a595f": {
+      "zh_CN": "人物"
+    },
+    "9864db9b9a92": {
+      "zh_CN": "至少要有一个人物"
+    }
+  }
+}

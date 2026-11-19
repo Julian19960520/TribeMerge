@@ -128,7 +128,7 @@ static func _book_chain(page: Control, r: Rect2, chain_id: String, y: float) -> 
 		if G.discovered.has("%s_%d" % [chain_id, l + 1]):
 			n += 1
 	var mid := _book_cell_x(r, 0) + 126.0 * 1.5
-	Popups.section(page, TextCatalog.source("ui.itempopups.2a16b06f2781") % [str(c["name"]), n, items.size()], y, Color("8a5a30"), mid)
+	Popups.section(page, TextCatalog.fill(TextCatalog.source("ui.itempopups.2a16b06f2781"), [str(c["name"]), n, items.size()]), y, Color("8a5a30"), mid)
 	y += 52
 	for l in items.size():
 		var lv := l
@@ -228,7 +228,7 @@ static func item_info(id: String) -> PopupBase:
 	Popups.frame(p, r, c["name"], Art.TEAL)
 	var state := {"id": id}
 	var shown: String = state["id"]
-	var name_lbl := UI.lbl(p.box, TextCatalog.source("ui.itempopups.bcfcbb40fe43") % [Data.name_of(shown), Data.lv(shown)], Rect2(r.position.x, r.position.y + 48, r.size.x, 36), 24, Color("7a5a3a"))
+	var name_lbl := UI.lbl(p.box, TextCatalog.fill(TextCatalog.source("ui.itempopups.bcfcbb40fe43"), [Data.name_of(shown), Data.lv(shown)]), Rect2(r.position.x, r.position.y + 48, r.size.x, 36), 24, Color("7a5a3a"))
 	var items: Array = c["items"]
 	var cols := 4
 	var step := 112.0
@@ -258,20 +258,20 @@ static func item_info(id: String) -> PopupBase:
 				if nxt <= 0:
 					UI.lbl(lower, TextCatalog.source("ui.itempopups.2bdee9823731"), Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
 				else:
-					UI.lbl(lower, TextCatalog.source("ui.itempopups.c3e8c56f5b66") % nxt, Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
+					UI.lbl(lower, TextCatalog.fill(TextCatalog.source("ui.itempopups.c3e8c56f5b66"), nxt), Rect2(r.position.x, y + 50, r.size.x, 50), 24, Color("7a5a3a"))
 					UI.icon(lower, "%s_%d" % [Data.chain(cur_id), nxt], Vector2(r.get_center().x, y + 160), 100)
 			else:
 				Popups.section(lower, TextCatalog.source("ui.itempopups.08d23ef54331"), y)
 				var drops: Array = st["drops"]
 				y = _info_item_grid(lower, drops, y + 48, r.get_center().x)
 				if st.has("charges"):
-					var rest := TextCatalog.source("ui.itempopups.f12e39a2141a") % [st["charges"], st["refill"]]
-					if G.rules.starter.is_item(cur_id): rest = TextCatalog.source("ui.itempopups.b49f281cdc42") % [int(st["refill"]) / 60, int(st["charges"]), int(G.rules.starter.config()["lifetime_sec"]) / 86400]
+					var rest := TextCatalog.fill(TextCatalog.source("ui.itempopups.f12e39a2141a"), [st["charges"], st["refill"]])
+					if G.rules.starter.is_item(cur_id): rest = TextCatalog.fill(TextCatalog.source("ui.itempopups.b49f281cdc42"), [int(st["refill"]) / 60, int(st["charges"]), int(G.rules.starter.config()["lifetime_sec"]) / 86400])
 					UI.lbl(lower, rest, Rect2(r.position.x, y, r.size.x, 36), 22, Color("7a5a3a"))
 					y += 40
 					if G.rules.starter.is_item(cur_id) and not G.rules.starter.progress().is_empty():
 						var remaining := G.rules.starter.time_left()
-						var text := TextCatalog.source("ui.itempopups.b9d8853e0ce7") if remaining == 0 else TextCatalog.source("ui.itempopups.eb87147f8aba") % G.fmt_time(remaining)
+						var text := TextCatalog.source("ui.itempopups.b9d8853e0ce7") if remaining == 0 else TextCatalog.fill(TextCatalog.source("ui.itempopups.eb87147f8aba"), G.fmt_time(remaining))
 						UI.lbl(lower, text, Rect2(r.position.x, y, r.size.x, 36), 22, Art.CLAY)
 						y += 40
 		elif t == "item":
@@ -284,6 +284,12 @@ static func item_info(id: String) -> PopupBase:
 			var usage := UI.lbl(lower, Data.describe(cur_id), Rect2(r.position.x + 18, y + 50, r.size.x - 36, 160), 23, Art.INK)
 			usage.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			y += 210
+		elif t in ["energy", "shell", "amber", "sand"]:
+			var n := Data.value_of(cur_id)
+			var line := TextCatalog.source("ui.itemactionpanel.d15caef6c30b") + " %d%s" % [n, Rewards.unit(cur_id)] if n > 0 else TextCatalog.fill(TextCatalog.source("notice.data.d63394fd4de9"), "")
+			var collect := UI.lbl(lower, line, Rect2(r.position.x + 18, y + 12, r.size.x - 36, 72), 26, Art.INK, HORIZONTAL_ALIGNMENT_CENTER)
+			collect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			y += 88
 		else:
 			Popups.section(lower, TextCatalog.source("ui.itempopups.308b64c5efce"), y)
 			UI.lbl(lower, TextCatalog.source("ui.itempopups.874962b8db6e"), Rect2(r.position.x, y + 60, r.size.x, 60), 24, Color("7a5a3a"))
@@ -322,7 +328,7 @@ static func item_info(id: String) -> PopupBase:
 				return
 			state["id"] = slot_id
 			var now: String = state["id"]
-			name_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.itempopups.bcfcbb40fe43") % [Data.name_of(now), Data.lv(now)])
+			name_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.itempopups.bcfcbb40fe43"), [Data.name_of(now), Data.lv(now)]))
 			for cell_box in cells:
 				cell_box.queue_redraw()
 			rebuild.call()
@@ -435,9 +441,9 @@ static func _buy_offer(id: String, offer: Dictionary, origin: Vector2) -> bool:
 	G.rules.board.discover(id)
 	RewardPresenter.present(Rewards.items([id]), func(_k): return origin)
 	if Rewards.is_resource(id) and Data.value_of(id) > 0:
-		G.main.toast(TextCatalog.source("ui.itempopups.f7b943bd6db4") % [Data.value_of(id), Rewards.unit(id)])
+		G.main.toast(TextCatalog.fill(TextCatalog.source("ui.itempopups.f7b943bd6db4"), [Data.value_of(id), Rewards.unit(id)]))
 	else:
-		G.main.toast(TextCatalog.source("ui.itempopups.3cccefa5cc16") % Data.name_of(id))
+		G.main.toast(TextCatalog.fill(TextCatalog.source("ui.itempopups.3cccefa5cc16"), Data.name_of(id)))
 	return true
 
 static func _pulse_source(chain_id: String) -> void:
@@ -463,13 +469,13 @@ static func _book_dishes(holder: Control, r: Rect2) -> void:
 	for id in ids:
 		if G.discovered.has(id): discovered += 1
 	var mid := _book_cell_x(r, 0) + 126.0 * 1.5
-	Popups.section(sc.content, TextCatalog.source("ui.itempopups.7229dc7c50fd") % [discovered, ids.size()], 16, Color("8a5a30"), mid)
+	Popups.section(sc.content, TextCatalog.fill(TextCatalog.source("ui.itempopups.7229dc7c50fd"), [discovered, ids.size()]), 16, Color("8a5a30"), mid)
 	var heading: Label = sc.content.get_child(0)
 	Popups.live(sc, G.board_changed, func():
 		var count := 0
 		for id in ids:
 			if G.discovered.has(id): count += 1
-		heading.text = TextCatalog.resolve(TextCatalog.source("ui.itempopups.7229dc7c50fd") % [count, ids.size()]))
+		heading.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.itempopups.7229dc7c50fd"), [count, ids.size()])))
 	for k in ids.size():
 		var cell := Rect2(_book_cell_x(r, k % 4) - 52, 68 + (k / 4) * 116, 104, 104)
 		_book_slot(sc.content, cell, str(ids[k]), k)

@@ -358,6 +358,25 @@ func boost_drop(id: String) -> String:
 		cur = nxt
 	return cur
 
+func lucky_open() -> bool:
+	return context.progression.feature_unlocked(Data.LUCKY_LEVEL)
+
+## 好运爆发：订单全都很难时，小概率把这次产物直接升 LUCKY_STEPS_MIN~MAX 级（随机）。
+## 抽到的级数超过这条链剩下的级数就按剩下的算；连最低级数都升不了则不触发。返回 {"id", "steps"}，没中返回空。
+func lucky_drop(id: String) -> Dictionary:
+	if not lucky_open() or Data.is_dish(id) or Data.type_of(id) != "item":
+		return {}
+	if not context.orders.all_orders_hard(Data.LUCKY_HARD_GAP):
+		return {}
+	var room := Data.max_lv(Data.chain(id)) - Data.lv(id)
+	if room < Data.LUCKY_STEPS_MIN:
+		return {}
+	var rng: RandomNumberGenerator = context.random_for("lucky_drop")
+	if rng.randf() >= Data.LUCKY_CHANCE:
+		return {}
+	var steps := mini(rng.randi_range(Data.LUCKY_STEPS_MIN, Data.LUCKY_STEPS_MAX), room)
+	return {"id": "%s_%d" % [Data.chain(id), Data.lv(id) + steps], "steps": steps}
+
 func gen_use(i: int) -> void:
 	if context.starter.is_item(str(state.board[i]["id"])):
 		context.starter.use()
@@ -425,29 +444,91 @@ func dispense_chest(i: int) -> Dictionary:
 	state.board_changed.emit()
 	return {"kind": "chest", "id": out, "to": to, "remaining": items.size(), "box_id": id}
 
+func inv_filled() -> int:
+	var n := 0
+	for id in state.inv:
+		if str(id) != "": n += 1
+	return n
+
+func _inv_trim() -> void:
+	while not state.inv.is_empty() and str(state.inv.back()) == "":
+		state.inv.pop_back()
+		state.inv_chests.erase(str(state.inv.size()))
+
+func _inv_ensure(index: int) -> bool:
+	if index < 0 or index >= state.inv_cap: return false
+	while state.inv.size() <= index:
+		state.inv.append("")
+	return true
+
 func store_cell(i: int) -> bool:
-	if i < 0 or i >= state.board.size() or not is_free(i) or not can_move(i) or context.orders.cooking(i) or state.inv.size() >= state.inv_cap or Data.is_dish(cell_id(i)) or Data.type_of(cell_id(i)) == "egen": return false
-	var slot = str(state.inv.size())
-	state.inv_chests.erase(slot)
-	if state.board[i].has("chest"): state.inv_chests[slot] = state.board[i]["chest"].duplicate()
-	state.inv.append(cell_id(i))
+	if i < 0 or i >= state.board.size() or not is_free(i) or not can_move(i) or context.orders.cooking(i) or inv_filled() >= state.inv_cap or Data.is_dish(cell_id(i)) or Data.type_of(cell_id(i)) == "egen": return false
+	var slot := -1
+	for k in state.inv.size():
+		if str(state.inv[k]) == "":
+			slot = k
+			break
+	if slot < 0:
+		slot = state.inv.size()
+		state.inv.append("")
+	var key := str(slot)
+	state.inv_chests.erase(key)
+	if state.board[i].has("chest"): state.inv_chests[key] = state.board[i]["chest"].duplicate()
+	state.inv[slot] = cell_id(i)
 	state.board[i]["id"] = ""
 	state.board[i].erase("chest")
 	return true
 
+## 取走一格，后面的物品留在原位。末尾空格会收掉。
+func remove_inventory(index: int) -> String:
+	if index < 0 or index >= state.inv.size() or str(state.inv[index]) == "": return ""
+	var id := str(state.inv[index])
+	state.inv[index] = ""
+	state.inv_chests.erase(str(index))
+	_inv_trim()
+	return id
+
 func take_inventory(index: int, to: int) -> bool:
-	if index < 0 or index >= state.inv.size() or to < 0 or to >= state.board.size() or not _vacant(to): return false
+	if index < 0 or index >= state.inv.size() or str(state.inv[index]) == "" or to < 0 or to >= state.board.size() or not _vacant(to): return false
 	var contents = state.inv_chests.get(str(index))
-	var shifted = {}
-	for key in state.inv_chests:
-		var slot = int(key)
-		if slot != index: shifted[str(slot - 1 if slot > index else slot)] = state.inv_chests[key]
-	state.inv_chests = shifted
-	state.board[to]["id"] = str(state.inv.pop_at(index))
+	state.inv_chests.erase(str(index))
+	state.board[to]["id"] = str(state.inv[index])
+	state.inv[index] = ""
 	state.board[to].erase("chest")
 	if contents is Array: state.board[to]["chest"] = contents.duplicate()
+	_inv_trim()
 	discover(cell_id(to))
 	return true
+
+## 洞里拖放：相同且还能升级的合成到目标格，不同物品交换，空位则挪过去。开过的宝箱只换位。
+func move_inventory(a: int, b: int) -> String:
+	if a == b or a < 0 or a >= state.inv.size() or str(state.inv[a]) == "": return ""
+	if not _inv_ensure(b): return ""
+	var ida := str(state.inv[a])
+	var idb := str(state.inv[b])
+	var chest_a: Variant = state.inv_chests.get(str(a))
+	var chest_b: Variant = state.inv_chests.get(str(b))
+	if ida == idb and Data.next_id(ida) != "" and not (chest_a is Array) and not (chest_b is Array):
+		var nxt := Data.next_id(ida)
+		state.inv[b] = nxt
+		state.inv[a] = ""
+		state.inv_chests.erase(str(a))
+		state.inv_chests.erase(str(b))
+		_inv_trim()
+		discover(nxt)
+		state.dirty()
+		state.board_changed.emit()
+		return "merge"
+	state.inv[a] = idb
+	state.inv[b] = ida
+	state.inv_chests.erase(str(a))
+	state.inv_chests.erase(str(b))
+	if chest_a is Array: state.inv_chests[str(b)] = chest_a
+	if chest_b is Array and idb != "": state.inv_chests[str(a)] = chest_b
+	_inv_trim()
+	state.dirty()
+	state.board_changed.emit()
+	return "move" if idb == "" else "swap"
 
 func _merge_coin(merged: String, origin: int) -> void:
 	var to = find_empty_near(origin)

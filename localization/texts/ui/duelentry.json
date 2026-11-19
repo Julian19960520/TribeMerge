@@ -1,0 +1,14 @@
+{
+  "feature": "duelentry",
+  "entries": {
+    "5375104054f0": {
+      "zh_CN": "领奖"
+    },
+    "a75fb7376be1": {
+      "zh_CN": "开赛"
+    },
+    "e0cda514ecc2": {
+      "zh_CN": "${0}级"
+    }
+  }
+}

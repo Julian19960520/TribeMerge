@@ -19,7 +19,7 @@ func refresh() -> void:
 		for oi in lv["orders"].size():
 			var o: Dictionary = lv["orders"][oi]
 			var r := Ui.row(g)
-			Ui.lbl(r, TextCatalog.source("developer.story_editor.de16c9bfd599") % (oi + 1), 64)
+			Ui.lbl(r, TextCatalog.fill(TextCatalog.source("developer.story_editor.de16c9bfd599"), (oi + 1)), 64)
 			_who(r, o, people)
 			Ui.lbl(r, TextCatalog.source("developer.story_editor.22cc9072ab1e"), 40)
 			var xp := Ui.spin(r, int(o["xp"]), 0, 999, 70)
@@ -90,9 +90,9 @@ func validate() -> String:
 	for lv in data["levels"]:
 		var n := int(lv["level"])
 		if seen.has(n):
-			return TextCatalog.source("developer.levels_editor.c5259ed5a980") % n
+			return TextCatalog.fill(TextCatalog.source("developer.levels_editor.c5259ed5a980"), n)
 		seen[n] = true
 		for o in lv["orders"]:
 			if o["items"].is_empty():
-				return TextCatalog.source("developer.story_editor.0bdf0264fde8") % n
+				return TextCatalog.fill(TextCatalog.source("developer.story_editor.0bdf0264fde8"), n)
 	return ""

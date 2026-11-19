@@ -138,7 +138,8 @@ func _add_random_batch(at: int = -1) -> void:
 	var avoid: Array = []
 	for o in state.orders:
 		if o is Dictionary and _is_random_order(o) and o.get("items") is Array:
-			avoid = o["items"]
+			for id in o["items"]:
+				avoid.append(str(id))
 	var slot = 0
 	while have < n and slot < n:
 		if taken.has(slot):
@@ -147,18 +148,18 @@ func _add_random_batch(at: int = -1) -> void:
 		var made: Dictionary
 		var tier := ""
 		if Data.random_curve_count() <= 0:
-			made = _spice(_make_order_free())
+			made = _spice(_make_order_free(avoid))
 		elif not Data.ORDER_TIERS.is_empty():
 			tier = _roll_tier()
 			var target := Data.tier_target(state.level, tier, context.random_for("orders"))
 			made = _make_order(target, avoid)
 			if made.is_empty():
-				made = _spice(_make_order_free())
+				made = _spice(_make_order_free(avoid))
 			made["diff"] = target
 		else:
 			made = _make_order(_slot_target(slot), avoid)
 			if made.is_empty():
-				made = _spice(_make_order_free())
+				made = _spice(_make_order_free(avoid))
 		if tier != "":
 			made["tier"] = tier
 			made["xp_value"] = Data.tier_xp(tier)
@@ -166,7 +167,8 @@ func _add_random_batch(at: int = -1) -> void:
 			if coins > 0 and made.get("rw") is Dictionary: made["rw"]["shell"] = coins
 		made["slot"] = slot
 		if made.get("items") is Array:
-			avoid = made["items"]
+			for id in made["items"]:
+				avoid.append(str(id))
 		_insert_random(made, at)
 		at = -1
 		taken[slot] = true
@@ -207,7 +209,7 @@ func _ensure_story() -> bool:
 
 func _make_order(target: int = -1, avoid: Array = []) -> Dictionary:
 	if Data.random_curve_count() <= 0:
-		return _spice(_make_order_free())
+		return _spice(_make_order_free(avoid))
 	var bounds = Data.random_bounds(state.level)
 	var t = target
 	if t < 1:
@@ -215,7 +217,7 @@ func _make_order(target: int = -1, avoid: Array = []) -> Dictionary:
 	var plan := vine_plan()
 	var made: Dictionary = context.roll.make(state.level, float(t), context.random_for("orders"), avoid, {} if state.gm_activities else sourced_chains(), plan["keys"], plan["outputs"])
 	if made.is_empty():
-		made = _make_order_free()
+		made = _make_order_free(avoid)
 	made["xp_level"] = 0
 	return _spice(made)
 
@@ -246,7 +248,7 @@ func _spice(made: Dictionary) -> Dictionary:
 		made["rw"]["token"] = context.random_for("orders").randi_range(1, 3) * (made.get("items", []) as Array).size()
 	return made
 
-func _make_order_free() -> Dictionary:
+func _make_order_free(avoid: Array = []) -> Dictionary:
 	var r = context.random_for("orders").randf()
 	var n = 1 if state.level < 2 or r < 0.45 else (2 if r < 0.85 else 3)
 	var items = []
@@ -255,19 +257,33 @@ func _make_order_free() -> Dictionary:
 	var open = Data.unlocked_lines(state.level)
 	var allowed: Dictionary = {} if state.gm_activities else sourced_chains()
 	for i in n:
-		var ln: Dictionary = open[context.random_for("orders").randi() % open.size()]
-		var sub = str(ln.get("sub", ""))
-		if state.level >= 2 and sub != "" and Data.product_open(state.level, sub) and _sourced(sub, allowed) and context.random_for("orders").randf() < 0.15:
-			var sl = context.random_for("orders").randi_range(1, mini(3, 1 + state.level / 3))
-			items.append("%s_%d" % [sub, sl])
-			shell += 12 * int(pow(2, sl - 1)) + context.random_for("orders").randi_range(0, 4)
-			continue
-		var ch: String = ln["main"]
-		if not Data.product_open(state.level, ch) or not _sourced(ch, allowed):
-			continue
-		var l = context.random_for("orders").randi_range(1 if state.level < 2 else 2, mini(top, Data.max_lv(ch)))
-		items.append("%s_%d" % [ch, l])
-		shell += 3 * int(pow(2, l - 1)) + context.random_for("orders").randi_range(0, 4)
+		var placed := false
+		for attempt in 8:
+			var ln: Dictionary = open[context.random_for("orders").randi() % open.size()]
+			var id := ""
+			var add := 0
+			var sub = str(ln.get("sub", ""))
+			if state.level >= 2 and sub != "" and Data.product_open(state.level, sub) and _sourced(sub, allowed) and context.random_for("orders").randf() < 0.15:
+				var sl = context.random_for("orders").randi_range(1, mini(3, 1 + state.level / 3))
+				id = "%s_%d" % [sub, sl]
+				add = 12 * int(pow(2, sl - 1)) + context.random_for("orders").randi_range(0, 4)
+			else:
+				var ch: String = ln["main"]
+				if not Data.product_open(state.level, ch) or not _sourced(ch, allowed):
+					continue
+				var l = context.random_for("orders").randi_range(1 if state.level < 2 else 2, mini(top, Data.max_lv(ch)))
+				id = "%s_%d" % [ch, l]
+				add = 3 * int(pow(2, l - 1)) + context.random_for("orders").randi_range(0, 4)
+			if id == "":
+				continue
+			if (items.has(id) or avoid.has(id)) and attempt < 7:
+				continue
+			items.append(id)
+			shell += add
+			placed = true
+			break
+		if not placed:
+			break
 	var rw = {"shell": shell}
 	var plan := vine_plan()
 	for id in items:
@@ -446,30 +462,58 @@ func board_has(id: String, exclude: Array = []) -> int:
 			return k
 	return -1
 
-func _match_ids(ids: Array) -> Array:
-	var used = []
+func inv_has(id: String, exclude: Array = []) -> int:
+	for k in state.inv.size():
+		if str(state.inv[k]) == id and not (k in exclude):
+			return k
+	return -1
+
+## 棋盘空闲格优先，不够再算储物洞。命中后把位置记进对应的已用列表。
+func claim_supply(id: String, boards: Array, slots: Array) -> Dictionary:
+	var cell := board_has(id, boards)
+	if cell >= 0:
+		boards.append(cell)
+		return {"board": cell}
+	var slot := inv_has(id, slots)
+	if slot >= 0:
+		slots.append(slot)
+		return {"inv": slot}
+	return {}
+
+func _match_sources(ids: Array) -> Array:
+	var boards: Array = []
+	var slots: Array = []
+	var out: Array = []
 	for id in ids:
-		var k = board_has(str(id), used)
-		if k < 0:
+		var got := claim_supply(str(id), boards, slots)
+		if got.is_empty():
 			return []
-		used.append(k)
-	return used
+		out.append(got)
+	return out
+
+func _board_of(sources: Array) -> Array:
+	var cells: Array = []
+	for source in sources:
+		if source.has("board"):
+			cells.append(int(source["board"]))
+	return cells
+
+func _vacant_cell() -> int:
+	for i in state.board.size():
+		if context.board._vacant(i):
+			return i
+	return -1
 
 func order_cells(o: Dictionary) -> Array:
-	if str(o.get("kind", "")) == "craft":
-		var phase = str(o.get("phase", "need"))
-		if phase == "ready":
-			var k = board_has(str(o.get("dish", "")))
-			return [k] if k >= 0 else []
-		if phase == "cook":
-			return []
-		return _match_ids(o.get("mats", []))
-	return _match_ids(o["items"])
+	if str(o.get("kind", "")) == "craft" and str(o.get("phase", "need")) == "cook":
+		return []
+	return _board_of(_match_sources(_order_need_ids(o)))
 
 func order_ready(o: Dictionary) -> bool:
 	if str(o.get("kind", "")) == "craft":
-		return str(o.get("phase", "")) == "ready" and board_has(str(o.get("dish", ""))) >= 0
-	return order_cells(o).size() == o["items"].size()
+		return str(o.get("phase", "")) == "ready" and not _match_sources(_order_need_ids(o)).is_empty()
+	var items: Array = o["items"]
+	return _match_sources(items).size() == items.size()
 
 ## 棋盘上该格是否为带经验的制作订单已完成的产物
 func cell_has_craft_xp(i: int) -> bool:
@@ -478,8 +522,6 @@ func cell_has_craft_xp(i: int) -> bool:
 	var c: Dictionary = state.board[i]
 	var ck = c.get("ck")
 	if typeof(ck) == TYPE_DICTIONARY:
-		if not bool(ck.get("finished", false)):
-			return false
 		var uid := str(ck.get("uid", ""))
 		for o in state.orders:
 			if not (o is Dictionary) or str(o.get("kind", "")) != "craft" or str(o.get("uid", "")) != uid:
@@ -506,7 +548,10 @@ func craft_mats_ready(o: Dictionary) -> bool:
 	if str(o.get("kind", "")) != "craft" or str(o.get("phase", "need")) != "need":
 		return false
 	var mats: Array = o.get("mats", [])
-	return not mats.is_empty() and order_cells(o).size() == mats.size()
+	var sources := _match_sources(mats)
+	if mats.is_empty() or sources.size() != mats.size():
+		return false
+	return not _board_of(sources).is_empty() or _vacant_cell() >= 0
 
 func wanted_ids() -> Dictionary:
 	var d = {}
@@ -523,7 +568,7 @@ func wanted_ids() -> Dictionary:
 			d[id] = true
 	return d
 
-## 升级时的「订单宝箱」：当前订单还缺、棋盘和暂存区里都没有的物品，按订单顺序最多 cap 件。
+## 升级时的「订单宝箱」：当前订单还缺、棋盘、暂存区和储物洞里都没有的物品，按订单顺序最多 cap 件。
 ## 菜品要靠制作，不直接送；制作单送的是还缺的材料。
 func missing_order_items(cap: int = 3) -> Array:
 	var have = {}
@@ -531,6 +576,8 @@ func missing_order_items(cap: int = 3) -> Array:
 		if int(c.get("lock", 2)) == 0 and str(c.get("id", "")) != "":
 			have[str(c["id"])] = int(have.get(str(c["id"]), 0)) + 1
 	for s in state.stash:
+		have[str(s)] = int(have.get(str(s), 0)) + 1
+	for s in state.inv:
 		have[str(s)] = int(have.get(str(s), 0)) + 1
 	var out: Array = []
 	for o in state.orders:
@@ -548,6 +595,50 @@ func missing_order_items(cap: int = 3) -> Array:
 			out.append(id)
 			if out.size() >= cap: return out
 	return out
+
+## 好运爆发用：没有一张能马上交，且每张都还缺一件比手头同链（不超过要的那级）最高的高 gap 级以上的物品。
+## 制作中的单不算；手上一张单都没有也不算。
+func all_orders_hard(gap: int) -> bool:
+	var owned := {}
+	var note := func(raw) -> void:
+		var id := str(raw)
+		if id == "" or Data.is_dish(id) or not Data.is_board_item(id):
+			return
+		var ch := Data.chain(id)
+		if not owned.has(ch):
+			owned[ch] = []
+		owned[ch].append(Data.lv(id))
+	for c in state.board:
+		if int(c.get("lock", 2)) == 0:
+			note.call(c.get("id", ""))
+	for s in state.inv:
+		note.call(s)
+	for s in state.stash:
+		note.call(s)
+	var counted := 0
+	for o in state.orders:
+		if not (o is Dictionary):
+			continue
+		if str(o.get("kind", "")) == "craft" and str(o.get("phase", "need")) == "cook":
+			continue
+		if _order_filled(o):
+			return false
+		counted += 1
+		var hard := false
+		for raw in _order_need_ids(o):
+			var id := str(raw)
+			if Data.is_dish(id) or not Data.is_board_item(id) or Data.type_of(id) != "item":
+				continue
+			var best := 0
+			for l in owned.get(Data.chain(id), []):
+				if int(l) <= Data.lv(id):
+					best = maxi(best, int(l))
+			if Data.lv(id) - best >= gap:
+				hard = true
+				break
+		if not hard:
+			return false
+	return counted > 0
 
 func order_cell_tone() -> PackedInt32Array:
 	var tone = PackedInt32Array()
@@ -659,18 +750,34 @@ func begin_craft(oi: int) -> Array:
 	var o: Dictionary = state.orders[oi]
 	if not craft_mats_ready(o):
 		return []
-	var cells = order_cells(o)
-	var anchor = _gather_anchor(cells)
+	var sources := _match_sources(o.get("mats", []))
+	var cells := _board_of(sources)
+	var anchor := _gather_anchor(cells) if not cells.is_empty() else _vacant_cell()
+	if anchor < 0:
+		return []
 	var flights = []
 	var mats: Array = []
-	for n in cells.size():
-		var k: int = int(cells[n])
-		var id = str(state.board[k]["id"])
-		mats.append(id)
-		flights.append({"from": k, "to": anchor, "id": id, "delay": float(n) * 0.05})
-		state.board[k]["id"] = ""
-		state.board[k].erase("gm")
-		state.board[k].erase("ck")
+	var slots: Array = []
+	for source in sources:
+		if source.has("inv"):
+			slots.append(int(source["inv"]))
+	slots.sort()
+	var stored := {}
+	for n in range(slots.size() - 1, -1, -1):
+		stored[slots[n]] = context.board.remove_inventory(slots[n])
+	for source in sources:
+		if source.has("board"):
+			var k := int(source["board"])
+			var id := str(state.board[k]["id"])
+			mats.append(id)
+			flights.append({"from": k, "to": anchor, "id": id, "delay": float(flights.size()) * 0.05})
+			state.board[k]["id"] = ""
+			state.board[k].erase("gm")
+			state.board[k].erase("ck")
+		else:
+			mats.append(str(stored[int(source["inv"])]))
+	if flights.is_empty():
+		flights.append({"to": anchor})
 	var fly = 0.36 + 0.05 * float(maxi(cells.size() - 1, 0))
 	var t0 = context.now() + fly
 	state.board[anchor]["ck"] = {
@@ -762,16 +869,22 @@ func complete_order(oi: int, refill_after: bool = true) -> Array:
 	var craft = str(o.get("kind", "")) == "craft"
 	if craft and str(o.get("phase", "")) != "ready":
 		return []
-	var cells = order_cells(o)
-	if craft:
-		if cells.size() != 1:
-			return []
-	elif cells.size() != o["items"].size():
+	var need: Array = _order_need_ids(o)
+	var sources := _match_sources(need)
+	if sources.size() != need.size():
 		return []
+	var cells := _board_of(sources)
 	state.order_delivered.emit((o["items"] as Array).duplicate())
+	var slots: Array = []
+	for source in sources:
+		if source.has("inv"):
+			slots.append(int(source["inv"]))
 	for k in cells:
 		state.board[k]["id"] = ""
 		state.board[k].erase("ck")
+	slots.sort()
+	for n in range(slots.size() - 1, -1, -1):
+		context.board.remove_inventory(slots[n])
 	if o.get("story",false) and o.has("si"):
 		state.story_done["%d:%d" % [int(o.get("story_level",state.level)),int(o["si"])]] = true
 	context.onboarding.delivered(o)

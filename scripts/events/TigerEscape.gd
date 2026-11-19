@@ -250,7 +250,7 @@ static func pending_rewards(m: Dictionary) -> Array:
 	return rewards
 
 static func local_action(action: String, node := 0) -> Dictionary:
-	if not unlocked(): return {"error": TextCatalog.source("notice.tigerescape.72a4a2cc2623") % int(config()["unlock_level"])}
+	if not unlocked(): return {"error": TextCatalog.fill(TextCatalog.source("notice.tigerescape.72a4a2cc2623"), int(config()["unlock_level"]))}
 	# 存档里还没有活动状态时（未经 ActivityRules.initialize），先建好，免得开局写进临时字典丢失。
 	if G.tiger_escape.is_empty(): G.tiger_escape = {"rounds": 0, "round": {}}
 	tick()

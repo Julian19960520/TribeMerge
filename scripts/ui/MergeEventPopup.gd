@@ -117,8 +117,8 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		if state == 2:
 			ci.draw_circle(c, r - 2, Color(0.1, 0.2, 0.22, 0.45))
 			Paint.check_mark(ci, c + Vector2(r * 0.45, r * 0.45), 0.9)
-		var tag := TextCatalog.source("ui.duelpopup.844ab9477225") if state == 1 else (TextCatalog.source("ui.mergeeventpopup.795976989102") if last else TextCatalog.source("ui.mergeeventpopup.df26afb7786f") % int(ms[k]["at"]))
-		if str(cfg["board"].get("goal", "")) == "discover_all" and not last and state != 1: tag = TextCatalog.source("ui.mergeeventpopup.77188a2c2c50") % int(ms[k]["at"])
+		var tag := TextCatalog.source("ui.duelpopup.844ab9477225") if state == 1 else (TextCatalog.source("ui.mergeeventpopup.795976989102") if last else TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.df26afb7786f"), int(ms[k]["at"])))
+		if str(cfg["board"].get("goal", "")) == "discover_all" and not last and state != 1: tag = TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.77188a2c2c50"), int(ms[k]["at"]))
 		var tw := 62.0 if state == 1 else 54.0
 		var pill := Rect2(c + Vector2(-tw / 2, r - 4), Vector2(tw, 26))
 		Sprites.draw(ci, sp(cfg, "tag_on") if state == 1 else sp(cfg, "tag_off"), pill)
@@ -180,7 +180,7 @@ func _refresh_action() -> void:
 	var s := MergeEvent.state(cfg)
 	var cost := maxi(1, int(cfg["points"]["spawn_cost"]))
 	var can_place := int(s["points"]) >= cost and MergeEvent.active(cfg) and not bool(s["claimed"])
-	points.text = TextCatalog.resolve(TextCatalog.source("ui.mergeeventpopup.db27bec7405f") % (int(s["points"]) / cost))
+	points.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.db27bec7405f"), (int(s["points"]) / cost)))
 	spawn_btn.visible = can_place
 	spawn_btn.enabled = can_place
 	orders_btn.visible = not can_place
@@ -202,7 +202,7 @@ func _shelf() -> Array:
 func _show_relic(k: int) -> void:
 	var row: Dictionary = _shelf()[k]
 	var known: bool = MergeEvent.state(cfg)["discovered"].has(str(row["id"]))
-	G.main.toast((str(row["name"]) if known else TextCatalog.source("ui.mergeeventpopup.a76417399914")) + TextCatalog.source("ui.mergeeventpopup.8431070b30f3") % (k + 1))
+	G.main.toast((str(row["name"]) if known else TextCatalog.source("ui.mergeeventpopup.a76417399914")) + TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.8431070b30f3"), (k + 1)))
 
 func _paint_collection(ci: CanvasItem, sz: Vector2) -> void:
 	var chain := _shelf()
@@ -263,7 +263,7 @@ func _process(delta: float) -> void:
 func _tick() -> void:
 	if not is_instance_valid(timer): return
 	var left := maxi(0, int(float(cfg["ends_at"]) - G.now()))
-	timer.text = TextCatalog.resolve(TextCatalog.source("ui.mergeeventpopup.0e36116173a1") % [int(str(cfg["key"]).get_slice(":", 1)) + 1, G.fmt_time(left)] if left > 0 else TextCatalog.source("ui.mergeeventpopup.2ae23c5fed1b"))
+	timer.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.0e36116173a1"), [int(str(cfg["key"]).get_slice(":", 1)) + 1, G.fmt_time(left)]) if left > 0 else TextCatalog.source("ui.mergeeventpopup.2ae23c5fed1b"))
 	_refresh_action()
 
 func _claim() -> void:
@@ -282,10 +282,10 @@ func _preview_rewards(k: int) -> void:
 	var p := PopupBase.new()
 	p.tap_to_close = true
 	Popups.frame(p, Rect2(48, 470, 624, 540), TextCatalog.source("ui.mergeeventpopup.b55cd72528da") if last else TextCatalog.source("ui.mergeeventpopup.c3ba699e44e1"), _c("banner", "2f6377"))
-	var goal := TextCatalog.source("ui.mergeeventpopup.43e5d8c3c817") % int(m["at"]) if str(cfg["board"].get("goal", "")) == "discover_all" else (TextCatalog.source("ui.mergeeventpopup.b5c22a20d868") % int(m["at"]) if last else TextCatalog.source("ui.mergeeventpopup.4e043fd71b12") % int(m["at"]))
+	var goal := TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.43e5d8c3c817"), int(m["at"])) if str(cfg["board"].get("goal", "")) == "discover_all" else (TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.b5c22a20d868"), int(m["at"])) if last else TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.4e043fd71b12"), int(m["at"])))
 	var have := MergeEvent.got(cfg, s).has(k)
 	UI.lbl(p.box, goal, Rect2(80, 538, 560, 44), 30, INK, HORIZONTAL_ALIGNMENT_CENTER, 0, INK, true)
-	UI.lbl(p.box, TextCatalog.source("notice.sevenday.426e458a4124") if have else TextCatalog.source("ui.mergeeventpopup.17c5aa4b49f5") % [mini(MergeEvent.progress(cfg, s), int(m["at"])), int(m["at"])], Rect2(80, 582, 560, 34), 22, Color("8a5a30"))
+	UI.lbl(p.box, TextCatalog.source("notice.sevenday.426e458a4124") if have else TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.17c5aa4b49f5"), [mini(MergeEvent.progress(cfg, s), int(m["at"])), int(m["at"])]), Rect2(80, 582, 560, 34), 22, Color("8a5a30"))
 	var rewards: Array = m["rewards"]
 	var gap := 540.0 / maxi(1, rewards.size())
 	for j in rewards.size():

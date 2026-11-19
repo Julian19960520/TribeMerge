@@ -23,7 +23,7 @@ static func event() -> PopupBase:
 	var total := UI.lbl(root, "%d/%d" % [G.rules.progression.cards_total(), Data.ALBUMS.size() * 9], Rect2(200, 548, 380, 40), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	Popups.live(p, G.changed, func(): total.text = TextCatalog.resolve("%d/%d" % [G.rules.progression.cards_total(), Data.ALBUMS.size() * 9]))
 	var got := G.tokens - G.token_claimed
-	UI.lbl(root, TextCatalog.source("ui.collectionpopups.5bb518d753d0") % [got, G.TOKEN_STEP], Rect2(170, 616, 420, 36), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	UI.lbl(root, TextCatalog.fill(TextCatalog.source("ui.collectionpopups.5bb518d753d0"), [got, G.TOKEN_STEP]), Rect2(170, 616, 420, 36), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	UI.lbl(root, TextCatalog.source("ui.collectionpopups.bf1541cebfc0"), Rect2(60, 656, 600, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	for a in Data.ALBUMS.size():
 		var cx := 128.0 + (a % 3) * 232.0
@@ -158,7 +158,8 @@ static func card(album: int, index: int) -> PopupBase:
 	var art := UI.box(p.box, r, func(ci, sz):
 		Paint.collection_picture(ci, Rect2(Vector2.ZERO, sz), album, index), false)
 	art.name = "card_art"
-	var br := Rect2(180, r.position.y - 34, 360, 78)
+	# 横幅连同外扩贴图抬到画框上方，不再压住画面
+	var br := Rect2(180, r.position.y - 92, 360, 78)
 	UI.box(p.box, br, func(ci, sz): Paint.banner(ci, Rect2(Vector2.ZERO, sz), Paint.ALBUM_COL[album].darkened(0.2)))
 	UI.title(p.box, CardArtwork.card_name(album, index), Rect2(220, br.position.y + 4, 280, 68), 38, Color.WHITE)
 	var close := UI.hit(p.box, Rect2(r.end.x - 52, r.position.y - 24, 70, 70), p.close)

@@ -136,7 +136,7 @@ func _add_gem() -> void:
 	_gem_lbl = UI.lbl(c, "", Rect2(PILLS["amber"].position + Vector2(30, 0) - o, Vector2(PILL_W - 34.0, 50)), 26)
 	UI.hit(c, Rect2(Vector2.ZERO, r.size), func():
 		if _gem_mode == "sand":
-			G.main.toast(TextCatalog.source("ui.topbar.8204fee264bd") % Data.rush_text())
+			G.main.toast(TextCatalog.fill(TextCatalog.source("ui.topbar.8204fee264bd"), Data.rush_text()))
 		else:
 			_open_from("amber", "store"))
 
@@ -177,7 +177,7 @@ func _add_festival_progress() -> void:
 	_festival_lbl = UI.lbl(_festival, "", Rect2(56, 0, 276, 58), 23, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	UI.hit(_festival, Rect2(Vector2.ZERO, _festival.size), func():
 		if G.rules.progression.feature_unlocked(Data.CARD_LEVEL): G.main.open("event")
-		else: G.main.toast(TextCatalog.source("ui.topbar.ed9bbdbbe892") % Data.CARD_LEVEL))
+		else: G.main.toast(TextCatalog.fill(TextCatalog.source("ui.topbar.ed9bbdbbe892"), Data.CARD_LEVEL)))
 	_festival.hide()
 
 func _add_shop() -> void:
@@ -296,7 +296,7 @@ func target(kind: String) -> Vector2:
 	return get_global_transform() * (r.position + Vector2(8, 24))
 
 func _refresh() -> void:
-	_festival_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.topbar.0520da220f57") % [G.tokens - G.token_claimed, G.TOKEN_STEP])
+	_festival_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.topbar.0520da220f57"), [G.tokens - G.token_claimed, G.TOKEN_STEP]))
 	_lv.text = TextCatalog.resolve(str(G.level))
 	_en.text = TextCatalog.resolve(str(G.energy))
 	_sh.text = TextCatalog.resolve(str(G.shells))

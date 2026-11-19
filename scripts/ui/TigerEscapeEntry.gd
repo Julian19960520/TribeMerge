@@ -27,7 +27,7 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	var style := "go"
 	if not m.is_empty():
 		if m["status"] == "running":
-			text = TextCatalog.source("ui.tigerescapeentry.spots") % TigerEscape.stage_remaining(m)
+			text = TextCatalog.fill(TextCatalog.source("ui.tigerescapeentry.spots"), TigerEscape.stage_remaining(m))
 			style = "time"
 		else: text = TextCatalog.source("ui.raceentry.0e4062a72843")
 	# 和其他活动入口同一套：贴纸主题图 + 状态小牌 + 名字（scripts/sprites/events.gd 的 _en_tiger）

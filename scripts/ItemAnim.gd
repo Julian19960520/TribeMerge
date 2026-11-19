@@ -39,7 +39,7 @@ func frame_texture(id: String, rim: bool, frame: int) -> Texture2D:
 	var texture: Texture2D = _cache.fetch(path)
 	if texture == null and not _missing.has(id):
 		_missing[id] = true
-		push_warning(TextCatalog.source("notice.itemanim.5dd3ad32f0af") % id)
+		push_warning(TextCatalog.fill(TextCatalog.source("notice.itemanim.5dd3ad32f0af"), id))
 	return texture
 
 func cache_stats() -> Dictionary:
@@ -49,6 +49,7 @@ func blit(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool, rot: f
 	var texture := frame_texture(id, rim, Art.boil)
 	if texture == null:
 		return false
+	TextureCache.hold(ci, texture)
 	var show := float(tex_px) * (size / bake_size)
 	ci.draw_set_transform(c, rot, Vector2.ONE)
 	ci.draw_texture_rect(texture, Rect2(-show * 0.5, -show * 0.5, show, show), false)

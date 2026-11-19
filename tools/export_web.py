@@ -13,6 +13,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from text_catalog import load_document
 
 root = Path(__file__).resolve().parents[1]
 if len(sys.argv) != 2:
@@ -87,11 +88,11 @@ wasm.unlink()
 page = dist / "index.html"
 html = page.read_text()
 html = html.replace('"args":[]', '"args":["--","--cloud-off"]')
-text_catalog = json.loads((root / "localization/texts.json").read_text())
+text_catalog = load_document()
 
 def web_text(key):
     entry = text_catalog["entries"][key]
-    return entry["zh_CN"] or entry["source"]
+    return entry["zh_CN"]
 
 bootstrap = """<script>
 // Keep the engine download below the hosting per-file limit.
@@ -137,7 +138,7 @@ page.write_text(html)
 print("Web export ready:", dist, flush=True)
 # The simulator report is a separate lightweight page; it does not load the game engine.
 import shutil
-shutil.copyfile(root / "localization/texts.json", dist / "texts.json")
+(dist / "texts.json").write_text(json.dumps({key: text_catalog[key] for key in ("schema", "default_locale", "locales", "stats", "entries")}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 for market in ("CN", "US"):
     shutil.copyfile(root / f"server/public/catalog_{market}.json", dist / f"economy-{market.lower()}.json")
 for name in ("simulation.html", "simulation-events.js", "simulation-report.json.gz"):

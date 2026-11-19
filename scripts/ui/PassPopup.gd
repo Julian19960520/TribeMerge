@@ -76,7 +76,7 @@ static func screen() -> PopupBase:
 		if reached >= n:
 			goal_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.passpopup.d6d8e1de4a98") + (TextCatalog.source("ui.passpopup.78d451afe011") if G.pass_tier == 2 else ""))
 		else:
-			goal_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.passpopup.a0257d07f1bd") % [maxi(0, _need_left()), reached + 1])
+			goal_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.passpopup.a0257d07f1bd"), [maxi(0, _need_left()), reached + 1]))
 		prog_lbl.text = TextCatalog.resolve(G.rules.progression.pass_prog_text())
 		act.visible = G.pass_tier < 2
 		act.text = TextCatalog.resolve(TextCatalog.source("ui.passpopup.773660b8a7be") if G.pass_tier == 1 else TextCatalog.source("ui.passpopup.42d2ad8fbbb3"))
@@ -159,7 +159,7 @@ static func _tier_need(track: String) -> int:
 static func _rewards(track: String, lv: int) -> Array:
 	if track == "endless":
 		return [["chest_1", 1]]
-	return Data.PASS_LEVELS[lv - 1].get(track, [])
+	return Data.for_pass(G.level, Data.PASS_LEVELS[lv - 1].get(track, []))
 
 # ---------------------------------------------------------------- 奖励卡
 
@@ -200,7 +200,7 @@ static func _tap(p: PopupBase, c: Dictionary) -> void:
 		G.main.open("pass_buy")
 		return
 	if st == "future" and track != "endless":
-		G.main.toast(TextCatalog.source("ui.passpopup.545750bbfba5") % lv)
+		G.main.toast(TextCatalog.fill(TextCatalog.source("ui.passpopup.545750bbfba5"), lv))
 		return
 	if st == "done" or c.get("busy", false):
 		return
@@ -281,10 +281,10 @@ static func _paint_card(ci: CanvasItem, size: Vector2, track: String, lv: int) -
 		"future":
 			Sprites.draw(ci, "ev_pass_card_shade", r, Color(0.14, 0.08, 0.04, 0.42))
 			if lv == 0:
-				_band_text(ci, bc, TextCatalog.source("ui.passpopup.3edea80ffde5") % Data.pass_need(Data.PASS_LEVELS.size() - 1), Color("f1dfb8"))
+				_band_text(ci, bc, TextCatalog.fill(TextCatalog.source("ui.passpopup.3edea80ffde5"), Data.pass_need(Data.PASS_LEVELS.size() - 1)), Color("f1dfb8"))
 			else:
 				Paint.glyph(ci, "lock", Vector2(bc.x - 50, bc.y + 1), 1.1)
-				_band_text(ci, bc + Vector2(14, 0), TextCatalog.source("ui.passpopup.545750bbfba5") % lv, Color("f1dfb8"))
+				_band_text(ci, bc + Vector2(14, 0), TextCatalog.fill(TextCatalog.source("ui.passpopup.545750bbfba5"), lv), Color("f1dfb8"))
 		"lock":
 			if lv == 0:
 				Sprites.draw(ci, "ev_pass_card_shade", r, Color(0.14, 0.08, 0.04, 0.3))
@@ -370,7 +370,7 @@ static func _pulse(root: Control) -> DrawBox:
 		ci.draw_arc(o, 56, 0, TAU, 44, Color("bff3e8"), 5.0, true)
 	, false)
 	d.pivot_offset = d.size * 0.5
-	d.z_index = 0
+	d.z_index = 1
 	var tw := d.create_tween().set_loops()
 	tw.tween_property(d, "scale", Vector2(1.18, 1.18), 0.75).from(Vector2(0.72, 0.72)).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
 	tw.parallel().tween_property(d, "modulate:a", 0.0, 0.75).from(1.0).set_ease(Tween.EASE_IN)
@@ -383,7 +383,8 @@ static func _place_pulse(d: DrawBox) -> void:
 	d.visible = reached < n
 	if reached < n:
 		d.position = Vector2(MID_X, TRACK_TOP + _node_y(reached + 1)) - d.size * 0.5
-		d.get_parent().move_child(d, 1)
+		var host := d.get_parent()
+		host.move_child(d, host.get_child_count() - 1)
 
 # ---------------------------------------------------------------- 购买
 
@@ -430,7 +431,7 @@ static func _ticket(p: PopupBase, r: Rect2, super_vip: bool) -> void:
 		b.pressed.connect(func(): _do_super(p))
 		if G.pass_tier == 1:
 			# 已经是贵宾：只补差价，原价划掉
-			var full := TextCatalog.source("ui.passpopup.9d7c86d01728") % int(G.PASS_CNY["super"])
+			var full := TextCatalog.fill(TextCatalog.source("ui.passpopup.9d7c86d01728"), int(G.PASS_CNY["super"]))
 			var note := UI.lbl(p.box, full + TextCatalog.source("ui.passpopup.6160dd496345"), Rect2(r.position.x + 12, r.end.y - 150, r.size.x - 24, 34), 19, Art.CLAY)
 			UI.box(p.box, note.get_rect(), func(ci, sz):
 				var f: Font = G.font_body
@@ -625,7 +626,7 @@ static func _endless_note(ci: CanvasItem) -> void:
 		ci.draw_line(Vector2(x, r.position.y - 20), Vector2(x, r.position.y + 6), Art.ROPE, 2.5)
 	Sprites.draw(ci, "ev_pass_note", r)
 	var f := G.font_title
-	var lines := [TextCatalog.source("ui.passpopup.4a594183282e"), TextCatalog.source("ui.passpopup.aa4f64d7ba63") % Data.pass_need(Data.PASS_LEVELS.size() - 1)]
+	var lines := [TextCatalog.source("ui.passpopup.4a594183282e"), TextCatalog.fill(TextCatalog.source("ui.passpopup.aa4f64d7ba63"), Data.pass_need(Data.PASS_LEVELS.size() - 1))]
 	for i in lines.size():
 		var fs := 22 if i == 0 else 18
 		var w := f.get_string_size(TextCatalog.resolve(lines[i]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x

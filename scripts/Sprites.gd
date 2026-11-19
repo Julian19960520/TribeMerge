@@ -57,6 +57,7 @@ func draw(ci: CanvasItem, key: String, r: Rect2, mod: Color = Color.WHITE) -> vo
 	var tex := _current(key)
 	if tex == null:
 		return
+	TextureCache.hold(ci, tex)
 	var m: Dictionary = _meta[key]
 	var pad := float(m.get("pad", 0))
 	var nine = m.get("nine", null)
@@ -94,10 +95,26 @@ func draw(ci: CanvasItem, key: String, r: Rect2, mod: Color = Color.WHITE) -> vo
 				Rect2(sx[i], sy[j], sx[i + 1] - sx[i], sy[j + 1] - sy[j]), mod, false, true)
 
 ## 以 c 为中心按登记尺寸 × s 画，可旋转。
+## 和 draw 一样整张拉伸进 rect，但只画内容区下面 keep（0..1）这一截；部落部件「建到一半」用。
+func draw_bottom(ci: CanvasItem, key: String, r: Rect2, keep: float, mod: Color = Color.WHITE) -> void:
+	var tex := _current(key)
+	if tex == null or keep <= 0.0:
+		return
+	TextureCache.hold(ci, tex)
+	var m: Dictionary = _meta[key]
+	var pad := float(m.get("pad", 0))
+	var k := r.size / Vector2(maxf(float(m.get("w", 1)), 1.0), maxf(float(m.get("h", 1)), 1.0))
+	var full := Rect2(r.position - k * pad, r.size + k * pad * 2.0)
+	var cut := clampf(r.end.y - r.size.y * clampf(keep, 0.0, 1.0), full.position.y, full.end.y)
+	var th := float(tex.get_height())
+	var sy := (cut - full.position.y) / full.size.y * th
+	ci.draw_texture_rect_region(tex, Rect2(full.position.x, cut, full.size.x, full.end.y - cut), Rect2(0, sy, float(tex.get_width()), th - sy), mod)
+
 func at(ci: CanvasItem, key: String, c: Vector2, s: float = 1.0, rot: float = 0.0, mod: Color = Color.WHITE) -> void:
 	var tex := _current(key)
 	if tex == null:
 		return
+	TextureCache.hold(ci, tex)
 	var m: Dictionary = _meta[key]
 	var pad := float(m.get("pad", 0))
 	var full := Vector2(float(m.get("w", 0)) + pad * 2.0, float(m.get("h", 0)) + pad * 2.0) * s
@@ -124,7 +141,7 @@ func frame_texture(key: String, frame: int) -> Texture2D:
 		texture = _cache.fetch("%s/png/%s_%d.png" % [DIR, key, posmod(frame, count)])
 	if texture == null and not _missing.has(key):
 		_missing[key] = true
-		push_warning(TextCatalog.source("notice.sprites.371a27c749c2") % key)
+		push_warning(TextCatalog.fill(TextCatalog.source("notice.sprites.371a27c749c2"), key))
 	return texture
 
 func cache_stats() -> Dictionary:

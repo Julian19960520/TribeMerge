@@ -102,12 +102,12 @@ func _start_panel(s: Dictionary) -> void:
 	UI.title(body,"?",Rect2(470,430,100,100),60,Art.BONE)
 	_plate(Rect2(140,540,120,36),TextCatalog.source("ui.duelpopup.a0c7716669b5"),Art.MOSS_D)
 	_plate(Rect2(460,540,120,36),TextCatalog.source("ui.duelpopup.4ea064c4d27d"),Art.STONE_D)
-	UI.lbl(body,TextCatalog.source("ui.duelpopup.6059f40f9a5e")%target,Rect2(80,594,560,36),23,Color("7a5a3a"))
+	UI.lbl(body,TextCatalog.fill(TextCatalog.source("ui.duelpopup.6059f40f9a5e"), target),Rect2(80,594,560,36),23,Color("7a5a3a"))
 	_reward_card(Rect2(90,640,266,124),TextCatalog.source("ui.duelpopup.ec0dd761c15d"),DuelRace.config()["win_rewards"],Art.MOSS_D,Color("eef5d6"))
 	_reward_card(Rect2(364,640,266,124),TextCatalog.source("ui.duelpopup.2f701b057a0d"),DuelRace.config()["lose_rewards"],Art.LEATHER,Color("f6e7c8"))
 	var button:=UI.btn(body,Rect2(200,782,320,84),TextCatalog.source("ui.duelpopup.02ca74ca5ea7"),"green",func(): _action("join"),38)
 	button.name="duel_action"
-	Popups.section(body,TextCatalog.source("ui.duelpopup.a4f3802656e2")%int(s["wins"]),884,Color("8a5a30"),360)
+	Popups.section(body,TextCatalog.fill(TextCatalog.source("ui.duelpopup.a4f3802656e2"), int(s["wins"])),884,Color("8a5a30"),360)
 	var last:=_last_milestone()
 	var wins_now:=int(s["wins"])
 	UI.box(body,WIN_BAR,func(ci,sz):
@@ -141,7 +141,7 @@ func _start_panel(s: Dictionary) -> void:
 				ci.draw_circle(Vector2(58,50),13,Art.INK)
 				ci.draw_circle(Vector2(58,50),11,Art.MOSS_D)
 				ci.draw_polyline(PackedVector2Array([Vector2(52,50),Vector2(57,55),Vector2(65,45)]),Color.WHITE,3,true)
-		UI.lbl(body,TextCatalog.source("ui.duelpopup.742bc958e1a4")%wins,Rect2(x-44,1000,88,34),22,Color.WHITE if ready else Art.INK,HORIZONTAL_ALIGNMENT_CENTER,6 if ready else 0,Art.MOSS_D)
+		UI.lbl(body,TextCatalog.fill(TextCatalog.source("ui.duelpopup.742bc958e1a4"), wins),Rect2(x-44,1000,88,34),22,Color.WHITE if ready else Art.INK,HORIZONTAL_ALIGNMENT_CENTER,6 if ready else 0,Art.MOSS_D)
 	_render_reward_bubble()
 
 
@@ -176,7 +176,7 @@ func _progress_panel(m: Dictionary) -> void:
 	var target:=maxi(1,int(m.get("target",DuelRace.config()["target"])))
 	var scores:=[clampi(int(m.get("me",0)),0,target),clampi(int(m.get("opponent",0)),0,target)]
 	var lead:=0 if scores[0]>scores[1] else (1 if scores[1]>scores[0] else -1)
-	UI.title(body,TextCatalog.source("ui.duelpopup.473d07deecf7")%target,Rect2(90,288,540,54),36,Art.FIRE2)
+	UI.title(body,TextCatalog.fill(TextCatalog.source("ui.duelpopup.473d07deecf7"), target),Rect2(90,288,540,54),36,Art.FIRE2)
 	# 顶部对阵条：头像 VS 头像，比分在头像下
 	UI.box(body,Rect2(90,352,540,190),func(ci,sz):
 		_card(ci,Rect2(Vector2.ZERO,sz),Color("f3dfb4"),970)
@@ -194,7 +194,7 @@ func _progress_panel(m: Dictionary) -> void:
 		UI.box(body,Rect2(x-70,490,140,42),func(ci,sz): _card(ci,Rect2(Vector2.ZERO,sz),tint,980+side),false)
 		UI.lbl(body,"%s  %d"%[TextCatalog.source("ui.duelpopup.a0c7716669b5") if side==0 else TextCatalog.source("ui.duelpopup.4ea064c4d27d"),scores[side]],Rect2(x-70,490,140,42),24,Color.WHITE,HORIZONTAL_ALIGNMENT_CENTER,6,tint_d)
 	# 奖励归属：按当前比分，领先方拿胜利奖励，落后方拿参与奖励
-	var owner_text:=TextCatalog.source("ui.duelpopup.86a967cd95bb")%target
+	var owner_text:=TextCatalog.fill(TextCatalog.source("ui.duelpopup.86a967cd95bb"), target)
 	if lead==0: owner_text=TextCatalog.source("ui.duelpopup.01bfa7b9283c")
 	elif lead==1: owner_text=TextCatalog.source("ui.duelpopup.46204d7af127")
 	UI.lbl(body,owner_text,Rect2(90,548,540,34),22,Art.MOSS_D if lead==0 else (Color("9b3518") if lead==1 else Color("7a5a3a")))
@@ -304,7 +304,7 @@ func _render_reward_bubble() -> void:
 		var pointer:=PackedVector2Array([Vector2(tip-15,sz.y-5),Vector2(tip,sz.y+15),Vector2(tip+15,sz.y-5)])
 		Art.fill(ci,pointer,Art.BONE,2)
 		Art.fill(ci,Art.rrect(Rect2(Vector2.ZERO,sz),18,940,0),Art.BONE,2)
-	UI.lbl(bubble,TextCatalog.source("ui.duelpopup.ad94a5088af9")%bubble_wins,Rect2(10,8,290,32),24,Art.INK)
+	UI.lbl(bubble,TextCatalog.fill(TextCatalog.source("ui.duelpopup.ad94a5088af9"), bubble_wins),Rect2(10,8,290,32),24,Art.INK)
 	var prizes: Array=selected["rewards"]
 	for j in prizes.size():
 		var cx:=155+(float(j)-(prizes.size()-1)*0.5)*86
@@ -315,7 +315,7 @@ func _render_reward_bubble() -> void:
 		var claim:=UI.btn(bubble,Rect2(72,135,166,42),TextCatalog.source("ui.duelpopup.844ab9477225"),"green",func(): _action("milestone",wins),25)
 		claim.name="duel_claim_milestone"
 	else:
-		UI.lbl(bubble,TextCatalog.source("notice.sevenday.426e458a4124") if got else TextCatalog.source("ui.duelpopup.f31108c6c814")%(bubble_wins-int(s["wins"])),Rect2(15,139,280,32),24,Art.MOSS_D if got else Art.INK)
+		UI.lbl(bubble,TextCatalog.source("notice.sevenday.426e458a4124") if got else TextCatalog.fill(TextCatalog.source("ui.duelpopup.f31108c6c814"), (bubble_wins-int(s["wins"]))),Rect2(15,139,280,32),24,Art.MOSS_D if got else Art.INK)
 
 func _reward_card(r: Rect2, label: String, rw: Array, tint: Color, bg: Color) -> void:
 	UI.box(body,r,func(ci,sz):

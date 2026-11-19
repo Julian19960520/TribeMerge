@@ -1,4 +1,5 @@
 extends Control
+const TextureCache := preload("res://scripts/resources/TextureCache.gd")
 var btn: TButton
 var cfg: Dictionary
 var _last_key := ""
@@ -7,7 +8,7 @@ func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_IGNORE
 	btn = UI.hit(self, Rect2(Vector2.ZERO, size), func():
 		if MergeEvent.available(cfg): G.main.open("merge_event")
-		else: G.main.toast(TextCatalog.source("ui.mergeevententry.5f6f7b72a9c0") if cfg.is_empty() else TextCatalog.source("ui.mergeevententry.b2377e256fd8") % int(cfg["unlock_level"])))
+		else: G.main.toast(TextCatalog.source("ui.mergeevententry.5f6f7b72a9c0") if cfg.is_empty() else TextCatalog.fill(TextCatalog.source("ui.mergeevententry.b2377e256fd8"), int(cfg["unlock_level"]))))
 	btn.extra = _paint
 	G.merge_event_changed.connect(_refresh)
 	_refresh()
@@ -25,7 +26,7 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	var ready := unlocked and MergeEvent.complete(cfg, s) and not bool(s["claimed"])
 	var badge := {"text": "×%d" % int(s.get("points", 0)), "style": "num"}
 	if ready: badge = {"text": TextCatalog.source("ui.duelentry.5375104054f0"), "style": "go"}
-	elif not unlocked: badge = {"text": TextCatalog.source("ui.mergeevententry.1663dd3dc737") if cfg.is_empty() else TextCatalog.source("ui.duelentry.e0cda514ecc2") % int(cfg["unlock_level"]), "style": "lock"}
+	elif not unlocked: badge = {"text": TextCatalog.source("ui.mergeevententry.1663dd3dc737") if cfg.is_empty() else TextCatalog.fill(TextCatalog.source("ui.duelentry.e0cda514ecc2"), int(cfg["unlock_level"])), "style": "lock"}
 	elif float(cfg.get("ends_at", 0)) - G.now() < 86400: badge = {"text": _left(float(cfg["ends_at"]) - G.now()), "style": "time"}
 	# 默认的月石主题用程序手绘图；别的主题可以在配置里给自己的 entry_icon 贴图
 	var icon := str(cfg.get("theme", {}).get("entry_icon", ""))
@@ -34,7 +35,7 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 
 static func _left(sec: float) -> String:
 	var t := maxi(0, int(sec))
-	return TextCatalog.source("ui.board.e9e4f4da0297") % [t / 3600, t / 60 % 60] if t >= 3600 else TextCatalog.source("notice.game.30c88ef0108b") % [t / 60, t % 60]
+	return TextCatalog.fill(TextCatalog.source("ui.board.e9e4f4da0297"), [t / 3600, str(int(t / 60 % 60)).pad_zeros(2)]) if t >= 3600 else TextCatalog.fill(TextCatalog.source("notice.game.30c88ef0108b"), [t / 60, str(int(t % 60)).pad_zeros(2)])
 
 func _txt(ci: CanvasItem, text: String, p: Vector2, fs: int, col: Color) -> void:
 	var w := G.font_title.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
@@ -46,7 +47,10 @@ func fly_from(origin: Vector2) -> void:
 	var fx := DrawBox.new()
 	fx.size = Vector2(54, 54)
 	fx.position = origin - fx.size / 2
-	fx.painter = func(ci, sz): ci.draw_texture_rect(MergeEventArt.texture(str(cfg["theme"]["point_icon"])), Rect2(Vector2.ZERO, sz), false)
+	fx.painter = func(ci, sz):
+		var icon := MergeEventArt.texture(str(cfg["theme"]["point_icon"]))
+		TextureCache.hold(ci, icon)
+		ci.draw_texture_rect(icon, Rect2(Vector2.ZERO, sz), false)
 	G.main.fx_layer.add_child(fx)
 	var to := get_global_rect().get_center() - fx.size / 2
 	var tw := fx.create_tween()

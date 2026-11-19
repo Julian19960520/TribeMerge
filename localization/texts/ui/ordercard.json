@@ -1,0 +1,17 @@
+{
+  "feature": "ordercard",
+  "entries": {
+    "39298616da42": {
+      "zh_CN": "消耗${0}沙漏跳过制作"
+    },
+    "53fd66caee61": {
+      "zh_CN": "点石板取出"
+    },
+    "da2dadcd3ff9": {
+      "zh_CN": "制作"
+    },
+    "fc50a99caae0": {
+      "zh_CN": "跳过"
+    }
+  }
+}

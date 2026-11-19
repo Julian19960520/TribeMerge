@@ -1,6 +1,7 @@
 extends RefCounted
-## One owner for lazy textures. Rendering commands retain their own references;
-## this LRU bounds additional textures retained between screens and animations.
+## Lazy textures with a bounded LRU. Canvas items only store a texture RID, and
+## Godot draws a white rectangle after that texture is freed. Each draw pins the
+## texture on the canvas item until that item redraws and clears its commands.
 
 var budget_bytes: int
 var resident_bytes := 0
@@ -49,6 +50,20 @@ func clear() -> void:
 func stats() -> Dictionary:
 	return {"textures": _entries.size(), "resident_bytes": resident_bytes,
 		"budget_bytes": budget_bytes, "loads": loads, "hits": hits, "evictions": evictions}
+
+## 画进 CanvasItem 的贴图要留到下次重画。画布命令只记 RID，缓存淘汰后 RID 失效就会画出白块。
+static func hold(ci: CanvasItem, texture: Texture2D) -> void:
+	if ci == null or texture == null:
+		return
+	var pins: Array = ci.get_meta(&"_texture_hold", [])
+	if not ci.has_meta(&"_texture_hold"):
+		ci.set_meta(&"_texture_hold", pins)
+		ci.draw.connect(_drop_holds.bind(ci))
+	pins.append(texture)
+
+static func _drop_holds(ci: CanvasItem) -> void:
+	var pins: Array = ci.get_meta(&"_texture_hold", [])
+	pins.clear()
 
 static func load_texture(path: String) -> Texture2D:
 	if ResourceLoader.exists(path):

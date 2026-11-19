@@ -1,6 +1,7 @@
 class_name Paint
 extends RefCounted
 const Meme := preload("res://scripts/Meme.gd")
+const TextureCache := preload("res://scripts/resources/TextureCache.gd")
 ## 生成图片用的尺寸、种子表都在目录文件里
 const PS := preload("res://scripts/sprites/paint.gd")
 ## 界面部件、角色、卡牌与村庄的程序化绘制。
@@ -201,6 +202,7 @@ const ALBUM_COL := [Color("c98a55"), Color("b8a27a"), Color("6b4a3a"), Color("a0
 static func card_art(ci: CanvasItem, album: int, idx: int, r: Rect2, clip: PackedVector2Array = PackedVector2Array()) -> void:
 	var illustration := CardArtwork.texture(album, idx)
 	if illustration != null:
+		TextureCache.hold(ci, illustration)
 		if clip.is_empty(): ci.draw_texture_rect(illustration, r, false)
 		else: _card_texture(ci, illustration, r, clip)
 		return

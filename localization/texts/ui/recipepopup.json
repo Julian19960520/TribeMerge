@@ -1,0 +1,14 @@
+{
+  "feature": "recipepopup",
+  "entries": {
+    "6db1b0abacb2": {
+      "zh_CN": "制作配方"
+    },
+    "a8ff5639f884": {
+      "zh_CN": "需要的材料"
+    },
+    "c18455486abf": {
+      "zh_CN": "石板制作 · ${0}分${1}秒"
+    }
+  }
+}

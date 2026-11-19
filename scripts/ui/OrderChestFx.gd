@@ -51,7 +51,7 @@ func _ready() -> void:
 	_title = UI.lbl(self, TextCatalog.source("ui.orderchestfx.d372fa211584"), Rect2(0, 330, 720, 70), 44, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	_sub = UI.lbl(self, TextCatalog.source("ui.orderchestfx.2aa07a5586b5"), Rect2(0, 400, 720, 44), 26, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	if stashed > 0:
-		_sub.text = TextCatalog.resolve(TextCatalog.source("ui.orderchestfx.81889583f8e0") % stashed)
+		_sub.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.orderchestfx.81889583f8e0"), stashed))
 	for l in [_title, _sub]:
 		l.modulate.a = 0.0
 		l.mouse_filter = MOUSE_FILTER_IGNORE

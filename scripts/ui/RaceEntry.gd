@@ -27,7 +27,7 @@ func _ready() -> void:
 
 func _on_tap() -> void:
 	if not race.unlocked():
-		G.main.toast(TextCatalog.source("ui.raceentry.8bcea5694ccb") % race.unlock_level())
+		G.main.toast(TextCatalog.fill(TextCatalog.source("ui.raceentry.8bcea5694ccb"), race.unlock_level()))
 		return
 	RacePopup.open()
 
@@ -79,14 +79,14 @@ func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	# 一个状态牌：锁 → 等级；空闲 → 开赛；匹配中；比赛中 → 名次（金银铜底色）；比完 → 领奖 / 结算
 	var badge := {"text": TextCatalog.source("ui.duelentry.a75fb7376be1"), "style": "teal"}
 	var dot := false
-	if not race.unlocked(): badge = {"text": TextCatalog.source("ui.duelentry.e0cda514ecc2") % race.unlock_level(), "style": "lock"}
+	if not race.unlocked(): badge = {"text": TextCatalog.fill(TextCatalog.source("ui.duelentry.e0cda514ecc2"), race.unlock_level()), "style": "lock"}
 	elif race.ended():
 		dot = int(race.pending_result().get("me", {}).get("place", 0)) in [1, 2, 3]
 		badge = {"text": TextCatalog.source("ui.duelentry.5375104054f0") if dot else TextCatalog.source("ui.raceentry.0e4062a72843"), "style": "go"}
 	elif race.matching(): badge = {"text": TextCatalog.source("ui.raceentry.9741f68e19c7"), "style": "time"}
 	elif race.racing():
 		var place: int = race.place_of(race.me())
-		badge = {"text": TextCatalog.source("ui.raceentry.a99e21d72785") % place, "style": ["gold", "silver", "bronze"][place - 1] if place in [1, 2, 3] else "num"}
+		badge = {"text": TextCatalog.fill(TextCatalog.source("ui.raceentry.a99e21d72785"), place), "style": ["gold", "silver", "bronze"][place - 1] if place in [1, 2, 3] else "num"}
 	EventEntryArt.paint(ci, sz, "race", TextCatalog.source("ui.raceentry.fb8cff7697b3"), badge, not race.unlocked(), dot, _bump)
 
 static func _txt(ci: CanvasItem, f: Font, s: String, c: Vector2, fs: int, col: Color, ol: int = 0) -> void:

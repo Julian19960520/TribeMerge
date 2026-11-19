@@ -37,8 +37,8 @@ func run() -> void:
 	check(g.try_drop(0, 5) == "move" and g.board[5]["chest"] == remaining and not g.board[0].has("chest"), "remaining contents follow a moved chest")
 	g.inv = ["fruit_1"]; g.inv_chests = {}
 	check(g.rules.board.store_cell(5) and g.inv_chests["1"] == remaining, "storage preserves a partially opened chest")
-	check(g.rules.board.take_inventory(0, 2) and g.inv_chests["0"] == remaining, "taking an earlier storage item shifts the chest metadata")
-	check(g.rules.board.take_inventory(0, 3) and g.board[3]["chest"] == remaining and g.inv_chests.is_empty(), "taking the chest back preserves its remaining drops")
+	check(g.rules.board.take_inventory(0, 2) and g.inv_chests["1"] == remaining and str(g.inv[0]) == "", "taking an earlier storage item leaves its slot empty")
+	check(g.rules.board.take_inventory(1, 3) and g.board[3]["chest"] == remaining and g.inv_chests.is_empty(), "taking the chest back preserves its remaining drops")
 	g.save_game(); g.load_game()
 	check(g.board[3]["chest"] == remaining, "partial contents survive save and reload")
 	bs.board.select(3); bs._on_delete(); bs._on_undo()

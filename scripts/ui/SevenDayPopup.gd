@@ -46,7 +46,7 @@ func _ready() -> void:
 	tasks_root.mouse_filter = MOUSE_FILTER_IGNORE
 	box.add_child(tasks_root)
 	for k in 7:
-		var b := UI.btn(box, Rect2(48 + k * 90, TAB_Y, 84, 84), TextCatalog.source("ui.sevendaypopup.670ac1b359ac") % (k + 1), "hide", func(): page = k; _refresh(), 21)
+		var b := UI.btn(box, Rect2(48 + k * 90, TAB_Y, 84, 84), TextCatalog.fill(TextCatalog.source("ui.sevendaypopup.670ac1b359ac"), (k + 1)), "hide", func(): page = k; _refresh(), 21)
 		tabs.append(b)
 	G.seven_day_changed.connect(_schedule_refresh)
 	_refresh()
@@ -76,11 +76,11 @@ func _refresh() -> void:
 	if not is_instance_valid(score): return
 	var stages: Array = SevenDay.config()["milestones"]
 	var pts := SevenDay.points()
-	score.text = TextCatalog.resolve(TextCatalog.source("ui.sevendaypopup.bb26f1585be9") % pts)
+	score.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.sevendaypopup.bb26f1585be9"), pts))
 	goal.text = TextCatalog.resolve(TextCatalog.source("ui.sevendaypopup.d5a0e6c1dab4"))
 	for stage in stages:
 		if pts < int(stage["points"]):
-			goal.text = TextCatalog.resolve(TextCatalog.source("ui.sevendaypopup.84563e6328b4") % (int(stage["points"]) - pts))
+			goal.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.sevendaypopup.84563e6328b4"), (int(stage["points"]) - pts)))
 			break
 	rail.queue_redraw()
 	for child in tasks_root.get_children():
@@ -238,7 +238,7 @@ func _task(task: Dictionary, y: float, k: int) -> void:
 		var day := SevenDay.task_day(str(task["id"])) + 1
 		UI.box(tasks_root, Rect2(530, y + 34, 128, 56), func(ci, sz):
 			Sprites.draw(ci, "ev_sd_wip", Rect2(Vector2.ZERO, sz))
-			EventEntryArt.text(ci, TextCatalog.source("ui.sevendaypopup.ab306ba1f62d") % day, Vector2(sz.x * 0.5, sz.y * 0.5 + 8), 22, Color("9a8a70"), 0), false)
+			EventEntryArt.text(ci, TextCatalog.fill(TextCatalog.source("ui.sevendaypopup.ab306ba1f62d"), day), Vector2(sz.x * 0.5, sz.y * 0.5 + 8), 22, Color("9a8a70"), 0), false)
 		return
 	if not done:
 		UI.box(tasks_root, Rect2(530, y + 34, 128, 56), func(ci, sz):
@@ -263,7 +263,7 @@ func _stage(stage: Dictionary) -> void:
 	var grand := bool(stage.get("grand", false))
 	Popups.frame(p, Rect2(80, 470, 560, 520), str(stage.get("title", TextCatalog.source("ui.sevendaypopup.359ef6249d74"))), Art.CLAY if grand else Art.TEAL)
 	var got := SevenDay.stage_got(stage)
-	var line := TextCatalog.source("notice.sevenday.426e458a4124") if got else TextCatalog.source("ui.sevendaypopup.95d8603beb6e") % [int(stage["points"]), int(stage["points"]) - SevenDay.points()]
+	var line := TextCatalog.source("notice.sevenday.426e458a4124") if got else TextCatalog.fill(TextCatalog.source("ui.sevendaypopup.95d8603beb6e"), [int(stage["points"]), int(stage["points"]) - SevenDay.points()])
 	UI.lbl(p.box, line, Rect2(110, 545, 500, 46), 25, Color("8a5a30"))
 	var rewards: Array = stage["rewards"]
 	UI.box(p.box, Rect2(80, 600, 560, 220), func(ci, sz):

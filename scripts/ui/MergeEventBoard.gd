@@ -257,7 +257,7 @@ func _release(p: Vector2) -> void:
 			_animate_extras(result, b)
 			Sfx.play("merge" if result["kind"] in ["merge", "feed"] else "pop")
 			if result["kind"] == "feed":
-				_fx("text", center(b) + Vector2(0, -cell * 0.5), {"text": TextCatalog.source("ui.mergeeventboard.b14cf6838e54") if bool(result.get("level_up", false)) else TextCatalog.source("ui.mergeeventboard.0d1fd47477ac") % item_charges(str(result["id"])), "color": Color("ffd68a"), "size": 28})
+				_fx("text", center(b) + Vector2(0, -cell * 0.5), {"text": TextCatalog.source("ui.mergeeventboard.b14cf6838e54") if bool(result.get("level_up", false)) else TextCatalog.fill(TextCatalog.source("ui.mergeeventboard.0d1fd47477ac"), item_charges(str(result["id"]))), "color": Color("ffd68a"), "size": 28})
 			selected = b
 			action_finished.emit(result)
 		animating = true
@@ -282,7 +282,7 @@ func _animate_extras(result: Dictionary, origin: int) -> void:
 		moves.append({"id": str(p["id"]), "from": Vector2(size.x / 2, size.y + cell * 0.6), "to": int(p["to"]), "t": delay, "dur": 0.34, "spark": true})
 		delay -= 0.5
 	if int(result.get("queued", 0)) > 0:
-		_fx("text", Vector2(size.x / 2, cell * 0.9), {"text": TextCatalog.source("ui.mergeeventboard.6d14fa859d57") % int(result["queued"]), "color": Color("ffd68a"), "size": 26})
+		_fx("text", Vector2(size.x / 2, cell * 0.9), {"text": TextCatalog.fill(TextCatalog.source("ui.mergeeventboard.6d14fa859d57"), int(result["queued"])), "color": Color("ffd68a"), "size": 26})
 
 ## 点格子：画笔点一下画壁画；箱子气泡点一下收进暂存区；
 ## 资源先选中，再点一下领取；最高级的灯 / 壁画选中后再点挂上岩壁。返回 false 表示已自行收尾。

@@ -80,7 +80,7 @@ static func _amount(id: String) -> String:
 	var kind := Rewards.kind(id)
 	if unit.has(kind) and Data.value_of(id) > 0:
 		return "%d %s" % [Data.value_of(id), unit[kind]]
-	if kind == "chest": return TextCatalog.source("ui.choicechestpopup.c7a66c9dc23f") % SpecialChests.count(id)
+	if kind == "chest": return TextCatalog.fill(TextCatalog.source("ui.choicechestpopup.c7a66c9dc23f"), SpecialChests.count(id))
 	if kind == "pack": return TextCatalog.source("ui.choicechestpopup.480a1a6f3db3")
 	return "×1"
 
@@ -94,7 +94,7 @@ func _choose(option: int) -> void:
 		tw.tween_property(b, "scale", Vector2.ONE * (1.04 if k == option else 0.97), 0.18)
 		b.queue_redraw()
 	confirm.enabled = true
-	confirm.text = TextCatalog.resolve(TextCatalog.source("ui.choicechestpopup.1b46a0d455b7") % Data.name_of(str(_choices[option])))
+	confirm.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.choicechestpopup.1b46a0d455b7"), Data.name_of(str(_choices[option]))))
 	confirm.queue_redraw()
 
 func _confirm() -> void:

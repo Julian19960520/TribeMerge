@@ -1,0 +1,26 @@
+{
+  "feature": "cardrewardpresentation",
+  "entries": {
+    "0f4ceca75ab3": {
+      "zh_CN": "获得卡牌"
+    },
+    "52251aeea31a": {
+      "zh_CN": "收下"
+    },
+    "59867734cd78": {
+      "zh_CN": "新卡！"
+    },
+    "6f346e51c6f0": {
+      "zh_CN": "重复卡"
+    },
+    "db8db0530432": {
+      "zh_CN": "查看"
+    },
+    "dcd4eb027369": {
+      "zh_CN": "下一张"
+    },
+    "fac2a67ad878": {
+      "zh_CN": "确定"
+    }
+  }
+}

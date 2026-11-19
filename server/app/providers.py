@@ -10,7 +10,7 @@
 
 from .config import get_settings
 from .errors import ApiError
-from .texts import source as text_source
+from .texts import fill, source as text_source
 
 
 class LoginProvider:
@@ -36,7 +36,7 @@ class NotConfigured(LoginProvider):
         self.name = name
 
     def verify(self, credential: str) -> str:
-        raise ApiError(501, "provider_not_configured", text_source("server_notice.providers.d2cf5a6ca95c") % self.name)
+        raise ApiError(501, "provider_not_configured", fill(text_source("server_notice.providers.d2cf5a6ca95c"), self.name))
 
 
 PROVIDERS: dict[str, LoginProvider] = {

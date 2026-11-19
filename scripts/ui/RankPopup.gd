@@ -134,7 +134,7 @@ static func _podium(pod: Control, top: Array) -> void:
 		if e.is_empty():
 			UI.lbl(pod, TextCatalog.source("ui.rankpopup.11b72d983a39"), Rect2(x, y - 44, sw, 36), 22, Color("a08a70"))
 			continue
-		UI.lbl(pod, TextCatalog.source("ui.rankpopup.9e451981e177") % int(e.get("progress", 0)), Rect2(x, y + 56, sw, 34), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+		UI.lbl(pod, TextCatalog.fill(TextCatalog.source("ui.rankpopup.9e451981e177"), int(e.get("progress", 0))), Rect2(x, y + 56, sw, 34), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 		var nm := str(e.get("name", ""))
 		UI.lbl(pod, nm + (TextCatalog.source("ui.racepopup.dd4526102304") if mine else ""), Rect2(x - 6, y - 44, sw + 12, 36), 22 if nm.length() <= 6 else 18, Art.CLAY if mine else Art.INK)
 		var ac := Vector2(x + sw * 0.5, y - 92)
@@ -172,6 +172,6 @@ static func _row(parent: Control, e: Dictionary, mine: bool) -> void:
 	if mine:
 		name += TextCatalog.source("ui.racepopup.dd4526102304")
 	UI.lbl(parent, name, Rect2(110, 4, w - 300, ROW - 8), 26, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
-	UI.lbl(parent, TextCatalog.source("ui.rankpopup.9e451981e177") % int(e.get("progress", 0)), Rect2(w - 190, 4, 170, ROW - 8), 28,
+	UI.lbl(parent, TextCatalog.fill(TextCatalog.source("ui.rankpopup.9e451981e177"), int(e.get("progress", 0))), Rect2(w - 190, 4, 170, ROW - 8), 28,
 		Art.CLAY if mine else Color("6b4a2a"), HORIZONTAL_ALIGNMENT_RIGHT, 0, Art.INK, true)
 

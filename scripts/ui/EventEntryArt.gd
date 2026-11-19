@@ -1,6 +1,7 @@
 class_name EventEntryArt
 extends RefCounted
 const EntrySprites := preload("res://scripts/sprites/events.gd")
+const TextureCache := preload("res://scripts/resources/TextureCache.gd")
 ## 棋盘任务栏的活动入口（香蕉竞速 / 月石遗迹 / 七日任务）：没有卡片底，底部对齐。
 ## 从下往上：一行活动名 → 状态小牌（数量 / 倒计时 / 领奖 / 锁）→ 主题图（预生成贴图，见 scripts/sprites/events.gd）。
 ## 三张图画在同一个 100×100 的格子里、落在同一条地面线上，视觉分量一致。
@@ -31,7 +32,9 @@ static func paint(ci: CanvasItem, sz: Vector2, kind: String, title: String, badg
 		Sprites.at(ci, "ev_entry_%s%s" % [kind, "_grey" if locked else ""], c + Vector2(0, -54) * s, s)
 	else:
 		ci.draw_set_transform(c, 0.0, Vector2(s, s))
-		ci.draw_texture_rect(MergeEventArt.texture(kind), Rect2(-50, -104, 100, 110), false, Color(.7, .7, .7) if locked else Color.WHITE)
+		var icon := MergeEventArt.texture(kind)
+		TextureCache.hold(ci, icon)
+		ci.draw_texture_rect(icon, Rect2(-50, -104, 100, 110), false, Color(.7, .7, .7) if locked else Color.WHITE)
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if locked: Paint.glyph(ci, "lock", c + Vector2(0, -50), .7)
 	if dot: Paint.badge_num(ci, c + Vector2(42, -100), 8, 10)

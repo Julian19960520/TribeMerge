@@ -9,7 +9,7 @@ static func energy() -> PopupBase:
 	var r := Rect2(46, 380, 628, 780)
 	Popups.frame(p, r, TextCatalog.source("ui.shoppopups.dbc0003e7778"), Color("4f8fc0"), "fire")
 	var left := G.rules.clock.energy_full_left()
-	var txt := TextCatalog.source("ui.energyofferpopup.528cc454ebd6") if left == 0 else TextCatalog.source("ui.shoppopups.f821f7e01056") % G.fmt_time(left)
+	var txt := TextCatalog.source("ui.energyofferpopup.528cc454ebd6") if left == 0 else TextCatalog.fill(TextCatalog.source("ui.shoppopups.f821f7e01056"), G.fmt_time(left))
 	UI.lbl(p.box, txt, Rect2(r.position.x + 30, r.position.y + 62, r.size.x - 60, 50), 26, Color("6b4a2a"))
 	UI.box(p.box, Rect2(r.position.x + 44, r.position.y + 120, r.size.x - 88, 400), _energy_art)
 	var tag := UI.lbl(p.box, "×%d" % PriceBook.energy_amount(), Rect2(r.position.x + 92, r.position.y + 436, 150, 60), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
@@ -20,7 +20,7 @@ static func energy() -> PopupBase:
 	var b := UI.btn(p.box, Rect2(r.get_center().x - 150, r.position.y + 560, 300, 100), TextCatalog.source("developer.pass_editor.649a0fc7237e") if free else str(price), "green", Callable(), 44)
 	if not free: b.res = Art.AMBER_ICON
 	else: G.main.tips.energy_free.call_deferred(Rect2(b.position, b.size))
-	var note := TextCatalog.source("ui.shoppopups.ad79b6f744cb") if free else TextCatalog.source("ui.shoppopups.70f4525356ca") % [PriceBook.energy_price(2147483647), PriceBook.energy_amount()]
+	var note := TextCatalog.source("ui.shoppopups.ad79b6f744cb") if free else TextCatalog.fill(TextCatalog.source("ui.shoppopups.70f4525356ca"), [PriceBook.energy_price(2147483647), PriceBook.energy_amount()])
 	UI.lbl(p.box, note, Rect2(r.position.x + 30, r.position.y + 676, r.size.x - 60, 40), 22, Color("8a6a4a"))
 	var refresh_energy := func():
 		energy_state["price"] = G.rules.progression.energy_price()
@@ -424,14 +424,14 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 		hl.rotation = -0.2
 	UI.hit(parent, Rect2(r.position + Vector2(8, 8), Vector2(r.size.x - 16, 114)), func(): G.main.open("item_info", str(d["id"])))
 	if not hot:
-		var grade := UI.lbl(parent, TextCatalog.source("developer.chains_editor.b4d436ea2c00") % Data.lv(str(d["id"])), Rect2(r.end.x - 82, r.position.y + 8, 72, 30), 22, Art.INK, HORIZONTAL_ALIGNMENT_CENTER, 4, Art.BONE)
+		var grade := UI.lbl(parent, TextCatalog.fill(TextCatalog.source("developer.chains_editor.b4d436ea2c00"), Data.lv(str(d["id"]))), Rect2(r.end.x - 82, r.position.y + 8, 72, 30), 22, Art.INK, HORIZONTAL_ALIGNMENT_CENTER, 4, Art.BONE)
 		grade.set_meta("hot_item_level", Data.lv(str(d["id"])))
 	var left_lbl := UI.lbl(parent, "", Rect2(r.position.x, r.position.y + 128, r.size.x, 34), 22, Color("6b4a2a"))
 	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 178, r.size.x - 44, 64), "", "green", Callable(), 30)
 	var refresh := func():
 		var book_of: Dictionary = G.deals_bought if hot else G.hot_bought
 		var left: int = maxi(0, int(d["stock"]) - int(book_of.get(key, 0)))
-		left_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.shoppopups.c11a6c09ae8a") % left)
+		left_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.shoppopups.c11a6c09ae8a"), left))
 		b.text = TextCatalog.resolve((TextCatalog.source("developer.pass_editor.649a0fc7237e") if int(d["price"]) == 0 else str(d["price"])) if left > 0 else (TextCatalog.source("notice.sevenday.426e458a4124") if int(d["price"]) == 0 else TextCatalog.source("ui.shoppopups.0f3d8755dbc5")))
 		b.res = Art.AMBER_ICON if left > 0 and int(d["price"]) > 0 else ""
 		b.style = "green" if left > 0 and PriceBook.ready() else "grey"
@@ -457,7 +457,7 @@ static func _shell_card(parent: Control, r: Rect2, d: Dictionary, key: String) -
 	var refresh := func():
 		G.rules.clock.check_shell_period()
 		var left: int = int(d["stock"]) - int(G.shell_bought.get(key, 0))
-		left_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.shoppopups.c11a6c09ae8a") % left)
+		left_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.shoppopups.c11a6c09ae8a"), left))
 		b.text = TextCatalog.resolve(str(int(d["price"])) if left > 0 else TextCatalog.source("ui.shoppopups.0f3d8755dbc5"))
 		b.res = "shell_2" if left > 0 else ""
 		b.style = "green" if left > 0 and PriceBook.ready() else "grey"

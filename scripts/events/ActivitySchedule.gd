@@ -56,4 +56,4 @@ static func seconds_left(activity: String) -> int:
 static func closed_message(activity: String) -> String:
 	var slot := slot_of(activity)
 	var current := str(window(slot).get("activity", ""))
-	return TextCatalog.source("notice.activityschedule.69c0e50ab97d") % str(slot.get("name", "")) if current != activity else ""
+	return TextCatalog.fill(TextCatalog.source("notice.activityschedule.69c0e50ab97d"), str(slot.get("name", ""))) if current != activity else ""

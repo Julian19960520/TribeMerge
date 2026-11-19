@@ -174,7 +174,7 @@
 
 ### 储物洞
 
-初始 5 格，**不设上限**（需求 #33）。第一次扩建 50 琥珀，之后每扩一格下一格 +10（`rules.json` 的 `storage_expand_price` / `storage_expand_step`，客户端 `G.storage_price` 和服务器 `Economy.storage_price` 同一公式）。拖进去存放，点格子放回棋盘。
+初始 5 格，**不设上限**（需求 #33）。第一次扩建 50 琥珀，之后每扩一格下一格 +10（`rules.json` 的 `storage_expand_price` / `storage_expand_step`，客户端 `G.storage_price` 和服务器 `Economy.storage_price` 同一公式）。拖进去存放，点一下格子放回棋盘。洞里也能拖：相同物品合成下一级，不同物品交换，空位就挪到那一格；开过的宝箱只换位，不合成。取走或合成后，其余格子留在原地。
 
 界面（`scripts/ui/InventoryPopup.gd`）是山洞石壁上的木搁板：每层 5 格、层距 126，一块搁板横穿整层；已开的格子是凿出的石龛，下一格是虚线「+ 价格」格（点它或底部「扩建」按钮），同层剩下的位置和下面没挖开的几层是碎石壁（至少铺满可视区，格子少时也不空）。可滚动，只给看得见的 6 层建控件循环复用。
 

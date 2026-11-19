@@ -107,7 +107,7 @@ static func on_order(_order: Dictionary) -> void:
 	G.dirty()
 
 static func local_action(action: String, value := -1) -> Dictionary:
-	if not unlocked(): return {"error": TextCatalog.source("notice.fossildig.6d29b18fcbfb") % int(config()["unlock_level"])}
+	if not unlocked(): return {"error": TextCatalog.fill(TextCatalog.source("notice.fossildig.6d29b18fcbfb"), int(config()["unlock_level"]))}
 	if not action in ["refresh", "dig", "next", "claim"]: return {"error": TextCatalog.source("notice.duelrace.f242d2db4cea")}
 	initialize()
 	var s := state()

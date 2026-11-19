@@ -57,7 +57,7 @@ func refresh() -> void:
 	var items: Array = chain["items"]
 	for i in items.size():
 		var ir := Ui.row(right)
-		Ui.lbl(ir, TextCatalog.source("developer.chains_editor.b4d436ea2c00") % (i + 1), 48)
+		Ui.lbl(ir, TextCatalog.fill(TextCatalog.source("developer.chains_editor.b4d436ea2c00"), (i + 1)), 48)
 		var e := Ui.line(ir, str(items[i]))
 		e.text_changed.connect(_set_text.bind(items, i))
 		if chain.has("value"):
@@ -182,5 +182,5 @@ func validate() -> String:
 			return TextCatalog.source("developer.chains_editor.4bda17884ac6") + id
 		seen[id] = true
 		if c.get("items", []).is_empty():
-			return TextCatalog.source("developer.chains_editor.bf3f32f315b4") % id
+			return TextCatalog.fill(TextCatalog.source("developer.chains_editor.bf3f32f315b4"), id)
 	return ""

@@ -267,7 +267,7 @@ func claim_pass_free(lv: int) -> Array:
 	state.pass_free.append(lv)
 	state.dirty()
 	state.changed.emit()
-	return Data.PASS_LEVELS[lv - 1]["free"]
+	return Data.for_pass(state.level, Data.PASS_LEVELS[lv - 1]["free"])
 
 func claim_pass_prem(lv: int) -> Array:
 	context.clock.check_pass_season()
@@ -281,7 +281,7 @@ func claim_pass_prem(lv: int) -> Array:
 	state.pass_prem.append(lv)
 	state.dirty()
 	state.changed.emit()
-	return Data.PASS_LEVELS[lv - 1]["prem"]
+	return Data.for_pass(state.level, Data.PASS_LEVELS[lv - 1]["prem"])
 
 func claim_pass_super(lv: int) -> Array:
 	context.clock.check_pass_season()
@@ -295,7 +295,7 @@ func claim_pass_super(lv: int) -> Array:
 	state.pass_super.append(lv)
 	state.dirty()
 	state.changed.emit()
-	return Data.PASS_LEVELS[lv - 1].get("super", [])
+	return Data.for_pass(state.level, Data.PASS_LEVELS[lv - 1].get("super", []))
 
 func claim_pass_endless() -> Array:
 	context.clock.check_pass_season()
@@ -360,29 +360,54 @@ func build_can(id: String) -> bool:
 	var d = Data.build_def(id)
 	return not d.is_empty() and build_open(id) and int(state.builds.get(id, 0)) < Data.build_stages(d)
 
-## 当前这件部件已经建了几次（每件要建 steps 次才落成）；存在 builds["_steps"] 里
+## 当前这件部件（下标 = 已落成件数）已经建了几次（每件要建 steps 次才落成）；存在 builds["_steps"] 里
 func build_step(id: String) -> int:
 	var steps = state.builds.get("_steps", {})
 	return int(steps.get(id, 0)) if steps is Dictionary else 0
 
+## 后一件部件提前建了几次；存在 builds["_ahead"] 里
+func build_ahead(id: String) -> int:
+	var ahead = state.builds.get("_ahead", {})
+	return int(ahead.get(id, 0)) if ahead is Dictionary else 0
+
+## 第 idx 件部件已经建了几次
+func part_step(id: String, idx: int) -> int:
+	var parts = Data.build_parts(Data.build_def(id))
+	var built = int(state.builds.get(id, 0))
+	if idx < 0 or idx >= parts.size(): return 0
+	if idx < built: return Data.part_steps(parts[idx])
+	if idx == built: return mini(build_step(id), Data.part_steps(parts[idx]))
+	if idx == built + 1: return build_ahead(id)
+	return 0
+
+## 这块地下一次建哪一件。最多同时开两件：后一件始终比前一件少建至少一次、也不会抢先落成，
+## 所以两件交替往上长（图腾1、图腾2、大屋1、图腾3、大屋2…），落成顺序仍按 builds.json。
+func build_target(id: String) -> int:
+	var parts = Data.build_parts(Data.build_def(id))
+	var built = int(state.builds.get(id, 0))
+	if built < 0 or built >= parts.size(): return -1
+	if built + 1 < parts.size():
+		var ahead = build_ahead(id)
+		if ahead + 1 < Data.part_steps(parts[built + 1]) and ahead + 1 < build_step(id):
+			return built + 1
+	return built
+
 ## 这块地一共要建多少次、已经建了多少次
 func build_progress(id: String) -> Dictionary:
 	var parts = Data.build_parts(Data.build_def(id))
-	var built = int(state.builds.get(id, 0))
 	var total = 0
 	var done = 0
 	for k in parts.size():
-		var n = Data.part_steps(parts[k])
-		total += n
-		if k < built: done += n
-		elif k == built: done += mini(build_step(id), n)
+		total += Data.part_steps(parts[k])
+		done += part_step(id, k)
 	return {"done": done, "total": total}
 
+## 下一次要建的那件部件
 func build_part(id: String) -> Dictionary:
 	var parts = Data.build_parts(Data.build_def(id))
-	var st = int(state.builds.get(id, 0))
-	if st >= 0 and st < parts.size() and parts[st] is Dictionary:
-		return parts[st]
+	var t = build_target(id)
+	if t >= 0 and t < parts.size() and parts[t] is Dictionary:
+		return parts[t]
 	return {}
 
 func build_cost(id: String) -> int:
@@ -391,14 +416,14 @@ func build_cost(id: String) -> int:
 		return maxi(0, int(part["cost"]))
 	return 60 + int(state.builds.get(id, 0)) * 45
 
-## 建完当前这件部件发的奖励（中间几次不发）
+## 这次建完发的奖励：只有让部件落成的那一次才发
 func build_rewards(id: String) -> Array:
 	var part = build_part(id)
-	if build_step(id) + 1 < Data.part_steps(part):
+	if part_step(id, build_target(id)) + 1 < Data.part_steps(part):
 		return []
 	return build_piece_rewards(id)
 
-## 当前这件部件落成时的奖励（界面预告用）
+## 下一次要建的那件部件落成时的奖励（界面预告用）
 func build_piece_rewards(id: String) -> Array:
 	var part = build_part(id)
 	var out = []
@@ -412,26 +437,35 @@ func build_piece_rewards(id: String) -> Array:
 func do_build(id: String) -> Dictionary:
 	if not build_can(id):
 		return {}
+	var t = build_target(id)
 	var cost = build_cost(id)
 	var rewards = build_rewards(id)
 	if not spend("shell", cost):
 		return {}
 	var st = int(state.builds.get(id, 0))
 	var need = Data.part_steps(build_part(id))
-	var step = build_step(id) + 1
+	var step = part_step(id, t) + 1
 	var steps: Dictionary = state.builds.get("_steps", {}) if state.builds.get("_steps", {}) is Dictionary else {}
+	var ahead: Dictionary = state.builds.get("_ahead", {}) if state.builds.get("_ahead", {}) is Dictionary else {}
 	var finished = step >= need
-	if finished:
+	if t == st and finished:
+		# 前一件落成：提前建的后一件顶上来当「当前这件」
 		state.builds[id] = st + 1
-		steps.erase(id)
-	else:
+		var moved = int(ahead.get(id, 0))
+		ahead.erase(id)
+		if moved > 0: steps[id] = moved
+		else: steps.erase(id)
+	elif t == st:
 		steps[id] = step
-	if steps.is_empty(): state.builds.erase("_steps")
-	else: state.builds["_steps"] = steps
+	else:
+		ahead[id] = step
+	for pair in [["_steps", steps], ["_ahead", ahead]]:
+		if (pair[1] as Dictionary).is_empty(): state.builds.erase(pair[0])
+		else: state.builds[pair[0]] = pair[1]
 	if finished: context.orders.refill_orders()
 	state.dirty()
 	state.changed.emit()
-	return {"idx": st, "rewards": rewards, "finished": finished, "step": step if not finished else need, "steps": need}
+	return {"idx": t, "rewards": rewards, "finished": finished, "step": step if not finished else need, "steps": need}
 
 func find_pack_source(pack_id: String = "", cell: int = -1, stash_index: int = -1) -> Dictionary:
 	if cell >= 0:
@@ -484,7 +518,7 @@ func roll_card_pack(pack_id: String = "pack_1") -> Array:
 
 func draw_card_pack(pack_id: String = "pack_1") -> Dictionary:
 	if not feature_unlocked(Data.CARD_LEVEL):
-		state.present("notice", {"text": TextCatalog.source("notice.progressionrules.de74876a0a22") % Data.CARD_LEVEL})
+		state.present("notice", {"text": TextCatalog.fill(TextCatalog.source("notice.progressionrules.de74876a0a22"), Data.CARD_LEVEL)})
 		return {"error": TextCatalog.source("notice.progressionrules.0cf982b1fe0e")}
 	if CardPacks.definition(pack_id).is_empty(): return {"error": TextCatalog.source("notice.progressionrules.55437ec117b8")}
 	var out = []

@@ -985,14 +985,14 @@ func _draw_info() -> void:
 		return
 	var y := _info_y()
 	var target := _diff(sel_c, sel_l)
-	var left := TextCatalog.source("ui.ordercurvepad.a5eca7ad059e") % [sel_l + 1, _diff(0, sel_l), _diff(1, sel_l)]
+	var left := TextCatalog.fill(TextCatalog.source("ui.ordercurvepad.a5eca7ad059e"), [sel_l + 1, _diff(0, sel_l), _diff(1, sel_l)])
 	_text(left, Vector2(24, y), 22, Art.INK)
 	var items = order.get("items", [])
 	if items is Array and not items.is_empty():
 		var got := Roll.total(items)
 		var err := absf(got - float(target))
 		var col := Color("2f7a32") if err <= maxf(1.0, float(target) * 0.12) else Art.CLAY
-		var tail := TextCatalog.source("ui.ordercurvepad.fb2ce164a6de") % Roll.fmt(got)
+		var tail := TextCatalog.fill(TextCatalog.source("ui.ordercurvepad.fb2ce164a6de"), Roll.fmt(got))
 		_text(tail, Vector2(36.0 + _text_w(left, 22), y), 22, col)
 
 func _item_spots() -> Array:

@@ -1,0 +1,32 @@
+{
+  "feature": "payments",
+  "entries": {
+    "0019dfc4b32d": {
+      "zh_CN": "Not Found"
+    },
+    "093da914ff9a": {
+      "zh_CN": "该支付渠道不可用"
+    },
+    "0ff9b82279ec": {
+      "zh_CN": "已经买过了，这笔付款会退回"
+    },
+    "1152c7c1c53d": {
+      "zh_CN": "支付凭证已使用"
+    },
+    "4c1a561acab0": {
+      "zh_CN": "支付凭证无效"
+    },
+    "527d2a1ddee2": {
+      "zh_CN": "下单需要 Idempotency-Key"
+    },
+    "6898ca864456": {
+      "zh_CN": "订单不存在"
+    },
+    "6cbfd7f67f68": {
+      "zh_CN": "订单已支付"
+    },
+    "ff4fc4a36c34": {
+      "zh_CN": "订单已关闭"
+    }
+  }
+}

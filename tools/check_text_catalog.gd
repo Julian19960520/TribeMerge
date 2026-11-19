@@ -11,11 +11,9 @@ func run() -> void:
 	for node in root.get_children(): node.set_process(false)
 	var catalog = load("res://scripts/localization/TextCatalog.gd")
 	var ui = load("res://scripts/ui/UI.gd")
-	var doc: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(catalog.PATH))
+	var doc: Dictionary = catalog.document()
 	var basket_copy := str(doc["entries"]["names.chains.8eccdcf3c3af"]["zh_CN"])
-	if basket_copy.is_empty(): basket_copy = str(doc["entries"]["names.chains.8eccdcf3c3af"]["source"])
 	var claim_copy := str(doc["entries"]["ui.duelpopup.844ab9477225"]["zh_CN"])
-	if claim_copy.is_empty(): claim_copy = str(doc["entries"]["ui.duelpopup.844ab9477225"]["source"])
 	check(doc["stats"]["unique_texts"] == doc["entries"].size(), "catalogue count matches deduplicated entries")
 	var hydrated := true
 	for document in Data.ConfigFiles.documents().values():
@@ -30,8 +28,8 @@ func run() -> void:
 	catalog.source("ui.duelpopup.844ab9477225")
 	catalog._document["entries"]["ui.duelpopup.844ab9477225"]["en_US"] = "Collect"
 	catalog._document["entries"]["names.chains.8eccdcf3c3af"]["en_US"] = "Basket"
-	catalog._document["entries"]["ui.boardscreen.89a087698f45"]["en_US"] = "%s (Level %d)"
-	catalog._document["entries"]["ui.itempopups.bcfcbb40fe43"]["en_US"] = "%s / rank %d"
+	catalog._document["entries"]["ui.boardscreen.89a087698f45"]["en_US"] = "${0} (Level ${1})"
+	catalog._document["entries"]["ui.itempopups.bcfcbb40fe43"]["en_US"] = "${0} / rank ${1}"
 	catalog.set_locale("en_US")
 	check(catalog.text("ui.duelpopup.844ab9477225") == "Collect" and catalog.resolve("领取") == "Collect", "exact keys and legacy literals use the selected locale")
 	check(catalog.resolve("小草篓 (Lv.4)") == "Basket (Level 4)", "formatted legacy text translates both template and item argument")
@@ -48,10 +46,10 @@ func run() -> void:
 	check(catalog.resolve("领取") == "领取奖励", "missing translations fall back to the editable Chinese copy")
 	check(catalog.resolve(catalog.resolve("领取")) == "领取奖励", "nested rendering boundaries do not translate edited copy twice")
 	catalog.set_locale("zh_CN")
-	check(catalog.resolve("领取") == "领取奖励" and catalog.source("ui.duelpopup.844ab9477225") == "领取", "Chinese copy edits change presentation while stable source values remain canonical")
-	for entry in catalog._document["entries"].values(): entry["en_US"] = "TEST " + str(entry["source"])
+	check(catalog.resolve("§ui.duelpopup.844ab9477225§") == "领取奖励" and catalog.source("ui.duelpopup.844ab9477225") == "领取奖励", "a catalogue key reads the current Chinese copy")
+	for entry in catalog._document["entries"].values(): entry["en_US"] = "TEST " + str(entry["zh_CN"])
 	catalog.set_locale("en_US")
-	check(catalog.text("ui.duelpopup.844ab9477225") == "TEST 领取" and catalog.resolve("小草篓 (Lv.4)").ends_with("(Lv.4)"), "the complete catalogue can load a translated locale and compile all legacy display templates")
+	check(catalog.text("ui.duelpopup.844ab9477225") == "TEST 领取奖励" and catalog.resolve("小草篓 (Lv.4)").ends_with("(Lv.4)"), "the complete catalogue can load a translated locale and compile all legacy display templates")
 	catalog.set_locale("zh_CN")
 	catalog.reload()
 	check(catalog.resolve("领取") == claim_copy and catalog.locale() == "zh_CN", "reloading restores the editable on-disk catalogue")

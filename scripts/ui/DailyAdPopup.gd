@@ -12,7 +12,7 @@ func _ready() -> void:
 	Popups.frame(self, R, TextCatalog.source("ui.dailyadpopup.8b0a0f551e1d"), Art.TEAL)
 	stage = UI.box(box, Rect2(R.position.x + 40, R.position.y + 56, R.size.x - 80, 330), _paint_stage, false)
 	UI.lbl(box, TextCatalog.source("ui.dailyadpopup.7ec1e88023c9"), Rect2(R.position.x + 40, R.position.y + 402, R.size.x - 80, 40), 28, Color("7a5a3a"))
-	UI.lbl(box, TextCatalog.source("ui.dailyadpopup.19966a9e49e8") % REWARD, Rect2(R.position.x + 40, R.position.y + 444, R.size.x - 80, 36), 23, Color("8a6a48"))
+	UI.lbl(box, TextCatalog.fill(TextCatalog.source("ui.dailyadpopup.19966a9e49e8"), REWARD), Rect2(R.position.x + 40, R.position.y + 444, R.size.x - 80, 36), 23, Color("8a6a48"))
 	label = UI.lbl(box, TextCatalog.source("ui.dailyadpopup.871be2654869"), Rect2(R.position.x + 40, R.position.y + 494, R.size.x - 80, 32), 21, Color("b0603a"))
 	claim_btn = UI.btn(box, Rect2(190, R.position.y + 548, 340, 88), TextCatalog.source("ui.dailyadpopup.afd2bd434b2d"), "green", _claim, 36)
 	claim_btn.name = "ad_claim"

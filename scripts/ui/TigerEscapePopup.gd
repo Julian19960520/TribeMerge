@@ -53,7 +53,7 @@ func _ready() -> void:
 	action_button = UI.btn(box, Rect2(150, 1302, 420, 100), TextCatalog.source("ui.tigerescapepopup.b594fa791878"), "green", _primary, 40)
 	action_button.name = "tiger_primary"
 	UI.box(box, Rect2(22, 1260, 110, 115), func(ci, sz): TigerArt.draw(ci, sz * 0.5, 82), false)
-	UI.lbl(box, TextCatalog.source("ui.tigerescapepopup.c5d9596cdc4e") % int(TigerEscape.config()["points_per_order"]), Rect2(130, 1418, 460, 35), 23, Color("bbceb1"))
+	UI.lbl(box, TextCatalog.fill(TextCatalog.source("ui.tigerescapepopup.c5d9596cdc4e"), int(TigerEscape.config()["points_per_order"])), Rect2(130, 1418, 460, 35), 23, Color("bbceb1"))
 	visual_stage = float(TigerEscape.round_state().get("stage", 0))
 	_refresh(true)
 	if Cloud.can_talk() and not TigerEscape.round_state().is_empty():
@@ -103,20 +103,20 @@ func _refresh(first := false) -> void:
 		attack_active = true
 		_focus(attack_node, not first)
 	if attack_active: status = "attacking"
-	cohort_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.57bfcf49487f") % [TigerEscape.survivors(m), TigerEscape.player_count(m)])
-	stage_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.68a50bbc84e2") % [stage, count])
-	clock_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.edc4bd8226a5") % [TigerEscape.stage_remaining(m), TigerEscape.stage_quota(m)] if status == "running" else TextCatalog.source("ui.tigerescapepopup.422bc1b9ceb0"))
+	cohort_label.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.tigerescapepopup.57bfcf49487f"), [TigerEscape.survivors(m), TigerEscape.player_count(m)]))
+	stage_label.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.tigerescapepopup.68a50bbc84e2"), [stage, count]))
+	clock_label.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.tigerescapepopup.edc4bd8226a5"), [TigerEscape.stage_remaining(m), TigerEscape.stage_quota(m)]) if status == "running" else TextCatalog.source("ui.tigerescapepopup.422bc1b9ceb0"))
 	if status == "won": clock_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.630a53f031a3"))
 	elif status == "lost": clock_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.3fe387e551de"))
 	if attack_active: clock_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.96394ca97644"))
 	clock_label.modulate = Color("ff9585") if status == "running" and TigerEscape.stage_remaining(m) <= 10 else Color.WHITE
 	var rows: Array = m.get("stages", TigerEscape.config()["stages"])
 	var need := int(rows[mini(stage, count - 1)]["points"])
-	score_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.cf517f7ce05b") % [int(m.get("points", 0)), need] if status == "running" else TextCatalog.source("ui.tigerescapepopup.8dbac4d2006c"))
+	score_label.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.tigerescapepopup.cf517f7ce05b"), [int(m.get("points", 0)), need]) if status == "running" else TextCatalog.source("ui.tigerescapepopup.8dbac4d2006c"))
 	status_label.text = TextCatalog.resolve({"idle": TextCatalog.source("ui.tigerescapepopup.f00b5535bc10"), "running": TextCatalog.source("ui.tigerescapepopup.d7610459bccc"), "won": TextCatalog.source("ui.tigerescapepopup.21a23652518d"), "lost": TextCatalog.source("ui.tigerescapepopup.8674cad15875"), "attacking": TextCatalog.source("ui.tigerescapepopup.c9ebb2f8db71")}.get(status, ""))
 	action_button.text = TextCatalog.resolve({"idle": TextCatalog.source("ui.tigerescapepopup.b594fa791878"), "running": TextCatalog.source("ui.duelpopup.245ede446986"), "won": TextCatalog.source("ui.tigerescapepopup.0b14b6a80994"), "lost": TextCatalog.source("ui.tigerescapepopup.465801b6c612"), "attacking": TextCatalog.source("ui.tigerescapepopup.4eff1498c0b5")}.get(status, TextCatalog.source("ui.tigerescapepopup.b594fa791878")))
 	if status in ["won", "lost"]:
-		score_label.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.0c3999c12dd3") % stage)
+		score_label.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.tigerescapepopup.0c3999c12dd3"), stage))
 		action_button.text = TextCatalog.resolve(TextCatalog.source("ui.tigerescapepopup.0b14b6a80994") if not TigerEscape.pending_rewards(m).is_empty() else TextCatalog.source("ui.tigerescapepopup.465801b6c612"))
 	action_button.style = "orange" if status == "lost" else "green"
 	action_button.enabled = not working and not attack_active
@@ -158,7 +158,7 @@ func _preview(n: int) -> void:
 	var reached := n <= int(m.get("stage", 0))
 	var claimed: bool = n in m.get("claimed", [])
 	var p := PopupBase.new()
-	Popups.frame(p, Rect2(80, 460, 560, 460), TextCatalog.source("ui.tigerescapepopup.3fea10c89e10") % n, Art.OCHRE)
+	Popups.frame(p, Rect2(80, 460, 560, 460), TextCatalog.fill(TextCatalog.source("ui.tigerescapepopup.3fea10c89e10"), n), Art.OCHRE)
 	for k in rewards.size():
 		var x := 360.0 + (k - (rewards.size() - 1) * 0.5) * 145
 		UI.icon(p.box, str(rewards[k][0]), Vector2(x, 640), 90)
@@ -232,7 +232,7 @@ func _trail(ci: CanvasItem, _sz: Vector2) -> void:
 		Sprites.at(ci, "tiger_node", at + MemeSprites.NODE_BOX.get_center())
 		if n > 0:
 			var claimed: bool = n in m.get("claimed", [])
-			if n != stage:
+			if not claimed and n != stage:
 				Paint.gift(ci, at + Vector2(0, -42), 96 if n == count else 78)
 			if n <= stage and not claimed:
 				ci.draw_circle(at + Vector2(65, -42), 13, Art.MOSS)

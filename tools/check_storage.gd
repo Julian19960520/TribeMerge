@@ -44,6 +44,22 @@ func run() -> void:
 	for day in tasks.config()["days"]:
 		var logins: Array=day["tasks"].filter(func(t):return str(t["metric"])=="login_days")
 		check(day["tasks"].size()==5 and logins.size()==1 and int(logins[0]["target"])==int(day["day"]),"each page has matching login target and five tasks")
+	var replay = root.get_node("Replay")
+	g.inv=["fruit_1","fruit_1","tool_1"]
+	g.inv_chests={}
+	var merged: Dictionary=replay.perform("inventory_move",{"from":0,"to":1})
+	check(merged.get("kind")=="merge" and g.inv[1]=="fruit_2" and str(g.inv[0])=="","storage drag merges matching items and leaves the source empty")
+	var placed: Dictionary=replay.perform("inventory_move",{"from":1,"to":4})
+	check(placed.get("kind")=="move" and g.inv[4]=="fruit_2" and str(g.inv[1])=="" and g.inv.size()==5,"storage drag keeps an item in the chosen empty slot")
+	var swapped: Dictionary=replay.perform("inventory_move",{"from":4,"to":2})
+	check(swapped.get("kind")=="swap" and g.inv[2]=="fruit_2" and g.inv[4]=="tool_1","storage drag swaps different items")
+	check(g.rules.board.store_cell(0) and g.inv[0]=="fruit_1","storing fills the first empty storage slot")
+	g.inv=["chest_1","chest_1"]
+	g.inv_chests={"0":["fruit_3"]}
+	var kept: Dictionary=replay.perform("inventory_move",{"from":0,"to":1})
+	check(kept.get("kind")=="swap" and g.inv_chests.get("1")==["fruit_3"] and not g.inv_chests.has("0"),"opened chests rearrange without merging")
+	check(replay.perform("inventory_move",{"from":3,"to":0}).has("error"),"an empty storage slot cannot be dragged")
+	check(p._pad.mouse_filter==Control.MOUSE_FILTER_STOP and p.slots[0].mouse_filter==Control.MOUSE_FILTER_IGNORE,"storage drags are handled by one gesture layer")
 	main.queue_free();await process_frame;g.main=null
 	print("RESULT: ",failures.size()," failures")
 	quit(0 if failures.is_empty() else 1)

@@ -109,7 +109,7 @@ static func join() -> Dictionary:
 	var s := state()
 	var rl := rules()
 	if not G.gm_activities and G.level < int(rl.get("unlock_level", 12)):
-		return {"ok": false, "message": TextCatalog.source("notice.localrace.7411e0b16274") % int(rl.get("unlock_level", 12))}
+		return {"ok": false, "message": TextCatalog.fill(TextCatalog.source("notice.localrace.7411e0b16274"), int(rl.get("unlock_level", 12)))}
 	tick()
 	var cur: Dictionary = s.get("current", {})
 	if not cur.is_empty() and cur.get("group", {}).get("state", "") != "ended":
@@ -136,7 +136,7 @@ static func join() -> Dictionary:
 			av = rng.randi_range(0, avs - 1)
 		used[av] = true
 		var lv := maxi(1, G.level + rng.randi_range(-1, 1))
-		ms.append({"slot": k + 1, "me": false, "name": str(names[k]) if k < names.size() else TextCatalog.source("notice.localrace.a2c6b65026d6") % rng.randi_range(0, 99),
+		ms.append({"slot": k + 1, "me": false, "name": str(names[k]) if k < names.size() else TextCatalog.fill(TextCatalog.source("notice.localrace.a2c6b65026d6"), str(rng.randi_range(0, 99)).pad_zeros(2)),
 			"avatar": av, "level": lv, "score": 0.0, "finished_at": null, "place": null, "points": gen_curve(rng, lv, dur, tg)})
 	var gid := "banana_" + str(int(now)) + "_" + str(rng.randi_range(1000, 9999))
 	s["current"] = {"group": {"id": gid, "start": now, "end": now + dur, "ended_at": null, "target": tg, "size": 5,

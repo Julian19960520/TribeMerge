@@ -23,7 +23,7 @@ func refresh() -> void:
 		Ui.btn(r, TextCatalog.source("developer.editor_base.2f9daa828907")).pressed.connect(_remove_at.bind(data, i))
 		var rewards: Array = b["rewards"]
 		for s in rewards.size():
-			Ui.lbl(g, TextCatalog.source("developer.builds_editor.8b89e8795e16") % (s + 1))
+			Ui.lbl(g, TextCatalog.fill(TextCatalog.source("developer.builds_editor.8b89e8795e16"), (s + 1)))
 			reward_list(g, rewards[s])
 	Ui.btn(box, TextCatalog.source("developer.builds_editor.18bf12451adb")).pressed.connect(_add)
 
@@ -66,7 +66,7 @@ func validate() -> String:
 		for step in b["rewards"]:
 			for rw in step:
 				if str(rw[0]).strip_edges() == "":
-					return TextCatalog.source("developer.builds_editor.df7e16d07749") % b.get("name", id)
+					return TextCatalog.fill(TextCatalog.source("developer.builds_editor.df7e16d07749"), b.get("name", id))
 				if int(rw[1]) < 1:
-					return TextCatalog.source("developer.builds_editor.02ef744476a3") % b.get("name", id)
+					return TextCatalog.fill(TextCatalog.source("developer.builds_editor.02ef744476a3"), b.get("name", id))
 	return ""

@@ -1,0 +1,14 @@
+{
+  "feature": "tigerescapeentry",
+  "entries": {
+    "5e7c1a9e58e6": {
+      "zh_CN": "剑齿虎逃生"
+    },
+    "efdc22fca1c6": {
+      "zh_CN": "出发"
+    },
+    "spots": {
+      "zh_CN": "剩${0}名"
+    }
+  }
+}

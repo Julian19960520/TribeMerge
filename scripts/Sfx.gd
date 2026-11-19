@@ -9,7 +9,8 @@ var _music: AudioStreamPlayer
 const VisualRuntime := preload("res://scripts/resources/VisualRuntime.gd")
 const EFFECTS := {"tap": ["_wood", 0.09], "pop": ["_pop", 0.22], "merge": ["_merge", 0.35],
 	"coin": ["_coin", 0.3], "whoosh": ["_whoosh", 0.3], "drum": ["_drum", 0.35],
-	"fanfare": ["_fanfare", 1.2], "deny": ["_deny", 0.25], "crumble": ["_crumble", 0.32]}
+	"fanfare": ["_fanfare", 1.2], "deny": ["_deny", 0.25], "crumble": ["_crumble", 0.32],
+	"lucky": ["_lucky", 1.5]}
 var _enabled := false
 
 func _ready() -> void:
@@ -116,6 +117,19 @@ func _fanfare(t: float) -> float:
 	for i in 4:
 		v += _kalimba(t - float(i) * 0.12, notes[i]) * 0.35
 	return v + _drum(t) * 0.4
+
+## 好运爆发：一记低鼓 + 往上滚的五声音阶琶音 + 尾巴上一串高音闪烁
+func _lucky(t: float) -> float:
+	var notes := [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568.0]
+	var v := _drum(t) * 0.5
+	for i in notes.size():
+		v += _kalimba(t - 0.05 - float(i) * 0.06, notes[i]) * 0.26
+	var tail := t - 0.42
+	if tail > 0.0:
+		var shimmer := sin(TAU * 2093.0 * tail) * 0.5 + sin(TAU * 2637.0 * tail) * 0.5
+		v += shimmer * (0.5 + 0.5 * sin(TAU * 18.0 * tail)) * _env(tail, 0.01, 0.35) * 0.22
+		v += _kalimba(tail, 2093.0) * 0.3
+	return v
 
 func _load_music() -> AudioStream:
 	var s := load("res://assets/audio/bgm.mp3") as AudioStreamMP3

@@ -57,7 +57,7 @@ func _setup() -> void:
 func _process(_d: float) -> void:
 	if Engine.get_process_frames() % 20 == 0 and _time != null:
 		var left: float = chain.ends_at() - G.now()
-		_time.text = TextCatalog.resolve((TextCatalog.source("ui.giftchainpopup.3dc7ee799f91") % _fmt_left(left)) if chain.ok and left > 0.0 else "")
+		_time.text = TextCatalog.resolve((TextCatalog.fill(TextCatalog.source("ui.giftchainpopup.3dc7ee799f91"), _fmt_left(left))) if chain.ok and left > 0.0 else "")
 		if chain.ok and left <= 0.0 and not chain.loading:
 			chain.fetch()
 
@@ -71,7 +71,7 @@ static func _x0(cnt: int) -> float:
 static func _fmt_left(s: float) -> String:
 	var t := int(maxf(s, 0.0))
 	if t >= 86400:
-		return TextCatalog.source("ui.giftchainpopup.ec6ebf9298e4") % [t / 86400, (t % 86400) / 3600]
+		return TextCatalog.fill(TextCatalog.source("ui.giftchainpopup.ec6ebf9298e4"), [t / 86400, (t % 86400) / 3600])
 	return "%02d:%02d:%02d" % [t / 3600, (t % 3600) / 60, t % 60]
 
 # ---------------------------------------------------------------- 渲染
@@ -97,13 +97,13 @@ func _render() -> void:
 
 func _refresh_text() -> void:
 	var h: int = mini(chain.head(), chain.total())
-	_prog.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.beed887fea16") % [h, chain.total()])
+	_prog.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.giftchainpopup.beed887fea16"), [h, chain.total()]))
 	if not chain.online() or (not chain.ok and chain.fetched_once):
 		_status.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.6fc9ed84dfa7"))
 	elif not chain.ok:
 		_status.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.9b001b04f0a8"))
 	elif chain.done():
-		_status.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.d952510eeb4d") % _fmt_left(chain.ends_at() - G.now()))
+		_status.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.giftchainpopup.d952510eeb4d"), _fmt_left(chain.ends_at() - G.now())))
 	else:
 		_status.text = ""
 

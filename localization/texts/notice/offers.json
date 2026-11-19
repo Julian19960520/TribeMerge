@@ -1,0 +1,11 @@
+{
+  "feature": "offers",
+  "entries": {
+    "9f313e10b9ed": {
+      "zh_CN": "本期已买完"
+    },
+    "d345eb8ef0a1": {
+      "zh_CN": "本期礼包已结束"
+    }
+  }
+}

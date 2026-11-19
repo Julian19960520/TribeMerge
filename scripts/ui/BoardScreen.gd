@@ -1,6 +1,7 @@
 class_name BoardScreen
 extends Control
 const Meme := preload("res://scripts/Meme.gd")
+const LuckyDropFx := preload("res://scripts/ui/board/LuckyDropFx.gd")
 
 const BOARD_POS := Vector2(24, 432)
 ## 暂存区、基地和订单在同一个横向滚动列表里
@@ -184,7 +185,7 @@ func _paint_stash(ci: CanvasItem, sz: Vector2) -> void:
 		ci.draw_string_outline(G.font_body, Vector2(sz.x - 34, 42), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_CENTER, 40, 22, 5, Art.INK)
 		ci.draw_string(G.font_body, Vector2(sz.x - 34, 42), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_CENTER, 40, 22, Color.WHITE)
 		if top < 0:
-			ci.draw_string(G.font_body, Vector2(0, sz.y - 14), TextCatalog.resolve(TextCatalog.source("ui.boardscreen.8c933e9cc00a") % Data.CARD_LEVEL), HORIZONTAL_ALIGNMENT_CENTER, sz.x, 20, Art.BONE)
+			ci.draw_string(G.font_body, Vector2(0, sz.y - 14), TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.boardscreen.8c933e9cc00a"), Data.CARD_LEVEL)), HORIZONTAL_ALIGNMENT_CENTER, sz.x, 20, Art.BONE)
 		else:
 			var bob := 4.0 * sin(Time.get_ticks_msec() / 200.0)
 			Sprites.draw(ci, "board_stash_arrow", Rect2(sz.x * 0.5 - 16, sz.y - 30 + bob, 32, 22))
@@ -267,7 +268,12 @@ func _on_craft(oi: int) -> void:
 	var flights: Array = G.begin_craft(oi)
 	if flights.is_empty():
 		return
-	board.play_gather(flights)
+	var moving: Array = []
+	for flight in flights:
+		if flight.has("from"):
+			moving.append(flight)
+	if not moving.is_empty():
+		board.play_gather(moving)
 	board.select(int(flights[0]["to"]))
 	Sfx.play("whoosh", 0.9)
 
@@ -286,7 +292,7 @@ func _on_deliver(oi: int) -> void:
 	await get_tree().create_timer(0.35).timeout
 	var who := int(result["who"])
 	var say := str(result["say"])
-	G.main.toast(TextCatalog.source("ui.boardscreen.dccb2f9e37d1") % [Meme.customer_name(who, true), say if say != "" else Meme.line()])
+	G.main.toast(TextCatalog.fill(TextCatalog.source("ui.boardscreen.dccb2f9e37d1"), [Meme.customer_name(who, true), say if say != "" else Meme.line()]))
 	RewardPresenter.present(result["rewards"], func(_k): return card_pos)
 
 # ---------------------------------------------------------------- 交互
@@ -312,7 +318,7 @@ func _process(delta: float) -> void:
 	var i := board.selected
 	if i < 0 or not G.rules.orders.cooking(i):
 		return
-	var text := TextCatalog.source("ui.boardscreen.88594daece20") % [Board._sec_text(maxi(G.rules.orders.cook_left(i), 1)), G.rush, Data.rush_text(), G.rules.orders.rush_need(i)]
+	var text := TextCatalog.fill(TextCatalog.source("ui.boardscreen.88594daece20"), [Board._sec_text(maxi(G.rules.orders.cook_left(i), 1)), G.rush, Data.rush_text(), G.rules.orders.rush_need(i)])
 	if _info_desc.text != text:
 		_info_desc.text = UI.resource_text(text)
 
@@ -338,8 +344,8 @@ func _on_hammer() -> void:
 func _refresh_hud() -> void:
 	if not is_visible_in_tree(): return
 	_refresh_bubble_offer()
-	_inv_lbl.text = TextCatalog.resolve("%d/%d" % [G.inv.size(), G.inv_cap])
-	_lv_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.boardscreen.e6da3dfb89c6") % G.level)
+	_inv_lbl.text = TextCatalog.resolve("%d/%d" % [G.rules.board.inv_filled(), G.inv_cap])
+	_lv_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.boardscreen.e6da3dfb89c6"), G.level))
 	_xp_lbl.text = TextCatalog.resolve("%d/%d" % [G.xp, G.rules.progression.xp_need()])
 	_sync_boost()
 	_activity_row.refresh()
@@ -368,8 +374,8 @@ func _on_select(i: int) -> void:
 		_info_btn.visible = true
 		_info_desc.position.x = 170
 		_info_desc.size.x = 300
-		_info_name.text = UI.resource_text(TextCatalog.source("ui.boardscreen.4b51b48924cc") % Data.name_of(str(ck["dish"])))
-		_set_desc(TextCatalog.source("ui.boardscreen.88594daece20") % [Board._sec_text(maxi(G.rules.orders.cook_left(i), 1)), G.rush, Data.rush_text(), G.rules.orders.rush_need(i)])
+		_info_name.text = UI.resource_text(TextCatalog.fill(TextCatalog.source("ui.boardscreen.4b51b48924cc"), Data.name_of(str(ck["dish"]))))
+		_set_desc(TextCatalog.fill(TextCatalog.source("ui.boardscreen.88594daece20"), [Board._sec_text(maxi(G.rules.orders.cook_left(i), 1)), G.rush, Data.rush_text(), G.rules.orders.rush_need(i)]))
 		if pending:
 			_show_undo_btn()
 		else:
@@ -379,7 +385,7 @@ func _on_select(i: int) -> void:
 		_show_undo_btn()
 		_info_desc.position.x = 170
 		_info_desc.size.x = 300
-		_info_name.text = UI.resource_text(TextCatalog.source("ui.boardscreen.89a087698f45") % [Data.name_of(_undo_id), Data.lv(_undo_id)])
+		_info_name.text = UI.resource_text(TextCatalog.fill(TextCatalog.source("ui.boardscreen.89a087698f45"), [Data.name_of(_undo_id), Data.lv(_undo_id)]))
 		_set_desc(Data.describe(_undo_id))
 	elif has:
 		var c: Dictionary = G.board[i]
@@ -387,7 +393,7 @@ func _on_select(i: int) -> void:
 		_info_desc.position.x = 170
 		_info_desc.size.x = 300
 		if G.rules.board.is_merge_bubble(i):
-			_info_name.text = UI.resource_text(TextCatalog.source("ui.boardscreen.89a087698f45") % [Data.name_of(str(c["id"])), Data.lv(str(c["id"]))])
+			_info_name.text = UI.resource_text(TextCatalog.fill(TextCatalog.source("ui.boardscreen.89a087698f45"), [Data.name_of(str(c["id"])), Data.lv(str(c["id"]))]))
 			_set_desc(TextCatalog.source("ui.boardscreen.84a0886e478d"))
 		elif c["lock"] == 2:
 			_info_name.text = TextCatalog.resolve(TextCatalog.source("developer.board_editor.78f83cd0be53"))
@@ -400,7 +406,7 @@ func _on_select(i: int) -> void:
 			else:
 				_show_delete_btn(false)
 		else:
-			_info_name.text = UI.resource_text(TextCatalog.source("ui.boardscreen.89a087698f45") % [Data.name_of(c["id"]), Data.lv(c["id"])])
+			_info_name.text = UI.resource_text(TextCatalog.fill(TextCatalog.source("ui.boardscreen.89a087698f45"), [Data.name_of(c["id"]), Data.lv(c["id"])]))
 			_set_item_action(str(c["id"]), int(c["lock"]) == 1)
 		if pending:
 			_show_undo_btn()
@@ -439,7 +445,7 @@ func _show_delete_btn(show: bool) -> void:
 		var id := G.rules.board.cell_id(board.selected)
 		var n := int(G.rules.onboarding.config().get("sell_energy", {}).get(str(Data.lv(id)), 0)) if Data.type_of(id) == "item" else 0
 		if n > 0:
-			_del_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.boardscreen.68988fbf6c56") % n)
+			_del_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.boardscreen.68988fbf6c56"), n))
 			_del_btn.glyph = ""
 			_del_btn.extra = func(ci, sz): Art.item(ci, "fire_2", sz * 0.5, 48)
 			_del_btn.style = "green"
@@ -505,7 +511,7 @@ func _on_rush(i: int) -> void:
 	var used := G.rush_cook(i)
 	Sfx.play("pop", 1.15)
 	if G.rules.orders.cooking(i):
-		G.main.toast(TextCatalog.source("ui.boardscreen.ecabc720e963") % [used, G.rules.orders.rush_need(i)])
+		G.main.toast(TextCatalog.fill(TextCatalog.source("ui.boardscreen.ecabc720e963"), [used, G.rules.orders.rush_need(i)]))
 	else:
 		G.main.toast(TextCatalog.source("ui.boardscreen.b7b1c75dd57a"))
 
@@ -534,7 +540,7 @@ func _sync_boost() -> void:
 
 func _on_boost() -> void:
 	if not G.rules.board.boost_open():
-		G.main.toast(TextCatalog.source("ui.boardscreen.ea512726aa70") % Data.BOOST_LEVEL)
+		G.main.toast(TextCatalog.fill(TextCatalog.source("ui.boardscreen.ea512726aa70"), Data.BOOST_LEVEL))
 		return
 	var prev := G.rules.board.boost_mult()
 	G.set_boost_mult(G.rules.board.next_boost_mult())
@@ -574,7 +580,11 @@ func _on_activate(i: int) -> void:
 		if Data.type_of(id) == "gen" and G.energy < G.rules.board.gen_cost(): G.main.tips.energy_out()
 		elif str(result["error"]) == TextCatalog.source("notice.reducer.cf76442736ea"): G.main.tips.board_full(str(result["error"]))
 		else: G.main.toast(str(result["error"]))
-	elif result.get("kind", "") == "produce": board.fly_in(i, int(result["to"]), str(result["id"]))
+	elif result.get("kind", "") == "produce":
+		board.fly_in(i, int(result["to"]), str(result["id"]))
+		if int(result.get("lucky", 0)) > 0:
+			LuckyDropFx.play(board, i, int(result["to"]), int(result["lucky"]))
+			Sfx.play("lucky")
 	elif result.get("kind", "") == "produce_batch":
 		for item in result["items"]: board.fly_in(i, int(item["to"]), str(item["id"]))
 	elif result.get("kind", "") == "chest": _present_chest_drop(i, result)
@@ -628,7 +638,7 @@ func _on_stash() -> void:
 		return
 	var at := G.rules.board.stash_claim_index()
 	if at < 0:
-		G.main.toast(TextCatalog.source("ui.boardscreen.5abc2a8608a5") % Data.CARD_LEVEL)
+		G.main.toast(TextCatalog.fill(TextCatalog.source("ui.boardscreen.5abc2a8608a5"), Data.CARD_LEVEL))
 		return
 	if Data.type_of(Rewards.before_cards(str(G.stash[at]))) == "pack": G.main.open("pack", {"id": str(G.stash[at]), "stash": at}); return
 	var result: Dictionary = await Replay.perform("stash", {"index": at})
@@ -780,17 +790,20 @@ func _guide_spawn(near_i: int) -> int:
 	return G.rules.board.find_empty_near(near_i)
 
 ## 选中合成泡泡时，泡泡上方弹出的购买小卡：泡泡里的物品 + 名字等级 + 倒计时 + 琥珀买下
-const OFFER_W := 340.0
-const OFFER_H := 132.0
+const OFFER_W := 376.0
+const OFFER_H := 150.0
+## 右栏（名字、倒计时、买下按钮）的左边界和右侧留白
+const OFFER_COL := 128.0
+const OFFER_PAD := 20.0
 func _build_bubble_offer() -> void:
 	_bubble_offer = Control.new()
 	_bubble_offer.size = Vector2(OFFER_W, OFFER_H + 18)
 	_bubble_offer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_bubble_offer)
 	UI.box(_bubble_offer, Rect2(Vector2.ZERO, _bubble_offer.size), _paint_bubble_offer)
-	_bubble_title = UI.lbl(_bubble_offer, "", Rect2(112, 12, OFFER_W - 124, 34), 24, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
-	_bubble_time = UI.lbl(_bubble_offer, "", Rect2(140, 46, OFFER_W - 152, 28), 19, Color("2f6d93"), HORIZONTAL_ALIGNMENT_LEFT)
-	_bubble_buy = UI.btn(_bubble_offer, Rect2(112, 76, OFFER_W - 126, 46), "", "green", Callable(), 24)
+	_bubble_title = UI.lbl(_bubble_offer, "", Rect2(OFFER_COL, 14, OFFER_W - OFFER_COL - OFFER_PAD, 34), 24, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
+	_bubble_time = UI.lbl(_bubble_offer, "", Rect2(OFFER_COL + 30, 50, OFFER_W - OFFER_COL - OFFER_PAD - 30, 30), 20, Color("2f6d93"), HORIZONTAL_ALIGNMENT_LEFT)
+	_bubble_buy = UI.btn(_bubble_offer, Rect2(OFFER_COL, 90, OFFER_W - OFFER_COL - OFFER_PAD, 46), "", "green", Callable(), 24)
 	_bubble_buy.res = Art.AMBER_ICON
 	_bubble_buy.pressed.connect(func():
 		var at := board.selected
@@ -818,7 +831,7 @@ func _paint_bubble_offer(ci: CanvasItem, sz: Vector2) -> void:
 	Sprites.draw(ci, "board_offer_top", card)
 	Sprites.draw(ci, "board_offer_tail_fill", tail)
 	# 左边：泡泡里的物品
-	var c := Vector2(58, OFFER_H * 0.5)
+	var c := Vector2(66, OFFER_H * 0.5)
 	ci.draw_circle(c, 44, Color(0.62, 0.88, 1.0, 0.35))
 	var at := board.selected if board != null else -1
 	if at >= 0 and at < G.board.size() and str(G.board[at]["id"]) != "":
@@ -826,7 +839,7 @@ func _paint_bubble_offer(ci: CanvasItem, sz: Vector2) -> void:
 	ci.draw_arc(c, 44, 0, TAU, 40, Color(Board.BUBBLE_RIM, 0.9), 3.0, true)
 	ci.draw_arc(c, 37, PI * 1.08, PI * 1.42, 12, Color(1, 1, 1, 0.92), 5.0, true)
 	ci.draw_circle(c + Vector2(-13, -33), 3.2, Color.WHITE)
-	Paint.glyph(ci, "clock", Vector2(126, 60), 0.85)
+	Paint.glyph(ci, "clock", Vector2(OFFER_COL + 13, 65), 0.85)
 
 func _refresh_bubble_offer() -> void:
 	if _bubble_offer == null: return
@@ -836,9 +849,9 @@ func _refresh_bubble_offer() -> void:
 	var c: Dictionary = G.board[at]
 	var p := BOARD_POS + board.cell_center(at)
 	_bubble_offer.position = Vector2(clampf(p.x - OFFER_W * 0.5, 8, 720 - OFFER_W - 8), p.y - 48 - _bubble_offer.size.y)
-	_bubble_title.text = UI.resource_text(TextCatalog.source("ui.boardscreen.89a087698f45") % [Data.name_of(str(c["id"])), Data.lv(str(c["id"]))])
+	_bubble_title.text = UI.resource_text(TextCatalog.fill(TextCatalog.source("ui.boardscreen.89a087698f45"), [Data.name_of(str(c["id"])), Data.lv(str(c["id"]))]))
 	_bubble_tick()
-	_bubble_buy.text = TextCatalog.resolve(TextCatalog.source("ui.boardscreen.d104bbd5c679") % int(c["bubble"]["price"]))
+	_bubble_buy.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.boardscreen.d104bbd5c679"), int(c["bubble"]["price"])))
 	_bubble_buy.enabled = not G._bubble_busy.has(str(c["bubble"]["uid"]))
 	_bubble_buy.queue_redraw()
 	for child in _bubble_offer.get_children():
@@ -847,7 +860,7 @@ func _refresh_bubble_offer() -> void:
 ## 每帧只在秒数变化时改字
 func _bubble_tick() -> void:
 	var left := G.rules.board.bubble_left(board.selected)
-	var text := TextCatalog.source("ui.boardscreen.2e4c2d942ec8") % left
+	var text := TextCatalog.fill(TextCatalog.source("ui.boardscreen.2e4c2d942ec8"), left)
 	if _bubble_time.text != text:
 		_bubble_time.text = TextCatalog.resolve(text)
 		_bubble_time.label_settings.font_color = Art.CLAY if left <= 10 else Color("2f6d93")
@@ -876,9 +889,9 @@ func _set_item_action(id: String, tangled: bool = false) -> void:
 	elif kind == "chest":
 		var left: int = G.board[board.selected].get("chest", []).size() if board.selected >= 0 else 0
 		var detail := Data.describe(id) if Data.chain(id) in ["orderbox", "premiumbox"] else TextCatalog.source("ui.boardscreen.dfbf4fc1a8a9")
-		_set_desc(TextCatalog.source("ui.boardscreen.865c6c294595") % [left, detail] if left > 0 else detail)
+		_set_desc(TextCatalog.fill(TextCatalog.source("ui.boardscreen.865c6c294595"), [left, detail]) if left > 0 else detail)
 	elif kind == "pack":
-		_set_desc(TextCatalog.source("ui.boardscreen.e3f0a6655048") % [Data.lv(id), int(CardPacks.config()["cards_per_pack"])] if G.rules.progression.feature_unlocked(Data.CARD_LEVEL) else TextCatalog.source("ui.boardscreen.1a9e870d234d") % Data.CARD_LEVEL)
+		_set_desc(TextCatalog.fill(TextCatalog.source("ui.boardscreen.e3f0a6655048"), [Data.lv(id), int(CardPacks.config()["cards_per_pack"])]) if G.rules.progression.feature_unlocked(Data.CARD_LEVEL) else TextCatalog.fill(TextCatalog.source("ui.boardscreen.1a9e870d234d"), Data.CARD_LEVEL))
 	else:
 		_set_desc(Data.describe(id))
 	_info_visual.visible = not _info_action.is_empty()

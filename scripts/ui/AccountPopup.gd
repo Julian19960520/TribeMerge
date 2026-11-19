@@ -46,7 +46,7 @@ static func _build(p: PopupBase) -> void:
 	var code_lbl := UI.lbl(p.box, "", Rect2(x0, y, w, 90), 26, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
 	code_lbl.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 	var show_code := func():
-		code_lbl.text = TextCatalog.resolve((TextCatalog.source("ui.accountpopup.c14ace6a1ef8") % [c.account_id, c.transfer_code]) if c.transfer_code != "" \
+		code_lbl.text = TextCatalog.resolve((TextCatalog.fill(TextCatalog.source("ui.accountpopup.c14ace6a1ef8"), [c.account_id, c.transfer_code])) if c.transfer_code != "" \
 			else TextCatalog.source("ui.accountpopup.9fad38d78a66"))
 	show_code.call()
 	y += 96
@@ -98,7 +98,7 @@ static func _build(p: PopupBase) -> void:
 
 static func _status_text(c, info: Dictionary) -> String:
 	var lines := []
-	lines.append(TextCatalog.source("ui.accountpopup.e1ecd2f2dc00") % (c.account_id if c.account_id != "" else G.player_id))
+	lines.append(TextCatalog.fill(TextCatalog.source("ui.accountpopup.e1ecd2f2dc00"), (c.account_id if c.account_id != "" else G.player_id)))
 	if c.kicked != "":
 		lines.append(TextCatalog.source("ui.accountpopup.86344fd28ab4") + c._kick_text(c.kicked))
 	elif not c.enabled:
@@ -107,11 +107,11 @@ static func _status_text(c, info: Dictionary) -> String:
 		lines.append(TextCatalog.source("ui.accountpopup.86344fd28ab4") + (TextCatalog.source("ui.accountpopup.b9086662b1df") if c.online else TextCatalog.source("ui.accountpopup.8cb38a83bcb6")))
 	var binds: Array = info.get("bindings", [])
 	var has_code := bool(info.get("has_transfer_code", c.transfer_code != ""))
-	lines.append(TextCatalog.source("ui.accountpopup.91a923df213b") % ["✓" if has_code else "—", "✓" if binds.has("mock") else "—"])
+	lines.append(TextCatalog.fill(TextCatalog.source("ui.accountpopup.91a923df213b"), ["✓" if has_code else "—", "✓" if binds.has("mock") else "—"]))
 	var t: float = float(c.last_sync)
 	if info.get("last_sync_at") != null:
 		t = float(info["last_sync_at"])
-	lines.append(TextCatalog.source("ui.accountpopup.d017732a667b") % (Time.get_datetime_string_from_unix_time(int(t) + 8 * 3600, true) if t > 0.0 else TextCatalog.source("ui.accountpopup.d2342efd86fa")))
+	lines.append(TextCatalog.fill(TextCatalog.source("ui.accountpopup.d017732a667b"), (Time.get_datetime_string_from_unix_time(int(t) + 8 * 3600, true) if t > 0.0 else TextCatalog.source("ui.accountpopup.d2342efd86fa"))))
 	if Replay.needs_upload():
 		lines.append(TextCatalog.source("ui.accountpopup.1a96f1074c89"))
 	return "\n".join(lines)
@@ -136,9 +136,9 @@ static func _after_login(p: PopupBase, c, res: Dictionary) -> void:
 	var r := Rect2(60, 420, 600, 640)
 	Popups.frame(q, r, TextCatalog.source("ui.accountpopup.d17c02d0e789"), Art.AMBER)
 	var both: bool = c.has_progress(cloud) and c.has_progress(local)
-	var txt := TextCatalog.source("ui.accountpopup.8260a0229ce3") % [
+	var txt := TextCatalog.fill(TextCatalog.source("ui.accountpopup.8260a0229ce3"), [
 		str(res.get("account_id", "")), int(cloud.get("level", 1)), int(cloud.get("parts", 0)),
-		int(local.get("level", 1)), int(local.get("parts", 0))]
+		int(local.get("level", 1)), int(local.get("parts", 0))])
 	if both:
 		txt += TextCatalog.source("ui.accountpopup.21a2809b4f35")
 	var t := UI.lbl(q.box, txt, Rect2(r.position.x + 36, r.position.y + 70, r.size.x - 72, 280), 26, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)

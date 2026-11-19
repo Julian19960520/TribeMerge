@@ -105,7 +105,7 @@ func _process(_dt: float) -> void:
 	if fps == _fps_shown:
 		return
 	_fps_shown = fps
-	_fps_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.main.1353da032c2b") % fps)
+	_fps_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.main.1353da032c2b"), fps))
 
 func _layer() -> Control:
 	var c := Control.new()
@@ -252,7 +252,7 @@ func _on_presentation(kind: String, payload: Dictionary) -> void:
 			if count > 0: present_rewards([["pack_1", count]])
 		"overflow":
 			var count := int(payload.get("count", 0))
-			if count > 0: toast(TextCatalog.source("ui.main.d75c2da7d3ed") % count)
+			if count > 0: toast(TextCatalog.fill(TextCatalog.source("ui.main.d75c2da7d3ed"), count))
 		"tiger_open":
 			_open_tiger_panel(str(payload.get("reason", "")))
 
@@ -289,7 +289,7 @@ func _open_levelup_after_chest() -> void:
 
 func _play_order_chest(items: Array, stashed: int) -> void:
 	if items.is_empty():
-		if stashed > 0: toast(TextCatalog.source("ui.main.680c0062f51e") % stashed)
+		if stashed > 0: toast(TextCatalog.fill(TextCatalog.source("ui.main.680c0062f51e"), stashed))
 		return
 	if screen != "board" or not is_instance_valid(board_screen):
 		return

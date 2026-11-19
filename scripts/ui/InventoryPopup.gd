@@ -10,14 +10,25 @@ const SLOT := 108.0
 const GAP_X := 122.0
 const FR := Rect2(30, 300, 660, 880)
 const VIEW := Rect2(50, 432, 620, 600)
+const DRAG_LIFT := Vector2(0, -28)
 var scroll: Scroller
 var slots: Array = []
 var shelves: Array = []
 var capacity: Label
 var next_lbl: Label
 var unlock: TButton
+var _pad: Control
+var _ghost: DrawBox
 var _first_row := -1
 var _busy := false
+var _press_index := -1
+var _press_pos := Vector2.ZERO
+var _dragging := false
+var _drag_from := -1
+var _drag_id := ""
+var _drag_chest := false
+var _hover := -1
+var _pops := {}
 
 func _ready() -> void:
 	UI.box(box, Rect2(0, 0, 720, 1480), _paint_frame)
@@ -37,10 +48,18 @@ func _ready() -> void:
 	for k in POOL_ROWS * COLS:
 		var b := UI.btn(scroll.content, Rect2(0, 0, SLOT, SLOT), "", "none", Callable())
 		b.set_meta("slot", -1)
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.extra = func(ci, sz): _paint_slot(ci, sz, int(b.get_meta("slot")))
-		b.pressed.connect(func(): _take(int(b.get_meta("slot"))))
 		slots.append(b)
-	UI.lbl(box, TextCatalog.source("ui.inventorypopup.69e27b29a381"), Rect2(66, 1054, 320, 36), 24, Color("fbe7c0"), HORIZONTAL_ALIGNMENT_LEFT, 5, Color("2a1a10"))
+	_pad = Control.new()
+	_pad.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pad.size = VIEW.size
+	_pad.gui_input.connect(_gesture)
+	scroll.add_child(_pad)
+	_ghost = UI.box(box, Rect2(Vector2.ZERO, box.size), _paint_ghost, false)
+	_ghost.z_index = 40
+	_ghost.visible = false
+	UI.lbl(box, TextCatalog.source("ui.inventorypopup.29224762de89"), Rect2(66, 1054, 340, 36), 22, Color("fbe7c0"), HORIZONTAL_ALIGNMENT_LEFT, 5, Color("2a1a10"))
 	UI.lbl(box, TextCatalog.source("ui.inventorypopup.7f67efa818e0"), Rect2(66, 1094, 330, 30), 18, Color("d8c4a0"), HORIZONTAL_ALIGNMENT_LEFT)
 	unlock = UI.btn(box, Rect2(410, 1052, 250, 82), "", "green", _expand, 28)
 	unlock.res = Art.AMBER_ICON
@@ -71,9 +90,17 @@ func _paint_slot(ci: CanvasItem, sz: Vector2, index: int) -> void:
 	if index < cap:
 		# 凿出来的石龛
 		Sprites.draw(ci, "pop_inv_niche", r)
-		if index < G.inv.size():
+		var id := _slot_id(index)
+		var held := _dragging and index == _drag_from
+		if id != "" and not held:
+			var sc := 1.0
+			if _pops.has(index):
+				sc = 1.0 + 0.22 * sin(PI * clampf(float(_pops[index]) / 0.28, 0.0, 1.0))
 			Sprites.at(ci, "pop_spot_shadow", Vector2(sz.x * 0.5, sz.y - 14), 1.0, 0.0, Color(0, 0, 0, 0.35))
-			Art.item(ci, Art.chest_visual(str(G.inv[index]), G.inv_chests.has(str(index))), sz * 0.5 + Vector2(0, -2), 86)
+			Art.item(ci, Art.chest_visual(id, G.inv_chests.has(str(index))), sz * 0.5 + Vector2(0, -2), 86.0 * sc)
+		if _dragging and index == _hover:
+			var col := Color("7dbe6a") if _can_merge(index) else Color("f0b429")
+			ci.draw_arc(sz * 0.5 + Vector2(0, -2), 46.0, 0.0, TAU, 28, col, 5.0, true)
 	elif index == cap:
 		# 下一格：虚线框 + 加号 + 价格（点它扩建）
 		Sprites.draw(ci, "pop_inv_next", r)
@@ -86,8 +113,9 @@ func _paint_slot(ci: CanvasItem, sz: Vector2, index: int) -> void:
 		# 还没挖开：碎石堵着（离可扩建那格越远越暗）
 		Sprites.draw(ci, "pop_inv_rocks", r)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if scroll != null: _layout()
+	_tick_drag(delta)
 
 ## 至少铺满可视区（后面几层是还没挖开的碎石壁），格子少时洞里也不会空一大片
 func _rows() -> int:
@@ -115,9 +143,9 @@ func _layout(force := false) -> void:
 
 func _refresh() -> void:
 	if scroll == null: return
-	capacity.text = TextCatalog.resolve(TextCatalog.source("ui.inventorypopup.358c502fecea") % [G.inv.size(), G.inv_cap])
-	next_lbl.text = TextCatalog.resolve(TextCatalog.source("ui.inventorypopup.0d763b2b0f6d") % int(Data.RULES.get("storage_expand_step", 10)))
-	unlock.text = TextCatalog.resolve(TextCatalog.source("ui.inventorypopup.4b4bdd4a1307") % G.rules.progression.storage_price())
+	capacity.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.inventorypopup.358c502fecea"), [G.rules.board.inv_filled(), G.inv_cap]))
+	next_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.inventorypopup.0d763b2b0f6d"), int(Data.RULES.get("storage_expand_step", 10))))
+	unlock.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.inventorypopup.4b4bdd4a1307"), G.rules.progression.storage_price()))
 	unlock.enabled = not _busy
 	unlock.queue_redraw()
 	scroll.set_length(_rows() * ROW_H + 24)
@@ -128,7 +156,7 @@ func _take(index: int) -> void:
 	if index == G.inv_cap:
 		_expand()
 		return
-	if index < 0 or index >= G.inv.size(): return
+	if _slot_id(index) == "": return
 	var to := G.rules.board.find_empty_near(G.rules.board.idx(3, 4))
 	if to < 0:
 		G.main.toast(TextCatalog.source("ui.inventorypopup.0b563d7d1026"))
@@ -153,3 +181,102 @@ func _expand() -> void:
 	else:
 		G.main.toast(TextCatalog.source("ui.inventorypopup.ad2801cad3fd"))
 		_refresh()
+
+func _slot_id(index: int) -> String:
+	if index < 0 or index >= G.inv.size(): return ""
+	return str(G.inv[index])
+
+func _slot_at(local: Vector2) -> int:
+	var p := local + Vector2(0, scroll.offset)
+	var x := p.x - 8.0
+	var y := p.y - 8.0
+	if x < 0.0 or y < 0.0: return -1
+	var col := int(x / GAP_X)
+	var row := int(y / ROW_H)
+	if col < 0 or col >= COLS: return -1
+	if fposmod(x, GAP_X) >= SLOT or fposmod(y, ROW_H) >= SLOT: return -1
+	var index := row * COLS + col
+	if index < 0 or index >= _rows() * COLS: return -1
+	return index
+
+func _can_merge(index: int) -> bool:
+	var id := _slot_id(index)
+	return id != "" and id == _drag_id and Data.next_id(id) != "" and not _drag_chest and not G.inv_chests.has(str(index))
+
+func _gesture(e: InputEvent) -> void:
+	if _busy: return
+	if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
+		if e.pressed:
+			_press_index = _slot_at(e.position)
+			_press_pos = e.position
+			_clear_drag()
+			if _slot_id(_press_index) != "": scroll.yield_gesture()
+			accept_event()
+		else:
+			var index := _slot_at(e.position)
+			var from := _drag_from
+			var moved := _dragging
+			var tapped: bool = _press_index >= 0 and index == _press_index and e.position.distance_to(_press_pos) <= 12.0
+			_clear_drag()
+			if moved: _finish_drag(from, index)
+			elif tapped: _take(_press_index)
+			accept_event()
+	elif e is InputEventMouseMotion and _press_index >= 0 and _slot_id(_press_index) != "":
+		if not _dragging and e.position.distance_to(_press_pos) > 12.0:
+			_dragging = true
+			_drag_from = _press_index
+			_drag_id = _slot_id(_press_index)
+			_drag_chest = G.inv_chests.has(str(_press_index))
+			scroll.yield_gesture()
+			_ghost.visible = true
+			Sfx.play("tap", 1.3)
+			for b in slots: b.queue_redraw()
+		if _dragging: accept_event()
+
+func _finish_drag(from: int, index: int) -> void:
+	if from < 0 or index < 0 or index >= G.inv_cap or index == from:
+		if index != from: Sfx.play("deny")
+		return
+	var result: Dictionary = Replay.perform("inventory_move", {"from": from, "to": index})
+	if result.has("error") or not result.get("ok", false):
+		Sfx.play("deny")
+		return
+	_pops[index] = 0.0
+	if str(result.get("kind", "")) == "merge": Sfx.play("merge", 1.05)
+	else: Sfx.play("pop", 0.9)
+
+func _clear_drag() -> void:
+	_dragging = false
+	_drag_from = -1
+	_drag_id = ""
+	_drag_chest = false
+	_hover = -1
+	if _ghost != null: _ghost.visible = false
+	for b in slots: b.queue_redraw()
+
+func _tick_drag(delta: float) -> void:
+	var popping := not _pops.is_empty()
+	for k in _pops.keys():
+		_pops[k] = float(_pops[k]) + delta
+		if float(_pops[k]) >= 0.28: _pops.erase(k)
+	if popping:
+		for b in slots: b.queue_redraw()
+	if not _dragging or _pad == null: return
+	var local := _pad.get_local_mouse_position()
+	var edge := 72.0
+	var speed := 0.0
+	if local.y < edge: speed = -lerpf(120.0, 640.0, 1.0 - clampf(local.y / edge, 0.0, 1.0))
+	elif local.y > _pad.size.y - edge: speed = lerpf(120.0, 640.0, clampf((local.y - (_pad.size.y - edge)) / edge, 0.0, 1.0))
+	if speed != 0.0:
+		scroll.offset = clampf(scroll.offset + speed * delta, 0.0, maxf(0.0, scroll.length - scroll.size.y))
+		scroll.content.position = Vector2(0, -scroll.offset)
+		_layout(true)
+	var hover := _slot_at(local)
+	_hover = hover if hover >= 0 and hover < G.inv_cap and hover != _drag_from else -1
+	for b in slots: b.queue_redraw()
+	_ghost.queue_redraw()
+
+func _paint_ghost(ci: CanvasItem, _sz: Vector2) -> void:
+	if not _dragging or _drag_id == "": return
+	var at: Vector2 = _ghost.get_global_transform().affine_inverse() * _pad.get_global_mouse_position() + DRAG_LIFT
+	Art.item(ci, Art.chest_visual(_drag_id, _drag_chest), at, 98.0, true)

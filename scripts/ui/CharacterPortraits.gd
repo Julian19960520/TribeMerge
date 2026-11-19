@@ -38,11 +38,13 @@ static func fitted_rect(texture_size: Vector2, bounds: Rect2) -> Rect2:
 static func draw(ci: CanvasItem, role: int, bounds: Rect2) -> void:
 	var art := texture(role)
 	if art != null:
+		TextureCache.hold(ci, art)
 		ci.draw_texture_rect(art, fitted_rect(art.get_size(), bounds), false)
 
 static func chest(ci: CanvasItem, role: int, bounds: Rect2) -> void:
 	var art := texture(role)
 	if art == null: return
+	TextureCache.hold(ci, art)
 	var crop: Array = definition(role).get("chest", [0.08, 0.0, 0.84, 0.65])
 	var source := Rect2(Vector2(float(crop[0]), float(crop[1])) * art.get_size(),
 		Vector2(float(crop[2]), float(crop[3])) * art.get_size())
@@ -51,6 +53,7 @@ static func chest(ci: CanvasItem, role: int, bounds: Rect2) -> void:
 static func face(ci: CanvasItem, role: int, center: Vector2, diameter: float) -> void:
 	var art := texture(role)
 	if art == null: return
+	TextureCache.hold(ci, art)
 	var crop: Array = definition(role).get("avatar", [0.2, 0.0, 0.6, 0.45])
 	var uv_origin := Vector2(float(crop[0]), float(crop[1]))
 	var uv_size := Vector2(float(crop[2]), float(crop[3]))

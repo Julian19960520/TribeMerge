@@ -405,7 +405,7 @@ func _paint_tag(ci: CanvasItem, sz: Vector2, id: String) -> void:
 			var fill := Rect2(bar.position, Vector2(maxf(9.0, bar.size.x * float(st) / float(maxi(total, 1))), bar.size.y))
 			Sprites.draw(ci, "tribe_tag_fill", fill, Art.MOSS if not done else Art.OCHRE)
 	else:
-		var t := TextCatalog.source("ui.homescreen.1f67da2b53a5") % Data.build_unlock(b) if not G.rules.progression.feature_unlocked(Data.build_unlock(b)) else TextCatalog.source("ui.homescreen.bebe53ada85d")
+		var t := TextCatalog.fill(TextCatalog.source("ui.homescreen.1f67da2b53a5"), Data.build_unlock(b)) if not G.rules.progression.feature_unlocked(Data.build_unlock(b)) else TextCatalog.source("ui.homescreen.bebe53ada85d")
 		ci.draw_string_outline(G.font_body, Vector2(48, 44), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Art.INK)
 		ci.draw_string(G.font_body, Vector2(48, 44), TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("ffe7a8"))
 	if open and not done and G.shells >= G.rules.progression.build_cost(id):
@@ -441,8 +441,9 @@ func _open_next_build() -> void:
 func is_building() -> bool:
 	return _build_fx != null and is_instance_valid(_build_fx)
 
-## 部件从地基里敲出来：锤子敲三下扬起尘土 → 部件弹起落地 → 星星散开 → 领奖
-func play_build(area: String, idx: int, kind: String, part_name: String, rewards: Array) -> void:
+## 部件从地基里敲出来：锤子敲三下扬起尘土 → 部件弹起落地 → 星星散开 → 领奖。
+## 分几次建的部件：from/to 是这次建之前、之后的进度（0..1），没建满时长到半成品，标题写 step（如「2/3」）。
+func play_build(area: String, idx: int, kind: String, part_name: String, rewards: Array, from := 0.0, to := 1.0, step := "") -> void:
 	if is_building():
 		_build_fx.queue_free()
 	_hide = {area: idx}
@@ -457,8 +458,9 @@ func play_build(area: String, idx: int, kind: String, part_name: String, rewards
 	_build_fx = fx
 	var st := {"t": 0.0, "hits": 0, "popped": false}
 	var dur := 2.3
-	var box := UI.box(fx, Rect2(Vector2.ZERO, TribeArt.WORLD), func(ci, _sz): _paint_build(ci, at, kind, h, float(st["t"])), false)
-	var lbl := UI.lbl(fx, TextCatalog.source("ui.homescreen.28c5830c2172") % part_name, Rect2(at.x - 200, at.y - h - 70, 400, 50), 32, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
+	var box := UI.box(fx, Rect2(Vector2.ZERO, TribeArt.WORLD), func(ci, _sz): _paint_build(ci, at, kind, h, float(st["t"]), from, to), false)
+	var title := TextCatalog.fill(TextCatalog.source("ui.homescreen.28c5830c2172"), part_name) if step == "" else "%s %s" % [TextCatalog.resolve(part_name), step]
+	var lbl := UI.lbl(fx, title, Rect2(at.x - 200, at.y - h - 70, 400, 50), 32, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	lbl.position.x = clampf(lbl.position.x, -60.0, TribeArt.WORLD.x - 340.0)
 	lbl.modulate.a = 0.0
 	lbl.pivot_offset = lbl.size * 0.5
@@ -491,13 +493,18 @@ func play_build(area: String, idx: int, kind: String, part_name: String, rewards
 		if not rewards.is_empty():
 			G.main.present_rewards(rewards))
 
-func _paint_build(ci: CanvasItem, at: Vector2, kind: String, h: float, t: float) -> void:
+func _paint_build(ci: CanvasItem, at: Vector2, kind: String, h: float, t: float, from := 0.0, to := 1.0) -> void:
 	var glow_a := clampf(t / 0.2, 0.0, 1.0) * (1.0 - clampf((t - 1.8) / 0.5, 0.0, 1.0))
 	ci.draw_colored_polygon(Art.ell(at, Vector2(70, 26), 3, 0.0, 24, 0.0, 0.0), Color(1, 0.9, 0.5, 0.35 * glow_a))
 	if t < 1.05:
 		# 施工中：半透明剪影一点点长高，锤子敲三下
 		var grow := clampf(t / 1.0, 0.0, 1.0)
-		TribeArt.part(ci, kind, at, TribeArt.VS, Vector2(1.0, 0.15 + 0.55 * grow), "_flat", Color(1, 0.97, 0.88, 0.4 + 0.15 * sin(t * 30.0)))
+		if from > 0.0:
+			# 已经建过几次：先画现在的半成品，上面一层剪影跟着敲击慢慢长
+			TribeArt.part_stage(ci, kind, at, TribeArt.VS, from)
+			TribeArt.part(ci, kind, at, TribeArt.VS, Vector2(1.0, lerpf(from, to, grow)), "_flat", Color(1, 0.97, 0.88, 0.18 + 0.1 * sin(t * 30.0)))
+		else:
+			TribeArt.part(ci, kind, at, TribeArt.VS, Vector2(1.0, (0.15 + 0.55 * grow) * to), "_flat", Color(1, 0.97, 0.88, 0.4 + 0.15 * sin(t * 30.0)))
 		Sprites.draw(ci, "tribe_build_ring", Rect2(at - Vector2(40, 17), Vector2(80, 34)))
 		var swing := -1.2
 		if t >= 0.12:
@@ -512,7 +519,7 @@ func _paint_build(ci: CanvasItem, at: Vector2, kind: String, h: float, t: float)
 		if u < 0.16:
 			sy = lerpf(0.5, 1.22, u / 0.16)
 			sx = lerpf(1.2, 0.88, u / 0.16)
-		TribeArt.part(ci, kind, at, TribeArt.VS, Vector2(sx, sy))
+		TribeArt.part_stage(ci, kind, at, TribeArt.VS, to, "", Vector2(sx, sy))
 	for k in 3:
 		_dust(ci, at, t - (0.12 + 0.3 * float(k) + 0.22), 4, k * 11)
 	_dust(ci, at, t - 1.05, 8, 50)

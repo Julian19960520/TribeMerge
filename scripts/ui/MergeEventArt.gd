@@ -18,6 +18,7 @@ static func draw_item(ci: CanvasItem, cfg: Dictionary, id: String, center: Vecto
 	if icon != "":
 		var image := texture(icon)
 		if image != null:
+			TextureCache.hold(ci, image)
 			ci.draw_texture_rect(image, Rect2(center - Vector2.ONE * size / 2, Vector2.ONE * size), false, tint)
 		return
 	if MergeEvent.kind(cfg, id) != "reward": return

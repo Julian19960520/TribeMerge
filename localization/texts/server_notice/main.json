@@ -1,0 +1,17 @@
+{
+  "feature": "main",
+  "entries": {
+    "43b961c83a74": {
+      "zh_CN": "需要 Content-Length"
+    },
+    "9e0fe7610c52": {
+      "zh_CN": "服务器出错了"
+    },
+    "d361b7d6e1ac": {
+      "zh_CN": "请求体太大"
+    },
+    "f952a59b306d": {
+      "zh_CN": "请求太频繁"
+    }
+  }
+}

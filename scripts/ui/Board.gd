@@ -37,6 +37,7 @@ var press_pos := Vector2.ZERO
 var dragging := false
 ## 新手引导把拖着的物品画在遮罩上面，棋盘这边就不再画一份
 var hide_drag := false
+var _drag_layer: DrawBox
 var drag_from := -1
 var drag_pos := Vector2.ZERO
 var drag_vis := Vector2.ZERO
@@ -99,9 +100,22 @@ func _ready() -> void:
 	G.orders_changed.connect(_redraw_cells)
 	G.orders_changed.connect(queue_redraw)
 	call_deferred("_grant_loose_rewards")
+	_drag_layer = DrawBox.new()
+	_drag_layer.mouse_filter = MOUSE_FILTER_IGNORE
+	_drag_layer.z_index = 40
+	_drag_layer.boil = false
+	_drag_layer.visible = false
+	_drag_layer.painter = _paint_drag_ghost
+	var host: Control = G.main if G.main != null else self
+	host.add_child(_drag_layer)
+	_drag_layer.position = Vector2.ZERO
+	_drag_layer.size = host.size
 
 func _process(delta: float) -> void:
-	if not is_visible_in_tree(): return
+	if not is_visible_in_tree():
+		if _drag_layer != null and _drag_layer.visible:
+			_drag_layer.visible = false
+		return
 	frame_updates += 1
 	_t += delta
 	_tick_hint(delta)
@@ -184,6 +198,7 @@ func _process(delta: float) -> void:
 		_second = fmod(_second, 1.0)
 		_redraw_cells() # Generator countdown labels change at most once per second.
 	if busy: queue_redraw()
+	_sync_drag_ghost()
 
 func set_active(active: bool) -> void:
 	if not active:
@@ -203,6 +218,7 @@ func set_active(active: bool) -> void:
 		bursts.clear()
 		_clear_drop_ring()
 		_clear_hint()
+		_sync_drag_ghost()
 	else:
 		_refresh_continuous_cells()
 		_invalidate_base()
@@ -260,18 +276,21 @@ func cell_at(p: Vector2) -> int:
 func pop(i: int) -> void:
 	pops[i] = 0.0
 
-## 棋盘上这条生产器链的格子，各放大一次。面板先收起，所以晚一拍再开始。
+## 关掉物品面板后，能马上生产、且没被藤蔓锁住的生产器各放大一次。面板先收起，所以晚一拍再开始。
 func pulse_chain(chain_id: String) -> void:
 	if chain_id == "":
 		return
+	var pulsed := false
 	for i in G.board.size():
-		var id := str(G.board[i]["id"])
-		if id == "" or int(G.board[i]["lock"]) == 2:
+		var cell: Dictionary = G.board[i]
+		var id := str(cell.get("id", ""))
+		if id == "" or int(cell.get("lock", 0)) != 0 or Data.chain(id) != chain_id:
 			continue
-		if Data.chain(id) != chain_id:
+		if Data.gen_stats(id).is_empty() or G.rules.board.gen_left(i) == 0:
 			continue
 		bounces[i] = -0.12
-	if not bounces.is_empty():
+		pulsed = true
+	if pulsed:
 		queue_redraw()
 
 func shake(i: int) -> void:
@@ -458,6 +477,7 @@ func _notification(what: int) -> void:
 		drag_from = -1
 		press_cell = -1
 		_clear_drop_ring()
+		_sync_drag_ghost()
 		queue_redraw()
 
 func _clear_drop_ring() -> void:
@@ -514,6 +534,7 @@ func _gui_input(e: InputEvent) -> void:
 			dragging = false
 			drag_from = -1
 			_clear_drop_ring()
+			_sync_drag_ghost()
 			queue_redraw()
 	elif e is InputEventMouseMotion and press_cell >= 0:
 		if not dragging and e.position.distance_to(press_pos) > 10.0:
@@ -540,7 +561,7 @@ func _tap(i: int) -> void:
 			return
 		if selected == i:
 			if G.main:
-				G.main.toast(TextCatalog.source("ui.board.1302b10947e7") % _sec_text(G.rules.orders.cook_left(i)))
+				G.main.toast(TextCatalog.fill(TextCatalog.source("ui.board.1302b10947e7"), _sec_text(G.rules.orders.cook_left(i))))
 			shake(i)
 			Sfx.play("deny")
 			return
@@ -643,7 +664,7 @@ func _draw_base(ci: CanvasItem) -> void:
 		var col := Art.HIDE if (i % G.COLS + i / G.COLS) % 2 == 0 else Color("f0dcb4")
 		if typeof(c.get("ck")) == TYPE_DICTIONARY:
 			col = Color("f6c56b")
-		elif c["lock"] == 0 and not hid.has(i) and i < tone.size():
+		elif c["lock"] == 0 and i < tone.size():
 			if tone[i] == 2:
 				col = ORDER_FULL
 			elif tone[i] == 1:
@@ -712,17 +733,32 @@ func _draw() -> void:
 	if _drop_ring.target >= 0:
 		_drop_ring.paint(self, cell_center(_drop_ring.target), CELL)
 	if dragging and drag_from >= 0:
-		var r0 := cell_rect(drag_from)
-		draw_rect(r0.grow(-6), Color(0.3, 0.2, 0.1, 0.12))
-		if not hide_drag:
-			var at := drag_vis + DRAG_LIFT
-			if G.rules.orders.cooking(drag_from):
-				_draw_cook(drag_from, Rect2(at - Vector2(CELL, CELL) * 0.5, Vector2(CELL, CELL)), G.board[drag_from]["ck"])
-			elif G.rules.board.is_merge_bubble(drag_from):
-				_draw_merge_bubble(drag_from, at, 1.15)
-			else:
-				var tilt := clampf((drag_pos.x - drag_vis.x) * 0.004, -0.25, 0.25)
-				Art.item(self, Art.chest_visual(str(G.board[drag_from]["id"]), G.board[drag_from].has("chest")), at, ITEM * 1.15, true, tilt)
+		draw_rect(cell_rect(drag_from).grow(-6), Color(0.3, 0.2, 0.1, 0.12))
+
+## 跟手的物品画在主界面最上层，盖住订单栏、顶栏和底栏。
+func _sync_drag_ghost() -> void:
+	if _drag_layer == null: return
+	var show := dragging and drag_from >= 0 and not hide_drag
+	if _drag_layer.visible != show:
+		_drag_layer.visible = show
+	if show:
+		_drag_layer.queue_redraw()
+
+func _paint_drag_ghost(ci: CanvasItem, _sz: Vector2) -> void:
+	if not dragging or drag_from < 0 or drag_from >= G.board.size() or hide_drag: return
+	var at: Vector2 = _drag_layer.get_global_transform().affine_inverse() * (get_global_transform() * (drag_vis + DRAG_LIFT))
+	if G.rules.orders.cooking(drag_from):
+		_draw_cook(drag_from, Rect2(at - Vector2(CELL, CELL) * 0.5, Vector2(CELL, CELL)), G.board[drag_from]["ck"], ci)
+	elif G.rules.board.is_merge_bubble(drag_from):
+		_draw_merge_bubble(drag_from, at, 1.15, ci)
+	else:
+		var tilt := clampf((drag_pos.x - drag_vis.x) * 0.004, -0.25, 0.25)
+		Art.item(ci, Art.chest_visual(str(G.board[drag_from]["id"]), G.board[drag_from].has("chest")), at, ITEM * 1.15, true, tilt)
+
+func _exit_tree() -> void:
+	if _drag_layer != null and is_instance_valid(_drag_layer) and _drag_layer.get_parent() != self:
+		_drag_layer.queue_free()
+		_drag_layer = null
 
 func _draw_cell(i: int, ci: CanvasItem = null) -> void:
 	if ci == null: ci = self
@@ -825,7 +861,7 @@ func _draw_max_badge(r: Rect2, ci: CanvasItem = null) -> void:
 	ci.draw_texture_rect(MAX_CROWN, Rect2(-23, -18, 46, 36), false)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-## 带经验的制作订单完成后，在棋盘物品右上角显示经验图标
+## 带经验的制作订单，制作中和完成后都在格子右上角显示经验图标
 func _draw_craft_xp_badge(ctr: Vector2, sc: float = 1.0, ci: CanvasItem = null) -> void:
 	if ci == null: ci = self
 	Art.item(ci, "xp_1", ctr + Vector2(26, -26) * sc, 32.0 * sc)
@@ -833,10 +869,10 @@ func _draw_craft_xp_badge(ctr: Vector2, sc: float = 1.0, ci: CanvasItem = null) 
 static func _sec_text(sec: int) -> String:
 	sec = maxi(sec, 0)
 	if sec >= 3600:
-		return TextCatalog.source("ui.board.e9e4f4da0297") % [sec / 3600, sec % 3600 / 60]
+		return TextCatalog.fill(TextCatalog.source("ui.board.e9e4f4da0297"), [sec / 3600, str(int(sec % 3600 / 60)).pad_zeros(2)])
 	if sec >= 60:
-		return TextCatalog.source("notice.game.30c88ef0108b") % [sec / 60, sec % 60]
-	return TextCatalog.source("ui.board.9ccc04915f66") % sec
+		return TextCatalog.fill(TextCatalog.source("notice.game.30c88ef0108b"), [sec / 60, str(int(sec % 60)).pad_zeros(2)])
+	return TextCatalog.fill(TextCatalog.source("ui.board.9ccc04915f66"), sec)
 
 ## 材料聚在这一格：陶锅搅拌，底下是制作进度
 func _draw_cook(i: int, r: Rect2, ck: Dictionary, ci: CanvasItem = null) -> void:
@@ -877,6 +913,8 @@ func _draw_cook(i: int, r: Rect2, ck: Dictionary, ci: CanvasItem = null) -> void
 		Sprites.draw(ci, "board_cook_flame", Rect2(ctr + Vector2(-8, 20.0 - fh * 0.5), Vector2(16, fh)))
 	var frac := 0.0 if into <= 0.0 else clampf(into / secs, 0.0, 1.0)
 	Paint.bar(ci, Rect2(r.position.x + 10, r.end.y - 16, r.size.x - 20, 11), frac, Art.MOSS, seed + 9)
+	if G.rules.orders.cell_has_craft_xp(i):
+		_draw_craft_xp_badge(r.get_center(), 1.0, ci)
 
 ## 生产器休息中：右下角的小表盘，亮弧是恢复进度
 ## 体力生产器底部的小牌：休息时是倒计时，能点时是剩余次数（样式同合成泡泡的倒计时牌）。

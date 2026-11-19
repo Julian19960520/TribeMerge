@@ -91,7 +91,7 @@ static func claim(id: String, stage := false) -> Dictionary:
 	if book.has(id): return {"error": TextCatalog.source("notice.sevenday.426e458a4124")}
 	if not stage:
 		var k := task_day(id)
-		if k >= 0 and not day_open(k): return {"error": TextCatalog.source("notice.sevenday.f5a5ba1c57f7") % (k + 1)}
+		if k >= 0 and not day_open(k): return {"error": TextCatalog.fill(TextCatalog.source("notice.sevenday.f5a5ba1c57f7"), (k + 1))}
 	if (points() < int(entry["points"]) if stage else not done(entry)): return {"error": TextCatalog.source("notice.sevenday.042811378798")}
 	book[id] = true
 	Rewards.settle(entry["rewards"])

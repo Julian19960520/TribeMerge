@@ -73,7 +73,7 @@ const PAY_PER_FLAME := 3.0
 static func shell_of(items: Array) -> int:
 	return maxi(int(round(total(items) * PriceBook.order_shell_per_value())), 1)
 
-## 按目标火苗随一单。avoid 里的物品组合会尽量避开，给「换一单」用。
+## 按目标火苗随一单。avoid 里的物品会尽量不再出现，同一单里也尽量不重复。
 ## allowed 非空时只出这些链上的东西（玩家现有生产器掉得出来的）
 static func make(level: int, target: float, rng: RandomNumberGenerator, avoid: Array = [], allowed: Dictionary = {}, blocked: Dictionary = {}, preferred: Dictionary = {}) -> Dictionary:
 	var pool := _pool(level, target, allowed, blocked)
@@ -88,7 +88,7 @@ static func make(level: int, target: float, rng: RandomNumberGenerator, avoid: A
 	var close: Array = []
 	var tol := maxf(1.0, target * 0.12)
 	for _i in TRIES:
-		var built: Array = _try(pool, target, rng, n)
+		var built: Array = _try(pool, target, rng, n, avoid)
 		if built.is_empty():
 			continue
 		var err := absf(total(built) - target)
@@ -100,10 +100,14 @@ static func make(level: int, target: float, rng: RandomNumberGenerator, avoid: A
 	var chosen: Array = best
 	if not close.is_empty():
 		var fresh: Array = []
+		var distinct: Array = []
 		for built in close:
-			if not _same(built, avoid):
-				fresh.append(built)
-		var bag: Array = fresh if not fresh.is_empty() else close
+			if _same(built, avoid):
+				continue
+			fresh.append(built)
+			if _items_distinct(built, avoid):
+				distinct.append(built)
+		var bag: Array = distinct if not distinct.is_empty() else (fresh if not fresh.is_empty() else close)
 		chosen = _weighted(bag, target, rng, preferred)
 	if chosen.is_empty():
 		return {}
@@ -170,7 +174,7 @@ static func _pool(level: int, target: float, allowed: Dictionary = {}, blocked: 
 		out.append(cheapest)
 	return out
 
-static func _try(pool: Array, target: float, rng: RandomNumberGenerator, n: int = -1) -> Array:
+static func _try(pool: Array, target: float, rng: RandomNumberGenerator, n: int = -1, avoid: Array = []) -> Array:
 	if n < 1:
 		n = _count(target, rng)
 	var picked: Array = []
@@ -181,7 +185,7 @@ static func _try(pool: Array, target: float, rng: RandomNumberGenerator, n: int 
 		var want := budget
 		if left > 1:
 			want = budget * rng.randf_range(0.34, 0.72)
-		var id := _pick_near(pool, maxf(want, 0.5), rng, picked)
+		var id := _pick_near(pool, maxf(want, 0.5), rng, picked, avoid)
 		if id == "":
 			break
 		picked.append(id)
@@ -200,17 +204,14 @@ static func _count(target: float, rng: RandomNumberGenerator) -> int:
 		return 2
 	return 3
 
-static func _pick_near(pool: Array, want: float, rng: RandomNumberGenerator, already: Array) -> String:
-	var ranked: Array = []
-	for it in pool:
-		var id := str(it["id"])
-		var count := 0
-		for have in already:
-			if str(have) == id:
-				count += 1
-		if count >= 2:
-			continue
-		ranked.append({"id": id, "err": absf(float(it["cost"]) - want)})
+static func _pick_near(pool: Array, want: float, rng: RandomNumberGenerator, already: Array, avoid: Array = []) -> String:
+	var ranked := _rank(pool, want, already, avoid, true, true)
+	if ranked.is_empty():
+		ranked = _rank(pool, want, already, [], true, false)
+	if ranked.is_empty():
+		ranked = _rank(pool, want, already, avoid, false, true)
+	if ranked.is_empty():
+		ranked = _rank(pool, want, already, [], false, false)
 	if ranked.is_empty():
 		return ""
 	ranked.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -228,6 +229,39 @@ static func _pick_near(pool: Array, want: float, rng: RandomNumberGenerator, alr
 		if roll <= 0.0:
 			return str(ranked[i]["id"])
 	return str(ranked[0]["id"])
+
+static func _rank(pool: Array, want: float, already: Array, avoid: Array, unique: bool, forbid: bool) -> Array:
+	var ranked: Array = []
+	for it in pool:
+		var id := str(it["id"])
+		var count := 0
+		for have in already:
+			if str(have) == id:
+				count += 1
+		if unique and count >= 1:
+			continue
+		if not unique and count >= 2:
+			continue
+		if forbid and _listed(avoid, id):
+			continue
+		ranked.append({"id": id, "err": absf(float(it["cost"]) - want)})
+	return ranked
+
+static func _listed(rows: Array, id: String) -> bool:
+	for row in rows:
+		if str(row) == id:
+			return true
+	return false
+
+## 这一单内部不重复，也不再用 avoid 里已经点过的物品。
+static func _items_distinct(built: Array, avoid: Array) -> bool:
+	var seen := {}
+	for id in built:
+		var key := str(id)
+		if seen.has(key) or _listed(avoid, key):
+			return false
+		seen[key] = true
+	return true
 
 static func _same(a: Array, b: Array) -> bool:
 	if a.size() != b.size():

@@ -3,6 +3,7 @@ extends RefCounted
 ## 「石纹手作」绘图核心：线条沸腾 + 贴纸描边 + 双色块面。
 ## 物品图标统一在 100×100 的局部坐标里绘制（中心为原点）。
 
+const TextureCache := preload("res://scripts/resources/TextureCache.gd")
 const INK := Color("3b2314")
 ## 货币入口用二级完整单件图标；棋盘实物按自己的等级显示数量。
 const AMBER_ICON := "amber_2"
@@ -245,8 +246,10 @@ static func vector_item(id: String) -> String:
 static func _vector_item(ci: CanvasItem, id: String, c: Vector2, size: float, rot: float) -> bool:
 	var path := vector_item(id)
 	if path == "": return false
+	var texture := MergeEventArt.texture(path)
+	TextureCache.hold(ci, texture)
 	ci.draw_set_transform(c, rot, Vector2.ONE)
-	ci.draw_texture_rect(MergeEventArt.texture(path), Rect2(-size / 2, -size / 2, size, size), false)
+	ci.draw_texture_rect(texture, Rect2(-size / 2, -size / 2, size, size), false)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	return true
 

@@ -40,15 +40,17 @@ func _dispatch(name: String, a: Dictionary):
 		"tap": return tap(i)
 		"stash": return stash(int(a.get("index", -1)))
 		"store":
-			if not valid_cell(i) or G.rules.orders.cooking(i) or G.inv.size() >= G.inv_cap or Data.type_of(G.rules.board.cell_id(i)) == "egen" or G.rules.board.is_merge_bubble(i) or Data.is_dish(G.rules.board.cell_id(i)): return {"error": TextCatalog.source("notice.reducer.15bb521bca65")}
+			if not valid_cell(i) or G.rules.orders.cooking(i) or G.rules.board.inv_filled() >= G.inv_cap or Data.type_of(G.rules.board.cell_id(i)) == "egen" or G.rules.board.is_merge_bubble(i) or Data.is_dish(G.rules.board.cell_id(i)): return {"error": TextCatalog.source("notice.reducer.15bb521bca65")}
 			if not G.rules.board.store_cell(i): return {"error": TextCatalog.source("notice.reducer.15bb521bca65")}
 			return {}
 		"inventory":
 			var index := int(a.get("index", -1))
 			var to := G.rules.board.find_empty_near(0)
-			if index < 0 or index >= G.inv.size() or to < 0: return {"error": TextCatalog.source("notice.reducer.4c562c5a325b")}
-			G.rules.board.take_inventory(index, to)
+			if index < 0 or index >= G.inv.size() or str(G.inv[index]) == "" or to < 0 or not G.rules.board.take_inventory(index, to): return {"error": TextCatalog.source("notice.reducer.4c562c5a325b")}
 			return {"to": to}
+		"inventory_move":
+			var kind := G.rules.board.move_inventory(int(a.get("from", -1)), int(a.get("to", -1)))
+			return {"kind": kind} if kind != "" else {"error": TextCatalog.source("notice.reducer.863a17402e36")}
 		"discard":
 			if not valid_cell(i) or G.rules.orders.cooking(i) or G.rules.board.is_merge_bubble(i) or Data.type_of(G.rules.board.cell_id(i)) in ["gen", "egen"] or Data.is_dish(G.rules.board.cell_id(i)): return {"error": TextCatalog.source("notice.reducer.fef1d59e3fde")}
 			settle_trash()
@@ -272,10 +274,15 @@ func tap(i: int) -> Dictionary:
 		if t == "gen" and not G.rules.progression.spend("energy", G.rules.board.gen_cost()): return {"error": TextCatalog.source("notice.reducer.2eea6537a85c")}
 		G.rules.board.gen_use(i)
 		var out := G.rules.onboarding.scripted_drop(id)
-		if out == "": out = G.rules.board.roll_produce(id)
+		var scripted := out != ""
+		if not scripted: out = G.rules.board.roll_produce(id)
 		if t == "gen": out = G.rules.board.boost_drop(out)
+		var lucky: Dictionary = G.rules.board.lucky_drop(out) if t == "gen" and not scripted else {}
+		if not lucky.is_empty(): out = str(lucky["id"])
 		G.rules.board.discover(out); G.board[to]["id"] = out
-		return {"kind": "produce", "id": out, "to": to}
+		var made := {"kind": "produce", "id": out, "to": to}
+		if not lucky.is_empty(): made["lucky"] = int(lucky["steps"])
+		return made
 	if t in ["energy", "shell", "amber", "sand"]:
 		var n := Data.value_of(id)
 		if n <= 0: return {"error": TextCatalog.source("notice.reducer.49704ea9064a")}

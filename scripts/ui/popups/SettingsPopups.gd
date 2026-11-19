@@ -43,7 +43,7 @@ static func settings() -> PopupBase:
 			b.pressed.connect(func(): G.main.toast(TextCatalog.source("ui.settingspopups.51cd5550f5d0")))
 	var terms := UI.lbl(p.box, TextCatalog.source("ui.settingspopups.0fbc4c4fa48a"), Rect2(260, r.position.y + 590, 200, 40), 24, Color("2f7f8a"))
 	UI.box(p.box, Rect2(290, r.position.y + 626, 140, 6), func(ci, sz): ci.draw_line(Vector2(0, 2), Vector2(sz.x, 2), Color("2f7f8a"), 2.0))
-	UI.lbl(p.box, TextCatalog.source("ui.settingspopups.8ccb268b39a4") % G.player_id, Rect2(r.position.x, r.position.y + 650, r.size.x, 34), 20, Color("8a7a66"))
+	UI.lbl(p.box, TextCatalog.fill(TextCatalog.source("ui.settingspopups.8ccb268b39a4"), G.player_id), Rect2(r.position.x, r.position.y + 650, r.size.x, 34), 20, Color("8a7a66"))
 	UI.lbl(p.box, "V0.1.0", Rect2(r.position.x, r.position.y + 688, r.size.x, 34), 22, Color("8a7a66"))
 	var cfg := UI.btn(p.box, Rect2(r.position.x + 36, r.position.y + 690, 180, 50), TextCatalog.source("ui.settingspopups.e4cc45cd9a21"), "teal", Callable(), 22)
 	cfg.title_font = false

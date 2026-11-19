@@ -4,7 +4,7 @@ extends RefCounted
 const PassPopupScript := preload("res://scripts/ui/PassPopup.gd")
 static func create(name: String, arg = null) -> PopupBase:
 	if name in ["album", "pack", "event", "card", "card_star_shop", "card_received"] and not G.rules.progression.feature_unlocked(Data.CARD_LEVEL):
-		G.main.toast(TextCatalog.source("notice.progressionrules.de74876a0a22") % Data.CARD_LEVEL)
+		G.main.toast(TextCatalog.fill(TextCatalog.source("notice.progressionrules.de74876a0a22"), Data.CARD_LEVEL))
 		return null
 	var p: PopupBase
 	match name:

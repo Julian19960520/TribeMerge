@@ -8,7 +8,7 @@ func refresh() -> void:
 		var lv: Dictionary = data["levels"][i]
 		var g := Ui.group(box)
 		var head := Ui.row(g)
-		Ui.lbl(head, TextCatalog.source("developer.pass_editor.1445f628f6cc") % (i + 1), 72)
+		Ui.lbl(head, TextCatalog.fill(TextCatalog.source("developer.pass_editor.1445f628f6cc"), (i + 1)), 72)
 		Ui.lbl(head, TextCatalog.source("developer.pass_editor.10939f548645"), 40)
 		var need := Ui.spin(head, int(lv.get("need", 8)), 1, 9999, 90)
 		need.value_changed.connect(_set_num.bind(lv, "need"))
@@ -63,9 +63,9 @@ func validate() -> String:
 		i += 1
 		var need := int(lv.get("need", 0))
 		if need < 1:
-			return TextCatalog.source("developer.pass_editor.3e4838ee6c56") % i
+			return TextCatalog.fill(TextCatalog.source("developer.pass_editor.3e4838ee6c56"), i)
 		if need <= prev:
-			return TextCatalog.source("developer.pass_editor.e89040115048") % i
+			return TextCatalog.fill(TextCatalog.source("developer.pass_editor.e89040115048"), i)
 		prev = need
 		for key in ["free", "prem"]:
 			for rw in lv[key]:

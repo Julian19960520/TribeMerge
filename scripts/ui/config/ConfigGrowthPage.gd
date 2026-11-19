@@ -172,7 +172,7 @@ func _builds() -> float:
 		editor._line(editor._root, Rect2(100, y + 80, 160, 48), str(b.get("line", "")), func(t):
 			b["line"] = t.strip_edges()
 			editor._touch(Files.BUILDS))
-		editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.e62b941b58da") % Data.build_unlock(b), 280, y + 84, 400, 20)
+		editor._h(editor._root, TextCatalog.fill(TextCatalog.source("developer.configgrowthpage.e62b941b58da"), Data.build_unlock(b)), 280, y + 84, 400, 20)
 		var sy = y + 148.0
 		for k in parts.size():
 			var part: Dictionary = parts[k]
@@ -283,7 +283,7 @@ func _pass() -> float:
 		var lv: Dictionary = levels[i]
 		var idx = i
 		var row = lv
-		editor._h(editor._root, TextCatalog.source("developer.pass_editor.1445f628f6cc") % (i + 1), 24, y + 4, 150, 26)
+		editor._h(editor._root, TextCatalog.fill(TextCatalog.source("developer.pass_editor.1445f628f6cc"), (i + 1)), 24, y + 4, 150, 26)
 		editor._stepper(editor._root, 180, y, TextCatalog.source("developer.pass_editor.10939f548645"), int(row.get("need", 8)), 1, 9999, func(n):
 			row["need"] = n
 			editor._touch(Files.PASS))
@@ -452,7 +452,7 @@ func _order_capacity_rules(d: Dictionary, y: float) -> float:
 	y += 68
 	for i in caps.size():
 		var index = i
-		editor._h(editor._root, TextCatalog.source("developer.configgrowthpage.b950275c180b") % (i + 1), 24, y, 280, 22)
+		editor._h(editor._root, TextCatalog.fill(TextCatalog.source("developer.configgrowthpage.b950275c180b"), (i + 1)), 24, y, 280, 22)
 		editor._num_field(editor._root, Rect2(320, y, 150, 48), int(caps[i]), 1, 99, func(n):
 			caps[index] = n
 			editor._touch(Files.RULES))

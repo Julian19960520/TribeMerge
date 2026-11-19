@@ -179,7 +179,7 @@ func _open_story_item(level: int, cb: Callable, current = null) -> void:
 		if _editor_product_open(level, Data.chain(str(e.get("id", "")))):
 			entries.append(e)
 	if entries.is_empty():
-		G.main.toast(TextCatalog.source("developer.configstorypage.c5b2065f7fd9") % level)
+		G.main.toast(TextCatalog.fill(TextCatalog.source("developer.configstorypage.c5b2065f7fd9"), level))
 		return
 	editor._chooser.open(TextCatalog.source("developer.cfgedit.662f204e9e87"), entries, func(id):
 		if cb.is_valid():
@@ -190,7 +190,7 @@ func _assign_story_item(id: String, arr: Array, i: int, level: int) -> void:
 	if id == "":
 		return
 	if not _editor_product_open(level, Data.chain(id)):
-		G.main.toast(TextCatalog.source("developer.configstorypage.05cc9fc8982b") % [level, Data.name_of(id)])
+		G.main.toast(TextCatalog.fill(TextCatalog.source("developer.configstorypage.05cc9fc8982b"), [level, Data.name_of(id)]))
 		return
 	if i >= 0 and i < arr.size():
 		arr[i] = id
@@ -568,7 +568,7 @@ func _who_name(i: int) -> String:
 	var people: Array = editor._pages[Files.PEOPLE]
 	if i >= 0 and i < people.size():
 		return str(people[i])
-	return TextCatalog.source("developer.configstorypage.3b2f95b369dc") % i
+	return TextCatalog.fill(TextCatalog.source("developer.configstorypage.3b2f95b369dc"), i)
 
 func _who_short(i: int) -> String:
 	var name = _who_name(i)

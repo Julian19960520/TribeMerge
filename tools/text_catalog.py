@@ -1,13 +1,14 @@
-"""Maintain the single editable client text catalogue and its source references.
+"""Maintain the client text catalogue.
 
-Run --sync after adding text or moving references, and --check before publishing.
-Chinese UI copy belongs in localization/texts.json; comments, resource paths,
-frozen migration fixtures and offline art authoring are not runtime copy.
+Editable copy is split by feature under localization/texts/<group>/<feature>.json.
+Each entry is a key plus its languages. localization/texts.json lists those files.
+Run --sync after adding text, and --check before publishing.
+Comments, resource paths, frozen migration fixtures and offline art authoring
+are not runtime copy.
 """
 from __future__ import annotations
 import argparse
 import ast
-from collections import Counter
 from dataclasses import dataclass
 import hashlib
 import json
@@ -16,10 +17,9 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "localization/texts.json"
+PARTS = CATALOG.parent / "texts"
 CJK = re.compile(r"[\u3400-\u9fff]")
 REF = re.compile(r"^§([a-z0-9_.]+)§$")
-CALL = re.compile(r'\bTextCatalog\.(?:source|text)\("([a-z0-9_.]+)"\)')
-PRINTF = re.compile(r"%(?:[-+ #0]*\d*(?:\.\d+)?[sdifoxXc]|%)")
 TEXT_FIELDS = {"name", "title", "description", "desc", "text", "say", "badge", "entry_title", "cards", "quotes", "names", "people", "subtitle", "label", "caption"}
 TEXT_CALLS = {"lbl": 1, "title": 1, "btn": 2, "toast": 0, "section": 1, "draw_string": 2, "draw_string_outline": 2, "draw_multiline_string": 2, "draw_multiline_string_outline": 2, "get_string_size": 0, "get_multiline_string_size": 0, "resource_text": 0, "resource_rich": 0}
 DISPLAY_CALLS = {key: value for key, value in TEXT_CALLS.items() if key.startswith(("draw_", "get_"))}
@@ -252,10 +252,6 @@ def const_spans(source: str):
         yield token, end
 
 
-def format_signature(value: str) -> list[str]:
-    return [m.group()[-1].lower().replace("i", "d") for m in PRINTF.finditer(value) if m.group() != "%%"]
-
-
 def server_strings(source: str):
     offsets = [0]
     for line in source.splitlines(keepends=True): offsets.append(offsets[-1] + len(line))
@@ -275,27 +271,152 @@ def server_strings(source: str):
         if argument >= 0 and len(node.args) > argument: yield from literals(node.args[argument])
 
 
-def reference_scope(ref: str) -> str:
-    if ref.startswith("data/story.json#"): return "legacy_story"
-    if ref.startswith(("addons/", "scripts/ui/config/", "scripts/ui/CfgEdit.gd:", "scripts/ui/OrderCurvePad.gd:", "scripts/config/")): return "developer"
-    return "runtime"
+def join_key(path: Path, part: dict, local: str) -> str:
+    feature = str(part.get("feature") or path.stem)
+    prefix = f"{path.parent.name}.{feature}."
+    return local if local.startswith(prefix) else prefix + local
+
+
+def own_key(category_name: str, feature: str, key: str) -> str:
+    prefix = f"{category_name}.{feature}."
+    if not key.startswith(prefix) or key == prefix:
+        raise SystemExit("text key is outside its feature file: " + key)
+    return key[len(prefix):]
+
+
+def feature_of(key: str) -> tuple[str, str]:
+    category_name, feature, _identity = key.split(".", 2)
+    if not re.fullmatch(r"[a-z0-9_]+", category_name) or not re.fullmatch(r"[a-z0-9_]+", feature):
+        raise SystemExit("text key is not a feature file name: " + key)
+    return category_name, feature
+
+
+def part_paths(document: dict) -> list[Path]:
+    paths: list[Path] = []
+    seen: set[Path] = set()
+    for relative in document.get("files", []):
+        path = (CATALOG.parent / relative).resolve()
+        if path not in seen:
+            paths.append(path)
+            seen.add(path)
+    if PARTS.exists():
+        for path in sorted(PARTS.rglob("*.json")):
+            resolved = path.resolve()
+            if resolved not in seen:
+                paths.append(resolved)
+                seen.add(resolved)
+    return paths
+
+
+def load_document() -> dict:
+    document = json.loads(CATALOG.read_text(encoding="utf-8")) if CATALOG.exists() else {"schema": 1, "default_locale": "zh_CN", "locales": ["zh_CN"], "entries": {}}
+    paths = part_paths(document)
+    if not paths:
+        document.setdefault("entries", {})
+        return document
+    entries: dict = {}
+    for path in paths:
+        part = json.loads(path.read_text(encoding="utf-8"))
+        for key, entry in part.get("entries", {}).items():
+            full = join_key(path, part, key)
+            if full in entries:
+                raise SystemExit("duplicate text key " + full)
+            category_name, feature = feature_of(full)
+            expected = PARTS / category_name / f"{feature}.json"
+            if path.resolve() != expected.resolve():
+                raise SystemExit(f"{full} belongs in {expected.relative_to(ROOT).as_posix()}, not {path.relative_to(ROOT).as_posix()}")
+            entries[full] = entry
+    document["entries"] = entries
+    return document
+
+
+def copy_of(entry: dict) -> str:
+    value = entry.get("zh_CN", "")
+    return value if isinstance(value, str) else ""
+
+
+def stored_entry(entry: dict) -> dict:
+    stored = {"zh_CN": entry.get("zh_CN", "")}
+    for locale, value in entry.items():
+        if locale != "zh_CN" and isinstance(value, str) and value:
+            stored[locale] = value
+    return stored
+
+
+def onboarding_stage(key: str) -> int:
+    if not hasattr(onboarding_stage, "order"):
+        order = {}
+        document = json.loads((ROOT / "data/onboarding.json").read_text(encoding="utf-8"))
+        for index, stage in enumerate(document.get("stages", [])):
+            match = REF.fullmatch(str(stage.get("text", "")))
+            if match:
+                order.setdefault(match.group(1), index)
+        onboarding_stage.order = order
+    return onboarding_stage.order.get(key, 10**9)
+
+
+def ordered_entries(category_name: str, feature: str, entries: dict) -> dict:
+    if (category_name, feature) != ("content", "onboarding"):
+        ordered = sorted(entries.items())
+    else:
+        ordered = sorted(entries.items(), key=lambda item: (onboarding_stage(item[0]), item[0]))
+    return {own_key(category_name, feature, key): stored_entry(entry) for key, entry in ordered}
+
+
+def save_document(document: dict) -> None:
+    grouped: dict[tuple[str, str], dict] = {}
+    for key, entry in document["entries"].items():
+        grouped.setdefault(feature_of(key), {})[key] = entry
+    files: list[str] = []
+    used: set[Path] = set()
+    for (category_name, feature), entries in sorted(grouped.items()):
+        relative = f"texts/{category_name}/{feature}.json"
+        path = CATALOG.parent / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        body = {"feature": feature, "entries": ordered_entries(category_name, feature, entries)}
+        path.write_text(json.dumps(body, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        files.append(relative)
+        used.add(path.resolve())
+    if PARTS.exists():
+        for path in PARTS.rglob("*.json"):
+            if path.resolve() not in used:
+                path.unlink()
+        for path in sorted((item for item in PARTS.rglob("*") if item.is_dir()), reverse=True):
+            if not any(path.iterdir()):
+                path.rmdir()
+    locales = ["zh_CN"]
+    for grouped_entries in grouped.values():
+        for entry in grouped_entries.values():
+            for locale, value in stored_entry(entry).items():
+                if locale not in locales and value:
+                    locales.append(locale)
+    document["locales"] = locales
+    document["stats"] = {"unique_texts": len(document["entries"]), "translated": {locale: sum(bool(stored_entry(entry).get(locale)) for entry in document["entries"].values()) for locale in locales}}
+    manifest = {key: document[key] for key in ("schema", "default_locale", "locales", "stats") if key in document}
+    manifest["files"] = files
+    CATALOG.parent.mkdir(exist_ok=True)
+    CATALOG.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def maintain(sync: bool) -> dict:
-    document = json.loads(CATALOG.read_text()) if CATALOG.exists() else {"schema": 1, "default_locale": "zh_CN", "locales": ["zh_CN", "en_US"], "entries": {}}
+    document = load_document()
     entries = document["entries"]
-    by_source = {entry["source"]: key for key, entry in entries.items()}
+    by_copy = {}
+    for key, entry in entries.items():
+        text = copy_of(entry)
+        if text and text not in by_copy:
+            by_copy[text] = key
     errors = []
     def register(value, path):
-        if value in by_source: return by_source[value]
+        if value in by_copy: return by_copy[value]
         group = category(path)
         stem = re.sub(r"[^a-z0-9]+", "_", path.stem.lower()).strip("_")
         key = group + "." + stem + "." + hashlib.sha256(value.encode()).hexdigest()[:12]
-        entries[key] = {"category": group, "source": value, "zh_CN": value, "en_US": "", "refs": []}
-        by_source[value] = key
+        entries[key] = {"zh_CN": value}
+        by_copy[value] = key
         return key
     for path in script_paths():
-        source = path.read_text(); changes = []; changed = []
+        source = path.read_text(encoding="utf-8"); changes = []; changed = []
         for token in gd_tokens(source):
             if not translatable(token, source): continue
             if not sync:
@@ -308,18 +429,18 @@ def maintain(sync: bool) -> dict:
                 prefix = source[source.rfind("\n", 0, token.start) + 1:token.start]
                 changes.append((token.start, token.end, "var" if prefix.strip() == "" and prefix else "static var"))
         updated = bind_displays(path, apply(source, changes), sync, errors)
-        if updated != source: path.write_text(updated)
+        if updated != source: path.write_text(updated, encoding="utf-8")
     for path in json_paths():
-        source = path.read_text(); changes = []
+        source = path.read_text(encoding="utf-8"); changes = []
         for pointer, value, start, end in json_strings(source):
             if not json_copy(pointer, value): continue
             if not sync:
                 errors.append(f"{path.relative_to(ROOT)}#/{'/'.join(map(str, pointer))}: unmanaged text {value[:50]!r}"); continue
             key = register(value, path)
             changes.append((start, end, json.dumps("§" + key + "§", ensure_ascii=False)))
-        if changes: path.write_text(apply(source, changes))
+        if changes: path.write_text(apply(source, changes), encoding="utf-8")
     for path in sorted((ROOT / "server/app").glob("*.py")):
-        source = path.read_text(); changes = []
+        source = path.read_text(encoding="utf-8"); changes = []
         for value, start, end in server_strings(source):
             if not sync:
                 errors.append(f"{path.relative_to(ROOT)}: unmanaged server copy {value!r}"); continue
@@ -334,61 +455,16 @@ def maintain(sync: bool) -> dict:
                 lines = source.splitlines(keepends=True)
                 lines.insert(at_line, "from .texts import source as text_source\n")
                 source = "".join(lines)
-            path.write_text(source)
-    actual = {key: [] for key in entries}
-    for path in script_paths():
-        source = path.read_text()
-        for match in CALL.finditer(source):
-            key = match.group(1)
-            ref = f"{path.relative_to(ROOT).as_posix()}:{source.count(chr(10), 0, match.start()) + 1}"
-            if key not in actual: errors.append(ref + ": missing catalogue key " + key)
-            else: actual[key].append(ref)
-    for path in json_paths():
-        for pointer, value, _, _ in json_strings(path.read_text()):
-            if not (match := REF.fullmatch(value)): continue
-            key = match.group(1)
-            ref = path.relative_to(ROOT).as_posix() + "#/" + "/".join(str(p).replace("~", "~0").replace("/", "~1") for p in pointer)
-            if key not in actual: errors.append(ref + ": missing catalogue key " + key)
-            else: actual[key].append(ref)
-    web = ROOT / "tools/export_web.py"
-    for match in re.finditer(r'web_text\("([a-z0-9_.]+)"\)', web.read_text()):
-        key = match.group(1)
-        if key not in actual: errors.append("tools/export_web.py: missing catalogue key " + key)
-        else: actual[key].append("tools/export_web.py:" + str(web.read_text().count(chr(10), 0, match.start()) + 1))
-    for path in sorted((ROOT / "server/app").glob("*.py")):
-        source = path.read_text()
-        for match in re.finditer(r'text_source\("([a-z0-9_.]+)"\)', source):
-            key = match.group(1)
-            ref = path.relative_to(ROOT).as_posix() + ":" + str(source.count(chr(10), 0, match.start()) + 1)
-            if key not in actual: errors.append(ref + ": missing catalogue key " + key)
-            else: actual[key].append(ref)
-    counts = Counter(); scopes = Counter(); active = 0; references = 0
+            path.write_text(source, encoding="utf-8")
     for key, entry in entries.items():
-        if key.rsplit(".", 1)[-1] != hashlib.sha256(entry["source"].encode()).hexdigest()[:12]: errors.append(key + ": source identity changed; edit locale fields instead of source")
-        expected = format_signature(entry["source"])
+        if copy_of(entry) == "": errors.append(key + ": missing zh_CN")
         for locale in document["locales"]:
-            value = entry.get(locale, "")
-            if not isinstance(value, str): errors.append(key + ": invalid locale value " + locale)
-            elif value and format_signature(value) != expected: errors.append(key + ": placeholder mismatch in " + locale)
-        refs = sorted(set(actual[key]))
-        used_scopes = {reference_scope(ref) for ref in refs}
-        scope = "runtime" if "runtime" in used_scopes else ("developer" if "developer" in used_scopes else "legacy_story")
-        if sync:
-            entry["refs"] = refs
-            entry["scope"] = scope
-            entry["placeholders"] = expected
-        elif entry.get("refs") != refs: errors.append(key + ": references changed; run --sync")
-        elif entry.get("scope") != scope or entry.get("placeholders") != expected: errors.append(key + ": metadata changed; run --sync")
-        if refs:
-            active += 1; references += len(refs); counts[entry["category"]] += 1; scopes[scope] += 1
-    stats = {"unique_texts": active, "references": references, "scopes": dict(sorted(scopes.items())), "categories": dict(sorted(counts.items())), "translated": {locale: sum(bool(entry.get(locale)) for entry in entries.values() if actual[by_source[entry['source']]]) for locale in document["locales"]}}
+            if not isinstance(entry.get(locale, ""), str): errors.append(key + ": invalid locale value " + locale)
+    stats = {"unique_texts": len(entries), "translated": {locale: sum(bool(entry.get(locale)) for entry in entries.values()) for locale in document["locales"]}}
     if sync:
         document["stats"] = stats
-        document["entries"] = dict(sorted(((key, entry) for key, entry in entries.items() if actual[key]), key=lambda pair: (pair[1]["category"], pair[0])))
-        ordered = {key: document[key] for key in ("schema", "default_locale", "locales", "stats", "entries")}
-        ordered.update({key: value for key, value in document.items() if key not in ordered})
-        CATALOG.parent.mkdir(exist_ok=True)
-        CATALOG.write_text(json.dumps(ordered, ensure_ascii=False, indent=2) + "\n")
+        document["entries"] = dict(sorted(entries.items()))
+        save_document(document)
     elif document.get("stats") != stats: errors.append("Catalogue statistics changed; run --sync")
     if errors: raise SystemExit("\n".join(errors[:80]))
     return stats

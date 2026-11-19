@@ -1,0 +1,20 @@
+{
+  "feature": "store_editor",
+  "entries": {
+    "780c5fd5b105": {
+      "zh_CN": "库存"
+    },
+    "7c89d6ebe1f9": {
+      "zh_CN": "物品"
+    },
+    "bb3c6134b70f": {
+      "zh_CN": "添加商品"
+    },
+    "d9852d9fd665": {
+      "zh_CN": "有商品缺少物品 id"
+    },
+    "f4aa3f403dd0": {
+      "zh_CN": "集市热卖。物品 id 用链名_等级，例如 fruit_3。价格是琥珀。"
+    }
+  }
+}

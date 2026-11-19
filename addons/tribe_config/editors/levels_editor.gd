@@ -38,13 +38,13 @@ func validate() -> String:
 		if n < 1:
 			return TextCatalog.source("developer.levels_editor.30bb5702b31a")
 		if seen.has(n):
-			return TextCatalog.source("developer.levels_editor.c5259ed5a980") % n
+			return TextCatalog.fill(TextCatalog.source("developer.levels_editor.c5259ed5a980"), n)
 		seen[n] = true
 		for rw in lv.get("rewards", []):
 			if str(rw[0]).strip_edges() == "":
-				return TextCatalog.source("developer.levels_editor.3efc42eb5606") % n
+				return TextCatalog.fill(TextCatalog.source("developer.levels_editor.3efc42eb5606"), n)
 			if int(rw[1]) < 1:
-				return TextCatalog.source("developer.levels_editor.7944311bf46c") % n
+				return TextCatalog.fill(TextCatalog.source("developer.levels_editor.7944311bf46c"), n)
 			if n < Data.CARD_LEVEL and Data.type_of(str(rw[0])) == "pack":
-				return TextCatalog.source("developer.levels_editor.877270788d17") % [Data.CARD_LEVEL, n]
+				return TextCatalog.fill(TextCatalog.source("developer.levels_editor.877270788d17"), [Data.CARD_LEVEL, n])
 	return ""

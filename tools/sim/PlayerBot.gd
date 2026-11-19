@@ -155,7 +155,7 @@ func snap() -> Dictionary:
 	var c := MergeEvent.current()
 	var activity := MergeEvent.state(c) if MergeEvent.available(c) else {}
 	if not activity.is_empty(): moon = MergeEvent.progress(c, activity)
-	var state: Dictionary={"level": G.level, "xp": G.xp, "energy": G.energy, "coins": G.shells, "gems": G.amber, "empty": G.rules.board.empty_count(), "storage": G.inv.size(), "stash": G.stash.size(), "parts": parts, "moon": moon, "cards": G.rules.progression.cards_total(), "duel_wins": int(DuelRace.state()["wins"]), "orders": G.orders.size()}
+	var state: Dictionary={"level": G.level, "xp": G.xp, "energy": G.energy, "coins": G.shells, "gems": G.amber, "empty": G.rules.board.empty_count(), "storage": G.rules.board.inv_filled(), "stash": G.stash.size(), "parts": parts, "moon": moon, "cards": G.rules.progression.cards_total(), "duel_wins": int(DuelRace.state()["wins"]), "orders": G.orders.size()}
 	state.merge(production_line_totals())
 	state.merge(production_line_levels())
 	state.merge({"sand":G.rush,"amber_earned":int(resource_earned.get("amber",0)),"sand_earned":int(resource_earned.get("sand",0))})
@@ -764,6 +764,7 @@ func retrieve() -> bool:
 	if G.rules.board.empty_count()<1: return false
 	for j in G.inv.size():
 		var id := str(G.inv[j])
+		if id == "": continue
 		var spare := 0
 		for cell in G.board.size():
 			if free_item(cell) and G.rules.board.cell_id(cell)==id: spare+=1
@@ -905,11 +906,11 @@ func make_room() -> bool:
 		if kind=="item" and not useful(id) and Data.lv(id)<=int(cfg.get("delete_max_level",10)) and value<worst_value:
 			worst=i; worst_value=value
 	if best_store>=0 and bool(cfg.get("use_storage",true)):
-		if G.inv.size()>=G.inv_cap and bool(cfg.get("expand_storage",false)) and G.inv_cap<int(cfg.get("max_storage",20)) and G.amber>=G.rules.progression.storage_price():
+		if G.rules.board.inv_filled()>=G.inv_cap and bool(cfg.get("expand_storage",false)) and G.inv_cap<int(cfg.get("max_storage",20)) and G.amber>=G.rules.progression.storage_price():
 			command("expand")
 			record("storage","扩建储物洞","保护高价值物品，使用配置允许的琥珀预算")
 			return true
-		if G.inv.size()<G.inv_cap:
+		if G.rules.board.inv_filled()<G.inv_cap:
 			var id: String=G.rules.board.cell_id(best_store)
 			# Active generators carry cooldown state; leave them on board.
 			if not G.board[best_store].has("gm"):

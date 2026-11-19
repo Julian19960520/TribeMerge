@@ -65,7 +65,7 @@ static func act(action: String, milestone := 0) -> Dictionary:
 	return result
 
 static func local_action(action: String, milestone:=0) -> Dictionary:
-	if not unlocked(): return {"error":TextCatalog.source("notice.duelrace.2821c8ca32bd")%int(config()["unlock_level"])}
+	if not unlocked(): return {"error":TextCatalog.fill(TextCatalog.source("notice.duelrace.2821c8ca32bd"), int(config()["unlock_level"]))}
 	# 存档里还没有活动状态时先建好，免得开局写进临时字典丢失。
 	if G.duel_race.is_empty(): G.duel_race={"wins": 0, "rounds": 0, "claimed": [], "match": {}}
 	tick()

@@ -40,7 +40,7 @@ func _ready() -> void:
 		Sprites.draw(ci, "ev_ufo_star", Rect2(Vector2.ZERO, sz)))
 	star.rotation = -0.16
 	star.pivot_offset = star.size * 0.5
-	UI.lbl(star, TextCatalog.source("ui.ufopopup.cf0b0f85fbc9") % off, Rect2(0, 30, 128, 52), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
+	UI.lbl(star, TextCatalog.fill(TextCatalog.source("ui.ufopopup.cf0b0f85fbc9"), off), Rect2(0, 30, 128, 52), 40, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 	UI.lbl(star, TextCatalog.source("ui.ufopopup.e1f7a0a1daa2"), Rect2(0, 78, 128, 24), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
 	# 倒计时
 	UI.box(box, Rect2(482, 398, 158, 48), func(ci, sz):

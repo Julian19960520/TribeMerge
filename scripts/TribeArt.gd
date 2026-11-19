@@ -76,6 +76,50 @@ static func part(ci: CanvasItem, kind: String, c: Vector2, s: float = 1.0, squas
 	Sprites.draw(ci, "tribe_" + k + variant, part_box(k, bs), mod)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+## 建到一半的部件：frac（0..1）是已建比例。底下已建的那截是真图，上面露出淡淡的轮廓，外面搭着木脚手架；
+## frac 越大真图越高、脚手架越少，建满就是完整的部件。
+static func part_stage(ci: CanvasItem, kind: String, c: Vector2, s: float, frac: float, variant: String = "", squash: Vector2 = Vector2.ONE) -> void:
+	if frac >= 0.999:
+		part(ci, kind, c, s, squash, variant)
+		return
+	var k := kind if has_art(kind) else "rubble"
+	frac = clampf(frac, 0.0, 1.0)
+	# 还没建的部分：淡色轮廓
+	part(ci, k, c, s, squash, "_flat", Color(0.42, 0.3, 0.18, 0.22))
+	var bs: float = VAR_SCALE.get(variant, 1.0)
+	var box := part_box(k, bs)
+	ci.draw_set_transform(c, 0.0, squash * (s / bs))
+	# 已建的部分：内容框下面 frac 这一截（底部留一点地面，至少露出一截）
+	var keep := 0.12 + 0.88 * frac
+	Sprites.draw_bottom(ci, "tribe_" + k + variant, box, keep)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_scaffold(ci, c, s, k, keep)
+
+## 木脚手架：两根立柱 + 已建高度处一根横梁 + 斜撑，用部件的实际宽高定位。
+static func _scaffold(ci: CanvasItem, c: Vector2, s: float, kind: String, keep: float) -> void:
+	var h := float(_HEIGHT.get(kind, 80)) * s
+	var w := float(_WIDTH.get(kind, 100)) * s
+	var lw := maxf(2.0, 4.0 * s)
+	var x0 := c.x - w * 0.46
+	var x1 := c.x + w * 0.46
+	var top := c.y - h * 1.04
+	var beam := c.y - h * keep
+	var wood := Color("b97a3f")
+	var ink := Color("3a2414")
+	var lines := [
+		[Vector2(x0, c.y + 2 * s), Vector2(x0 - 3 * s, top)],
+		[Vector2(x1, c.y + 2 * s), Vector2(x1 + 3 * s, top)],
+		[Vector2(x0 - 8 * s, beam), Vector2(x1 + 8 * s, beam)],
+		[Vector2(x0, c.y - 2 * s), Vector2(lerpf(x0, x1, 0.45), beam)],
+	]
+	for seg in lines:
+		ci.draw_line(seg[0], seg[1], ink, lw + 3.0 * maxf(s, 0.6), true)
+	for seg in lines:
+		ci.draw_line(seg[0], seg[1], wood, lw, true)
+	# 绑绳
+	for x in [x0, x1]:
+		ci.draw_circle(Vector2(x, beam), lw * 0.9, Color("e2b950"))
+
 ## 部件图的内容框（生成时的像素，相对落地点）
 static func part_box(kind: String, bs: float) -> Rect2:
 	var b: Array = BOUNDS.get(kind, BOUNDS["rubble"])
@@ -84,14 +128,17 @@ static func part_box(kind: String, bs: float) -> Rect2:
 	return Rect2(tl, br - tl)
 
 ## 弹窗卡片里的图标：自动缩放到 box 里，落地点在底部偏上
-static func icon(ci: CanvasItem, kind: String, r: Rect2, dim := false) -> void:
+## frac < 1 时画建到一半的样子（见 part_stage）
+static func icon(ci: CanvasItem, kind: String, r: Rect2, dim := false, frac := 1.0, max_s := 1.5) -> void:
 	var h := float(_HEIGHT.get(kind, 80))
 	var w := float(_WIDTH.get(kind, 100))
 	var s := minf(r.size.y * 0.8 / h, r.size.x * 0.86 / w)
-	s = minf(s, 1.5)
+	s = minf(s, max_s)
 	var c := Vector2(r.get_center().x, r.end.y - r.size.y * 0.1)
 	if dim:
 		part(ci, kind, c, s, Vector2.ONE, "_flat", Color("8f7a5e"))
+	elif frac < 0.999:
+		part_stage(ci, kind, c, s, frac, "_icon")
 	else:
 		part(ci, kind, c, s, Vector2.ONE, "_icon")
 
@@ -119,14 +166,28 @@ static func village(ci: CanvasItem, builds: Dictionary, level: int, hide: Dictio
 			if hide.has(id) and int(hide[id]) == k:
 				continue
 			order.append(k)
-		order.sort_custom(func(a, c): return part_at(id, a).y < part_at(id, c).y)
-		# 下一件的地基：虚线圈 + 木桩
+		# 正在建的部件（当前这件和提前开工的下一件）按进度画半成品；当前这件还没动工就画地基
+		var staged: Array = []
 		if open and st < parts.size() and not (hide.has(id) and int(hide[id]) == st):
-			var gp := part_at(id, st)
-			Sprites.draw(ci, "tribe_found_%d" % (st % FOUND_N), Rect2(gp + FOUND_BOX.position, FOUND_BOX.size))
+			if _steps_of(builds, "_steps", id) > 0: staged.append(st)
+			else:
+				var gp := part_at(id, st)
+				Sprites.draw(ci, "tribe_found_%d" % (st % FOUND_N), Rect2(gp + FOUND_BOX.position, FOUND_BOX.size))
+		if open and st + 1 < parts.size() and _steps_of(builds, "_ahead", id) > 0 and not (hide.has(id) and int(hide[id]) == st + 1):
+			staged.append(st + 1)
+		order.append_array(staged)
+		order.sort_custom(func(a, c): return part_at(id, a).y < part_at(id, c).y)
 		for k in order:
 			var pid := str(parts[k].get("id", "")) if parts[k] is Dictionary else ""
-			part(ci, pid, part_at(id, k), VS)
+			if k < st:
+				part(ci, pid, part_at(id, k), VS)
+			else:
+				var done := _steps_of(builds, "_steps" if k == st else "_ahead", id)
+				part_stage(ci, pid, part_at(id, k), VS, float(done) / float(Data.part_steps(parts[k])))
+
+static func _steps_of(builds: Dictionary, key: String, id: String) -> int:
+	var d = builds.get(key, {})
+	return int(d.get(id, 0)) if d is Dictionary else 0
 
 ## 地块能不能建（游戏里看建造规则：产线开放且前一块建完；没有游戏状态时只看等级）
 static func lot_open(id: String, level: int) -> bool:

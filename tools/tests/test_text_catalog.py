@@ -44,9 +44,4 @@ class TextCatalogueTests(unittest.TestCase):
         source = '# ApiError(400, "id", "注释")\nraise ApiError(400, "id", "%s 登录" % provider)\nraise ApiError(400, "id", text_source("notice.key"))'
         self.assertEqual([value for value, *_ in catalog.server_strings(source)], ["%s 登录"])
 
-    def test_placeholder_types_order_and_percent_escape(self):
-        self.assertEqual(catalog.format_signature("%s / %02d / %.1f%%"), ["s", "d", "f"])
-        self.assertNotEqual(catalog.format_signature("%s %d"), catalog.format_signature("%d %s"))
-
-
 if __name__ == "__main__": unittest.main()
