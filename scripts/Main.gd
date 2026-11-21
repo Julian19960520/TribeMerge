@@ -22,6 +22,9 @@ var _fps_lbl: Label
 ## 全屏领奖一次只开一张，后面的排队
 var _rw_q: Array = []
 var _rw_showing := false
+## Swallows every tap while a tribe part is being built; the reward popup that
+## follows is modal on its own, so nothing else is clickable until it is claimed.
+var _build_block: Control
 var _fps_shown := -1
 
 func _ready() -> void:
@@ -49,6 +52,11 @@ func _ready() -> void:
 	popup_layer.topbar = topbar
 	pin = _layer()
 	fx_layer = _layer()
+	_build_block = Control.new()
+	_build_block.size = size
+	_build_block.mouse_filter = MOUSE_FILTER_STOP
+	_build_block.visible = false
+	add_child(_build_block)
 	_curtain = ColorRect.new()
 	_curtain.size = size
 	_curtain.color = Color(0.23, 0.14, 0.08, 0.0)
@@ -99,6 +107,8 @@ func _add_fps() -> void:
 	_fps_lbl = UI.lbl(host, TextCatalog.source("ui.main.e0d2fb2554ca"), Rect2(box.position.x + 3, box.position.y + 3, box.size.x - 6, box.size.y - 6), 20, Color(1, 1, 1, 0.55))
 
 func _process(_dt: float) -> void:
+	if _build_block != null:
+		_build_block.visible = home != null and is_instance_valid(home) and home.is_building()
 	if _fps_lbl == null or not _fps_lbl.visible:
 		return
 	var fps := Engine.get_frames_per_second()

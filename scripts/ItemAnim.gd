@@ -10,14 +10,18 @@ var frame_sec := 0.125
 var tex_px := 256
 var bake_size := 160.0
 var _ids: Dictionary = {}
+var _ai: Dictionary = {}
 var _cache = TextureCache.new(CACHE_BYTES)
 var _missing: Dictionary = {}
 var _enabled := false
+## 生图图标在 256 画布里的主体边长，用来跟现有物品的显示尺寸对齐
+const AI_FIT := 168.0
 
 func _ready() -> void:
 	_enabled = VisualRuntime.enabled() and not "--bake-items" in OS.get_cmdline_user_args()
 	if not _enabled:
 		return
+	_load_ai()
 	var data = JSON.parse_string(FileAccess.get_file_as_string("res://assets/items/anim.json"))
 	if not data is Dictionary:
 		return
@@ -31,6 +35,32 @@ func _ready() -> void:
 
 func has_animation(id: String) -> bool:
 	return _ids.has(id)
+
+func has_ai(id: String) -> bool:
+	return _ai.has(id)
+
+## 模型生成的合成物图标。文件在 assets/items/ai/{id}.png，不进烘焙，重画物品图时不会被清掉。
+func blit_ai(ci: CanvasItem, id: String, c: Vector2, size: float, rot: float) -> bool:
+	if not _enabled or not _ai.has(id):
+		return false
+	var texture: Texture2D = _cache.fetch(str(_ai[id]))
+	if texture == null:
+		return false
+	TextureCache.hold(ci, texture)
+	var show := float(tex_px) * (size / AI_FIT)
+	ci.draw_set_transform(c, rot, Vector2.ONE)
+	ci.draw_texture_rect(texture, Rect2(-show * 0.5, -show * 0.5, show, show), false)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	return true
+
+func _load_ai() -> void:
+	_ai.clear()
+	var dir := DirAccess.open("res://assets/items/ai")
+	if dir == null:
+		return
+	for name in dir.get_files():
+		if str(name).ends_with(".png"):
+			_ai[str(name).trim_suffix(".png")] = "res://assets/items/ai/%s" % name
 
 func frame_texture(id: String, rim: bool, frame: int) -> Texture2D:
 	if not _enabled or not _ids.has(id):

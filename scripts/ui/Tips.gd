@@ -278,11 +278,6 @@ func _auto() -> void:
 	var bs = G.main.board_screen
 	if bs == null:
 		return
-	# 引导刚结束：先讲一遍玩法循环（订单→不那那→建造→奖励）
-	if not seen("howto"):
-		G.tips_seen["howto"] = true
-		G.main.open("howto")
-		return
 	# 礼物在暂存区 → 拿出来合进生产器 → 生产器升级（竞品第二次装修后的那一段）
 	if not G.stash.is_empty() and show_once("stash", TextCatalog.source("ui.tips.9fe521e1e574"),
 			func(): return bs._stash_wrap.get_global_rect()):

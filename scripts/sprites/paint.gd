@@ -15,6 +15,8 @@ const K_CARDS := 1.45
 const K_HUT := 1.1
 const K_SHOP := 1.1
 const K_POUCH := 1.2
+## 集市图标在顶栏的贴图缩放（TopBar 里 Paint.shop_icon(..., 0.72)），用来对齐线宽
+const K_SHOP_SCREEN := 0.72
 const K_HOME := 1.0
 const S_GIFT := 86.0
 const S_MASCOT := 120.0
@@ -282,7 +284,7 @@ static func live_shop_icon(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	# 柱子和柜台
 	Art.sil(ci, [Art.P(Art.rrect(Rect2(-48, -30, 9, 64), 3, 1, 0.4), Art.WOOD_D, 2),
 		Art.P(Art.rrect(Rect2(39, -30, 9, 64), 3, 2, 0.4), Art.WOOD_D, 2),
-		Art.P(Art.rrect(Rect2(-46, 12, 92, 26), 5, 3, 0.5), Art.WOOD, 1)])
+		Art.P(Art.rrect(Rect2(-46, 12, 92, 26), 5, 3, 0.5), Art.WOOD, 1)], false)
 	for i in 3:
 		Art.ln(ci, Vector2(-40, 20 + i * 7), Vector2(40, 20 + i * 7), 1.6, Color(0.4, 0.22, 0.08, 0.5), i)
 	# 柜台上的货
@@ -313,7 +315,6 @@ static func live_shop_icon(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 		var st := PackedVector2Array([t0, t1])
 		st.append_array(arc)
 		stripes.append([st, i])
-	Art.dilate(ci, shape, 9.0, Color(1, 0.98, 0.92, 0.96))
 	Art.dilate(ci, shape, 3.0, Art.INK)
 	for sp in stripes:
 		ci.draw_colored_polygon(sp[0], Art.CLAY if int(sp[1]) % 2 == 0 else Art.BONE)
@@ -321,7 +322,39 @@ static func live_shop_icon(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	Art.outline(ci, shape, 2.2, Art.INK)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
+## 储物洞：长青苔的石丘，底下一个黑洞口。
+## 棋盘上按 s=K_POUCH 贴、集市按 0.72 贴；线宽除以 K_POUCH/0.72，两边在屏幕上一样粗。
 static func live_pouch(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
+	var old_k := Art.stroke_k
+	Art.stroke_k = old_k * K_POUCH / K_SHOP_SCREEN
+	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
+	var mound := Art.poly([Vector2(-44, 30), Vector2(-41, 8), Vector2(-30, -16), Vector2(-12, -32),
+		Vector2(8, -34), Vector2(26, -24), Vector2(38, -4), Vector2(44, 30)], 21, 0.8)
+	var moss := Art.poly([Vector2(-22, -26), Vector2(-10, -36), Vector2(8, -38), Vector2(22, -30),
+		Vector2(14, -24), Vector2(4, -27), Vector2(-6, -24), Vector2(-14, -21)], 22, 0.5)
+	Art.sil(ci, [Art.P(mound, Art.STONE, 0), Art.P(moss, Art.LEAF, 1),
+		Art.P(Art.ell(Vector2(-38, 27), Vector2(10, 7), 23, 0.06, 12), Art.STONE.lightened(0.1), 1),
+		Art.P(Art.ell(Vector2(37, 26), Vector2(12, 8), 24, 0.06, 12), Art.STONE.lightened(0.1), 1)], false)
+	# 洞口：半个拱，底边贴地
+	var mouth := PackedVector2Array()
+	for k in 13:
+		var a := PI + PI * float(k) / 12.0
+		mouth.append(Vector2(cos(a) * 18.0, 30.0 + sin(a) * 30.0))
+	ci.draw_colored_polygon(mouth, Color("2e2018"))
+	var deep := PackedVector2Array()
+	for k in 13:
+		var a := PI + PI * float(k) / 12.0
+		deep.append(Vector2(cos(a) * 11.0 + 1.5, 30.0 + sin(a) * 21.0))
+	ci.draw_colored_polygon(deep, Color("1a120c"))
+	Art.pl(ci, Array(mouth), 2.2, Art.INK, 25)
+	# 石头上的裂纹
+	Art.pl(ci, [Vector2(-30, 0), Vector2(-24, 6), Vector2(-26, 14)], 2.0, Art.STONE_D, 26)
+	Art.pl(ci, [Vector2(26, -6), Vector2(30, 4)], 2.0, Art.STONE_D, 27)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Art.stroke_k = old_k
+
+## 旧的兽皮袋，留着备查，不生成。
+static func _legacy_pouch_bag(ci: CanvasItem, c: Vector2, s: float = 1.0) -> void:
 	ci.draw_set_transform(c, 0.0, Vector2.ONE * s)
 	Art.sil(ci, [Art.P(Art.ell(Vector2(0, 8), Vector2(34, 30), 1, 0.06), Color("b9844e")),
 		Art.P(Art.poly([Vector2(-16, -18), Vector2(-24, -36), Vector2(0, -30), Vector2(24, -36), Vector2(16, -18)], 2), Color("a3703f"), 1)])

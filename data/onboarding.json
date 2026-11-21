@@ -1,5 +1,5 @@
 {
-	"version": 6,
+	"version": 8,
 	"initial_amber": 30,
 	"build_area": "fire",
 	"generator": "basket_4",
@@ -11,17 +11,17 @@
 		{
 			"key": "welcome",
 			"mode": "enter_board",
-			"text": "§content.onboarding.dbaa88f6efb8§"
+			"text": "§dialogue.hero_voice.4f4d264d9e52§"
 		},
 		{
 			"key": "motive",
 			"mode": "dialog",
-			"text": "§content.onboarding.80387acbfb2e§"
+			"text": "§dialogue.hero_voice.c58da5ebf1e8§"
 		},
 		{
 			"key": "merge1",
 			"mode": "merge",
-			"text": "§content.onboarding.de776321a475§",
+			"text": "§dialogue.hero_voice.c1b902108fb5§",
 			"wait": {
 				"has": "basket_2"
 			},
@@ -42,7 +42,7 @@
 		{
 			"key": "merge2",
 			"mode": "merge",
-			"text": "§content.onboarding.d033162defac§",
+			"text": "§dialogue.hero_voice.cf03e2bb53b5§",
 			"wait": {
 				"has": "basket_3"
 			},
@@ -63,7 +63,7 @@
 		{
 			"key": "merge3",
 			"mode": "merge",
-			"text": "§content.onboarding.4715d9f20048§",
+			"text": "§dialogue.hero_voice.a651ff7c7f8d§",
 			"wait": {
 				"has": "basket_4"
 			},
@@ -79,13 +79,13 @@
 		{
 			"key": "first_order",
 			"mode": "dialog",
-			"text": "§content.onboarding.def61b3d3698§",
+			"text": "§dialogue.hero_voice.d8ecaa605819§",
 			"target": "order"
 		},
 		{
 			"key": "produce",
 			"mode": "produce",
-			"text": "§content.onboarding.e5b9069402a5§",
+			"text": "§dialogue.hero_voice.fed91f915982§",
 			"wait": {
 				"count": [
 					"fruit_1",
@@ -97,7 +97,7 @@
 		{
 			"key": "make_fruit2",
 			"mode": "merge",
-			"text": "§content.onboarding.d04bf074e3a3§",
+			"text": "§dialogue.hero_voice.b3f228d3b11a§",
 			"wait": {
 				"has": "fruit_2"
 			},
@@ -114,13 +114,13 @@
 		{
 			"key": "first_ready",
 			"mode": "dialog",
-			"text": "§content.onboarding.8dd0a0fc2c53§",
+			"text": "§dialogue.hero_voice.2ec942804217§",
 			"target": "order"
 		},
 		{
 			"key": "submit1",
 			"mode": "submit",
-			"text": "§content.onboarding.8f7accd90e81§",
+			"text": "§dialogue.hero_voice.a46f038d214d§",
 			"wait": {
 				"delivered": "practice1"
 			}
@@ -128,7 +128,7 @@
 		{
 			"key": "produce_more",
 			"mode": "produce",
-			"text": "§content.onboarding.ffcc6c315990§",
+			"text": "§dialogue.hero_voice.d1b85511dc1c§",
 			"wait": {
 				"produced_since": 3
 			},
@@ -145,7 +145,7 @@
 		{
 			"key": "submit2",
 			"mode": "submit",
-			"text": "§content.onboarding.aafee5764f47§",
+			"text": "§dialogue.hero_voice.d76d92cd7e9e§",
 			"wait": {
 				"delivered": "practice2"
 			}
@@ -153,12 +153,12 @@
 		{
 			"key": "upgrade",
 			"mode": "open_build",
-			"text": "§content.onboarding.e23e9216930f§"
+			"text": "§dialogue.hero_voice.6b2d1272e79d§"
 		},
 		{
 			"key": "build1",
 			"mode": "build",
-			"text": "§content.onboarding.79cb031d4a69§",
+			"text": "§dialogue.hero_voice.d49acf6982dd§",
 			"wait": {
 				"build": 2
 			}
@@ -174,7 +174,7 @@
 		{
 			"key": "back1",
 			"mode": "back",
-			"text": "§content.onboarding.2afb427118e7§"
+			"text": "§dialogue.hero_voice.734eb5efa06e§"
 		},
 		{
 			"key": "coin",
@@ -192,7 +192,7 @@
 		{
 			"key": "submit3",
 			"mode": "submit",
-			"text": "§content.onboarding.f680cede9c2d§",
+			"text": "§dialogue.hero_voice.38dfc5ed4f47§",
 			"wait": {
 				"delivered": "practice3"
 			}
@@ -200,50 +200,45 @@
 		{
 			"key": "orders_start",
 			"mode": "banner",
-			"text": "§content.onboarding.971334504817§"
+			"text": "§dialogue.hero_voice.77634f2ed9c8§"
 		},
 		{
 			"key": "reputation",
 			"mode": "dialog",
-			"text": "§content.onboarding.428861c1f227§"
+			"text": "§dialogue.hero_voice.eb2a1a0ca4f7§"
 		},
 		{
 			"key": "xp_rule",
 			"mode": "dialog",
-			"text": "§content.onboarding.0fee45da387e§",
-			"formula": [
-				"xp_1",
-				"xp_1",
-				"xp_1"
-			]
+			"text": "§dialogue.hero_voice.c9c77e8d6ba5§"
 		},
 		{
 			"key": "xp_bar",
 			"mode": "dialog",
-			"text": "§content.onboarding.5faaaea489d7§",
+			"text": "§dialogue.hero_voice.7e2981fe399c§",
 			"target": "xp"
 		},
 		{
 			"key": "level_open",
 			"mode": "level_open",
-			"text": "§content.onboarding.2b8f8909cc80§"
+			"text": "§dialogue.hero_voice.267485f46d91§"
 		},
 		{
 			"key": "level_rule",
 			"mode": "dialog",
-			"text": "§content.onboarding.3f3ce2607372§",
+			"text": "§dialogue.hero_voice.71ac6e9ca0ec§",
 			"target": "level_progress"
 		},
 		{
 			"key": "level_preview",
 			"mode": "dialog",
-			"text": "§content.onboarding.20dc00e68821§",
+			"text": "§dialogue.hero_voice.5afd736f934f§",
 			"target": "level_rewards"
 		},
 		{
 			"key": "level_close",
 			"mode": "level_close",
-			"text": "§content.onboarding.685105470f82§"
+			"text": "§dialogue.hero_voice.9aa056360032§"
 		},
 		{
 			"key": "free_level1",
@@ -282,12 +277,12 @@
 		{
 			"key": "back2",
 			"mode": "back",
-			"text": "§content.onboarding.9dd338989101§"
+			"text": "§dialogue.hero_voice.91db4eb64a98§"
 		},
 		{
 			"key": "stash",
 			"mode": "stash",
-			"text": "§content.onboarding.e58b1ec5a017§",
+			"text": "§dialogue.hero_voice.d9b362661c5d§",
 			"wait": {
 				"has": "basket_3"
 			}
@@ -295,7 +290,7 @@
 		{
 			"key": "gen_merge3",
 			"mode": "merge",
-			"text": "§content.onboarding.9142c1f3427d§",
+			"text": "§dialogue.hero_voice.39c2994bc913§",
 			"wait": {
 				"count": [
 					"basket_4",
@@ -310,7 +305,7 @@
 		{
 			"key": "gen_merge5",
 			"mode": "merge",
-			"text": "§content.onboarding.1fe8b58dec78§",
+			"text": "§dialogue.hero_voice.b37133ee851a§",
 			"wait": {
 				"has": "basket_5"
 			},
@@ -322,7 +317,7 @@
 		{
 			"key": "gen_tap",
 			"mode": "produce",
-			"text": "§content.onboarding.027ca3cc6eac§",
+			"text": "§dialogue.hero_voice.f017f6bb04a8§",
 			"wait": {
 				"produced_since": 1
 			},
@@ -339,30 +334,30 @@
 		{
 			"key": "recipe_open",
 			"mode": "recipe_open",
-			"text": "§content.onboarding.bc3c3dc77033§"
+			"text": "§dialogue.hero_voice.f197996d1b49§"
 		},
 		{
 			"key": "recipe_mats",
 			"mode": "dialog",
-			"text": "§content.onboarding.d2317d78a95c§",
+			"text": "§dialogue.hero_voice.6c3bdb6ba1b5§",
 			"target": "recipe_mats"
 		},
 		{
 			"key": "recipe_time",
 			"mode": "dialog",
-			"text": "§content.onboarding.4378c9d8e06b§",
+			"text": "§dialogue.hero_voice.3de7645e6c9f§",
 			"target": "recipe_time"
 		},
 		{
 			"key": "recipe_ready",
 			"mode": "dialog",
-			"text": "§content.onboarding.23809f2ac16f§",
+			"text": "§dialogue.hero_voice.b5504875bdb9§",
 			"target": "recipe"
 		},
 		{
 			"key": "recipe_close",
 			"mode": "recipe_close",
-			"text": "§content.onboarding.d79e2b1ba7dc§"
+			"text": "§dialogue.hero_voice.fb0df23dcae3§"
 		},
 		{
 			"key": "free_prepare",
@@ -375,7 +370,7 @@
 		{
 			"key": "first_cook",
 			"mode": "cook",
-			"text": "§content.onboarding.40965751f9cc§",
+			"text": "§dialogue.hero_voice.362846a03553§",
 			"wait": {
 				"phase": [
 					"craft1",
@@ -397,7 +392,7 @@
 		{
 			"key": "take_dish",
 			"mode": "take_dish",
-			"text": "§content.onboarding.385da3f80faa§",
+			"text": "§dialogue.hero_voice.189811b4a907§",
 			"wait": {
 				"phase": [
 					"craft1",
@@ -434,8 +429,29 @@
 			"mode": "energy_gen",
 			"text": "§dialogue.hero_voice.365775cd0600§",
 			"wait": {
-				"energy_gift": true
+				"egen_taps": 2
 			}
+		},
+		{
+			"key": "egen_merge",
+			"mode": "merge",
+			"text": "§dialogue.hero_voice.38575e8fa132§",
+			"wait": {
+				"has": "fire_6"
+			},
+			"pair": [
+				"fire_5",
+				"fire_5"
+			]
+		},
+		{
+			"key": "egen_collect",
+			"mode": "collect",
+			"text": "§dialogue.hero_voice.2d58c498dc23§",
+			"wait": {
+				"absent": "fire_6"
+			},
+			"target": "fire_6"
 		},
 		{
 			"key": "free_level4",
@@ -551,20 +567,19 @@
 		{
 			"tag": "seed_first",
 			"items": [
-				"fruit_6"
+				"fruit_3"
 			],
 			"coin": 19,
 			"xp": 1,
 			"build": 3,
 			"level": 2,
 			"gate": "gen_tap",
-			"prefer_vine_output": true,
-			"max_item_level": 6
+			"prefer_vine_output": true
 		},
 		{
 			"tag": "seed_second",
 			"items": [
-				"seed_4"
+				"seed_2"
 			],
 			"coin": 29,
 			"xp": 1,
@@ -576,15 +591,14 @@
 		{
 			"tag": "fruit_again",
 			"items": [
-				"fruit_6"
+				"fruit_4"
 			],
 			"coin": 19,
 			"xp": 1,
 			"build": 3,
 			"level": 2,
 			"after": "seed_first",
-			"prefer_vine_output": true,
-			"max_item_level": 6
+			"prefer_vine_output": true
 		},
 		{
 			"tag": "seed_last",
@@ -596,25 +610,24 @@
 			"build": 3,
 			"level": 2,
 			"after": "seed_second",
-			"prefer_vine_output": true,
-			"max_item_level": 6
+			"prefer_vine_output": true
 		},
 		{
 			"tag": "craft1",
 			"items": [
-				"salad"
+				"berrybowl"
 			],
 			"coin": 20,
 			"xp": 1,
 			"build": 3,
 			"level": 3,
 			"after": "seed_last",
-			"dish": "salad"
+			"dish": "berrybowl"
 		},
 		{
 			"tag": "craft2",
 			"items": [
-				"fruit_6"
+				"fruit_4"
 			],
 			"coin": 19,
 			"xp": 1,
@@ -626,14 +639,14 @@
 		{
 			"tag": "craft3",
 			"items": [
-				"fruit_7"
+				"nutmix"
 			],
 			"coin": 28,
 			"xp": 1,
 			"build": 3,
 			"level": 3,
 			"after": "craft1",
-			"prefer_vine_output": true
+			"dish": "nutmix"
 		},
 		{
 			"tag": "craft6",
@@ -650,7 +663,7 @@
 		{
 			"tag": "level4_last",
 			"items": [
-				"fruit_6"
+				"fruit_5"
 			],
 			"coin": 19,
 			"xp": 1,
@@ -662,21 +675,20 @@
 		{
 			"tag": "craft7",
 			"items": [
-				"trailpack"
+				"salad"
 			],
 			"coin": 13,
 			"xp": 2,
 			"build": 3,
 			"level": 4,
 			"after": "craft3",
-			"dish": "trailpack",
+			"dish": "salad",
 			"gate": "free_level4"
 		},
 		{
 			"tag": "level5_last",
 			"items": [
-				"fruit_8",
-				"fruit_7"
+				"fruit_4"
 			],
 			"coin": 65,
 			"xp": 1,
@@ -1232,6 +1244,8 @@
 		"start_stage": "free_high"
 	},
 	"energy_gift_after": [
-		"craft6"
-	]
+		"craft6",
+		"level4_last"
+	],
+	"energy_gift_drop": "fire_5"
 }

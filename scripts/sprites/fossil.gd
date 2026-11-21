@@ -141,16 +141,12 @@ static func _entry(ci: CanvasItem, r: Rect2) -> void:
 	var o := r.position
 	var mound := Art.poly([o + Vector2(4, 96), o + Vector2(10, 76), o + Vector2(30, 64), o + Vector2(58, 60), o + Vector2(86, 64),
 		o + Vector2(104, 78), o + Vector2(106, 96)], 600, 0.8)
-	# 外圈奶白贴纸边
-	Art.dilate(ci, mound, 9.0, Color(1, 0.98, 0.92, 0.96))
 	var skull_parts := []
 	for poly in _shapes("skull", 2, 2):
 		var moved := PackedVector2Array()
 		for q in poly:
 			moved.append(o + Vector2(4, -14) + q * 0.46)
 		skull_parts.append(moved)
-	for q in skull_parts:
-		Art.dilate(ci, q, 9.0, Color(1, 0.98, 0.92, 0.96))
 	# 铲子（在头骨后面）
 	ci.draw_set_transform(o + Vector2(88, 40), 0.45, Vector2.ONE * 0.62)
 	_shovel(ci, Rect2(-30, -55, 60, 110))

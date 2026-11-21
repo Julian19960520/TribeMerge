@@ -23,25 +23,17 @@ func _process(delta: float) -> void:
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
 	var unlocked := MergeEvent.available(cfg)
 	var s := MergeEvent.state(cfg) if unlocked else {}
-	var ready := unlocked and MergeEvent.complete(cfg, s) and not bool(s["claimed"])
-	var badge := {"text": "×%d" % int(s.get("points", 0)), "style": "num"}
-	if ready: badge = {"text": TextCatalog.source("ui.duelentry.5375104054f0"), "style": "go"}
-	elif not unlocked: badge = {"text": TextCatalog.source("ui.mergeevententry.1663dd3dc737") if cfg.is_empty() else TextCatalog.fill(TextCatalog.source("ui.duelentry.e0cda514ecc2"), int(cfg["unlock_level"])), "style": "lock"}
-	elif float(cfg.get("ends_at", 0)) - G.now() < 86400: badge = {"text": _left(float(cfg["ends_at"]) - G.now()), "style": "time"}
+	# 还没进过这一季时存档里没有棋盘：进度按 0 算
+	var have := MergeEvent.progress(cfg, s) if not s.is_empty() else 0
+	var ready := not s.is_empty() and not MergeEvent.claimable(cfg, s).is_empty()
+	var info := {}
+	if unlocked: info = {"left": float(cfg.get("ends_at", 0)) - G.now(), "have": have, "need": MergeEvent.goal_total(cfg), "icon": str(cfg.get("theme", {}).get("point_icon", ""))}
+	elif not cfg.is_empty(): info = {"lock": TextCatalog.fill(TextCatalog.source("ui.duelentry.e0cda514ecc2"), int(cfg["unlock_level"]))}
 	# 默认的月石主题用程序手绘图；别的主题可以在配置里给自己的 entry_icon 贴图
 	var icon := str(cfg.get("theme", {}).get("entry_icon", ""))
 	var kind := "ruins" if icon == "" or icon.ends_with("/ruins.svg") else icon
-	EventEntryArt.paint(ci, sz, kind, str(cfg.get("entry_title", TextCatalog.source("ui.mergeevententry.973c334a813e"))), badge, not unlocked, ready)
+	EventEntryArt.paint(ci, sz, kind, info, not unlocked, ready)
 
-static func _left(sec: float) -> String:
-	var t := maxi(0, int(sec))
-	return TextCatalog.fill(TextCatalog.source("ui.board.e9e4f4da0297"), [t / 3600, str(int(t / 60 % 60)).pad_zeros(2)]) if t >= 3600 else TextCatalog.fill(TextCatalog.source("notice.game.30c88ef0108b"), [t / 60, str(int(t % 60)).pad_zeros(2)])
-
-func _txt(ci: CanvasItem, text: String, p: Vector2, fs: int, col: Color) -> void:
-	var w := G.font_title.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var pos := p - Vector2(w / 2, 0)
-	ci.draw_string_outline(G.font_title, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Art.INK)
-	ci.draw_string(G.font_title, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 func fly_from(origin: Vector2) -> void:
 	if cfg.is_empty() or not MergeEvent.available(cfg): return
 	var fx := DrawBox.new()

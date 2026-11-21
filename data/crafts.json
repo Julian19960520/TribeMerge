@@ -1,0 +1,3094 @@
+{
+	"categories": [
+		{
+			"id": "fruitplate",
+			"name": "§content.crafts.904ec506305f§",
+			"icon": "fruit_6",
+			"items": [
+				{
+					"id": "fruitplate_1",
+					"name": "§content.crafts.2e319922e49f§",
+					"mats": [
+						"fruit_1",
+						"cloth_1"
+					],
+					"secs": 20
+				},
+				{
+					"id": "fruitplate_2",
+					"name": "§content.crafts.622b47821c87§",
+					"mats": [
+						"fruit_2",
+						"cloth_1"
+					],
+					"secs": 30
+				},
+				{
+					"id": "fruitplate_3",
+					"name": "§content.crafts.5c8991b34653§",
+					"mats": [
+						"fruit_1",
+						"fruit_3"
+					],
+					"secs": 60
+				},
+				{
+					"id": "fruitplate_4",
+					"name": "§content.crafts.945004dabf4b§",
+					"mats": [
+						"fruit_4",
+						"tool_2"
+					],
+					"secs": 120
+				},
+				{
+					"id": "fruitplate_5",
+					"name": "§content.crafts.b0c664001f04§",
+					"mats": [
+						"fruit_5",
+						"tool_2"
+					],
+					"secs": 180
+				},
+				{
+					"id": "fruitplate_6",
+					"name": "§content.crafts.ec91825fdaba§",
+					"mats": [
+						"fruit_2",
+						"fruit_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "fruitplate_7",
+					"name": "§content.crafts.c669e3544ced§",
+					"mats": [
+						"fruit_6",
+						"fruit_7"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "fruitplate_8",
+					"name": "§content.crafts.e06c49e53d6b§",
+					"mats": [
+						"cloth_7",
+						"fruit_6",
+						"fruit_4"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "fruitplate_9",
+					"name": "§content.crafts.ee72e9ea4a12§",
+					"mats": [
+						"fruit_9",
+						"cloth_4"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "fruitplate_10",
+					"name": "§content.crafts.7e8dd9e7d23f§",
+					"mats": [
+						"fruit_10",
+						"tool_4"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "fruitplate_11",
+					"name": "§content.crafts.de2d5ef5c2ea§",
+					"mats": [
+						"fruit_11",
+						"tool_4",
+						"fruit_3"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "fruitplate_12",
+					"name": "§content.crafts.c5f537f38e59§",
+					"mats": [
+						"fruit_12",
+						"fruit_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "fruitplate_13",
+					"name": "§content.crafts.d7106b7c956a§",
+					"mats": [
+						"fruit_13",
+						"tool_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "fruitplate_14",
+					"name": "§content.crafts.0307b256ae8e§",
+					"mats": [
+						"fruit_2",
+						"fruit_5",
+						"fruit_7",
+						"fruit_9"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "fruitplate_15",
+					"name": "§content.crafts.7eecd6b70e80§",
+					"mats": [
+						"fruit_8",
+						"pot_3"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "fruitplate_16",
+					"name": "§content.crafts.d6fb55f36c75§",
+					"mats": [
+						"pot_2",
+						"fruit_6",
+						"fruit_8"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "fruitplate_17",
+					"name": "§content.crafts.5bb0455b1bcb§",
+					"mats": [
+						"fruit_14",
+						"fruit_10",
+						"fruit_8"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "fruitplate_18",
+					"name": "§content.crafts.b5a6f174deaa§",
+					"mats": [
+						"fruit_12",
+						"fruit_13",
+						"fruit_14",
+						"cloth_9"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "ration",
+			"name": "§content.crafts.8962fa7dfcd5§",
+			"icon": "seed_8",
+			"items": [
+				{
+					"id": "ration_1",
+					"name": "§content.crafts.1c5b64a45d1a§",
+					"mats": [
+						"seed_1",
+						"cloth_2"
+					],
+					"secs": 30
+				},
+				{
+					"id": "ration_2",
+					"name": "§content.crafts.7888901c2897§",
+					"mats": [
+						"seed_2",
+						"tool_1"
+					],
+					"secs": 30
+				},
+				{
+					"id": "ration_3",
+					"name": "§content.crafts.9b6c56b5740f§",
+					"mats": [
+						"seed_3",
+						"tool_9"
+					],
+					"secs": 2700
+				},
+				{
+					"id": "ration_4",
+					"name": "§content.crafts.3f1f39556087§",
+					"mats": [
+						"seed_4",
+						"fruit_5"
+					],
+					"secs": 300
+				},
+				{
+					"id": "ration_5",
+					"name": "§content.crafts.4ca971dd392b§",
+					"mats": [
+						"seed_2",
+						"seed_4",
+						"tool_9"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "ration_6",
+					"name": "§content.crafts.be16b014f36f§",
+					"mats": [
+						"seed_5",
+						"armor_3"
+					],
+					"secs": 180
+				},
+				{
+					"id": "ration_7",
+					"name": "§content.crafts.fc58e0ac3c04§",
+					"mats": [
+						"seed_6",
+						"fruit_7",
+						"cloth_5"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "ration_8",
+					"name": "§content.crafts.74009da84f55§",
+					"mats": [
+						"seed_7",
+						"cloth_3"
+					],
+					"secs": 900
+				},
+				{
+					"id": "ration_9",
+					"name": "§content.crafts.b37370e77f83§",
+					"mats": [
+						"seed_8",
+						"tool_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ration_10",
+					"name": "§content.crafts.38c2713cad05§",
+					"mats": [
+						"seed_4",
+						"fruit_6",
+						"pot_3"
+					],
+					"secs": 600
+				},
+				{
+					"id": "ration_11",
+					"name": "§content.crafts.3a7137329cec§",
+					"mats": [
+						"seed_9",
+						"craft_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ration_12",
+					"name": "§content.crafts.97f71495a389§",
+					"mats": [
+						"seed_10",
+						"armor_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ration_13",
+					"name": "§content.crafts.02e7d3dbf055§",
+					"mats": [
+						"seed_11",
+						"fruit_8",
+						"tool_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ration_14",
+					"name": "§content.crafts.423238becbb6§",
+					"mats": [
+						"seed_12",
+						"seed_8",
+						"tool_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ration_15",
+					"name": "§content.crafts.8911bac9633f§",
+					"mats": [
+						"seed_7",
+						"fruit_9",
+						"armor_5"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "ration_16",
+					"name": "§content.crafts.b92bf9ba2c76§",
+					"mats": [
+						"seed_5",
+						"seed_6",
+						"fruit_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ration_17",
+					"name": "§content.crafts.b4ea6ef17c1a§",
+					"mats": [
+						"seed_9",
+						"fruit_12",
+						"armor_6"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "grill",
+			"name": "§names.chains.94553e63f294§",
+			"icon": "beast_5",
+			"items": [
+				{
+					"id": "grill_1",
+					"name": "§content.crafts.82e698da28d8§",
+					"mats": [
+						"bird_1",
+						"furn_1"
+					],
+					"secs": 20
+				},
+				{
+					"id": "grill_2",
+					"name": "§content.crafts.209ead6ab25d§",
+					"mats": [
+						"beast_1",
+						"furn_2"
+					],
+					"secs": 30
+				},
+				{
+					"id": "grill_3",
+					"name": "§content.crafts.8496852c777e§",
+					"mats": [
+						"beast_2",
+						"furn_3"
+					],
+					"secs": 60
+				},
+				{
+					"id": "grill_4",
+					"name": "§content.crafts.97165106b45d§",
+					"mats": [
+						"bird_3",
+						"furn_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "grill_5",
+					"name": "§content.crafts.df26a76615e0§",
+					"mats": [
+						"beast_3",
+						"furn_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "grill_6",
+					"name": "§content.crafts.b2b3c38e36b0§",
+					"mats": [
+						"bird_4",
+						"furn_5"
+					],
+					"secs": 300
+				},
+				{
+					"id": "grill_7",
+					"name": "§content.crafts.f69b59d9b41a§",
+					"mats": [
+						"beast_4",
+						"furn_6"
+					],
+					"secs": 420
+				},
+				{
+					"id": "grill_8",
+					"name": "§content.crafts.16eae1d8856b§",
+					"mats": [
+						"beast_4",
+						"tool_9",
+						"furn_6"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "grill_9",
+					"name": "§content.crafts.7c6ea3b58cb6§",
+					"mats": [
+						"bird_5",
+						"furn_6"
+					],
+					"secs": 600
+				},
+				{
+					"id": "grill_10",
+					"name": "§content.crafts.8722e31ae474§",
+					"mats": [
+						"beast_2",
+						"fruit_6",
+						"furn_6"
+					],
+					"secs": 900
+				},
+				{
+					"id": "grill_11",
+					"name": "§content.crafts.f25b5a48007f§",
+					"mats": [
+						"beast_5",
+						"furn_7"
+					],
+					"secs": 900
+				},
+				{
+					"id": "grill_12",
+					"name": "§content.crafts.c4cf3f2feb13§",
+					"mats": [
+						"beast_5",
+						"craft_2",
+						"furn_7"
+					],
+					"secs": 900
+				},
+				{
+					"id": "grill_13",
+					"name": "§content.crafts.48bc0c4e2c9b§",
+					"mats": [
+						"bird_3",
+						"seed_7",
+						"furn_7"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "grill_14",
+					"name": "§content.crafts.3a9d22e56941§",
+					"mats": [
+						"beast_6",
+						"furn_8"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "grill_15",
+					"name": "§content.crafts.e54ff1a04b0e§",
+					"mats": [
+						"beast_5",
+						"cloth_8",
+						"furn_8"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "grill_16",
+					"name": "§content.crafts.3b469b2fe8e3§",
+					"mats": [
+						"beast_7",
+						"furn_9"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "grill_17",
+					"name": "§content.crafts.a9fae4c2b5ad§",
+					"mats": [
+						"beast_6",
+						"bird_4",
+						"furn_9"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "grill_18",
+					"name": "§content.crafts.e175a23586ad§",
+					"mats": [
+						"bird_8",
+						"furn_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "grill_19",
+					"name": "§content.crafts.1bc806e46217§",
+					"mats": [
+						"beast_8",
+						"furn_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "grill_20",
+					"name": "§content.crafts.619522fb8e3f§",
+					"mats": [
+						"beast_7",
+						"bird_5",
+						"furn_12"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "honey",
+			"name": "§content.crafts.5d6b90d21f86§",
+			"icon": "craft_11",
+			"items": [
+				{
+					"id": "honey_1",
+					"name": "§content.crafts.fb1973e462ec§",
+					"mats": [
+						"craft_10",
+						"fruit_1"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "honey_2",
+					"name": "§content.crafts.54344244e8fa§",
+					"mats": [
+						"craft_10",
+						"fruit_2"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "honey_3",
+					"name": "§content.crafts.2c4ebcf24eac§",
+					"mats": [
+						"craft_10",
+						"seed_1"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "honey_4",
+					"name": "§content.crafts.caa4606d6245§",
+					"mats": [
+						"craft_10",
+						"cloth_7"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_5",
+					"name": "§content.crafts.0e61b453ece0§",
+					"mats": [
+						"craft_11",
+						"fruit_4"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_6",
+					"name": "§content.crafts.9776c8d9e619§",
+					"mats": [
+						"craft_11",
+						"seed_4"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_7",
+					"name": "§content.crafts.149bbb615dbc§",
+					"mats": [
+						"craft_11",
+						"fruit_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_8",
+					"name": "§content.crafts.fe644df013e9§",
+					"mats": [
+						"craft_11",
+						"seed_6",
+						"seed_8"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_9",
+					"name": "§content.crafts.e7c759587643§",
+					"mats": [
+						"craft_11",
+						"fruit_6",
+						"furn_3"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_10",
+					"name": "§content.crafts.06a1938d687e§",
+					"mats": [
+						"craft_11",
+						"pot_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_11",
+					"name": "§content.crafts.a7911938c623§",
+					"mats": [
+						"craft_12",
+						"fruit_8",
+						"pot_3"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_12",
+					"name": "§content.crafts.28dfe5abb6d0§",
+					"mats": [
+						"craft_12",
+						"seed_8",
+						"tool_9"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_13",
+					"name": "§content.crafts.c5e3dc358288§",
+					"mats": [
+						"craft_12",
+						"fruit_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_14",
+					"name": "§content.crafts.9497a2aa249b§",
+					"mats": [
+						"craft_12",
+						"fruit_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "honey_15",
+					"name": "§content.crafts.3ea94dbe7f05§",
+					"mats": [
+						"craft_12",
+						"fruit_9",
+						"fruit_7",
+						"pot_2"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "stew",
+			"name": "§content.crafts.4a55ff5de1ef§",
+			"icon": "pot_10",
+			"items": [
+				{
+					"id": "stew_1",
+					"name": "§content.crafts.413b48c3090b§",
+					"mats": [
+						"pot_3",
+						"craft_7"
+					],
+					"secs": 900
+				},
+				{
+					"id": "stew_2",
+					"name": "§content.crafts.e2126105c7a3§",
+					"mats": [
+						"pot_3",
+						"craft_8"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "stew_3",
+					"name": "§content.crafts.828f55674d50§",
+					"mats": [
+						"pot_3",
+						"fish_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "stew_4",
+					"name": "§content.crafts.85cd559e19d2§",
+					"mats": [
+						"pot_6",
+						"beast_2"
+					],
+					"secs": 420
+				},
+				{
+					"id": "stew_5",
+					"name": "§content.crafts.d7c06fc03ec2§",
+					"mats": [
+						"pot_6",
+						"bird_3"
+					],
+					"secs": 420
+				},
+				{
+					"id": "stew_6",
+					"name": "§content.crafts.068c94272195§",
+					"mats": [
+						"pot_6",
+						"bird_3",
+						"seed_7"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "stew_7",
+					"name": "§content.crafts.80129bf90042§",
+					"mats": [
+						"pot_6",
+						"bird_4",
+						"seed_5"
+					],
+					"secs": 600
+				},
+				{
+					"id": "stew_8",
+					"name": "§content.crafts.40cd92b2c2e7§",
+					"mats": [
+						"pot_6",
+						"beast_5"
+					],
+					"secs": 600
+				},
+				{
+					"id": "stew_9",
+					"name": "§content.crafts.f186940ab730§",
+					"mats": [
+						"pot_6",
+						"fish_6"
+					],
+					"secs": 900
+				},
+				{
+					"id": "stew_10",
+					"name": "§content.crafts.8470d82de6f6§",
+					"mats": [
+						"pot_6",
+						"clam_3"
+					],
+					"secs": 420
+				},
+				{
+					"id": "stew_11",
+					"name": "§content.crafts.47834b7b3c10§",
+					"mats": [
+						"pot_9",
+						"beast_6",
+						"craft_8"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "stew_12",
+					"name": "§content.crafts.818bf6544708§",
+					"mats": [
+						"pot_9",
+						"craft_9",
+						"bird_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stew_13",
+					"name": "§content.crafts.887924e28ee5§",
+					"mats": [
+						"pot_10",
+						"beast_7"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stew_14",
+					"name": "§content.crafts.a48b4d47756d§",
+					"mats": [
+						"pot_11",
+						"seed_7"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stew_15",
+					"name": "§content.crafts.6588f7a913eb§",
+					"mats": [
+						"pot_11",
+						"fish_7"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stew_16",
+					"name": "§content.crafts.99cbe8d1a9b7§",
+					"mats": [
+						"pot_13",
+						"beast_7",
+						"craft_9"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stew_17",
+					"name": "§content.crafts.9e93f859b9c5§",
+					"mats": [
+						"pot_13",
+						"beast_8"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stew_18",
+					"name": "§content.crafts.5b029574155d§",
+					"mats": [
+						"pot_10",
+						"fish_10",
+						"clam_5",
+						"clam_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stew_19",
+					"name": "§content.crafts.42523766295f§",
+					"mats": [
+						"pot_13",
+						"beast_6",
+						"bird_5",
+						"seed_9"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "drink",
+			"name": "§content.crafts.d2ac0846fa7f§",
+			"icon": "pot_8",
+			"items": [
+				{
+					"id": "drink_1",
+					"name": "§content.crafts.ef2dedd36756§",
+					"mats": [
+						"pot_1",
+						"fruit_1"
+					],
+					"secs": 20
+				},
+				{
+					"id": "drink_2",
+					"name": "§content.crafts.c89d459b9199§",
+					"mats": [
+						"pot_1",
+						"fruit_2"
+					],
+					"secs": 30
+				},
+				{
+					"id": "drink_3",
+					"name": "§content.crafts.046e07ff6493§",
+					"mats": [
+						"pot_1",
+						"craft_10"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "drink_4",
+					"name": "§content.crafts.f686cd3bdbd7§",
+					"mats": [
+						"pot_3",
+						"fruit_3"
+					],
+					"secs": 90
+				},
+				{
+					"id": "drink_5",
+					"name": "§content.crafts.8eb5363a20f6§",
+					"mats": [
+						"pot_6",
+						"fruit_6"
+					],
+					"secs": 900
+				},
+				{
+					"id": "drink_6",
+					"name": "§content.crafts.c922637fc3c2§",
+					"mats": [
+						"pot_6",
+						"seed_4",
+						"seed_9"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "drink_7",
+					"name": "§content.crafts.fb57d9d5ed69§",
+					"mats": [
+						"pot_6",
+						"fruit_13"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "drink_8",
+					"name": "§content.crafts.5c696f162163§",
+					"mats": [
+						"pot_7",
+						"fruit_7"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "drink_9",
+					"name": "§content.crafts.42194437fdc0§",
+					"mats": [
+						"pot_7",
+						"fruit_8"
+					],
+					"secs": 2700
+				},
+				{
+					"id": "drink_10",
+					"name": "§content.crafts.cfdb6a7dd075§",
+					"mats": [
+						"pot_7",
+						"fruit_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "drink_11",
+					"name": "§content.crafts.b842a5df41b9§",
+					"mats": [
+						"pot_7",
+						"craft_2"
+					],
+					"secs": 900
+				},
+				{
+					"id": "drink_12",
+					"name": "§content.crafts.18a6eed619f9§",
+					"mats": [
+						"pot_7",
+						"craft_9"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "drink_13",
+					"name": "§content.crafts.3635d0cca9c7§",
+					"mats": [
+						"fruit_12",
+						"tool_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "drink_14",
+					"name": "§content.crafts.05f2ca8d331e§",
+					"mats": [
+						"pot_9",
+						"fruit_9",
+						"craft_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "drink_15",
+					"name": "§content.crafts.9df485df196f§",
+					"mats": [
+						"pot_12",
+						"fruit_9",
+						"craft_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "drink_16",
+					"name": "§content.crafts.e11ad55dbeba§",
+					"mats": [
+						"pot_13",
+						"craft_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "drink_17",
+					"name": "§content.crafts.cd8b5152957d§",
+					"mats": [
+						"pot_15",
+						"fruit_9",
+						"fruit_14"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "seafood",
+			"name": "§content.crafts.9bb950db274b§",
+			"icon": "fish_6",
+			"items": [
+				{
+					"id": "seafood_1",
+					"name": "§content.crafts.38d22bfaa13a§",
+					"mats": [
+						"fish_2",
+						"furn_1"
+					],
+					"secs": 30
+				},
+				{
+					"id": "seafood_2",
+					"name": "§content.crafts.54530bab69ba§",
+					"mats": [
+						"fish_3",
+						"furn_2"
+					],
+					"secs": 60
+				},
+				{
+					"id": "seafood_3",
+					"name": "§content.crafts.3e2cc7a08429§",
+					"mats": [
+						"clam_1",
+						"furn_2"
+					],
+					"secs": 30
+				},
+				{
+					"id": "seafood_4",
+					"name": "§content.crafts.059cb4823afd§",
+					"mats": [
+						"clam_2",
+						"furn_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "seafood_5",
+					"name": "§content.crafts.07ff4757fbfc§",
+					"mats": [
+						"fish_4",
+						"cloth_3"
+					],
+					"secs": 120
+				},
+				{
+					"id": "seafood_6",
+					"name": "§content.crafts.e5e8c9309581§",
+					"mats": [
+						"fish_3",
+						"fish_4",
+						"cloth_4"
+					],
+					"secs": 180
+				},
+				{
+					"id": "seafood_7",
+					"name": "§content.crafts.19ec32c28d29§",
+					"mats": [
+						"clam_4",
+						"pot_2"
+					],
+					"secs": 120
+				},
+				{
+					"id": "seafood_8",
+					"name": "§content.crafts.a69df5fa62f6§",
+					"mats": [
+						"clam_5",
+						"pot_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "seafood_9",
+					"name": "§content.crafts.725a8e911cfb§",
+					"mats": [
+						"clam_6",
+						"furn_5"
+					],
+					"secs": 600
+				},
+				{
+					"id": "seafood_10",
+					"name": "§content.crafts.4b3ce166076f§",
+					"mats": [
+						"fish_6",
+						"tool_9",
+						"furn_6"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "seafood_11",
+					"name": "§content.crafts.9daa9f10d74d§",
+					"mats": [
+						"clam_7",
+						"furn_6"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "seafood_12",
+					"name": "§content.crafts.724478f7efa5§",
+					"mats": [
+						"fish_7",
+						"cloth_6"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "seafood_13",
+					"name": "§content.crafts.23f3eb5e3fb4§",
+					"mats": [
+						"fish_9",
+						"furn_4"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "seafood_14",
+					"name": "§content.crafts.e3662a5c30ac§",
+					"mats": [
+						"fish_10",
+						"furn_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "seafood_15",
+					"name": "§content.crafts.5ea56d35bc10§",
+					"mats": [
+						"fish_11",
+						"craft_2",
+						"furn_7"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "seafood_16",
+					"name": "§content.crafts.fdd4a68bfe56§",
+					"mats": [
+						"fish_12",
+						"cloth_8"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "seafood_17",
+					"name": "§content.crafts.d008d04e83ca§",
+					"mats": [
+						"clam_8",
+						"pot_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "seafood_18",
+					"name": "§content.crafts.e0d7889f464d§",
+					"mats": [
+						"fish_6",
+						"clam_3",
+						"clam_6",
+						"pot_2"
+					],
+					"secs": 900
+				},
+				{
+					"id": "seafood_19",
+					"name": "§content.crafts.df0ad3fd1ff2§",
+					"mats": [
+						"fish_15",
+						"tool_5",
+						"furn_9"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "seafood_20",
+					"name": "§content.crafts.7792bc86794f§",
+					"mats": [
+						"fish_16",
+						"pot_13",
+						"furn_11"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "stonetool",
+			"name": "§content.crafts.5b6f323902ef§",
+			"icon": "tool_8",
+			"items": [
+				{
+					"id": "stonetool_1",
+					"name": "§content.crafts.ea4882a4eb9d§",
+					"mats": [
+						"tool_2",
+						"furn_1"
+					],
+					"secs": 30
+				},
+				{
+					"id": "stonetool_2",
+					"name": "§content.crafts.c96ee5747677§",
+					"mats": [
+						"tool_3",
+						"furn_2"
+					],
+					"secs": 60
+				},
+				{
+					"id": "stonetool_3",
+					"name": "§content.crafts.cc59dce1c0b0§",
+					"mats": [
+						"tool_2",
+						"furn_2",
+						"cloth_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "stonetool_4",
+					"name": "§names.chains.4200690c1d17§",
+					"mats": [
+						"tool_4",
+						"furn_3"
+					],
+					"secs": 120
+				},
+				{
+					"id": "stonetool_5",
+					"name": "§names.chains.923fd27aa95e§",
+					"mats": [
+						"tool_9",
+						"furn_4",
+						"cloth_5"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "stonetool_6",
+					"name": "§content.crafts.e78c37846fec§",
+					"mats": [
+						"tool_5",
+						"armor_5"
+					],
+					"secs": 420
+				},
+				{
+					"id": "stonetool_7",
+					"name": "§content.crafts.e14ad42cda6b§",
+					"mats": [
+						"tool_6",
+						"armor_3"
+					],
+					"secs": 420
+				},
+				{
+					"id": "stonetool_8",
+					"name": "§content.crafts.3f3d19128645§",
+					"mats": [
+						"tool_7",
+						"furn_4",
+						"cloth_5"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "stonetool_9",
+					"name": "§cards.albums.52698ee7d8f0§",
+					"mats": [
+						"tool_8",
+						"furn_5",
+						"cloth_6"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "stonetool_10",
+					"name": "§content.crafts.3d06df19ed15§",
+					"mats": [
+						"tool_12",
+						"furn_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stonetool_11",
+					"name": "§content.crafts.ccc6242fb1a5§",
+					"mats": [
+						"tool_9",
+						"tool_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stonetool_12",
+					"name": "§content.crafts.af01d7bb04e8§",
+					"mats": [
+						"tool_13",
+						"tool_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stonetool_13",
+					"name": "§content.crafts.b89d05638f2d§",
+					"mats": [
+						"tool_10",
+						"tool_13"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stonetool_14",
+					"name": "§names.chains.c93bad55e745§",
+					"mats": [
+						"tool_14",
+						"tool_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "stonetool_15",
+					"name": "§content.crafts.2672d57e98c3§",
+					"mats": [
+						"tool_7",
+						"furn_8",
+						"cloth_6"
+					],
+					"secs": 2700
+				},
+				{
+					"id": "stonetool_16",
+					"name": "§content.crafts.11534f5ceada§",
+					"mats": [
+						"armor_6",
+						"tool_4",
+						"tool_6"
+					],
+					"secs": 900
+				},
+				{
+					"id": "stonetool_17",
+					"name": "§content.crafts.5f4246865844§",
+					"mats": [
+						"tool_6",
+						"tool_7",
+						"tool_8",
+						"armor_7"
+					],
+					"secs": 3600
+				}
+			]
+		},
+		{
+			"id": "weave",
+			"name": "§content.crafts.27c1d28d3ef4§",
+			"icon": "cloth_10",
+			"items": [
+				{
+					"id": "weave_1",
+					"name": "§content.crafts.35d1e3df2c12§",
+					"mats": [
+						"cloth_1",
+						"cloth_2"
+					],
+					"secs": 30
+				},
+				{
+					"id": "weave_2",
+					"name": "§content.crafts.31fcf44f7d5c§",
+					"mats": [
+						"cloth_3",
+						"cloth_2"
+					],
+					"secs": 60
+				},
+				{
+					"id": "weave_3",
+					"name": "§content.crafts.10e6da00602f§",
+					"mats": [
+						"cloth_3",
+						"cloth_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "weave_4",
+					"name": "§content.crafts.fb9ab5bac0bf§",
+					"mats": [
+						"cloth_3",
+						"armor_1"
+					],
+					"secs": 60
+				},
+				{
+					"id": "weave_5",
+					"name": "§content.crafts.d81dfd344890§",
+					"mats": [
+						"cloth_5",
+						"cloth_4"
+					],
+					"secs": 300
+				},
+				{
+					"id": "weave_6",
+					"name": "§content.crafts.5e121b04ad37§",
+					"mats": [
+						"cloth_3",
+						"cloth_5"
+					],
+					"secs": 180
+				},
+				{
+					"id": "weave_7",
+					"name": "§content.crafts.1859b611c338§",
+					"mats": [
+						"cloth_6",
+						"furn_4"
+					],
+					"secs": 420
+				},
+				{
+					"id": "weave_8",
+					"name": "§content.crafts.38bcd52b31d4§",
+					"mats": [
+						"cloth_6",
+						"cloth_5",
+						"cloth_4"
+					],
+					"secs": 600
+				},
+				{
+					"id": "weave_9",
+					"name": "§content.crafts.d0ef177d0b83§",
+					"mats": [
+						"cloth_7",
+						"furn_1"
+					],
+					"secs": 900
+				},
+				{
+					"id": "weave_10",
+					"name": "§content.crafts.ce402d3eb41c§",
+					"mats": [
+						"cloth_8",
+						"cloth_6"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "weave_11",
+					"name": "§content.crafts.7e7ac5ee2f4c§",
+					"mats": [
+						"cloth_9",
+						"cloth_6"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "weave_12",
+					"name": "§content.crafts.b9df453ea2ef§",
+					"mats": [
+						"cloth_9",
+						"furn_4"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "weave_13",
+					"name": "§content.crafts.7f46c19baf34§",
+					"mats": [
+						"cloth_10",
+						"cloth_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "weave_14",
+					"name": "§cards.albums.07e35a586b64§",
+					"mats": [
+						"cloth_10",
+						"cloth_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "weave_15",
+					"name": "§content.crafts.550a67e49048§",
+					"mats": [
+						"cloth_11",
+						"armor_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "weave_16",
+					"name": "§content.crafts.d4b7aaf009f7§",
+					"mats": [
+						"cloth_12",
+						"furn_13"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "weave_17",
+					"name": "§content.crafts.1329101f4325§",
+					"mats": [
+						"cloth_12",
+						"cloth_6",
+						"furn_8"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "hunting",
+			"name": "§content.crafts.ec5208a01a61§",
+			"icon": "tool_3",
+			"items": [
+				{
+					"id": "hunting_1",
+					"name": "§names.chains.4fff1c1ed56e§",
+					"mats": [
+						"cloth_5",
+						"tool_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "hunting_2",
+					"name": "§content.crafts.3e7e86279da0§",
+					"mats": [
+						"furn_4",
+						"tool_3"
+					],
+					"secs": 120
+				},
+				{
+					"id": "hunting_3",
+					"name": "§cards.albums.0a13922f8bfe§",
+					"mats": [
+						"furn_5",
+						"tool_3",
+						"cloth_5"
+					],
+					"secs": 420
+				},
+				{
+					"id": "hunting_4",
+					"name": "§content.crafts.ca6659aec801§",
+					"mats": [
+						"tool_4",
+						"cloth_4"
+					],
+					"secs": 180
+				},
+				{
+					"id": "hunting_5",
+					"name": "§content.crafts.674650b36c70§",
+					"mats": [
+						"furn_2",
+						"tool_2",
+						"bird_1"
+					],
+					"secs": 60
+				},
+				{
+					"id": "hunting_6",
+					"name": "§content.crafts.40f18924f5f2§",
+					"mats": [
+						"furn_3",
+						"tool_3",
+						"bird_3"
+					],
+					"secs": 120
+				},
+				{
+					"id": "hunting_7",
+					"name": "§content.crafts.a2d096ade990§",
+					"mats": [
+						"furn_4",
+						"cloth_6"
+					],
+					"secs": 420
+				},
+				{
+					"id": "hunting_8",
+					"name": "§content.crafts.030f4f1f06b8§",
+					"mats": [
+						"furn_8",
+						"cloth_6",
+						"armor_3"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "hunting_9",
+					"name": "§content.crafts.0832ddeedcab§",
+					"mats": [
+						"armor_5",
+						"cloth_6"
+					],
+					"secs": 600
+				},
+				{
+					"id": "hunting_10",
+					"name": "§content.crafts.66119651edfd§",
+					"mats": [
+						"cloth_6",
+						"furn_3"
+					],
+					"secs": 420
+				},
+				{
+					"id": "hunting_11",
+					"name": "§content.crafts.9df499928ad6§",
+					"mats": [
+						"cloth_6",
+						"cloth_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "hunting_12",
+					"name": "§content.crafts.76ac0d9e8746§",
+					"mats": [
+						"furn_5",
+						"tool_5"
+					],
+					"secs": 420
+				},
+				{
+					"id": "hunting_13",
+					"name": "§content.crafts.883ce57b6742§",
+					"mats": [
+						"tool_5",
+						"furn_2",
+						"armor_3"
+					],
+					"secs": 300
+				},
+				{
+					"id": "hunting_14",
+					"name": "§content.crafts.a6a499673023§",
+					"mats": [
+						"furn_8",
+						"tool_3",
+						"cloth_6"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "hunting_15",
+					"name": "§content.crafts.ffffc2e97300§",
+					"mats": [
+						"cloth_12",
+						"tool_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "hunting_16",
+					"name": "§content.crafts.8cd6d0ae1d71§",
+					"mats": [
+						"tool_8",
+						"furn_9",
+						"cloth_6"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "hunting_17",
+					"name": "§content.crafts.4af6384289aa§",
+					"mats": [
+						"furn_10",
+						"tool_5",
+						"armor_7"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "furniture",
+			"name": "§content.crafts.b0844df54614§",
+			"icon": "furn_13",
+			"items": [
+				{
+					"id": "furniture_1",
+					"name": "§content.crafts.616b696d63d9§",
+					"mats": [
+						"furn_4",
+						"furn_2"
+					],
+					"secs": 120
+				},
+				{
+					"id": "furniture_2",
+					"name": "§content.crafts.2a7a639c53fb§",
+					"mats": [
+						"furn_6",
+						"armor_2"
+					],
+					"secs": 420
+				},
+				{
+					"id": "furniture_3",
+					"name": "§content.crafts.a65965ce9638§",
+					"mats": [
+						"furn_5",
+						"pot_3"
+					],
+					"secs": 180
+				},
+				{
+					"id": "furniture_4",
+					"name": "§content.crafts.d3f7c601aad9§",
+					"mats": [
+						"furn_9",
+						"tool_6"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "furniture_5",
+					"name": "§content.crafts.6ceb5e77e6f0§",
+					"mats": [
+						"cloth_11",
+						"furn_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "furniture_6",
+					"name": "§content.crafts.5a4c28d536ae§",
+					"mats": [
+						"cloth_11",
+						"armor_3",
+						"furn_4"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "furniture_7",
+					"name": "§content.crafts.1e35f5e81a6d§",
+					"mats": [
+						"furn_5",
+						"armor_6"
+					],
+					"secs": 600
+				},
+				{
+					"id": "furniture_8",
+					"name": "§content.crafts.e40572ecace4§",
+					"mats": [
+						"armor_7",
+						"cloth_3"
+					],
+					"secs": 900
+				},
+				{
+					"id": "furniture_9",
+					"name": "§names.chains.af0a1ceacd73§",
+					"mats": [
+						"furn_8",
+						"furn_5",
+						"cloth_5"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "furniture_10",
+					"name": "§content.crafts.5da2651c1389§",
+					"mats": [
+						"furn_10",
+						"cloth_3"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "furniture_11",
+					"name": "§content.crafts.1e9df80d7000§",
+					"mats": [
+						"furn_11",
+						"armor_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "furniture_12",
+					"name": "§content.crafts.e401ae914339§",
+					"mats": [
+						"furn_13",
+						"furn_4"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "furniture_13",
+					"name": "§names.chains.44fdb2e64d3d§",
+					"mats": [
+						"furn_13",
+						"tool_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "furniture_14",
+					"name": "§content.crafts.84728a18fea9§",
+					"mats": [
+						"tool_11",
+						"tool_13"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "furniture_15",
+					"name": "§content.crafts.4912b1359fec§",
+					"mats": [
+						"furn_14",
+						"furn_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "furniture_16",
+					"name": "§names.builds.d240058ed94b§",
+					"mats": [
+						"furn_14",
+						"pot_9"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "furniture_17",
+					"name": "§content.crafts.0d1eadd01f12§",
+					"mats": [
+						"furn_14",
+						"furn_15",
+						"tool_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "furniture_18",
+					"name": "§content.crafts.11c2c642aefb§",
+					"mats": [
+						"furn_15",
+						"armor_10",
+						"gem_5"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "building",
+			"name": "§content.crafts.20e8599ddc65§",
+			"icon": "tool_13",
+			"items": [
+				{
+					"id": "building_1",
+					"name": "§content.crafts.555184edcc12§",
+					"mats": [
+						"furn_5",
+						"cloth_5"
+					],
+					"secs": 420
+				},
+				{
+					"id": "building_2",
+					"name": "§content.crafts.06e49d640af6§",
+					"mats": [
+						"cloth_9",
+						"furn_4"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "building_3",
+					"name": "§content.crafts.e35d11d31692§",
+					"mats": [
+						"furn_8",
+						"cloth_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "building_4",
+					"name": "§content.crafts.c3505cff2b9e§",
+					"mats": [
+						"armor_9",
+						"furn_5",
+						"cloth_6"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "building_5",
+					"name": "§content.crafts.093490b0addd§",
+					"mats": [
+						"tool_13",
+						"tool_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "building_6",
+					"name": "§content.crafts.b0f7223017e9§",
+					"mats": [
+						"tool_13",
+						"tool_9"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "building_7",
+					"name": "§content.crafts.08c652f9b9b3§",
+					"mats": [
+						"tool_14",
+						"tool_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "building_8",
+					"name": "§content.crafts.02471c7a62f7§",
+					"mats": [
+						"furn_14",
+						"furn_8"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "building_9",
+					"name": "§content.crafts.721762fce2a1§",
+					"mats": [
+						"furn_15",
+						"cloth_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "building_10",
+					"name": "§content.crafts.4139117d7d18§",
+					"mats": [
+						"furn_14",
+						"cloth_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "building_11",
+					"name": "§content.crafts.e481babbdd71§",
+					"mats": [
+						"tool_15",
+						"tool_16"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "building_12",
+					"name": "§content.crafts.4ecb3dc5e266§",
+					"mats": [
+						"furn_15",
+						"furn_11",
+						"cloth_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "building_13",
+					"name": "§content.crafts.afc30a279608§",
+					"mats": [
+						"furn_16",
+						"furn_15",
+						"tool_15"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "light",
+			"name": "§content.crafts.2a8f5a10cfd5§",
+			"icon": "pot_5",
+			"items": [
+				{
+					"id": "light_1",
+					"name": "§content.crafts.dc24a3741cd4§",
+					"mats": [
+						"furn_3",
+						"craft_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "light_2",
+					"name": "§content.merge_events.f67f7f55b5c9§",
+					"mats": [
+						"craft_3",
+						"furn_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "light_3",
+					"name": "§content.crafts.bb392a237ccb§",
+					"mats": [
+						"furn_4",
+						"craft_5"
+					],
+					"secs": 300
+				},
+				{
+					"id": "light_4",
+					"name": "§names.chains.67f725a44c78§",
+					"mats": [
+						"pot_6",
+						"craft_4",
+						"furn_1"
+					],
+					"secs": 420
+				},
+				{
+					"id": "light_5",
+					"name": "§content.crafts.6d7acf0bf12f§",
+					"mats": [
+						"furn_7",
+						"tool_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "light_6",
+					"name": "§content.crafts.159436e840d2§",
+					"mats": [
+						"tool_10",
+						"furn_7"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "light_7",
+					"name": "§content.crafts.4e80d0bc190d§",
+					"mats": [
+						"pot_5",
+						"craft_5"
+					],
+					"secs": 420
+				},
+				{
+					"id": "light_8",
+					"name": "§content.crafts.4a8fdc55a23e§",
+					"mats": [
+						"pot_5",
+						"craft_6"
+					],
+					"secs": 600
+				},
+				{
+					"id": "light_9",
+					"name": "§content.crafts.8f9e9336b115§",
+					"mats": [
+						"cloth_8",
+						"pot_5"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "light_10",
+					"name": "§content.crafts.061090563e75§",
+					"mats": [
+						"pot_5",
+						"craft_6",
+						"gem_2"
+					],
+					"secs": 600
+				},
+				{
+					"id": "light_11",
+					"name": "§content.crafts.50463e7dac8f§",
+					"mats": [
+						"pot_13",
+						"furn_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "light_12",
+					"name": "§content.crafts.b54c5f431b4f§",
+					"mats": [
+						"tool_12",
+						"tool_13",
+						"furn_10"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "fishgear",
+			"name": "§names.chains.80c98e21cc34§",
+			"icon": "weir_4",
+			"items": [
+				{
+					"id": "fishgear_1",
+					"name": "§content.crafts.9d3e2e5b91be§",
+					"mats": [
+						"tool_2",
+						"cloth_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "fishgear_2",
+					"name": "§content.crafts.06d89cfa372b§",
+					"mats": [
+						"cloth_6",
+						"tool_2"
+					],
+					"secs": 420
+				},
+				{
+					"id": "fishgear_3",
+					"name": "§names.chains.7c5c806db11f§",
+					"mats": [
+						"furn_4",
+						"cloth_6",
+						"tool_2"
+					],
+					"secs": 420
+				},
+				{
+					"id": "fishgear_4",
+					"name": "§content.crafts.ac1961beb8ea§",
+					"mats": [
+						"pot_1",
+						"cloth_6"
+					],
+					"secs": 420
+				},
+				{
+					"id": "fishgear_5",
+					"name": "§content.crafts.cb0e1dba62b8§",
+					"mats": [
+						"cloth_6",
+						"cloth_5"
+					],
+					"secs": 600
+				},
+				{
+					"id": "fishgear_6",
+					"name": "§content.crafts.bcf79fed3762§",
+					"mats": [
+						"furn_5",
+						"tool_3",
+						"cloth_5"
+					],
+					"secs": 420
+				},
+				{
+					"id": "fishgear_7",
+					"name": "§content.crafts.be5e7b96e98f§",
+					"mats": [
+						"cloth_10",
+						"cloth_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "fishgear_8",
+					"name": "§content.crafts.2cc6137fa992§",
+					"mats": [
+						"cloth_11",
+						"furn_3"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "fishgear_9",
+					"name": "§content.crafts.76615b787c0b§",
+					"mats": [
+						"tool_12",
+						"furn_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "fishgear_10",
+					"name": "§content.crafts.0ab0b1d1e542§",
+					"mats": [
+						"furn_8",
+						"cloth_6"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "fishgear_11",
+					"name": "§content.crafts.57b3a4916438§",
+					"mats": [
+						"furn_13",
+						"tool_2",
+						"cloth_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "fishgear_12",
+					"name": "§content.crafts.6428d1286d22§",
+					"mats": [
+						"furn_9",
+						"tool_7"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "fishgear_13",
+					"name": "§content.crafts.db1208e752e2§",
+					"mats": [
+						"cloth_12",
+						"pot_2"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "fishgear_14",
+					"name": "§content.crafts.dfcf90061dfe§",
+					"mats": [
+						"furn_10",
+						"cloth_12"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "jewelry",
+			"name": "§content.crafts.3b91c1d91db2§",
+			"icon": "gem_5",
+			"items": [
+				{
+					"id": "jewelry_1",
+					"name": "§content.crafts.192d8db5afd7§",
+					"mats": [
+						"seed_1",
+						"cloth_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "jewelry_2",
+					"name": "§content.crafts.87f3e2e4f2b3§",
+					"mats": [
+						"bird_1",
+						"furn_1"
+					],
+					"secs": 20
+				},
+				{
+					"id": "jewelry_3",
+					"name": "§content.crafts.16851a3c5351§",
+					"mats": [
+						"gem_1",
+						"cloth_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "jewelry_4",
+					"name": "§content.crafts.b8d56ded0108§",
+					"mats": [
+						"armor_1",
+						"cloth_5"
+					],
+					"secs": 180
+				},
+				{
+					"id": "jewelry_5",
+					"name": "§content.crafts.7f8ec4aae6e9§",
+					"mats": [
+						"gem_2",
+						"cloth_5"
+					],
+					"secs": 180
+				},
+				{
+					"id": "jewelry_6",
+					"name": "§content.crafts.f2b499145d8b§",
+					"mats": [
+						"gem_3",
+						"bird_6",
+						"cloth_6"
+					],
+					"secs": 900
+				},
+				{
+					"id": "jewelry_7",
+					"name": "§content.crafts.058ab950a0ff§",
+					"mats": [
+						"gem_4",
+						"cloth_6"
+					],
+					"secs": 420
+				},
+				{
+					"id": "jewelry_8",
+					"name": "§content.crafts.1d277118897a§",
+					"mats": [
+						"gem_5",
+						"cloth_6"
+					],
+					"secs": 600
+				},
+				{
+					"id": "jewelry_9",
+					"name": "§content.crafts.1713d1b24e62§",
+					"mats": [
+						"gem_6",
+						"armor_5"
+					],
+					"secs": 600
+				},
+				{
+					"id": "jewelry_10",
+					"name": "§content.crafts.ba90aadbeca3§",
+					"mats": [
+						"gem_6",
+						"pot_1",
+						"cloth_6"
+					],
+					"secs": 900
+				},
+				{
+					"id": "jewelry_11",
+					"name": "§content.crafts.ba209e2f583d§",
+					"mats": [
+						"seed_8",
+						"seed_5",
+						"cloth_6"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "jewelry_12",
+					"name": "§content.crafts.404cfbcd8775§",
+					"mats": [
+						"clam_1",
+						"clam_7",
+						"cloth_6"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "jewelry_13",
+					"name": "§cards.albums.cd6b9a866a06§",
+					"mats": [
+						"clam_6",
+						"cloth_6"
+					],
+					"secs": 900
+				},
+				{
+					"id": "jewelry_14",
+					"name": "§content.crafts.4d26878330b6§",
+					"mats": [
+						"gem_7",
+						"tool_6"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "jewelry_15",
+					"name": "§content.crafts.6787f4c9d5b5§",
+					"mats": [
+						"gem_8",
+						"bird_5"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "jewelry_16",
+					"name": "§content.crafts.d4e82a362c1d§",
+					"mats": [
+						"bird_5",
+						"bird_7",
+						"cloth_6"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "jewelry_17",
+					"name": "§content.crafts.5c48661eef09§",
+					"mats": [
+						"bird_7",
+						"armor_7"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "jewelry_18",
+					"name": "§content.crafts.6dc60dd48e20§",
+					"mats": [
+						"clam_11",
+						"cloth_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "jewelry_19",
+					"name": "§content.crafts.74f257c11b8a§",
+					"mats": [
+						"clam_12",
+						"gem_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "jewelry_20",
+					"name": "§content.crafts.7f05d0e214f0§",
+					"mats": [
+						"gem_9",
+						"gem_5",
+						"armor_7"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "jewelry_21",
+					"name": "§content.crafts.9dc9ec695c45§",
+					"mats": [
+						"gem_11",
+						"armor_7"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "clothes",
+			"name": "§content.crafts.7415c55f5479§",
+			"icon": "armor_7",
+			"items": [
+				{
+					"id": "clothes_1",
+					"name": "§names.chains.1f860a00d2f7§",
+					"mats": [
+						"cloth_3",
+						"cloth_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "clothes_2",
+					"name": "§content.crafts.571837f5dd6c§",
+					"mats": [
+						"armor_2",
+						"cloth_5"
+					],
+					"secs": 180
+				},
+				{
+					"id": "clothes_3",
+					"name": "§content.crafts.883039db0251§",
+					"mats": [
+						"armor_3",
+						"cloth_5"
+					],
+					"secs": 180
+				},
+				{
+					"id": "clothes_4",
+					"name": "§content.crafts.5f03f1c18550§",
+					"mats": [
+						"armor_3",
+						"cloth_6"
+					],
+					"secs": 420
+				},
+				{
+					"id": "clothes_5",
+					"name": "§content.crafts.9884309bbaff§",
+					"mats": [
+						"armor_4",
+						"cloth_6"
+					],
+					"secs": 420
+				},
+				{
+					"id": "clothes_6",
+					"name": "§content.crafts.d879aad38f14§",
+					"mats": [
+						"armor_5",
+						"cloth_6"
+					],
+					"secs": 600
+				},
+				{
+					"id": "clothes_7",
+					"name": "§content.crafts.cc5b2dc96312§",
+					"mats": [
+						"armor_5",
+						"cloth_3"
+					],
+					"secs": 180
+				},
+				{
+					"id": "clothes_8",
+					"name": "§content.crafts.7aa9ecc52a70§",
+					"mats": [
+						"armor_5",
+						"cloth_5",
+						"cloth_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "clothes_9",
+					"name": "§content.crafts.e2bd443ada9b§",
+					"mats": [
+						"armor_6",
+						"cloth_6"
+					],
+					"secs": 900
+				},
+				{
+					"id": "clothes_10",
+					"name": "§content.crafts.6cd0644fcf32§",
+					"mats": [
+						"armor_6",
+						"armor_2"
+					],
+					"secs": 420
+				},
+				{
+					"id": "clothes_11",
+					"name": "§content.crafts.32867140f78f§",
+					"mats": [
+						"armor_7",
+						"cloth_6"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "clothes_12",
+					"name": "§content.crafts.a3a2e70dc322§",
+					"mats": [
+						"armor_7",
+						"armor_1"
+					],
+					"secs": 900
+				},
+				{
+					"id": "clothes_13",
+					"name": "§names.chains.5a4666a1a978§",
+					"mats": [
+						"armor_8",
+						"cloth_6"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "clothes_14",
+					"name": "§content.crafts.b0cb26e157f7§",
+					"mats": [
+						"armor_8",
+						"gem_2"
+					],
+					"secs": 1800
+				},
+				{
+					"id": "clothes_15",
+					"name": "§content.crafts.7674a0e7bb91§",
+					"mats": [
+						"armor_9",
+						"tool_5"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "clothes_16",
+					"name": "§content.crafts.80db47e6e174§",
+					"mats": [
+						"armor_10",
+						"cloth_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "clothes_17",
+					"name": "§content.crafts.016faaf4316f§",
+					"mats": [
+						"armor_11",
+						"gem_8"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "music",
+			"name": "§content.crafts.a59949fd38a4§",
+			"icon": "armor_5",
+			"items": [
+				{
+					"id": "music_1",
+					"name": "§content.crafts.4614daaa3b32§",
+					"mats": [
+						"cloth_4",
+						"cloth_1"
+					],
+					"secs": 120
+				},
+				{
+					"id": "music_2",
+					"name": "§content.crafts.b93010c739c0§",
+					"mats": [
+						"craft_2",
+						"furn_2"
+					],
+					"secs": 45
+				},
+				{
+					"id": "music_3",
+					"name": "§content.crafts.4eb58cf6d76c§",
+					"mats": [
+						"furn_5",
+						"furn_4"
+					],
+					"secs": 300
+				},
+				{
+					"id": "music_4",
+					"name": "§content.crafts.7f4a9214c4dc§",
+					"mats": [
+						"furn_4",
+						"furn_5",
+						"craft_4"
+					],
+					"secs": 420
+				},
+				{
+					"id": "music_5",
+					"name": "§content.crafts.b7d57172d5d4§",
+					"mats": [
+						"tool_9",
+						"cloth_6"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "music_6",
+					"name": "§content.crafts.0a76eb7692b9§",
+					"mats": [
+						"armor_5",
+						"furn_9",
+						"cloth_6"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "music_7",
+					"name": "§names.chains.afb851aec128§",
+					"mats": [
+						"pot_1",
+						"tool_2"
+					],
+					"secs": 30
+				},
+				{
+					"id": "music_8",
+					"name": "§content.crafts.8823bf65b873§",
+					"mats": [
+						"pot_6",
+						"armor_5"
+					],
+					"secs": 600
+				},
+				{
+					"id": "music_9",
+					"name": "§content.crafts.88e2fd35464a§",
+					"mats": [
+						"seed_7",
+						"seed_8",
+						"pot_6"
+					],
+					"secs": 2700
+				},
+				{
+					"id": "music_10",
+					"name": "§content.crafts.34274fd44ca8§",
+					"mats": [
+						"clam_1",
+						"clam_3",
+						"cloth_6"
+					],
+					"secs": 420
+				},
+				{
+					"id": "music_11",
+					"name": "§content.crafts.a06ab469d7ed§",
+					"mats": [
+						"clam_7",
+						"tool_2"
+					],
+					"secs": 900
+				},
+				{
+					"id": "music_12",
+					"name": "§content.crafts.999fd21dbb6b§",
+					"mats": [
+						"armor_9",
+						"furn_12",
+						"cloth_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "music_13",
+					"name": "§content.crafts.738a34b598d5§",
+					"mats": [
+						"armor_8",
+						"furn_11",
+						"pot_13"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "medicine",
+			"name": "§content.crafts.1425bb500be9§",
+			"icon": "craft_9",
+			"items": [
+				{
+					"id": "medicine_1",
+					"name": "§content.crafts.3372fc2895e3§",
+					"mats": [
+						"craft_1",
+						"cloth_5"
+					],
+					"secs": 180
+				},
+				{
+					"id": "medicine_2",
+					"name": "§content.crafts.c6a9f01d9ca1§",
+					"mats": [
+						"cloth_2",
+						"craft_4"
+					],
+					"secs": 120
+				},
+				{
+					"id": "medicine_3",
+					"name": "§content.crafts.e7d08a71bf3b§",
+					"mats": [
+						"cloth_6",
+						"craft_5"
+					],
+					"secs": 600
+				},
+				{
+					"id": "medicine_4",
+					"name": "§content.crafts.06cb240b27dd§",
+					"mats": [
+						"craft_6",
+						"cloth_3"
+					],
+					"secs": 420
+				},
+				{
+					"id": "medicine_5",
+					"name": "§content.crafts.c7b46becd79e§",
+					"mats": [
+						"craft_5",
+						"pot_2"
+					],
+					"secs": 180
+				},
+				{
+					"id": "medicine_6",
+					"name": "§content.crafts.c9541b505150§",
+					"mats": [
+						"craft_7",
+						"pot_6"
+					],
+					"secs": 1200
+				},
+				{
+					"id": "medicine_7",
+					"name": "§content.crafts.1255ae2b41d4§",
+					"mats": [
+						"craft_8",
+						"tool_9"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "medicine_8",
+					"name": "§content.crafts.2bca3ee94958§",
+					"mats": [
+						"craft_10",
+						"seed_2"
+					],
+					"secs": 5400
+				},
+				{
+					"id": "medicine_9",
+					"name": "§content.crafts.b3b77ebf9094§",
+					"mats": [
+						"craft_9",
+						"pot_7"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "medicine_10",
+					"name": "§content.crafts.9a160dbbf51f§",
+					"mats": [
+						"craft_9",
+						"craft_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "medicine_11",
+					"name": "§content.crafts.c29494381adf§",
+					"mats": [
+						"furn_13",
+						"craft_9",
+						"cloth_6"
+					],
+					"secs": 7200
+				}
+			]
+		},
+		{
+			"id": "ritual",
+			"name": "§content.crafts.5d47275597e5§",
+			"icon": "gem_9",
+			"items": [
+				{
+					"id": "ritual_1",
+					"name": "§content.crafts.5fc25472ff47§",
+					"mats": [
+						"gem_2",
+						"cloth_6"
+					],
+					"secs": 420
+				},
+				{
+					"id": "ritual_2",
+					"name": "§content.crafts.66ef96a7d37f§",
+					"mats": [
+						"clam_10",
+						"cloth_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_3",
+					"name": "§content.crafts.f1bbb15c79bc§",
+					"mats": [
+						"bird_3",
+						"furn_6",
+						"cloth_6"
+					],
+					"secs": 900
+				},
+				{
+					"id": "ritual_4",
+					"name": "§content.crafts.f8909c0737af§",
+					"mats": [
+						"furn_12",
+						"gem_4"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_5",
+					"name": "§content.crafts.485770b5efd7§",
+					"mats": [
+						"bird_7",
+						"furn_8",
+						"gem_8"
+					],
+					"secs": 3600
+				},
+				{
+					"id": "ritual_6",
+					"name": "§content.crafts.c6930335eb16§",
+					"mats": [
+						"gem_6",
+						"tool_13"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_7",
+					"name": "§content.crafts.215e8e5cd1c2§",
+					"mats": [
+						"gem_9",
+						"tool_15"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_8",
+					"name": "§content.crafts.afb0c069212e§",
+					"mats": [
+						"tool_16",
+						"furn_11",
+						"craft_6"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_9",
+					"name": "§content.crafts.9c3322da4ac5§",
+					"mats": [
+						"clam_12",
+						"gem_6",
+						"cloth_12"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_10",
+					"name": "§content.crafts.951867e402b3§",
+					"mats": [
+						"pot_14",
+						"gem_5"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_11",
+					"name": "§content.crafts.c4e8451591d4§",
+					"mats": [
+						"pot_15",
+						"fish_13",
+						"cloth_9"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_12",
+					"name": "§names.chains.9c220e1e66db§",
+					"mats": [
+						"pot_13",
+						"gem_12",
+						"armor_11"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_13",
+					"name": "§cards.albums.8ae267e3eda3§",
+					"mats": [
+						"furn_16",
+						"gem_5",
+						"bird_7"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_14",
+					"name": "§content.crafts.edbdc9ca790f§",
+					"mats": [
+						"gem_11",
+						"bird_8",
+						"armor_10"
+					],
+					"secs": 7200
+				},
+				{
+					"id": "ritual_15",
+					"name": "§content.crafts.194bef25f967§",
+					"mats": [
+						"pot_16",
+						"gem_9"
+					],
+					"secs": 7200
+				}
+			]
+		}
+	],
+	"groups": [
+		{
+			"id": "food",
+			"name": "§content.crafts.849f32bb7a96§",
+			"icon": "fruit_6",
+			"categories": [
+				"fruitplate",
+				"ration",
+				"grill",
+				"honey",
+				"stew",
+				"seafood",
+				"drink"
+			]
+		},
+		{
+			"id": "gear",
+			"name": "§content.crafts.7b659bdb06d5§",
+			"icon": "tool_8",
+			"categories": [
+				"stonetool",
+				"hunting",
+				"fishgear",
+				"light"
+			]
+		},
+		{
+			"id": "home",
+			"name": "§content.crafts.f39921c56b8f§",
+			"icon": "furn_13",
+			"categories": [
+				"weave",
+				"furniture",
+				"building"
+			]
+		},
+		{
+			"id": "wear",
+			"name": "§content.crafts.ee245af1eeaf§",
+			"icon": "gem_5",
+			"categories": [
+				"clothes",
+				"jewelry"
+			]
+		},
+		{
+			"id": "rite",
+			"name": "§content.crafts.bd68be11d57f§",
+			"icon": "gem_9",
+			"categories": [
+				"music",
+				"medicine",
+				"ritual"
+			]
+		}
+	]
+}

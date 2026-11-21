@@ -11,7 +11,7 @@
     "first_ready": "§dialogue.hero_voice.2ec942804217§",
     "submit1": "§dialogue.hero_voice.a46f038d214d§",
     "produce_more": "§dialogue.hero_voice.d1b85511dc1c§",
-    "submit2": "§dialogue.hero_voice.a46f038d214d§",
+    "submit2": "§dialogue.hero_voice.d76d92cd7e9e§",
     "upgrade": "§dialogue.hero_voice.6b2d1272e79d§",
     "build1": "§dialogue.hero_voice.d49acf6982dd§",
     "back1": "§dialogue.hero_voice.734eb5efa06e§",
@@ -37,7 +37,9 @@
     "first_cook": "§dialogue.hero_voice.362846a03553§",
     "take_dish": "§dialogue.hero_voice.189811b4a907§",
     "energy_gift": "§dialogue.hero_voice.365775cd0600§",
-    "free_energy_gift": "§dialogue.hero_voice.6ad4231372ef§"
+    "free_energy_gift": "§dialogue.hero_voice.6ad4231372ef§",
+    "egen_merge": "§dialogue.hero_voice.38575e8fa132§",
+    "egen_collect": "§dialogue.hero_voice.2d58c498dc23§"
   },
   "tips": {
     "stash": "§dialogue.hero_voice.d9b362661c5d§",
@@ -48,7 +50,7 @@
     "craft_cook": "§dialogue.hero_voice.a5564fb16f32§",
     "craft_ready": "§dialogue.hero_voice.0774633ff346§",
     "egen": "§dialogue.hero_voice.b4f597a3bca2§",
-    "build": "§dialogue.hero_voice.6b2d1272e79d§",
+    "build": "§dialogue.hero_voice.38b0fa743f00§",
     "energy_out": "§dialogue.hero_voice.443c7f58f4f5§",
     "energy_free": "§dialogue.hero_voice.c2900447e189§"
   }

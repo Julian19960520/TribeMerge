@@ -161,6 +161,7 @@ static func pebble(ci: CanvasItem, c: Vector2, r: float, pal: Array, seed: int) 
 	ci.draw_colored_polygon(p, pal[1])
 	ci.draw_colored_polygon(Art.ell(c + Vector2(-r * 0.25, -r * 0.25), Vector2(r * 0.45, r * 0.25), seed, 0.0, 8, -0.3, 0.2), pal[2])
 
+## 旧的巨石锁格，留着备查；现在烘焙用 forest()
 static func rock(ci: CanvasItem, r: Rect2, i: int) -> void:
 	var s := i * 7 + 3
 	var c := r.get_center() + Vector2(0, 6)
@@ -212,6 +213,96 @@ static func rock(ci: CanvasItem, r: Rect2, i: int) -> void:
 		flower(ci, c + Vector2(-22 + r01(s, 23) * 10.0, 20), s + 80)
 	elif deco < 0.27:
 		mushroom(ci, c + Vector2(26 - r01(s, 24) * 6.0, 32), s + 90)
+
+# ---------------------------------------------------------------- 密林锁格（现用）
+## 和部落界面 Paint.forest_tree 一个画法：不描墨线，树干 + 三层深浅树冠。
+## 每格先铺一块草地（往外多铺几像素，相邻锁格连成一片），再种三四棵树；
+## 按格子序号挑棵数、位置、大小，63 个变体互不相同。格子按行画，下一行的树冠自然压住上一行的树干。
+
+const FOREST_FLOOR := Color("81a656")
+## 比部落界面的树灰一些，锁格退到后面，不抢棋盘上物品的眼
+const FOREST_GREENS := [Color("3b6e44"), Color("4a814c"), Color("5c9555")]
+const FOREST_TRUNK := Color("6d4d32")
+const LEAF_LIGHT := Color("8cc63f")
+
+## base 是树根，s 是缩放（Paint.forest_tree 的 s 约 0.8–1.3）
+static func forest_tree(ci: CanvasItem, base: Vector2, seed: int, s: float) -> void:
+	ci.draw_colored_polygon(Art.ell(base + Vector2(0, 3), Vector2(30, 8) * s, seed, 0.05, 14), Color(0.08, 0.18, 0.06, 0.4))
+	ci.draw_rect(Rect2(base + Vector2(-5, -40) * s, Vector2(10, 42) * s), FOREST_TRUNK)
+	for k in 3:
+		var c := base + Vector2((r01(seed, k) - 0.5) * 26.0, -58.0 - float(k) * 16.0) * s
+		ci.draw_colored_polygon(Art.ell(c, Vector2(44 - k * 9, 34 - k * 7) * s, seed + k, 0.12, 16), FOREST_GREENS[k])
+	ci.draw_circle(base + Vector2(-10, -98) * s, 7.0 * s, Color(1, 1, 1, 0.12))
+
+## 底层：草地（forest_ground.png）。棋盘先把所有锁格的草地铺完，再画树，草地就不会盖住上一行的树冠。
+static func forest_ground(ci: CanvasItem, r: Rect2, i: int) -> void:
+	var s := i * 7 + 3
+	ci.draw_colored_polygon(Art.rrect(r.grow(5.0), 14, s, 0.6), FOREST_FLOOR)
+	# 林地上几簇浅色草点
+	for k in 4:
+		var p := r.position + Vector2(10 + r01(s, 80 + k) * 76.0, 60 + r01(s, 84 + k) * 30.0)
+		ci.draw_colored_polygon(Art.ell(p, Vector2(12, 4.5), s + k, 0.1, 10), Color(0.77, 0.85, 0.55, 0.42))
+
+## 上层：树（rocks_0..3.png，透明底）
+static func forest(ci: CanvasItem, r: Rect2, i: int) -> void:
+	var s := i * 7 + 3
+	# 后排两棵（矮、偏上），前排一两棵（偏下、大一点）
+	# 树冠不能超出 128 图块（四边各留 16）：后排树根 y≈56–64、s≤0.64，前排树根 y≈92–98、s≤0.74
+	var trees: Array = []
+	var flip := r01(s, 9) > 0.5
+	var bx := 28.0 + r01(s, 10) * 40.0
+	trees.append([r.position + Vector2(bx, 56.0 + r01(s, 20) * 8.0), 0.56 + r01(s, 30) * 0.08])
+	if r01(s, 11) > 0.15:
+		var bx2 := bx + (34.0 + r01(s, 12) * 10.0) * (-1.0 if bx > 48.0 else 1.0)
+		trees.append([r.position + Vector2(clampf(bx2, 18.0, 78.0), 50.0 + r01(s, 21) * 10.0), 0.5 + r01(s, 31) * 0.08])
+	var fx := 28.0 + r01(s, 40) * 10.0
+	trees.append([r.position + Vector2(fx if flip else 96.0 - fx, 94.0 + r01(s, 50) * 4.0), 0.66 + r01(s, 60) * 0.08])
+	if r01(s, 41) > 0.15:
+		var fx2 := 58.0 + r01(s, 42) * 10.0
+		trees.append([r.position + Vector2(fx2 if flip else 96.0 - fx2, 90.0 + r01(s, 51) * 6.0), 0.6 + r01(s, 61) * 0.1])
+	trees.sort_custom(func(a, b): return float(a[0].y) < float(b[0].y))
+	for k in trees.size():
+		forest_tree(ci, trees[k][0], s + 100 + k * 7, float(trees[k][1]))
+	# 偶尔一颗红果 / 一朵小花点缀
+	if r01(s, 70) > 0.6:
+		var p := r.position + Vector2(18 + r01(s, 71) * 60.0, 30 + r01(s, 72) * 30.0)
+		ci.draw_circle(p, 3.2, Color("c95062"))
+		ci.draw_circle(p + Vector2(-1, -1), 1.1, Color(1, 1, 1, 0.6))
+
+## 砍开那一下：树冠上冒出一圈浅色叶子、两侧几道摇晃的弧线
+static func rustle(ci: CanvasItem, r: Rect2, i: int, u: float) -> void:
+	var c := r.get_center() + Vector2(0, -6)
+	var swish := Color(1, 0.98, 0.85, 0.85 * (1.0 - u * 0.5))
+	for sx in [-1.0, 1.0]:
+		for k in 2:
+			var rad := 30.0 + float(k) * 10.0
+			ci.draw_arc(c, rad, (PI if sx < 0.0 else 0.0) - 0.5, (PI if sx < 0.0 else 0.0) + 0.5, 10, swish, lerpf(2.5, 4.0, u) - float(k), true)
+	for k in 6:
+		var a := TAU * float(k) / 6.0 + r01(i, 90 + k)
+		var p := c + Vector2(cos(a) * 26.0, sin(a) * 22.0)
+		var leaf := Art.ell(p, Vector2(6.5, 3.2), i * 9 + k, 0.0, 10, a)
+		ci.draw_colored_polygon(leaf, LEAF_LIGHT)
+		Art.outline(ci, leaf, 1.4, Art.LEAF_D)
+
+## 飞出去的碎片：0–5 叶子（4、5 带一截树枝），6 小圆叶，7 一团淡绿的尘
+static func leaf_fragment(ci: CanvasItem, k: int) -> void:
+	var c := Vector2(32, 32)
+	if k == 6:
+		ci.draw_circle(c, 13, Art.LEAF_D)
+		ci.draw_circle(c, 10.5, FOREST_GREENS[2])
+		ci.draw_circle(c + Vector2(-3, -3), 3.5, Color(1, 1, 1, 0.25))
+	elif k == 7:
+		ci.draw_circle(c, 28, Color(0.72, 0.84, 0.55, 1))
+	else:
+		if k >= 4:
+			Art.ln(ci, c + Vector2(-18, 10), c + Vector2(16, -8), 4.0, Color("6a4526"), k)
+		var col: Color = [FOREST_GREENS[1], FOREST_GREENS[2], LEAF_LIGHT, FOREST_GREENS[0], FOREST_GREENS[2], LEAF_LIGHT][k]
+		var leaf := Art.ell(c + Vector2(2, -2), Vector2(15 + k % 3, 7 + k % 2), 400 + k, 0.0, 14, -0.5 + float(k) * 0.3)
+		ci.draw_colored_polygon(leaf, col)
+		Art.outline(ci, leaf, 2.0, Art.LEAF_D)
+		Art.ln(ci, c + Vector2(-9, 4).rotated(float(k) * 0.3), c + Vector2(11, -7).rotated(float(k) * 0.3), 1.4, Art.LEAF_D, k + 10)
+
+# ---------------------------------------------------------------- 旧的巨石（备查，不再烘焙）
 
 static func cracks(ci: CanvasItem, r: Rect2, i: int, u: float) -> void:
 	var c := r.get_center() + Vector2(0, 4)

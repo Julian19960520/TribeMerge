@@ -44,6 +44,8 @@ const FISH := Color("6fb0c8")
 static var boil: int = 0
 ## 线条抖动倍率。生成图片时由配置里的幅度写入，平时为 1。
 static var wobble := 1.0
+## 烘焙时把偏小的物品放大：形状（顶点）跟着放大，描边按这个倍数缩回去，线条粗细不变
+static var stroke_k := 1.0
 
 # ---------------------------------------------------------------- 随机与抖动
 
@@ -163,7 +165,7 @@ static func bbox(pts: PackedVector2Array) -> Rect2:
 static func outline(ci: CanvasItem, pts: PackedVector2Array, w: float = 3.0, col: Color = INK) -> void:
 	var c := pts.duplicate()
 	c.append(pts[0])
-	ci.draw_polyline(c, col, w, true)
+	ci.draw_polyline(c, col, w / stroke_k, true)
 
 static func fill(ci: CanvasItem, pts: PackedVector2Array, col: Color, w: float = 3.0, line: Color = INK) -> void:
 	ci.draw_colored_polygon(pts, col)
@@ -199,18 +201,18 @@ static func P(pts: PackedVector2Array, col: Color, mode: int = 0) -> Array:
 static func sil(ci: CanvasItem, parts: Array, rim: bool = true, w: float = 3.0) -> void:
 	if rim:
 		for p in parts:
-			dilate(ci, p[0], w + 6.0, Color(1, 0.98, 0.92, 0.96))
+			dilate(ci, p[0], (w + 6.0) / stroke_k, Color(1, 0.98, 0.92, 0.96))
 	for p in parts:
-		dilate(ci, p[0], w, INK)
+		dilate(ci, p[0], w / stroke_k, INK)
 	for p in parts:
 		shade(ci, p[0], p[1], p[2])
 		outline(ci, p[0], 2.2, INK)
 
 static func ln(ci: CanvasItem, a: Vector2, b: Vector2, w: float = 2.5, col: Color = INK, seed: int = 0) -> void:
-	ci.draw_line(a + jv(seed, 0.6), b + jv(seed + 5, 0.6), col, w, true)
+	ci.draw_line(a + jv(seed, 0.6), b + jv(seed + 5, 0.6), col, w / stroke_k, true)
 
 static func pl(ci: CanvasItem, arr: Array, w: float = 2.5, col: Color = INK, seed: int = 0) -> void:
-	ci.draw_polyline(poly(arr, seed, 0.6), col, w, true)
+	ci.draw_polyline(poly(arr, seed, 0.6), col, w / stroke_k, true)
 
 static func dot(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
 	ci.draw_circle(c, r, col)
@@ -257,6 +259,7 @@ static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool 
 	if id == "":
 		return
 	if _vector_item(ci, id, c, size, rot): return
+	if Items.blit_ai(ci, id, c, size, rot): return
 	Items.blit(ci, id, c, size, rim, rot)
 
 static func chest_visual(id: String, opened: bool) -> String:
@@ -270,6 +273,9 @@ static func draw_item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: 
 	if Data.is_dish(id):
 		_paint_dish(ci, id, c, size, rim, rot)
 		return
+	if Data.is_craft(id):
+		PACraft.draw(ci, id, c, size, rim)
+		return
 	if Data.chain(id) == "emberpot":
 		ci.draw_set_transform(c, rot, Vector2.ONE * (size / 100.0))
 		_emberpot(ci, 41, rim)
@@ -278,15 +284,10 @@ static func draw_item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: 
 	var ch := id.get_slice("_", 0)
 	var lv := int(id.get_slice("_", 1))
 	var def: Dictionary = Data.CHAINS.get(ch, {})
-	if def.has("line"):
-		var role := Data.draw_role(ch)
-		if role != "":
-			ProdArt.draw(ci, def["line"], role, lv, c, size, rim)
-			return
+	if ProdArt.draw_chain(ci, ch, lv, c, size, rim):
+		return
 	ci.draw_set_transform(c, rot, Vector2.ONE * (size / 100.0))
 	_outer = Transform2D(rot, Vector2.ONE * (size / 100.0), 0.0, c)
-	if not _nested:
-		ci.draw_colored_polygon(ell(Vector2(0, 40), Vector2(30, 6), 1, 0.0, 14, 0.0, 0.0), Color(0.2, 0.1, 0.0, 0.18))
 	var s: int = abs(ch.hash()) % 97 + lv * 7
 	match ch:
 		"fire", "shell", "amber", "sand": _currency(ci, ch, lv, s, rim)
@@ -782,7 +783,6 @@ static func _hourglass_pts(inner: float, w: float, neck: float, _pad: float, y0:
 
 ## 火种罐（体力生产器）：鼓肚陶罐，腰上一圈草绳，罐口冒火苗、飞火星。生成 PNG 时按 boil 相位画出各帧。
 static func _emberpot(ci: CanvasItem, s: int, rim: bool) -> void:
-	ci.draw_colored_polygon(ell(Vector2(0, 44), Vector2(32, 6), 1, 0.0, 14, 0.0, 0.0), Color(0.2, 0.1, 0.0, 0.18))
 	var body := poly([Vector2(-20, -16), Vector2(-34, 0), Vector2(-36, 18), Vector2(-26, 38), Vector2(26, 38),
 		Vector2(36, 18), Vector2(34, 0), Vector2(20, -16)], s, 0.8)
 	var neck := rrect(Rect2(-22, -24, 44, 12), 5, s + 1, 0.5)
@@ -1475,7 +1475,6 @@ static func _scissors(ci: CanvasItem, s: int, rim: bool) -> void:
 
 static func _paint_dish(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool, rot: float) -> void:
 	ci.draw_set_transform(c, rot, Vector2.ONE * (size / 100.0))
-	ci.draw_colored_polygon(ell(Vector2(0, 40), Vector2(34, 7), 2, 0.0, 14, 0.0, 0.0), Color(0.2, 0.1, 0.0, 0.18))
 	var s: int = absi(id.hash()) % 97
 	match id:
 		"salad":

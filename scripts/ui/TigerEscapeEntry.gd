@@ -27,13 +27,10 @@ func _process(delta: float) -> void:
 		button.queue_redraw()
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
+	# 档期剩余时间；逃跑中再画已过的关数
 	var m := TigerEscape.round_state()
-	var text := TextCatalog.source("ui.tigerescapeentry.efdc22fca1c6")
-	var style := "go"
-	if not m.is_empty():
-		if m["status"] == "running":
-			text = TextCatalog.fill(TextCatalog.source("ui.tigerescapeentry.spots"), TigerEscape.stage_remaining(m))
-			style = "time"
-		else: text = TextCatalog.source("ui.raceentry.0e4062a72843")
-	# 和其他活动入口同一套：贴纸主题图 + 状态小牌 + 名字（scripts/sprites/events.gd 的 _en_tiger）
-	EventEntryArt.paint(ci, sz, "tiger", TextCatalog.source("ui.tigerescapeentry.5e7c1a9e58e6"), {"text": text, "style": style}, false, not TigerEscape.pending_rewards(m).is_empty(), _bump)
+	var info := {}
+	if ActivitySchedule.scheduled("tiger"): info["left"] = ActivitySchedule.seconds_left("tiger")
+	if not m.is_empty() and m["status"] == "running":
+		info.merge({"have": int(m.get("stage", 0)), "need": m.get("stages", []).size(), "icon": "banana"})
+	EventEntryArt.paint(ci, sz, "tiger", info, false, not TigerEscape.pending_rewards(m).is_empty(), _bump)

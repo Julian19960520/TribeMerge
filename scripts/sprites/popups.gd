@@ -24,7 +24,7 @@ const EVENT_PANEL := Rect2(60, 350, 600, 190)
 const RIBBON := Rect2(-6, 168, 232, 56)
 const INV_FRAME := Rect2(30, 300, 660, 880)
 const INV_LEDGE := Rect2(48, 1026, 624, 124)
-const INV_SIGN := Rect2(240, 300, 240, 96)
+const INV_SIGN := Rect2(240, 264, 240, 96)
 const INV_SHELF := Rect2(0, 100, 620, 40)
 const INV_SLOT := Rect2(4, 4, 100, 102)
 const CC_CARD := Rect2(0, 0, 184, 316)
@@ -409,7 +409,6 @@ static func live_choice(ci: CanvasItem, r: Rect2, on: bool) -> void:
 ## 粗糙石壁 + 石块纹理 + 洞口（画在洞口渐变之前）
 static func live_inv_frame(ci: CanvasItem) -> void:
 	var FR := INV_FRAME
-	var VIEW := Rect2(50, 432, 620, 600)
 	ci.draw_colored_polygon(Art.rrect(Rect2(FR.position + Vector2(0, 12), FR.size), 40, 161, 0.0), Color(0, 0, 0, 0.35))
 	var outer := Art.rrect(FR, 40, 161, 2.2, 30.0)
 	Art.dilate(ci, outer, 3.5, Art.INK)
@@ -418,7 +417,8 @@ static func live_inv_frame(ci: CanvasItem) -> void:
 		var q := FR.position + Vector2(Art.srnd(k * 3) * FR.size.x, Art.srnd(k * 5 + 1) * FR.size.y)
 		var rr := 6.0 + Art.srnd(k) * 16.0
 		ci.draw_colored_polygon(Art.ell(q, Vector2(rr, rr * 0.7), 170 + k, 0.12, 10), Color("6a645a") if k % 2 == 0 else Color("8c867a"))
-	var cave := Art.rrect(Rect2(VIEW.position - Vector2(10, 62), VIEW.size + Vector2(20, 76)), 30, 162, 1.6, 34.0)
+	# 洞口盖住滚动区和底部扩建按钮，底边留一圈石框
+	var cave := Art.rrect(Rect2(40, 358, 640, 798), 30, 162, 1.6, 34.0)
 	Art.dilate(ci, cave, 3.0, Art.INK)
 	ci.draw_colored_polygon(cave, Color("3a2a1f"))
 
@@ -430,14 +430,12 @@ static func live_inv_ledge(ci: CanvasItem) -> void:
 	ci.draw_colored_polygon(ledge, Color("5c4636"))
 
 static func live_inv_sign(ci: CanvasItem) -> void:
-	var sign := Art.rrect(Rect2(240, 318, 240, 70), 14, 165, 0.8)
-	ci.draw_line(Vector2(270, 300), Vector2(282, 320), Art.ROPE, 5.0, true)
-	ci.draw_line(Vector2(450, 300), Vector2(438, 320), Art.ROPE, 5.0, true)
-	ci.draw_colored_polygon(Art.rrect(Rect2(240, 326, 240, 70), 14, 165, 0.0), Color(0, 0, 0, 0.3))
+	var sign := Art.rrect(Rect2(240, 272, 240, 70), 14, 165, 0.8)
+	ci.draw_colored_polygon(Art.rrect(Rect2(240, 280, 240, 70), 14, 165, 0.0), Color(0, 0, 0, 0.3))
 	Art.dilate(ci, sign, 3.0, Art.INK)
 	ci.draw_colored_polygon(sign, Art.WOOD)
-	Art.pl(ci, [Vector2(256, 342), Vector2(360, 338), Vector2(464, 344)], 2.0, Art.WOOD_D, 166)
-	Art.pl(ci, [Vector2(256, 370), Vector2(360, 374), Vector2(464, 368)], 2.0, Art.WOOD_D, 167)
+	Art.pl(ci, [Vector2(256, 296), Vector2(360, 292), Vector2(464, 298)], 2.0, Art.WOOD_D, 166)
+	Art.pl(ci, [Vector2(256, 324), Vector2(360, 328), Vector2(464, 322)], 2.0, Art.WOOD_D, 167)
 
 static func live_inv_shelf(ci: CanvasItem, sz: Vector2) -> void:
 	var y := 108.0 + 4.0

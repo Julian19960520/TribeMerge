@@ -14,6 +14,7 @@ var free_seen := false
 var manual_seen := false
 var same_step := 0
 var last_step := ""
+var waited_min := 0
 func _initialize() -> void: run.call_deferred()
 func check(ok: bool, label: String) -> void:
 	print(("PASS " if ok else "FAIL ") + label)
@@ -58,7 +59,11 @@ func _produce() -> bool:
 			if stashed >= 0: replay.perform("stash", {"index": stashed}); return true
 		var result: Dictionary = replay.perform("energy")
 		if result.get("free", false): free_seen = true
-		return not result.has("error")
+		if result.has("error"):
+			# Out of amber: wait like a player does while stamina comes back.
+			waited_min += 10
+			replay.perform("tick", {}, replay.clock + 600)
+		return true
 	var r: Dictionary = replay.perform("tap", {"cell": at})
 	return not r.has("error")
 func _free_play() -> bool:
@@ -81,8 +86,9 @@ func _free_play() -> bool:
 	var protect := {}
 	for o in game.orders:
 		for id in o.get("mats", o["items"]): protect[str(id)] = int(protect.get(str(id), 0)) + 1
-	for lv in range(7, 0, -1):
+	for lv in range(13, 0, -1):
 		for chain in ["fruit", "seed", "fire", "shell"]:
+			if lv >= Data.max_lv(chain): continue
 			var id := "%s_%d" % [chain, lv]
 			if protect.has(id) and game.rules.onboarding.count(id) <= int(protect[id]): continue
 			var from := _find(id)
@@ -130,7 +136,7 @@ func run() -> void:
 			break
 		if not seen.has(step):
 			seen[step] = true
-			print("STEP ", step, " lv=", game.level, " xp=", game.xp, " energy=", game.energy, " money=", game.shells)
+			print("STEP ", step, " lv=", game.level, " xp=", game.xp, " energy=", game.energy, " money=", game.shells, " amber=", game.amber, " waited=", waited_min)
 			if shots != "":
 				await create_timer(0.45).timeout
 				await RenderingServer.frame_post_draw
@@ -173,6 +179,8 @@ func run() -> void:
 		elif mode == "free":
 			if not _free_play():
 				check(false, "无法继续自由阶段 " + step)
+				print("STATE ", game.level, " ", game.xp, " energy ", game.energy, " amber ", game.amber, " stash ", game.stash, " orders ", game.orders)
+				print("BOARD ", game.board)
 				break
 		await create_timer(0.03 if mode == "free" else 0.12).timeout
 		if k % 200 == 199: print("PROGRESS ", k, " ", step)
@@ -184,7 +192,11 @@ func run() -> void:
 	check(free_seen, "体力耗尽后用过首次免费补充")
 	check(manual_seen, "菜做完后从设备取出，再提交订单")
 	check(checkpoint_checked, "在生产器升级中途恢复过快照")
-	print("COMMANDS ", steps)
+	var opened := []
+	for i in game.board.size():
+		if int(game.board[i]["lock"]) != 2: opened.append(i)
+	print("OPENED ", opened)
+	print("COMMANDS ", steps, " WAITED_MIN ", waited_min, " AMBER ", game.amber)
 	if failures == 0 and checkpoint_out != "":
 		var file := FileAccess.open(checkpoint_out, FileAccess.WRITE)
 		file.store_string(JSON.stringify(replay.snapshot(), "\t")); file.close()

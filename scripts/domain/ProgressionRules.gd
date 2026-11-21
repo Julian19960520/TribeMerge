@@ -10,6 +10,17 @@ func unlock_all_features() -> void:
 	state.boost_gm = true
 	state.tutorial_on = false
 	state.seen_tutorial = true
+	# GM 解锁时图鉴全部点亮：各产线的生产器和产物、菜、配方（奖励仍要在图鉴里点了领）
+	for line in Data.LINES:
+		for ch in [str(line["gen"])] + Data.products(line):
+			if not Data.CHAINS.has(ch):
+				continue
+			for i in Data.CHAINS[ch]["items"].size():
+				state.discovered["%s_%d" % [ch, i + 1]] = true
+	for id in Data.DISHES:
+		state.discovered[str(id)] = true
+	for id in Data.CRAFT_IDS:
+		state.discovered[str(id)] = true
 	if first: context.orders.refill_orders()
 	state.dirty()
 
@@ -55,13 +66,15 @@ func spend(kind: String, n: int) -> bool:
 
 func energy_price() -> int:
 	context.clock._check_day()
-	return PriceBook.energy_price(state.energy_buys)
+	# During the tutorial every refill costs the first-tier price, like the
+	# reference game's flat 10 diamonds; those buys don't raise the day's price.
+	return PriceBook.energy_price(0 if context.onboarding.active() else state.energy_buys)
 
 func buy_energy() -> bool:
 	context.clock._check_day()
 	if not spend("amber", energy_price()):
 		return false
-	state.energy_buys += 1
+	if not context.onboarding.active(): state.energy_buys += 1
 	state.dirty()
 	return true
 

@@ -25,18 +25,19 @@ func run() -> void:
 	var p: Dictionary = g.rules.onboarding.progress()
 	p["step"] = g.rules.onboarding.stage_index("free_level2")
 	for row in g.rules.onboarding.config()["orders"]: p["issued"].append(str(row["tag"]))
-	var old: Dictionary = g.order_identity({"who": 1, "items": ["seed_4"], "rw": {"shell": 29, "xp": 1}, "story": true, "onboarding": "seed_second"})
+	var version := int(g.rules.onboarding.config()["version"])
+	var old: Dictionary = g.order_identity({"who": 1, "items": ["seed_2"], "rw": {"shell": 29, "xp": 1}, "story": true, "onboarding": "seed_second", "guide_revision": version})
 	g.orders = [old]; var uid := str(old["uid"])
-	g.board[0]["id"] = "seed_4"; g.board[1] = {"id": "seed_4", "lock": 1}
+	g.board[0]["id"] = "seed_2"; g.board[1] = {"id": "seed_2", "lock": 1}
 	replay.perform("tick", {}, replay.clock)
-	check(old["items"] == ["seed_5"] and old["uid"] == uid and old["rw"]["xp"] == 1 and not g.rules.orders.order_ready(old), "截图旧订单转为藤蔓合成后的核桃，保留订单身份和经验")
+	check(old["items"] == ["seed_3"] and old["uid"] == uid and old["rw"]["xp"] == 1 and not g.rules.orders.order_ready(old), "订单转为和藤蔓合成后的橡果，保留订单身份和经验")
 	var merged: Dictionary = replay.perform("drop", {"from": 0, "to": 1}, replay.clock)
-	check(merged.get("kind", "") == "merge" and g.board[1]["id"] == "seed_5" and g.board[1]["lock"] == 0 and g.rules.orders.order_ready(old), "解开藤蔓后直接满足订单，不再二选一")
-	g.board[2] = {"id": "seed_5", "lock": 1}
+	check(merged.get("kind", "") == "merge" and g.board[1]["id"] == "seed_3" and g.board[1]["lock"] == 0 and g.rules.orders.order_ready(old), "解开藤蔓后直接满足订单，不再二选一")
+	g.board[2] = {"id": "seed_3", "lock": 1}
 	replay.perform("tick", {}, replay.clock)
-	check(old["items"] == ["seed_6"], "新露出同级藤蔓时继续指向合成产物")
+	check(old["items"] == ["seed_3"], "已备齐的订单不被新藤蔓抬高，最多只比原订单高一级")
 	g.board[2]["lock"] = 0; replay.perform("tick", {}, replay.clock)
-	check(old["items"] == ["seed_6"], "已提升的目标不因藤蔓消失而倒退")
+	check(old["items"] == ["seed_3"], "已提升的目标不因藤蔓消失而倒退")
 	fresh(); g.level = 8; g.tutorial_on = false; g.board[0]["id"] = "basket_5"
 	for row in [[1, "seed_3"], [2, "seed_4"], [3, "fruit_4"]]: g.board[row[0]] = {"id": row[1], "lock": 1}
 	var safe := true; var preferred := 0
@@ -61,7 +62,7 @@ func run() -> void:
 		var ids: Array = Data.DISHES[str(row["dish"])]["mats"] if row.has("dish") else row["items"]
 		for id in ids:
 			if Data.chain(str(id)) == "seed": seed_demands += 1; seed_units += int(pow(2, Data.lv(str(id)) - 1))
-	check(seed_demands == 2 and seed_units == 16, "新手坚果需求从4次降为2次，基础一级材料总量从64降为16")
+	check(seed_demands == 1 and seed_units == 2, "新手坚果需求只剩一张榛子单，基础一级材料只要2颗松子")
 	fresh(); g.level = 2
 	p = g.rules.onboarding.progress(); p["step"] = g.rules.onboarding.stage_index("free_level2")
 	for row in g.rules.onboarding.config()["orders"]: p["issued"].append(str(row["tag"]))
@@ -80,20 +81,20 @@ func run() -> void:
 	var migrated_recipe: Dictionary = g.order_identity({"who": 0, "items": ["seed_5"], "mats": ["seed_5"], "dish": "trailpack", "kind": "craft", "phase": "need", "manual_collect": true, "rw": {"shell": 13, "xp": 2}, "story": true, "onboarding": "craft7", "guide_revision": 3})
 	g.orders = [migrated_recipe]
 	g.rules.onboarding._sync_orders()
-	check(migrated_recipe["mats"] == ["seed_4", "fruit_5"] and Data.is_dish(str(migrated_recipe["dish"])) and root.get_node("Items").has_animation(str(migrated_recipe["dish"])) and migrated_recipe["rw"]["xp"] == 2, "旧烘烤坚果单降为4级材料，保留经验并使用有效产物图片ID")
-	g.board[0]["id"] = "seed_4"; g.board[1]["id"] = "fruit_5"
+	check(migrated_recipe["mats"] == ["fruit_5"] and str(migrated_recipe["dish"]) == "salad" and root.get_node("Items").has_animation(str(migrated_recipe["dish"])) and migrated_recipe["rw"]["xp"] == 2, "旧烘烤坚果单改成无花果小碗，保留经验并使用有效产物图片ID")
+	g.board[0]["id"] = "fruit_5"
 	var made: Dictionary = replay.perform("craft", {"cell": 0}, replay.clock)
 	g.simulation_time = replay.clock + 250; replay.perform("tick", {}, int(g.simulation_time))
 	var collected: Dictionary = replay.perform("tap", {"cell": 0}, replay.clock)
 	var migrated_save: Dictionary = replay.snapshot()
-	check(not made.has("error") and not collected.has("error") and g.board[0]["id"] == "trailpack" and replay.restore(migrated_save), "迁移后的制作订单可完成、取出并保存恢复")
+	check(not made.has("error") and not collected.has("error") and g.board[0]["id"] == "salad" and replay.restore(migrated_save), "迁移后的制作订单可完成、取出并保存恢复")
 	fresh(); g.level = 4; g.energy = 65
 	p = g.rules.onboarding.progress(); p["step"] = g.rules.onboarding.stage_index("free_energy_gift")
-	p["delivered"] = ["craft6", "craft7"]
+	p["delivered"] = ["craft6", "level4_last"]
 	g.stash = ["emberpot_1", "basket_1"]
 	var main = load("res://main.tscn").instantiate(); root.add_child(main); main.show_screen("board", true)
 	main._guide._refresh()
-	check(main._guide.visible and main._guide._mode == "stash" and g.rules.board.stash_claim_index() == 0, "两张制作完成后直接提示取火种罐，不强刷空体力")
+	check(main._guide.visible and main._guide._mode == "stash" and g.rules.board.stash_claim_index() == 0, "4级两张订单交完后直接提示取火种罐，不强刷空体力")
 	replay.perform("stash", {"index": 0}, replay.clock); main._guide._refresh()
 	check(str(g.rules.onboarding.stage()["key"]) == "energy_gift" and g.energy == 65, "取出后直接接上火种罐教学，已有体力不扣除")
 	await process_frame

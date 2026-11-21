@@ -9,15 +9,16 @@ func _ready() -> void:
 	G.changed.connect(func(): button.queue_redraw())
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	Sprites.at(ci, "fos_entry", Vector2(sz.x * 0.5, sz.y - 108), 0.92)
-	var ready := not FossilDig.ready_rewards().is_empty()
-	var text := "×%d" % int(FossilDig.state().get("shovels", 0))
-	if ready: text = TextCatalog.source("ui.duelentry.5375104054f0")
-	elif FossilDig.finished(): text = TextCatalog.source("ui.fossildigentry.c0b3fbff51cc")
-	elif FossilDig.cleared(): text = TextCatalog.source("ui.fossildigentry.4b6ccee91ad1")
-	EventEntryArt._pill(ci, Vector2(sz.x * 0.5, sz.y - 42), text, "go" if ready or FossilDig.cleared() else "num")
-	EventEntryArt.text(ci, TextCatalog.source("ui.fossildigentry.64311488dd2a"), Vector2(sz.x * 0.5, sz.y - 8), 20, Color("fff0c5"))
-	if ready: Paint.badge_num(ci, Vector2(sz.x - 18, 30), 8, 10)
+	# 和其他入口同一条地面线；档期剩余时间 + 挖出的骨头进度（满 = 最后一档里程碑）
+	var ground := EventEntryArt.ground(sz)
+	Sprites.draw(ci, "ev_ell_shadow", Rect2(Vector2(sz.x * 0.5 - 44, ground - 10), Vector2(88, 16)), Color(0.16, 0.1, 0.04, 0.28))
+	Sprites.at(ci, "fos_entry", Vector2(sz.x * 0.5, ground - 40), 0.92)
+	var stages: Array = FossilDig.config()["milestones"]
+	var need := int(stages[-1]["bones"]) if not stages.is_empty() else 0
+	var info := {"have": mini(int(FossilDig.state().get("recovered", 0)), need), "need": need, "icon": "bone"}
+	if ActivitySchedule.scheduled("fossil"): info["left"] = ActivitySchedule.seconds_left("fossil")
+	EventEntryArt.footer(ci, sz, info)
+	if not FossilDig.ready_rewards().is_empty(): Paint.badge_num(ci, Vector2(sz.x * 0.5 + 42, ground - 100), 8, 10)
 
 func fly_from(origin: Vector2) -> void:
 	if not FossilDig.unlocked(): return

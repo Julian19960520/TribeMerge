@@ -1,10 +1,10 @@
 {
 	"sprites": {
 		"badge_num": {
-			"frames": 4.0,
-			"h": 38.0,
-			"pad": 4.0,
-			"w": 38.0
+			"frames": 4,
+			"h": 46,
+			"pad": 4,
+			"w": 46
 		},
 		"banner_base": {
 			"frames": 4.0,
@@ -331,16 +331,16 @@
 			"w": 400.0
 		},
 		"speech_tail_l": {
-			"frames": 4,
-			"h": 64,
-			"pad": 6,
-			"w": 80
+			"frames": 4.0,
+			"h": 64.0,
+			"pad": 6.0,
+			"w": 80.0
 		},
 		"speech_tail_r": {
-			"frames": 4,
-			"h": 64,
-			"pad": 6,
-			"w": 80
+			"frames": 4.0,
+			"h": 64.0,
+			"pad": 6.0,
+			"w": 80.0
 		},
 		"toast": {
 			"frames": 4.0,

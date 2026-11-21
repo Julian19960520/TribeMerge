@@ -151,7 +151,7 @@ func _row(l: Dictionary, kind: String, y: float) -> void:
 			Art.dilate(self, pts, 6.0, Color("ffd23f"))
 		Art.dilate(self, pts, 2.0, Art.INK)
 		draw_colored_polygon(pts, Color("cdbb98") if idle else PANEL)
-		ProdArt.draw(self, l["id"], kind, lv, r.position + Vector2(CARD.x * 0.5, 52), 70)
+		ProdArt.draw_chain(self, str(l[{"G": "gen_id", "M": "main_id", "S": "sub_id"}[kind]]), lv, r.position + Vector2(CARD.x * 0.5, 52), 70)
 		if idle:
 			draw_colored_polygon(pts, Color(0.25, 0.18, 0.12, 0.22))
 			var tag := Rect2(r.position.x + 30, r.position.y + 5, 60, 18)
@@ -208,7 +208,7 @@ func _detail(l: Dictionary, r: Rect2) -> void:
 	var names: Array = l[kind]
 	lv = clampi(lv, 1, names.size())
 	draw_circle(r.position + Vector2(170, 180), 140, PANEL_D)
-	ProdArt.draw(self, l["id"], kind, lv, r.position + Vector2(170, 170), 230)
+	ProdArt.draw_chain(self, str(l[{"G": "gen_id", "M": "main_id", "S": "sub_id"}[kind]]), lv, r.position + Vector2(170, 170), 230)
 	var tx := r.position.x + 330
 	var kn := {"G": "生产器 · " + String(l["gen"]), "M": "主产物 · " + String(l["main_name"]), "S": "副产物 · " + String(l["sub_name"])}
 	_txt(names[lv - 1], Vector2(tx, r.position.y + 56), 34, Art.INK, true)

@@ -25,16 +25,16 @@
 			"w": 16.0
 		},
 		"board_bolt_boost_4": {
-			"frames": 4,
-			"h": 18,
-			"pad": 5,
-			"w": 16
+			"frames": 4.0,
+			"h": 18.0,
+			"pad": 5.0,
+			"w": 16.0
 		},
 		"board_boost_4": {
-			"frames": 4,
-			"h": 42,
-			"pad": 5,
-			"w": 36
+			"frames": 4.0,
+			"h": 42.0,
+			"pad": 5.0,
+			"w": 36.0
 		},
 		"board_boost_off": {
 			"frames": 4.0,
@@ -307,100 +307,100 @@
 			"w": 106.0
 		},
 		"board_vine_b0": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_b1": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_b2": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_b3": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_b4": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_b5": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_b6": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_b7": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_f0": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_f1": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_f2": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_f3": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_f4": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_f5": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_f6": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		},
 		"board_vine_f7": {
-			"frames": 4.0,
-			"h": 96.0,
-			"pad": 20.0,
-			"w": 96.0
+			"frames": 4,
+			"h": 96,
+			"pad": 20,
+			"w": 96
 		}
 	}
 }

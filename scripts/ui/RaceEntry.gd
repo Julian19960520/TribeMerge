@@ -1,6 +1,6 @@
 extends Control
 ## 棋盘订单栏里、主角卡左边的「篝火竞速」入口（参加与否都在）。
-## 画法在 EventEntryArt：香蕉串 + 赛旗，下面一个状态牌（等级锁 / 开赛 / 匹配中 / 名次 / 领奖）。
+## 画法在 EventEntryArt：香蕉串 + 赛旗，下面是香蕉进度条和剩余时间（锁着时写解锁等级）。
 ## 交付订单时 BoardScreen 调 fly_from()：香蕉从订单卡飞进这里。比完一局自动弹结算；领完奖弹「再来一局」。
 
 const RaceNet := preload("res://scripts/net/Race.gd")
@@ -76,24 +76,12 @@ func fly_from(from: Vector2) -> void:
 			d.queue_free())
 
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	# 一个状态牌：锁 → 等级；空闲 → 开赛；匹配中；比赛中 → 名次（金银铜底色）；比完 → 领奖 / 结算
-	var badge := {"text": TextCatalog.source("ui.duelentry.a75fb7376be1"), "style": "teal"}
+	# 比赛中：本局剩余时间 + 自己的香蕉进度；没在比：档期剩余时间；锁着：解锁等级
+	var info := {}
 	var dot := false
-	if not race.unlocked(): badge = {"text": TextCatalog.fill(TextCatalog.source("ui.duelentry.e0cda514ecc2"), race.unlock_level()), "style": "lock"}
-	elif race.ended():
-		dot = int(race.pending_result().get("me", {}).get("place", 0)) in [1, 2, 3]
-		badge = {"text": TextCatalog.source("ui.duelentry.5375104054f0") if dot else TextCatalog.source("ui.raceentry.0e4062a72843"), "style": "go"}
-	elif race.matching(): badge = {"text": TextCatalog.source("ui.raceentry.9741f68e19c7"), "style": "time"}
-	elif race.racing():
-		var place: int = race.place_of(race.me())
-		badge = {"text": TextCatalog.fill(TextCatalog.source("ui.raceentry.a99e21d72785"), place), "style": ["gold", "silver", "bronze"][place - 1] if place in [1, 2, 3] else "num"}
-	EventEntryArt.paint(ci, sz, "race", TextCatalog.source("ui.raceentry.fb8cff7697b3"), badge, not race.unlocked(), dot, _bump)
-
-static func _txt(ci: CanvasItem, f: Font, s: String, c: Vector2, fs: int, col: Color, ol: int = 0) -> void:
-	if f == null:
-		return
-	var w := f.get_string_size(TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var p := Vector2(c.x - w * 0.5, c.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
-	if ol > 0:
-		ci.draw_string_outline(f, p, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ol, Art.INK)
-	ci.draw_string(f, p, TextCatalog.resolve(s), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	if not race.unlocked(): info = {"lock": TextCatalog.fill(TextCatalog.source("ui.duelentry.e0cda514ecc2"), race.unlock_level())}
+	elif race.ended(): dot = int(race.pending_result().get("me", {}).get("place", 0)) in [1, 2, 3]
+	elif race.racing() and not race.matching():
+		info = {"left": race.secs_left(), "have": race.score_of(race.me()), "need": race.target(), "icon": "banana"}
+	elif ActivitySchedule.scheduled("race"): info = {"left": ActivitySchedule.seconds_left("race")}
+	EventEntryArt.paint(ci, sz, "race", info, not race.unlocked(), dot, _bump)

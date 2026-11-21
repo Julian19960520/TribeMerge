@@ -1,6 +1,6 @@
 class_name PAHunt
 extends PA
-## 狩猎线：狩猎陷阱 / 走兽 / 飞禽。每只猎物按自己的样子摆死亡姿势：倒挂、蜷着、仰翻、跪倒、趴倒……
+## 狩猎线：狩猎陷阱 / 走兽 / 飞禽（麻雀、乌鸦、野鸡、野鸭、大雁、秃鹫、老鹰、鸵鸟）。每只猎物按自己的样子摆死亡姿势：倒挂、蜷着、仰翻、跪倒、趴倒……
 
 const MOUSE := Color("9a9590")
 const FROG := Color("6dbb4a")
@@ -19,7 +19,141 @@ const TIGER := Color("e89a3a")
 const RHINO := Color("8a6a4a")
 const MAMMOTH := Color("7a4e2e")
 
+## 每级的整体缩放（以脚下地面为支点），让一条链从小到大
+const GEN_SCALE := [1.0, 0.94, 1.0, 0.9, 1.03, 1.08, 0.92, 0.98, 1.1]
+const MAIN_SCALE := [0.8, 0.74, 0.87, 0.94, 0.88, 0.95, 0.92, 0.95, 1.0, 1.0]
+const SUB_SCALE := [0.75, 0.9, 0.85, 0.97, 0.95, 0.85, 1.04, 0.98]
+
+static func _grow(ci: CanvasItem, k: float) -> Transform2D:
+	var keep := xf
+	xf = keep * Transform2D(0.0, Vector2(k, k), 0.0, Vector2(0, 38) * (1.0 - k))
+	ci.draw_set_transform_matrix(xf)
+	return keep
+
+static func _ungrow(ci: CanvasItem, keep: Transform2D) -> void:
+	xf = keep
+	ci.draw_set_transform_matrix(xf)
+
+## 生产器：1~3 级只是做陷阱的材料、还没搭好（不能狩猎），4 级起是能用的陷阱，5 级篮筐陷阱开始抓麻雀
 static func gen(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+	var keep := _grow(ci, GEN_SCALE[clampi(lv, 1, 9) - 1])
+	var dirt := Color("7a4f2a")
+	match lv:
+		1:
+			## 一捆树枝：几根木棍，中间用草绳扎住，一头还带着片叶子
+			var parts := [ov(Vector2(0, 34), 28, 4, s, dirt, 0.0, 1)]
+			var d := Vector2(46, -22).normalized()
+			var nrm := d.orthogonal()
+			for k in 4:
+				var o := nrm * (float(k) - 1.5) * 4.6
+				parts.append(stk(Vector2(-22, 28) + o, Vector2(20, 8) + o + d * float(k % 2) * 3.0, 2.4, s + 1 + k, WOOD if k % 2 == 0 else WOOD.darkened(0.12), 2))
+			parts.append(leaf(Vector2(20, 8) + nrm * -5.0, 11, 4, -0.9, s + 6))
+			parts.append(stk(Vector2(-1, 18) - nrm * 11.0, Vector2(-1, 18) + nrm * 11.0, 3.4, s + 7, ROPE))
+			sil(ci, parts, rim)
+			ln(ci, Vector2(-1, 18) - nrm * 9.0 + d * 1.5, Vector2(-1, 18) + nrm * 9.0 + d * 1.5, 1.2, Color(INK, 0.4), s)
+		2:
+			## 尖木桩：三根削尖的木桩摞在地上，一根草绳松松地搭在上面
+			var parts := [ov(Vector2(0, 35), 38, 5, s, dirt, 0.0, 1)]
+			var stakes := [[Vector2(-34, 30), Vector2(18, 24)], [Vector2(-30, 21), Vector2(20, 13)], [Vector2(-24, 12), Vector2(14, 1)]]
+			for k in stakes.size():
+				var a: Vector2 = stakes[k][0]
+				var b: Vector2 = stakes[k][1]
+				var dd := (b - a).normalized()
+				var nn := dd.orthogonal()
+				parts.append(pg([a + nn * 3.2, b + nn * 3.2, b + dd * 14.0, b - nn * 3.2, a - nn * 3.2], s + 1 + k, WOOD.darkened(0.06 * float(k)), 1))
+			for r in [[Vector2(-38, 31), 7.5], [Vector2(32, 31), 8.5], [Vector2(22, 35), 5.5], [Vector2(-26, 35), 5.0]]:
+				parts.append(raw_rock(r[0], r[1], s + 20 + int(r[1]), STONE if int(r[1]) % 2 == 0 else STONE.darkened(0.08), 7, 0.22))
+			sil(ci, parts, rim)
+			for k in stakes.size():
+				var a: Vector2 = stakes[k][0]
+				var b: Vector2 = stakes[k][1]
+				var dd := (b - a).normalized()
+				var nn := dd.orthogonal()
+				var tipp := poly([b + nn * 3.0, b + dd * 13.0, b - nn * 3.0], s + 9 + k, 0.3)
+				safe_poly(ci, tipp, Color("ecd09a"))
+				outline(ci, tipp, 1.4)
+				ln(ci, b + nn * 1.5 + dd * 2.0, b + dd * 9.0, 1.0, Color(INK, 0.35), s + k)
+			var rope_pts := [Vector2(-14, 36), Vector2(-12, 26), Vector2(-8, 18), Vector2(-10, 8), Vector2(-4, 2), Vector2(4, 6), Vector2(2, 16), Vector2(8, 26), Vector2(14, 34)]
+			pl(ci, rope_pts, 4.6, INK, s)
+			pl(ci, rope_pts, 2.6, ROPE, s)
+		3:
+			## 没搭好的落石陷阱：石板平放在地上，做「4 字形」机关的三根木棍还散在一边，没放诱饵
+			var parts := [ov(Vector2(0, 36), 44, 5, s, dirt, 0.0, 1)]
+			parts.append(pg([Vector2(-44, 30), Vector2(-38, 20), Vector2(8, 12), Vector2(20, 16), Vector2(16, 28), Vector2(-34, 36)], s + 1, STONE, 1))
+			parts.append(stk(Vector2(14, 34), Vector2(42, 28), 2.6, s + 2, WOOD, 2))
+			parts.append(stk(Vector2(22, 24), Vector2(44, 12), 2.4, s + 3, WOOD.darkened(0.1), 2))
+			parts.append(stk(Vector2(26, 36), Vector2(36, 6), 2.4, s + 4, WOOD, 2))
+			sil(ci, parts, rim)
+			ln(ci, Vector2(-36, 21), Vector2(10, 14), 2.0, Color(1, 1, 1, 0.35), s)
+			for k in 3:
+				ln(ci, Vector2(-30.0 + float(k) * 14.0, 28.0 - float(k) * 3.0), Vector2(-24.0 + float(k) * 14.0, 26.0 - float(k) * 3.0), 1.6, Color(INK, 0.3), s + k)
+		4: trap_old(ci, 1, s, rim)
+		5: _basket_trap(ci, s, rim)
+		6: trap_old(ci, 4, s, rim)
+		7: trap_old(ci, 5, s, rim)
+		8: trap_old(ci, 7, s, rim)
+		_: trap_old(ci, 8, s, rim)
+	_ungrow(ci, keep)
+
+## 篮筐支棍陷阱：倒扣的草篮一边用木棍支起来，棍上拴着长绳，篮下撒着谷粒，一只麻雀正跳进去啄食——一拉绳就扣住
+static func _basket_trap(ci: CanvasItem, s: int, rim: bool) -> void:
+	var dirt := Color("7a4f2a")
+	var lo := Vector2(-46, 33)
+	var hi := Vector2(14, 0)
+	var straw := Color("d9b264")
+	var weave_c := Color("8e6428")
+	var m := (lo + hi) * 0.5
+	var half := (hi - lo).length() * 0.5
+	var a := (hi - lo).angle()
+	var dome := []
+	for k in 17:
+		var t := PI * float(k) / 16.0
+		dome.append(m + Vector2(cos(t) * half, -sin(t) * 27.0).rotated(a))
+	var inner := ell(m, Vector2(half, 8.0), s + 1, 0.02, 20, a)
+	sil(ci, [ov(Vector2(0, 36), 46, 5, s, dirt, 0.0, 1), stk(Vector2(13, 2), Vector2(17, 36), 2.8, s + 2, WOOD, 2),
+		P(inner, Color("4a3018"), 2), pg(dome, s + 3, straw, 1)], rim)
+	## 草篮的编织纹：顺着篮身的几道弧 + 几根竖筋
+	for r in [0.35, 0.6, 0.82]:
+		var arc := []
+		for k in 13:
+			var t := PI * (0.06 + 0.88 * float(k) / 12.0)
+			arc.append(m + Vector2(cos(t) * half * (0.35 + r * 0.65), -sin(t) * 27.0 * r).rotated(a))
+		pl(ci, arc, 1.6, Color(weave_c, 0.85), s + int(r * 10.0))
+	for k in 9:
+		var t := PI * (0.1 + 0.8 * float(k) / 8.0)
+		ln(ci, m + Vector2(cos(t) * half * 0.98, 0).rotated(a), m + Vector2(cos(t) * half * 0.9, -sin(t) * 25.5).rotated(a), 1.4, Color(weave_c, 0.75), s + k)
+	pl(ci, [lo, m + Vector2(-half * 0.5, 2).rotated(a), m + Vector2(half * 0.5, 2).rotated(a), hi], 3.0, weave_c, s)
+	## 篮子底下一小堆白米当诱饵，堆在支起来的那一边，看得见
+	var heap := []
+	for k in 13:
+		var ang := PI + PI * float(k) / 12.0
+		heap.append(Vector2(2, 34) + Vector2(cos(ang) * 16.0, sin(ang) * 10.0 * (1.0 + 0.08 * sin(ang * 5.0))))
+	var hp := poly(heap, s + 40, 0.5)
+	safe_poly(ci, hp, Color("f6efdc"))
+	outline(ci, hp, 1.8)
+	for g in [Vector2(-6, 30), Vector2(0, 28), Vector2(6, 30), Vector2(-2, 32.5), Vector2(4, 26), Vector2(10, 32.5), Vector2(-9, 33)]:
+		ln(ci, g + Vector2(-1.6, 0.6), g + Vector2(1.6, -0.6), 1.2, Color(INK, 0.25), s + int(g.x))
+	for g in [Vector2(22, 35.5), Vector2(27, 35)]:
+		safe_poly(ci, ell(g, Vector2(2.6, 1.5), s + int(g.x), 0.0, 8, 0.4), Color("f6efdc"))
+	hl(ci, Vector2(-3, 27), 4, 1.6, -0.2, 0.6)
+	## 拴在支棍上的拉绳，沿着地面拖到右边
+	var rope_pts := [Vector2(15, 12), Vector2(24, 20), Vector2(32, 31), Vector2(42, 35), Vector2(52, 33)]
+	pl(ci, rope_pts, 4.0, INK, s)
+	pl(ci, rope_pts, 2.2, ROPE, s)
+
+static func main(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+	var keep := _grow(ci, MAIN_SCALE[clampi(lv, 1, 10) - 1])
+	_main_art(ci, lv, s, rim)
+	_ungrow(ci, keep)
+
+static func sub(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+	var keep := _grow(ci, SUB_SCALE[clampi(lv, 1, 8) - 1])
+	_sub_art(ci, lv, s, rim)
+	_ungrow(ci, keep)
+
+## 旧的生产器画法：1 落石陷阱 / 2 绳套 / 3 木夹子 / 4 尖桩陷阱 / 5 陷阱牢笼 / 6 武器架 / 7 猎人营帐 / 8 猛犸狩猎屋。
+## 新 gen() 的 4~8 级借用其中 1、4、5、7、8；绳套、木夹子、武器架留着给以后别的物品用。
+static func trap_old(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 	var dirt := Color("7a4f2a")
 	match lv:
 		1:
@@ -242,48 +376,33 @@ static func _h_shag(c: Vector2, r: Vector2, n: int, k: float, s: int, col: Color
 		pts.append(c + Vector2(cos(a) * r.x * f, sin(a) * r.y * f))
 	return pg(pts, s, col, 1)
 
-static func main(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+static func _main_art(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 	match lv:
 		1:
-			## 灰壁虎（个头小）：肚皮朝上摊开（俯视），四只脚张开露出吸盘趾，尾巴卷起来
+			## 灰壁虎（最小的一只）：肚皮朝上摊开（俯视），四只小脚张开，尾巴卷起来
 			var gk := Color("8e8a86")
 			var belly := Color("d9d3c8")
-			set_xf(ci, Transform2D(0.0, Vector2.ONE * 0.8, 0.0, Vector2(0, 3)))
 			var parts := []
-			var tl := [Vector2(0, 14), Vector2(4, 26), Vector2(14, 33), Vector2(25, 29), Vector2(26, 19)]
+			var tl := [Vector2(0, 20), Vector2(2, 28), Vector2(8, 33), Vector2(15, 31), Vector2(16, 25)]
 			for i in 4:
-				parts.append(stk(tl[i], tl[i + 1], 5.0 - float(i) * 1.0, s + i, gk, 2))
+				parts.append(stk(tl[i], tl[i + 1], 3.4 - float(i) * 0.5, s + i, gk, 2))
 			var feet := []
 			for sd in [-1.0, 1.0]:
-				var f0 := Vector2(sd * 8.0, -10)
-				var f1 := Vector2(sd * 20.0, -20)
-				var h0 := Vector2(sd * 8.0, 10)
-				var h1 := Vector2(sd * 22.0, 18)
-				parts.append(stk(f0, f0 + (f1 - f0) * 0.55 + Vector2(0, 2), 3.0, s + 10, gk, 2))
-				parts.append(stk(f0 + (f1 - f0) * 0.55 + Vector2(0, 2), f1, 2.6, s + 11, gk, 2))
-				parts.append(stk(h0, h0 + (h1 - h0) * 0.5 - Vector2(0, 3), 3.4, s + 12, gk, 2))
-				parts.append(stk(h0 + (h1 - h0) * 0.5 - Vector2(0, 3), h1, 2.8, s + 13, gk, 2))
-				feet.append([f1, -PI * 0.5 + sd * 0.9])
-				feet.append([h1, PI * 0.5 - sd * 0.9])
+				parts.append(stk(Vector2(sd * 4.0, 4), Vector2(sd * 12.0, -2), 2.2, s + 10, gk, 2))
+				parts.append(stk(Vector2(sd * 4.0, 16), Vector2(sd * 12.0, 22), 2.4, s + 12, gk, 2))
+				feet.append([Vector2(sd * 12.0, -2), -PI * 0.5 + sd * 0.9])
+				feet.append([Vector2(sd * 12.0, 22), PI * 0.5 - sd * 0.9])
 			for f in feet:
-				for t in 4:
-					var a: float = f[1] + (float(t) - 1.5) * 0.55
-					parts.append(circ((f[0] as Vector2) + Vector2(cos(a), sin(a)) * 6.0, 2.4, s + 20 + t, gk, 2))
-			parts.append(ov(Vector2(0, 0), 10, 19, s + 30, gk, 0.0, 1))
-			parts.append(ov(Vector2(0, -26), 10, 9, s + 31, gk, 0.0, 1))
+				for k in 3:
+					var a: float = f[1] + (float(k) - 1.0) * 0.6
+					parts.append(circ((f[0] as Vector2) + Vector2(cos(a), sin(a)) * 3.6, 1.7, s + 20 + k, gk, 2))
+			parts.append(ov(Vector2(0, 10), 6.5, 11, s + 30, gk, 0.0, 1))
+			parts.append(ov(Vector2(0, -6), 6.5, 6, s + 31, gk, 0.0, 1))
 			sil(ci, parts, rim)
-			for f in feet:
-				for t in 4:
-					var a: float = f[1] + (float(t) - 1.5) * 0.55
-					ln(ci, f[0], (f[0] as Vector2) + Vector2(cos(a), sin(a)) * 5.0, 1.6, gk.darkened(0.25), t)
-			ci.draw_colored_polygon(ell(Vector2(0, 1), Vector2(6.5, 15), s, 0.0, 16), belly)
-			ci.draw_colored_polygon(ell(Vector2(0, -27), Vector2(6, 5), s + 1, 0.0, 12), belly)
-			for k in 4:
-				ln(ci, Vector2(-4, -8.0 + float(k) * 6.0), Vector2(4, -8.0 + float(k) * 6.0), 1.2, Color(gk.darkened(0.2), 0.5), s + k)
-			xeye(ci, Vector2(-6, -30), 2.4, 2.0)
-			xeye(ci, Vector2(6, -30), 2.4, 2.0)
-			_h_tongue(ci, Vector2(0, -34), -PI * 0.5, 3.5)
-			reset_xf(ci)
+			ci.draw_colored_polygon(ell(Vector2(0, 11), Vector2(4, 8), s, 0.0, 12), belly)
+			ci.draw_colored_polygon(ell(Vector2(0, -6), Vector2(3.8, 3.4), s + 1, 0.0, 10), belly)
+			xeye(ci, Vector2(-3.4, -8), 1.6, 1.6)
+			xeye(ci, Vector2(3.4, -8), 1.6, 1.6)
 		2:
 			## 野兔：侧躺伸直，长耳朵向后贴在背上，大后腿蹬直，白尾巴翘着
 			var parts := []
@@ -433,32 +552,35 @@ static func main(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 			_h_tongue(ci, Vector2(-36, 33), PI * 0.85, 3.5)
 			hl(ci, Vector2(22, -8), 8, 3, -0.3, 0.25)
 		8:
-			## 剑齿虎：趴倒在地，前爪向前伸平，下巴贴地，两根长剑齿戳到地上
+			## 剑齿虎：一身壮实的肌肉趴倒在地，前爪向前伸平；大脑袋侧着，嘴张开，两根长剑齿一直戳到地上，短尾巴
+			var fur := TIGER
 			var parts := []
-			parts.append(stk(Vector2(-8, 22), Vector2(-32, 27), 4.6, s, TIGER.darkened(0.15), 2))
-			parts.append(stk(Vector2(30, 24), Vector2(46, 30), 4.6, s + 1, TIGER.darkened(0.15), 2))
-			parts.append(ov(Vector2(40, 8), 4, 4, s + 2, TIGER.darkened(0.1), 0.0, 2))
-			parts.append(ov(Vector2(10, 15), 30, 13, s + 3, TIGER, 0.0, 1))
-			parts.append(ov(Vector2(28, 16), 12, 12, s + 4, TIGER.darkened(0.04), 0.0, 1))
-			parts.append(stk(Vector2(-12, 24), Vector2(-40, 31), 5.2, s + 5, TIGER, 2))
-			parts.append(circ(Vector2(-17, 0), 5, s + 6, TIGER.darkened(0.06), 1))
-			parts.append(ov(Vector2(-25, 10), 15, 13, s + 7, TIGER, 0.0, 1))
-			parts.append(pg([Vector2(-36, 20), Vector2(-35, 36), Vector2(-31, 21)], s + 8, BONE))
-			parts.append(pg([Vector2(-26, 21), Vector2(-25, 35), Vector2(-21, 21)], s + 9, BONE))
-			parts.append(ov(Vector2(-34, 16), 9, 6.5, s + 10, BONE, 0.0, 1))
+			parts.append(stk(Vector2(34, 6), Vector2(48, -4), 3.2, s, fur.darkened(0.1), 2))
+			parts.append(stk(Vector2(26, 24), Vector2(50, 33), 6.2, s + 1, fur.darkened(0.14), 2))
+			parts.append(stk(Vector2(-6, 26), Vector2(-30, 33), 6.0, s + 2, fur.darkened(0.14), 2))
+			parts.append(ov(Vector2(8, 12), 34, 19, s + 3, fur, 0.0, 1))
+			parts.append(ov(Vector2(-12, 6), 16, 17, s + 4, fur.darkened(0.03), 0.0, 1))
+			parts.append(stk(Vector2(-14, 26), Vector2(-46, 33), 6.6, s + 5, fur, 2))
+			parts.append(circ(Vector2(-26, -14), 6, s + 6, fur.darkened(0.06), 1))
+			parts.append(ov(Vector2(-32, 2), 17, 15, s + 7, fur, 0.0, 1))
+			parts.append(pg([Vector2(-48, 4), Vector2(-40, 10), Vector2(-30, 12), Vector2(-46, 16)], s + 8, Color("5a2418"), 2))
+			parts.append(pg([Vector2(-44, 9), Vector2(-42, 34), Vector2(-37, 11)], s + 9, BONE))
+			parts.append(pg([Vector2(-35, 11), Vector2(-33, 31), Vector2(-29, 12)], s + 10, BONE))
+			parts.append(ov(Vector2(-41, 1), 9, 6, s + 11, BONE, 0.0, 1))
 			sil(ci, parts, rim)
-			for k in 4:
-				var x := -4.0 + float(k) * 9.0
-				ci.draw_colored_polygon(poly([Vector2(x - 3.5, 3), Vector2(x + 3.5, 3), Vector2(x + 1, 14)], s + k), FUR_D)
+			## 背上的条纹、脸上的纹、肚皮
+			for k in 5:
+				var x := -2.0 + float(k) * 9.0
+				ci.draw_colored_polygon(poly([Vector2(x - 4, -5.0 + absf(float(k) - 2.0) * 1.2), Vector2(x + 4, -5.0 + absf(float(k) - 2.0) * 1.2), Vector2(x + 1, 9)], s + k), FUR_D)
 			for k in 3:
-				var x := -30.0 + float(k) * 5.0
-				ci.draw_colored_polygon(poly([Vector2(x - 2, -2), Vector2(x + 2, -2), Vector2(x + 0.5, 4)], s + k + 5), FUR_D)
-			ci.draw_colored_polygon(ell(Vector2(8, 24), Vector2(20, 3.5), s, 0.0, 14), Color(BONE, 0.6))
-			_h_toes(ci, Vector2(-40, 31), PI * 0.85, 4.0, 3, INK, 1.4)
-			ci.draw_circle(Vector2(-40, 13), 2.2, INK)
-			xeye(ci, Vector2(-25, 6), 2.6)
-			_h_tongue(ci, Vector2(-30, 22), PI * 0.5, 4.0)
-			hl(ci, Vector2(12, 5), 9, 3, -0.1, 0.3)
+				var x := -36.0 + float(k) * 6.0
+				ci.draw_colored_polygon(poly([Vector2(x - 2, -12), Vector2(x + 2, -12), Vector2(x + 0.5, -5)], s + k + 5), FUR_D)
+			ci.draw_colored_polygon(ell(Vector2(10, 27), Vector2(24, 3.5), s, 0.0, 14), Color(BONE, 0.6))
+			_h_toes(ci, Vector2(-46, 33), PI * 0.85, 4.5, 3, INK, 1.6)
+			_h_toes(ci, Vector2(50, 33), PI * 0.15, 4.5, 3, INK, 1.6)
+			ci.draw_circle(Vector2(-49, -2), 2.6, INK)
+			xeye(ci, Vector2(-32, -4), 3.0)
+			hl(ci, Vector2(10, -1), 12, 3.5, -0.1, 0.3)
 		9:
 			## 披毛犀：侧倒、背朝前，两条粗腿从背后翘起来；大脑袋侧贴在地上，鼻子上一长一短两只角朝天
 			var parts := []
@@ -512,7 +634,7 @@ static func main(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 			hl(ci, Vector2(-6, -24), 5, 2.5, -0.1, 0.35)
 			sparks(ci, [Vector2(-42, -34), Vector2(42, -32), Vector2(-44, 4)])
 
-static func sub(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+static func _sub_art(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 	match lv:
 		1:
 			## 麻雀：仰面朝天，两只小爪蜷着朝上，翅膀尖垂在两边
@@ -536,6 +658,254 @@ static func sub(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 			for k in 3:
 				ln(ci, Vector2(-2.0 + float(k) * 7.0, 20), Vector2(4.0 + float(k) * 7.0, 27), 1.4, Color(INK, 0.4), s + k)
 			xeye(ci, Vector2(-20, 15), 2.4, 2.0)
+		2:
+			## 乌鸦：侧躺，翅膀半张开搭在身上（羽毛不再大张，个头比野鸡小）
+			var col := Color("2b2430")
+			var parts := []
+			var fe := []
+			for k in 5:
+				var a := lerpf(-PI * 0.78, -PI * 0.3, float(k) / 4.0)
+				fe.append([Vector2(10, 12), 17.0 + 3.0 * sin(float(k) / 4.0 * PI), a])
+				parts.append(leaf(Vector2(10, 12), fe[k][1], 5.0, a, s + k, col.lightened(0.08)))
+			parts.append(pg([Vector2(24, 14), Vector2(38, 11), Vector2(38, 23), Vector2(24, 22)], s + 10, col))
+			parts.append(ov(Vector2(6, 18), 19, 11, s + 11, col, 0.0, 1))
+			parts.append(circ(Vector2(-15, 20), 9, s + 12, col, 1))
+			parts.append(pg([Vector2(-21, 16), Vector2(-36, 23), Vector2(-21, 25)], s + 13, BLACK.lightened(0.15)))
+			parts.append(stk(Vector2(2, 28), Vector2(8, 35), 1.6, s + 14, STONE_D, 2))
+			sil(ci, parts, rim)
+			for f in fe:
+				vein(ci, f[0], f[1], f[2], s, Color("6a5a8a", 0.7))
+			_h_toes(ci, Vector2(8, 35), PI * 0.2, 3.5, 3, STONE_D, 1.4)
+			_h_xw(ci, Vector2(-16, 18), 2.4)
+			hl(ci, Vector2(4, 13), 7, 2.5, -0.1, 0.3)
+		3:
+			## 野鸡：侧躺，身子圆鼓鼓的，一对长长的花尾羽拖在后面，红脸、绿脖子、白颈环
+			var col := Color("b8622a")
+			var parts := []
+			parts.append(leaf(Vector2(16, 8), 40, 6.0, -0.22, s, Color("b89048")))
+			parts.append(leaf(Vector2(16, 11), 38, 6.0, 0.04, s + 1, Color("c8a058")))
+			parts.append(stk(Vector2(4, 26), Vector2(10, 34), 2.0, s + 2, STONE_D, 2))
+			parts.append(ov(Vector2(4, 12), 22, 17, s + 3, col, 0.0, 1))
+			parts.append(pg([Vector2(-6, 2), Vector2(12, -4), Vector2(26, 8), Vector2(20, 18), Vector2(4, 20)], s + 4, Color("8a4a22")))
+			parts.append(stk(Vector2(-12, 8), Vector2(-24, 18), 6.0, s + 5, Color("2f8a6a"), 2))
+			parts.append(circ(Vector2(-29, 21), 10.5, s + 6, Color("3a9a78"), 1))
+			parts.append(pg([Vector2(-38, 20), Vector2(-48, 26), Vector2(-37, 28)], s + 7, BONE2))
+			parts.append(ov(Vector2(-31, 20), 6.5, 7, s + 8, Color("e8402a"), 0.0, 2))
+			parts.append(pg([Vector2(-28, 12), Vector2(-24, 4), Vector2(-22, 13)], s + 9, Color("2f8a6a").darkened(0.15), 2))
+			sil(ci, parts, rim)
+			for k in 5:
+				var x := 22.0 + float(k) * 6.0
+				ln(ci, Vector2(x, 2.0 - float(k) * 1.4 - 2.0), Vector2(x + 1, 6.0 - float(k) * 1.4 + 2.0), 1.4, Color(INK, 0.45), s + k)
+				ln(ci, Vector2(x + 2, 10), Vector2(x + 3, 14), 1.4, Color(INK, 0.45), s + k + 5)
+			ln(ci, Vector2(-17, 8), Vector2(-20, 16), 2.8, BONE, s)
+			for k in 6:
+				ci.draw_circle(Vector2(-6.0 + float(k) * 5.0, 12.0 + float(k % 2) * 5.0), 1.6, Color(INK, 0.4))
+			_h_toes(ci, Vector2(10, 34), PI * 0.2, 3.5, 3, STONE_D, 1.4)
+			xeye(ci, Vector2(-31, 19), 2.6, 2.0)
+			hl(ci, Vector2(0, 2), 8, 3, -0.1, 0.3)
+		4:
+			## 野鸭：两只蹼脚被草绳拴在一根木棍上，整只倒挂下来，绿脑袋垂在最下面，黄嘴朝下
+			var col := Color("9a7a5a")
+			var parts := []
+			parts.append(stk(Vector2(-28, -38), Vector2(28, -40), 3.2, s, WOOD, 2))
+			for sd in [-1.0, 1.0]:
+				var top := Vector2(2.0 + sd * 6.0, -30)
+				parts.append(pg([top + Vector2(-5, 2), top + Vector2(0, -6), top + Vector2(5, 2)], s + 1 + int(sd), OCHRE, 2))
+				parts.append(stk(top + Vector2(0, 1), Vector2(2.0 + sd * 4.0, -16), 2.0, s + 3 + int(sd), OCHRE, 2))
+			parts.append(pg([Vector2(-10, -12), Vector2(14, -12), Vector2(2, -24)], s + 5, col.darkened(0.3)))
+			parts.append(ov(Vector2(2, 2), 17, 20, s + 6, col, 0.0, 1))
+			parts.append(pg([Vector2(-13, -8), Vector2(8, -12), Vector2(17, 4), Vector2(6, 18), Vector2(-11, 10)], s + 7, Color("7a5e44")))
+			parts.append(stk(Vector2(2, 18), Vector2(0, 26), 6.0, s + 8, Color("2f8a4a"), 2))
+			parts.append(circ(Vector2(-1, 29), 8.5, s + 9, Color("2f8a4a"), 1))
+			parts.append(ov(Vector2(-6, 37), 7, 3.6, s + 10, OCHRE, 0.9, 1))
+			sil(ci, parts, rim)
+			var rope := [Vector2(-4, -39), Vector2(-3, -32), Vector2(8, -32), Vector2(9, -39)]
+			pl(ci, rope, 4.0, INK, s)
+			pl(ci, rope, 2.2, ROPE, s)
+			ci.draw_colored_polygon(poly([Vector2(2, -4), Vector2(12, -2), Vector2(12, 5), Vector2(3, 3)], s), Color("3a6ac8"))
+			ln(ci, Vector2(-5, 20), Vector2(7, 20), 2.6, BONE, s)
+			ci.draw_colored_polygon(ell(Vector2(-6, 2), Vector2(4, 13), s + 1, 0.0, 12), Color(BONE2, 0.5))
+			xeye(ci, Vector2(3, 29), 2.4, 2.0)
+			hl(ci, Vector2(-8, -6), 3, 7, -0.1, 0.3)
+		5:
+			## 大雁：趴着蜷成一团，长脖子绕回来搭在背上，脑袋枕在翅膀上，一只橙脚从肚子底下露出来
+			var col := Color("8c7b66")
+			var neck := Color("cdbf9f")
+			var parts := []
+			parts.append(pg([Vector2(16, 30), Vector2(26, 36), Vector2(14, 38)], s, Color("e8925a"), 2))
+			parts.append(pg([Vector2(-26, 10), Vector2(-42, 4), Vector2(-40, 18), Vector2(-26, 22)], s + 1, col.darkened(0.3)))
+			parts.append(ov(Vector2(2, 16), 30, 18, s + 2, col, 0.0, 1))
+			parts.append(pg([Vector2(-24, 8), Vector2(-2, -2), Vector2(24, 4), Vector2(18, 22), Vector2(-14, 22)], s + 3, col.darkened(0.15), 1))
+			parts.append(stk(Vector2(26, 16), Vector2(34, 2), 6.0, s + 4, neck, 2))
+			parts.append(stk(Vector2(34, 2), Vector2(28, -12), 5.6, s + 5, neck, 2))
+			parts.append(stk(Vector2(28, -12), Vector2(14, -14), 5.4, s + 6, neck, 2))
+			parts.append(circ(Vector2(6, -11), 8.5, s + 7, neck, 1))
+			parts.append(pg([Vector2(0, -13), Vector2(-13, -9), Vector2(0, -6)], s + 8, Color("2b2430")))
+			sil(ci, parts, rim)
+			pl(ci, [Vector2(30, 14), Vector2(37, 2), Vector2(31, -14), Vector2(15, -18)], 2.4, Color("5a4430"), s)
+			for row in 2:
+				for k in 4:
+					var c := Vector2(-14.0 + float(k) * 8.0 + float(row) * 4.0, 6.0 + float(row) * 7.0)
+					pl(ci, arcp(c, Vector2(4.0, 3.0), PI * 0.05, PI * 0.95, 6), 1.5, Color(BONE2, 0.8), s + k + row * 4)
+			ci.draw_colored_polygon(ell(Vector2(4, 29), Vector2(20, 3.5), s + 1, 0.0, 12), Color("ece4d4"))
+			xeye(ci, Vector2(6, -13), 2.6, 2.0)
+			hl(ci, Vector2(-6, 0), 9, 3, -0.1, 0.3)
+		6:
+			## 秃鹫（正面）：瘫坐着，两只大翅膀像斗篷一样从肩膀垂到地上，白毛领子，光秃秃的粉脖子耷拉下来，钩嘴脑袋垂到地面
+			var col := Color("4a3a30")
+			var parts := []
+			for sd in [-1.0, 1.0]:
+				var w := [Vector2(sd * 8.0, -22), Vector2(sd * 30.0, -16), Vector2(sd * 42.0, 6)]
+				for k in 5:
+					var x: float = sd * lerpf(44.0, 14.0, float(k) / 4.0)
+					w.append(Vector2(x, 36.0 if k % 2 == 0 else 29.0))
+				w.append(Vector2(sd * 8.0, 20))
+				parts.append(pg(w, s + int(sd) + 2, col.darkened(0.08), 1))
+			parts.append(ov(Vector2(0, 8), 16, 24, s + 4, col, 0.0, 1))
+			parts.append(ov(Vector2(0, -18), 16, 8, s + 5, BONE2, 0.0, 1))
+			parts.append(stk(Vector2(0, -16), Vector2(4, 4), 3.8, s + 6, PINK.darkened(0.15), 2))
+			parts.append(stk(Vector2(4, 4), Vector2(2, 20), 3.6, s + 7, PINK.darkened(0.15), 2))
+			parts.append(circ(Vector2(1, 26), 7.5, s + 8, PINK.darkened(0.15), 1))
+			parts.append(pg([Vector2(-4, 30), Vector2(2, 40), Vector2(5, 31)], s + 9, BONE2))
+			for sd in [-1.0, 1.0]:
+				parts.append(stk(Vector2(sd * 9.0, 30), Vector2(sd * 13.0, 37), 2.2, s + 10 + int(sd), STONE_D, 2))
+			sil(ci, parts, rim)
+			for sd in [-1.0, 1.0]:
+				for k in 4:
+					var x: float = sd * (18.0 + float(k) * 6.0)
+					ln(ci, Vector2(x, -10.0 + float(k) * 4.0), Vector2(x + sd * 2.0, 28), 1.6, Color(INK, 0.4), s + k)
+				_h_toes(ci, Vector2(sd * 13.0, 37), PI * 0.5 - sd * 0.4, 3.5, 3, STONE_D, 1.4)
+			for k in 5:
+				ln(ci, Vector2(-10.0 + float(k) * 5.0, -21), Vector2(-11.0 + float(k) * 5.0, -14), 1.2, Color(INK, 0.25), s + k)
+			xeye(ci, Vector2(-2, 24), 2.4, 2.0)
+			hl(ci, Vector2(-6, -2), 4, 9, -0.1, 0.25)
+		7:
+			## 老鹰：背朝上，两只翅膀完全展开平铺，像个"大"字（最高级的金光让给了鸵鸟）
+			var col := Color("6a4428")
+			var parts := []
+			for sd in [-1.0, 1.0]:
+				for k in 5:
+					var a: float = (PI if sd < 0.0 else 0.0) + sd * (-0.25 + float(k) * 0.16)
+					parts.append(leaf(Vector2(sd * 36.0, -6.0 + float(k) * 1.5), 14.0 - float(k) * 0.8, 3.4, a, s + k + (0 if sd < 0.0 else 10), col.darkened(0.25)))
+				parts.append(pg([Vector2(sd * 6.0, -10), Vector2(sd * 22.0, -16), Vector2(sd * 40.0, -12), Vector2(sd * 42.0, 0), Vector2(sd * 30.0, 6), Vector2(sd * 16.0, 10), Vector2(sd * 6.0, 10)], s + 20 + int(sd), col))
+				parts.append(stk(Vector2(sd * 6.0, 18), Vector2(sd * 13.0, 24), 2.2, s + 24 + int(sd), GOLD, 2))
+			parts.append(pg([Vector2(-6, 14), Vector2(-16, 38), Vector2(0, 41), Vector2(16, 38), Vector2(6, 14)], s + 26, Color("f4f0e8")))
+			parts.append(ov(Vector2(0, 2), 10, 18, s + 27, col.darkened(0.1), 0.0, 1))
+			parts.append(circ(Vector2(0, -20), 9, s + 28, Color("f4f0e8"), 1))
+			parts.append(pg([Vector2(-6, -24), Vector2(-17, -21), Vector2(-15, -14), Vector2(-12, -17), Vector2(-6, -16)], s + 29, GOLD))
+			sil(ci, parts, rim)
+			for sd in [-1.0, 1.0]:
+				ci.draw_colored_polygon(poly([Vector2(sd * 8.0, -8), Vector2(sd * 24.0, -12), Vector2(sd * 30.0, -6), Vector2(sd * 12.0, -2)], s), Color("a8784e", 0.7))
+				for k in 4:
+					var x: float = sd * (14.0 + float(k) * 6.0)
+					ln(ci, Vector2(x, -2), Vector2(x + sd * 2.0, 8), 1.4, Color(INK, 0.4), s + k)
+				_h_toes(ci, Vector2(sd * 13.0, 24), PI * 0.5 - sd * 0.5, 4.0, 3, INK, 1.6)
+			for k in 3:
+				ln(ci, Vector2(-8.0 + float(k) * 8.0, 26), Vector2(-9.0 + float(k) * 9.0, 38), 1.2, Color(INK, 0.3), s + k)
+			xeye(ci, Vector2(-3, -21), 2.4, 2.0)
+		_:
+			## 鸵鸟：最大的一只。仰翻过去，两条粉色长腿直直踢向天上，蓬松的黑羽身子压在地上，白羽散开，长脖子软软地拖在地上，小脑袋
+			glow(ci, Vector2(0, -2), 58, GOLD)
+			var skin := Color("e3a58e")
+			var parts := []
+			parts.append(stk(Vector2(18, 0), Vector2(32, -20), 5.6, s, skin.darkened(0.12), 2))
+			parts.append(stk(Vector2(32, -20), Vector2(44, -38), 3.2, s + 1, skin.darkened(0.12), 2))
+			for k in 3:
+				parts.append(leaf(Vector2(30, 18), 22.0 - float(k) * 3.0, 7.5, -0.3 + float(k) * 0.4, s + 2 + k, Color("f4f0e8")))
+			parts.append(_h_shag(Vector2(4, 16), Vector2(30, 21), 26, 1.12, s + 6, Color("2e2a2c")))
+			parts.append(stk(Vector2(8, 2), Vector2(18, -22), 6.0, s + 7, skin, 2))
+			parts.append(stk(Vector2(18, -22), Vector2(26, -44), 3.4, s + 8, skin, 2))
+			for k in 3:
+				parts.append(leaf(Vector2(-8, 10), 22.0 - float(k) * 3.0, 7.0, -2.6 + float(k) * 0.4, s + 10 + k, Color("f4f0e8")))
+			parts.append(stk(Vector2(-22, 22), Vector2(-32, 32), 5.2, s + 14, Color("d9bcae"), 2))
+			parts.append(stk(Vector2(-32, 32), Vector2(-44, 33), 4.4, s + 15, Color("d9bcae"), 2))
+			parts.append(stk(Vector2(-44, 33), Vector2(-50, 27), 4.0, s + 16, Color("d9bcae"), 2))
+			parts.append(ov(Vector2(-52, 22), 6.5, 6, s + 17, Color("b8a8a0"), 0.0, 1))
+			parts.append(pg([Vector2(-57, 20), Vector2(-62, 14), Vector2(-54, 17)], s + 18, Color("e8c8a0"), 2))
+			sil(ci, parts, rim)
+			for k in 6:
+				var x := -14.0 + float(k) * 7.0
+				pl(ci, [Vector2(x, 10.0 + float(k % 2) * 3.0), Vector2(x + 3, 18), Vector2(x + 1, 26)], 1.4, Color(1, 1, 1, 0.18), s + k)
+			for leg in [[Vector2(26, -44), -1.3], [Vector2(44, -38), -1.0]]:
+				_h_toes(ci, leg[0], leg[1], 5.0, 2, INK, 2.0)
+			xeye(ci, Vector2(-52, 21), 2.2, 1.8)
+			hl(ci, Vector2(-4, 4), 8, 3, -0.2, 0.3)
+			sparks(ci, [Vector2(-46, -30), Vector2(-20, -44), Vector2(52, 8)])
+
+## 旧画法（重画前保留，游戏里现在不调用）：1 灰壁虎 / 8 剑齿虎
+static func beast_old(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+	match lv:
+		1:
+			## 灰壁虎（个头小）：肚皮朝上摊开（俯视），四只脚张开露出吸盘趾，尾巴卷起来
+			var gk := Color("8e8a86")
+			var belly := Color("d9d3c8")
+			set_xf(ci, Transform2D(0.0, Vector2.ONE * 0.8, 0.0, Vector2(0, 3)))
+			var parts := []
+			var tl := [Vector2(0, 14), Vector2(4, 26), Vector2(14, 33), Vector2(25, 29), Vector2(26, 19)]
+			for i in 4:
+				parts.append(stk(tl[i], tl[i + 1], 5.0 - float(i) * 1.0, s + i, gk, 2))
+			var feet := []
+			for sd in [-1.0, 1.0]:
+				var f0 := Vector2(sd * 8.0, -10)
+				var f1 := Vector2(sd * 20.0, -20)
+				var h0 := Vector2(sd * 8.0, 10)
+				var h1 := Vector2(sd * 22.0, 18)
+				parts.append(stk(f0, f0 + (f1 - f0) * 0.55 + Vector2(0, 2), 3.0, s + 10, gk, 2))
+				parts.append(stk(f0 + (f1 - f0) * 0.55 + Vector2(0, 2), f1, 2.6, s + 11, gk, 2))
+				parts.append(stk(h0, h0 + (h1 - h0) * 0.5 - Vector2(0, 3), 3.4, s + 12, gk, 2))
+				parts.append(stk(h0 + (h1 - h0) * 0.5 - Vector2(0, 3), h1, 2.8, s + 13, gk, 2))
+				feet.append([f1, -PI * 0.5 + sd * 0.9])
+				feet.append([h1, PI * 0.5 - sd * 0.9])
+			for f in feet:
+				for t in 4:
+					var a: float = f[1] + (float(t) - 1.5) * 0.55
+					parts.append(circ((f[0] as Vector2) + Vector2(cos(a), sin(a)) * 6.0, 2.4, s + 20 + t, gk, 2))
+			parts.append(ov(Vector2(0, 0), 10, 19, s + 30, gk, 0.0, 1))
+			parts.append(ov(Vector2(0, -26), 10, 9, s + 31, gk, 0.0, 1))
+			sil(ci, parts, rim)
+			for f in feet:
+				for t in 4:
+					var a: float = f[1] + (float(t) - 1.5) * 0.55
+					ln(ci, f[0], (f[0] as Vector2) + Vector2(cos(a), sin(a)) * 5.0, 1.6, gk.darkened(0.25), t)
+			ci.draw_colored_polygon(ell(Vector2(0, 1), Vector2(6.5, 15), s, 0.0, 16), belly)
+			ci.draw_colored_polygon(ell(Vector2(0, -27), Vector2(6, 5), s + 1, 0.0, 12), belly)
+			for k in 4:
+				ln(ci, Vector2(-4, -8.0 + float(k) * 6.0), Vector2(4, -8.0 + float(k) * 6.0), 1.2, Color(gk.darkened(0.2), 0.5), s + k)
+			xeye(ci, Vector2(-6, -30), 2.4, 2.0)
+			xeye(ci, Vector2(6, -30), 2.4, 2.0)
+			_h_tongue(ci, Vector2(0, -34), -PI * 0.5, 3.5)
+			reset_xf(ci)
+		8:
+			## 剑齿虎：趴倒在地，前爪向前伸平，下巴贴地，两根长剑齿戳到地上
+			var parts := []
+			parts.append(stk(Vector2(-8, 22), Vector2(-32, 27), 4.6, s, TIGER.darkened(0.15), 2))
+			parts.append(stk(Vector2(30, 24), Vector2(46, 30), 4.6, s + 1, TIGER.darkened(0.15), 2))
+			parts.append(ov(Vector2(40, 8), 4, 4, s + 2, TIGER.darkened(0.1), 0.0, 2))
+			parts.append(ov(Vector2(10, 15), 30, 13, s + 3, TIGER, 0.0, 1))
+			parts.append(ov(Vector2(28, 16), 12, 12, s + 4, TIGER.darkened(0.04), 0.0, 1))
+			parts.append(stk(Vector2(-12, 24), Vector2(-40, 31), 5.2, s + 5, TIGER, 2))
+			parts.append(circ(Vector2(-17, 0), 5, s + 6, TIGER.darkened(0.06), 1))
+			parts.append(ov(Vector2(-25, 10), 15, 13, s + 7, TIGER, 0.0, 1))
+			parts.append(pg([Vector2(-36, 20), Vector2(-35, 36), Vector2(-31, 21)], s + 8, BONE))
+			parts.append(pg([Vector2(-26, 21), Vector2(-25, 35), Vector2(-21, 21)], s + 9, BONE))
+			parts.append(ov(Vector2(-34, 16), 9, 6.5, s + 10, BONE, 0.0, 1))
+			sil(ci, parts, rim)
+			for k in 4:
+				var x := -4.0 + float(k) * 9.0
+				ci.draw_colored_polygon(poly([Vector2(x - 3.5, 3), Vector2(x + 3.5, 3), Vector2(x + 1, 14)], s + k), FUR_D)
+			for k in 3:
+				var x := -30.0 + float(k) * 5.0
+				ci.draw_colored_polygon(poly([Vector2(x - 2, -2), Vector2(x + 2, -2), Vector2(x + 0.5, 4)], s + k + 5), FUR_D)
+			ci.draw_colored_polygon(ell(Vector2(8, 24), Vector2(20, 3.5), s, 0.0, 14), Color(BONE, 0.6))
+			_h_toes(ci, Vector2(-40, 31), PI * 0.85, 4.0, 3, INK, 1.4)
+			ci.draw_circle(Vector2(-40, 13), 2.2, INK)
+			xeye(ci, Vector2(-25, 6), 2.6)
+			_h_tongue(ci, Vector2(-30, 22), PI * 0.5, 4.0)
+			hl(ci, Vector2(12, 5), 9, 3, -0.1, 0.3)
+
+## 旧画法（重画前保留，游戏里现在不调用）：2 乌鸦 / 3 野鸡 / 4 野鸭 / 6 老鹰（原最高级，带金光）
+static func bird_old(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+	match lv:
 		2:
 			## 乌鸦：侧躺，一边翅膀像扇子一样摊开在地上
 			var col := Color("2b2430")
@@ -602,32 +972,7 @@ static func sub(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 			ci.draw_circle(Vector2(-44, 27), 1.2, INK)
 			xeye(ci, Vector2(-28, 20), 2.4, 2.0)
 			hl(ci, Vector2(12, 6), 7, 2.5, -0.1, 0.3)
-		5:
-			## 秃鹫：扑倒在地，两边大翅膀像斗篷一样摊下来，光秃秃的长脖子伸在地上
-			var col := Color("4a3a30")
-			var parts := []
-			parts.append(pg([Vector2(-4, -4), Vector2(-20, 6), Vector2(-26, 30), Vector2(-6, 26)], s, col.darkened(0.3)))
-			var wing := [Vector2(-4, -6), Vector2(18, -14), Vector2(36, -2)]
-			for k in 7:
-				var x := lerpf(44.0, 4.0, float(k) / 6.0)
-				wing.append(Vector2(x, 32.0 if k % 2 == 0 else 26.0))
-			parts.append(pg([Vector2(30, 14), Vector2(46, 18), Vector2(40, 28)], s + 1, col.darkened(0.15)))
-			parts.append(ov(Vector2(10, 10), 20, 15, s + 2, col, 0.0, 1))
-			parts.append(pg(wing, s + 3, col.darkened(0.08), 1))
-			parts.append(ov(Vector2(-10, 4), 10, 9, s + 4, BONE2, 0.0, 1))
-			parts.append(stk(Vector2(-14, 8), Vector2(-28, 24), 3.6, s + 5, PINK.darkened(0.15), 2))
-			parts.append(circ(Vector2(-31, 26), 7, s + 6, PINK.darkened(0.15), 1))
-			parts.append(pg([Vector2(-36, 22), Vector2(-46, 26), Vector2(-42, 32), Vector2(-36, 30)], s + 7, BONE2))
-			sil(ci, parts, rim)
-			for k in 5:
-				var x := 10.0 + float(k) * 7.0
-				ln(ci, Vector2(x - 4, 0), Vector2(x, 26), 1.6, Color(INK, 0.45), s + k)
-			for k in 4:
-				ln(ci, Vector2(-16.0 + float(k) * 4.0, 0), Vector2(-15.0 + float(k) * 4.0, 8), 1.2, Color(INK, 0.25), s + k)
-			ln(ci, Vector2(-44, 28), Vector2(-38, 28), 1.4, Color(INK, 0.6), s)
-			xeye(ci, Vector2(-30, 24), 2.4, 2.0)
-			hl(ci, Vector2(14, -4), 7, 2.5, -0.3, 0.25)
-		_:
+		6:
 			## 老鹰：背朝上，两只翅膀完全展开平铺，像个"大"字
 			glow(ci, Vector2(0, 0), 54, GOLD)
 			var col := Color("6a4428")
@@ -653,3 +998,109 @@ static func sub(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 				ln(ci, Vector2(-8.0 + float(k) * 8.0, 26), Vector2(-9.0 + float(k) * 9.0, 38), 1.2, Color(INK, 0.3), s + k)
 			xeye(ci, Vector2(-3, -21), 2.4, 2.0)
 			sparks(ci, [Vector2(-42, -32), Vector2(42, -34), Vector2(38, 30)])
+
+## 换姿势前的画法（游戏里现在不调用）：4 野鸭侧躺 / 5 大雁侧躺 / 6 秃鹫扑倒 / 8 鸵鸟侧倒
+static func bird_pose_old(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+	match lv:
+		4:
+			## 野鸭：侧躺，肥肥的身子，绿脖子直直伸在地上，扁扁的黄嘴贴地，橙色蹼脚翘在后面
+			var col := Color("9a7a5a")
+			var parts := []
+			for sd in [0.0, 1.0]:
+				var a := Vector2(18.0 + sd * 8.0, 24)
+				var b := a + Vector2(10, 8)
+				parts.append(stk(a, b, 2.0, s + int(sd), OCHRE, 2))
+				parts.append(pg([b + Vector2(-3, -1), b + Vector2(9, 2), b + Vector2(2, 8)], s + 2 + int(sd), OCHRE, 2))
+			parts.append(pg([Vector2(30, 4), Vector2(44, 4), Vector2(30, 16)], s + 4, col.darkened(0.25)))
+			parts.append(ov(Vector2(10, 12), 25, 17, s + 5, col, 0.0, 1))
+			parts.append(stk(Vector2(-10, 10), Vector2(-24, 20), 6.0, s + 6, Color("2f8a4a"), 2))
+			parts.append(circ(Vector2(-29, 22), 10, s + 7, Color("2f8a4a"), 1))
+			parts.append(ov(Vector2(-43, 28), 9, 4, s + 8, OCHRE, 0.3, 1))
+			parts.append(pg([Vector2(-6, 6), Vector2(14, -2), Vector2(34, 10), Vector2(22, 20), Vector2(4, 18)], s + 9, Color("7a5e44")))
+			sil(ci, parts, rim)
+			ci.draw_colored_polygon(poly([Vector2(12, 4), Vector2(24, 7), Vector2(22, 13), Vector2(10, 10)], s), Color("3a6ac8"))
+			ln(ci, Vector2(-13, 9), Vector2(-16, 17), 2.8, BONE, s)
+			ci.draw_colored_polygon(ell(Vector2(8, 24), Vector2(17, 3.5), s + 1, 0.0, 12), Color(BONE2, 0.6))
+			ci.draw_circle(Vector2(-46, 27), 1.3, INK)
+			xeye(ci, Vector2(-29, 19), 2.6, 2.0)
+			hl(ci, Vector2(10, 0), 8, 3, -0.1, 0.3)
+		5:
+			## 大雁：侧躺，灰褐色的身子，翅膀上一道道浅色横纹，长脖子伸在地上，后颈一道深褐条纹，黑嘴
+			var col := Color("8c7b66")
+			var neck := Color("cdbf9f")
+			var parts := []
+			for sd in [0.0, 1.0]:
+				var a := Vector2(20.0 + sd * 9.0, 24)
+				var b := a + Vector2(10, 9)
+				parts.append(stk(a, b, 2.2, s + int(sd), Color("e8925a"), 2))
+				parts.append(pg([b + Vector2(-3, -1), b + Vector2(10, 2), b + Vector2(2, 9)], s + 2 + int(sd), Color("e8925a"), 2))
+			parts.append(pg([Vector2(32, 0), Vector2(48, 2), Vector2(34, 14)], s + 4, col.darkened(0.3)))
+			parts.append(ov(Vector2(10, 10), 27, 18, s + 5, col, 0.0, 1))
+			parts.append(pg([Vector2(-6, 2), Vector2(16, -9), Vector2(40, 4), Vector2(28, 18), Vector2(4, 16)], s + 6, col.darkened(0.15), 1))
+			parts.append(stk(Vector2(-10, 8), Vector2(-27, 19), 6.0, s + 7, neck, 2))
+			parts.append(stk(Vector2(-27, 19), Vector2(-35, 25), 5.4, s + 8, neck, 2))
+			parts.append(circ(Vector2(-39, 26), 8.5, s + 9, neck, 1))
+			parts.append(pg([Vector2(-45, 24), Vector2(-58, 29), Vector2(-45, 32)], s + 10, Color("2b2430")))
+			sil(ci, parts, rim)
+			pl(ci, [Vector2(-8, 3), Vector2(-20, 10), Vector2(-30, 17), Vector2(-37, 19.5)], 2.4, Color("5a4430"), s)
+			for row in 2:
+				for k in 4:
+					var c := Vector2(6.0 + float(k) * 7.5 + float(row) * 3.5, 1.0 + float(row) * 7.0 + float(k) * 0.6)
+					pl(ci, arcp(c, Vector2(3.8, 2.8), PI * 0.05, PI * 0.95, 6), 1.5, Color(BONE2, 0.8), s + k + row * 4)
+			ci.draw_colored_polygon(ell(Vector2(8, 23), Vector2(18, 4), s + 1, 0.0, 12), Color("ece4d4"))
+			xeye(ci, Vector2(-40, 23), 2.6, 2.0)
+			hl(ci, Vector2(12, -2), 9, 3, -0.1, 0.3)
+		6:
+			## 秃鹫：扑倒在地，两边大翅膀像斗篷一样摊下来，光秃秃的长脖子伸在地上
+			var col := Color("4a3a30")
+			var parts := []
+			parts.append(pg([Vector2(-4, -4), Vector2(-20, 6), Vector2(-26, 30), Vector2(-6, 26)], s, col.darkened(0.3)))
+			var wing := [Vector2(-4, -6), Vector2(18, -14), Vector2(36, -2)]
+			for k in 7:
+				var x := lerpf(44.0, 4.0, float(k) / 6.0)
+				wing.append(Vector2(x, 32.0 if k % 2 == 0 else 26.0))
+			parts.append(pg([Vector2(30, 14), Vector2(46, 18), Vector2(40, 28)], s + 1, col.darkened(0.15)))
+			parts.append(ov(Vector2(10, 10), 20, 15, s + 2, col, 0.0, 1))
+			parts.append(pg(wing, s + 3, col.darkened(0.08), 1))
+			parts.append(ov(Vector2(-10, 4), 10, 9, s + 4, BONE2, 0.0, 1))
+			parts.append(stk(Vector2(-14, 8), Vector2(-28, 24), 3.6, s + 5, PINK.darkened(0.15), 2))
+			parts.append(circ(Vector2(-31, 26), 7, s + 6, PINK.darkened(0.15), 1))
+			parts.append(pg([Vector2(-36, 22), Vector2(-46, 26), Vector2(-42, 32), Vector2(-36, 30)], s + 7, BONE2))
+			sil(ci, parts, rim)
+			for k in 5:
+				var x := 10.0 + float(k) * 7.0
+				ln(ci, Vector2(x - 4, 0), Vector2(x, 26), 1.6, Color(INK, 0.45), s + k)
+			for k in 4:
+				ln(ci, Vector2(-16.0 + float(k) * 4.0, 0), Vector2(-15.0 + float(k) * 4.0, 8), 1.2, Color(INK, 0.25), s + k)
+			ln(ci, Vector2(-44, 28), Vector2(-38, 28), 1.4, Color(INK, 0.6), s)
+			xeye(ci, Vector2(-30, 24), 2.4, 2.0)
+			hl(ci, Vector2(14, -4), 7, 2.5, -0.3, 0.25)
+		8:
+			## 鸵鸟：最大的一只。侧倒在地，一身蓬松的黑羽，翅膀和尾巴各一簇白羽，两条粉色长腿伸出去，长脖子弯在地上，小脑袋
+			glow(ci, Vector2(0, 0), 58, GOLD)
+			var skin := Color("e3a58e")
+			var parts := []
+			parts.append(stk(Vector2(22, 18), Vector2(37, 25), 5.4, s, skin.darkened(0.12), 2))
+			parts.append(stk(Vector2(37, 25), Vector2(46, 33), 3.2, s + 1, skin.darkened(0.12), 2))
+			for k in 3:
+				parts.append(leaf(Vector2(30, -6), 26.0 - float(k) * 3.0, 8.0, -0.9 + float(k) * 0.45, s + 2 + k, Color("f4f0e8")))
+			parts.append(_h_shag(Vector2(6, 4), Vector2(30, 24), 26, 1.12, s + 6, Color("2e2a2c"), -1.1))
+			parts.append(stk(Vector2(12, 22), Vector2(26, 31), 6.0, s + 7, skin, 2))
+			parts.append(stk(Vector2(26, 31), Vector2(40, 37), 3.4, s + 8, skin, 2))
+			for k in 3:
+				parts.append(leaf(Vector2(-6, -6), 26.0 - float(k) * 3.0, 7.5, -0.35 + float(k) * 0.32, s + 10 + k, Color("f4f0e8")))
+			parts.append(stk(Vector2(-18, 8), Vector2(-29, 19), 5.2, s + 14, Color("d9bcae"), 2))
+			parts.append(stk(Vector2(-29, 19), Vector2(-36, 29), 4.4, s + 15, Color("d9bcae"), 2))
+			parts.append(stk(Vector2(-36, 29), Vector2(-42, 32), 4.0, s + 16, Color("d9bcae"), 2))
+			parts.append(ov(Vector2(-46, 30), 7, 6, s + 17, Color("b8a8a0"), 0.0, 1))
+			parts.append(pg([Vector2(-51, 29), Vector2(-58, 32), Vector2(-51, 34)], s + 18, Color("e8c8a0"), 2))
+			sil(ci, parts, rim)
+			for k in 6:
+				var x := -12.0 + float(k) * 7.0
+				pl(ci, [Vector2(x, 2.0 + float(k % 2) * 3.0), Vector2(x + 3, 9), Vector2(x + 1, 16)], 1.4, Color(1, 1, 1, 0.18), s + k)
+			for leg in [[Vector2(40, 37), 0.1], [Vector2(46, 33), -0.4]]:
+				_h_toes(ci, leg[0], leg[1], 5.0, 2, INK, 2.0)
+			ln(ci, Vector2(-22, 11), Vector2(-26, 15), 1.2, Color(INK, 0.3), s)
+			xeye(ci, Vector2(-47, 28), 2.2, 1.8)
+			hl(ci, Vector2(-2, -14), 8, 3, -0.2, 0.3)
+			sparks(ci, [Vector2(-44, -36), Vector2(46, -38), Vector2(50, 10)])

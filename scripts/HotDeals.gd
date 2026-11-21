@@ -12,8 +12,7 @@ static func grade_floor(base: Array, slot: int, player_level: int) -> int:
 static func goods_pool(tier: int, player_level: int) -> Array:
 	var out: Array = []
 	for line in Data.unlocked_lines(player_level):
-		for field in ["main", "sub"]:
-			var chain_id := str(line.get(field, ""))
+		for chain_id in Data.products(line):
 			if chain_id == "" or not Data.product_open(player_level, chain_id) or tier > Data.max_lv(chain_id): continue
 			var id := "%s_%d" % [chain_id, tier]
 			if _is_goods(id): out.append(id)

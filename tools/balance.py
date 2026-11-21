@@ -98,10 +98,33 @@ def apply_drop_template():
                 continue
             main, sub = DROP_TEMPLATE[g]
             drops = [{"id": "%s_%d" % (l["main"], lv), "p": p} for lv, p in main]
-            drops += [{"id": "%s_%d" % (l["sub"], lv), "p": p} for lv, p in sub]
+            if l["sub"]:
+                drops += [{"id": "%s_%d" % (l["sub"], lv), "p": p} for lv, p in sub]
+            else:
+                # 只配了一种产物的产线：副产物那份掉率并到主产物 1 级上
+                drops[0]["p"] += sum(p for _, p in sub)
             slot["drops"] = drops
 
 LINES = load("lines.json")
+
+
+def _line_roles(l):
+    """产线只写 products 列表；掉率最多的是主力产物（main），其余按副产物算。和 Data.gd 的 primary() 一致。"""
+    prods = l.get("products") or [x for x in (l.get("main"), l.get("sub")) if x]
+    weight = {ch: 0 for ch in prods}
+    for slot in CHAINS[l["gen"]].get("prod") or []:
+        for d in (slot or {}).get("drops", []):
+            ch = d["id"].rsplit("_", 1)[0]
+            if ch in weight:
+                weight[ch] += d["p"]
+    main = max(prods, key=lambda ch: (weight[ch], -prods.index(ch)))
+    l["main"] = main
+    l["subs"] = [ch for ch in prods if ch != main]
+    l["sub"] = l["subs"][0] if l["subs"] else None
+
+
+for _l in LINES:
+    _line_roles(_l)
 BUILDS = load("builds.json")
 PEOPLE = load("people.json")
 UNLOCKS = load("unlocks.json")
@@ -164,14 +187,14 @@ def eff(gen, g):
         v = d["p"] / 100.0 * 2 ** (int(lv) - 1)
         if ch == line["main"]:
             em += v
-        elif ch == line["sub"]:
+        elif ch in line["subs"]:
             es += v
     return em, es
 
 
 def sub_avg_percent(sub):
     """副产物 1 级在各级生产器里的平均掉率，用来算副产物的理论火苗。和 OrderRoll.gd 一致。"""
-    line = next(l for l in LINES if l["sub"] == sub)
+    line = next(l for l in LINES if sub in l["subs"])
     ps = []
     for s in CHAINS[line["gen"]]["prod"]:
         if not s:
@@ -398,7 +421,7 @@ INTRO = {
 
 LAST_SAYS = set()
 LAST_ITEMS = set()
-SUB_CHAINS = {l["sub"] for l in LINES}
+SUB_CHAINS = {ch for l in LINES for ch in l["subs"]}
 
 
 def item_flames(x):
@@ -433,7 +456,7 @@ def story_for(L, rows_by_level, rng):
     shares = [w / sum(weights) for w in weights]
     fresh = [l for l in LINES if l["unlock"] <= L <= l["unlock"] + 2]
     chains = [l["main"] for l in open_lines(L) if product_open(L, l["main"])]
-    subs = [l["sub"] for l in open_lines(L) if product_open(L, l["sub"])]
+    subs = [ch for l in open_lines(L) for ch in l["subs"] if product_open(L, ch)]
     out = []
     # 同一级、上一级已经要过的物品尽量不再要，免得订单栏里全是同一两种东西
     recent = set(LAST_ITEMS)
@@ -568,7 +591,7 @@ def run():
         "old_total_build": sum(p["cost"] for b in OLD_BUILDS for p in b["parts"]),
         "story": story,
         "level_rewards": {L: level_rewards(L, level_gens) for L in range(2, KNOBS["levels"] + 1)},
-        "sub_percent": {l["sub"]: round(sub_avg_percent(l["sub"]), 2) for l in LINES},
+        "sub_percent": {ch: round(sub_avg_percent(ch), 2) for l in LINES for ch in l["subs"]},
     }
     return out
 

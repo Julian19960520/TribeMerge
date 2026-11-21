@@ -48,7 +48,14 @@ func advance() -> void:
 		if str(current.get("key", "")) == "coin":
 			_next()
 			continue
-		if str(current.get("key", "")) in ["free_energy_gift", "energy_gift"] and context.starter.expired():
+		if str(current.get("key", "")) in ["free_energy_gift", "energy_gift", "egen_merge", "egen_collect"] and context.starter.expired():
+			_next()
+			continue
+		# The two drops may already be merged, spent or claimed by hand; a lesson
+		# step whose items are gone would otherwise hold the board forever.
+		var drop := str(config().get("energy_gift_drop", ""))
+		var basket := Data.next_id(drop) if drop != "" else ""
+		if str(current.get("key", "")) == "egen_merge" and count(basket) == 0 and count(drop) < 2:
 			_next()
 			continue
 		if str(current.get("mode", "")) == "complete":
@@ -92,6 +99,8 @@ func _satisfied(w: Dictionary) -> bool:
 		return not o.is_empty() and context.orders.craft_mats_ready(o)
 	if w.has("phase"): return str(order(str(w["phase"][0])).get("phase", "")) == str(w["phase"][1])
 	if w.has("energy_gift"): return bool(progress()["energy_gift"])
+	if w.has("egen_taps"): return int(progress().get("egen_taps", 0)) >= int(w["egen_taps"])
+	if w.has("absent"): return count(str(w["absent"])) == 0
 	if w.has("energy_gift_ready"):
 		var free_slots := 0
 		for cell in state.board:
@@ -118,8 +127,10 @@ func order(tag: String) -> Dictionary:
 
 func _vine_target(id: String, row: Dictionary) -> String:
 	var output: String = context.orders.vine_output(id)
-	var limit := int(row.get("max_item_level", 0))
-	if limit <= 0 or Data.lv(output) <= limit: return output
+	# A lesson order may ask for the item one merge with a vined copy makes, never
+	# a whole chain of vines above it: that turned a pear into a 256-berry grape.
+	var limit := int(row.get("max_item_level", Data.lv(id) + 1))
+	if Data.lv(output) <= limit: return output
 	# Revealing a chain of vines must not promote a beginner's affordable order
 	# all the way to a pomegranate. Prefer another non-vine target in its budget.
 	var keys: Dictionary = context.orders.vine_plan()["keys"]
@@ -187,13 +198,20 @@ func _sync_orders() -> bool:
 				else:
 					for key in ["kind", "dish", "mats", "secs", "phase", "cell", "t0", "manual_collect"]: o.erase(key)
 				o["rw"]["shell"] = int(row["coin"])
+				if row.get("prefer_vine_output", false) and not row.has("dish"):
+					for i in o["items"].size(): o["items"][i] = _vine_target(str(o["items"][i]), row)
 			o["guide_revision"] = int(config()["version"])
 			changed = true
 		if not row.get("prefer_vine_output", false) or row.has("dish"): continue
+		# Follow a newly revealed vined copy (merging into it costs nothing extra),
+		# but never climb past one level above the lesson's item.
 		if row.has("max_item_level") and context.orders.order_ready(o): continue
 		for i in o["items"].size():
-			var id: String = _vine_target(str(o["items"][i]), row)
-			if id != str(o["items"][i]): o["items"][i] = id; changed = true
+			if i >= row["items"].size(): break
+			var capped: Dictionary = row.duplicate()
+			capped["max_item_level"] = int(row.get("max_item_level", Data.lv(str(row["items"][i])) + 1))
+			var id: String = _vine_target(str(o["items"][i]), capped)
+			if Data.lv(id) > Data.lv(str(o["items"][i])): o["items"][i] = id; changed = true
 	return changed
 
 func delivered(o: Dictionary) -> void:
@@ -204,7 +222,9 @@ func observe(name: String, args: Dictionary, result: Dictionary) -> void:
 	if not active(): return
 	if name == "tap" and str(result.get("kind", "")) == "produce":
 		progress()["produced"] = int(progress()["produced"]) + 1
-		if context.starter.is_item(context.board.cell_id(int(args.get("cell", -1)))): progress()["energy_gift"] = true
+		if context.starter.is_item(context.board.cell_id(int(args.get("cell", -1)))):
+			progress()["energy_gift"] = true
+			progress()["egen_taps"] = int(progress().get("egen_taps", 0)) + 1
 	if name == "tap" and str(result.get("kind", "")) == "collect":
 		var id := str(result.get("id", ""))
 		var kind := Data.type_of(id)
@@ -229,6 +249,12 @@ func scripted_drop(gen_id: String) -> String:
 	if not active(): return ""
 	if str(stage().get("key", "")) == "gen_tap" and gen_id == str(config()["upgraded_generator"]):
 		return str(config()["upgrade_first_drop"])
+	# Like the reference game's gift box: the lesson's first two pots merge into
+	# one full basket of stamina (40 + 40 -> 100), refilling an empty bar.
+	# The pot can be taken from the stash and tapped before stamina runs out, so
+	# the first two taps give the lesson's drop whenever they happen.
+	if gen_id == str(config()["energy_generator"]) and int(progress().get("egen_taps", 0)) < 2 and int(progress()["step"]) <= stage_index("energy_gift"):
+		return str(config().get("energy_gift_drop", ""))
 	# Only the single new-product lesson is scripted. All subsequent production
 	# uses the exact drops displayed by Data.gen_stats, including the configured secondary rate.
 	return ""

@@ -1,6 +1,7 @@
 class_name PAPot
 extends PA
-## 陶艺线：陶窑 / 陶器皿 / 陶制工艺品
+## 陶艺线：制陶工具和陶窑 / 陶器皿（16 级）。陶制工艺品（ware）现在没挂在产线上，画法留着。
+## 第一稿的生产器和器皿在 _gen_v1 / _main_v1。
 
 const RAW := Color("c99a6a")
 const FIRED := Color("c8693a")
@@ -59,17 +60,35 @@ static func _tier(ci: CanvasItem, lv: int, n: int, body: Callable, ks: Array = [
 		sparks(ci, [Vector2(-44, -36), Vector2(44, -40), Vector2(44, 28)])
 	reset_xf(ci)
 
+## 每级的缩放，以地面 (0, 38) 为原点放大缩小，按实际像素大小调过
+const K_GEN := [0.702, 0.558, 0.609, 0.735, 0.785, 0.897, 0.956, 0.874]
+const K_MAIN := [0.586, 0.514, 0.575, 0.742, 0.649, 0.635, 0.604, 0.713, 0.68, 0.745, 0.763, 1.04, 0.724, 0.857, 0.836, 1.116]
+
 static func gen(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
-	_tier(ci, lv, 9, func(): _gen(ci, lv, s, rim), [0.66, 0.72, 0.78, 0.82, 0.86, 0.92, 0.95, 1.0, 1.0])
+	var keep := _p_grow(ci, K_GEN[clampi(lv, 1, 8) - 1])
+	_gen_art(ci, lv, s, rim)
+	_p_ungrow(ci, keep)
 
 static func main(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
-	_tier(ci, lv, 14, func(): _main(ci, lv, s, rim))
+	var keep := _p_grow(ci, K_MAIN[clampi(lv, 1, 16) - 1])
+	_main_art(ci, lv, s, rim)
+	_p_ungrow(ci, keep)
+
+static func _p_grow(ci: CanvasItem, k: float) -> Transform2D:
+	var keep := xf
+	xf = keep * Transform2D(0.0, Vector2(k, k), 0.0, Vector2(0, 38) * (1.0 - k))
+	ci.draw_set_transform_matrix(xf)
+	return keep
+
+static func _p_ungrow(ci: CanvasItem, keep: Transform2D) -> void:
+	xf = keep
+	ci.draw_set_transform_matrix(xf)
 
 static func sub(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 	_tier(ci, lv, 11, func(): _sub(ci, lv, s, rim))
 
 ## 生产器 ------------------------------------------------------------------
-static func _gen(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+static func _gen_v1(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 	match lv:
 		1:
 			## 黏土块
@@ -193,7 +212,7 @@ static func _scallop_shell(c: Vector2, s: int) -> Array:
 	return pg(arcp(c, Vector2(9, 8), PI, TAU, 8) + [c + Vector2(3, 6), c + Vector2(-3, 6)], s, SHELL)
 
 ## 主产物：陶器皿 ------------------------------------------------------------
-static func _main(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+static func _main_v1(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 	match lv:
 		1:
 			## 小陶杯
@@ -455,3 +474,157 @@ static func _sub(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 				ci.draw_circle(Vector2(-6.0 + float(k) * 6.0, -14 + absf(float(k) - 1.0) * -3.0) * q, 2.6, AMBER)
 			ci.draw_circle(Vector2(-3, -36) * q, 1.6, INK)
 			ci.draw_circle(Vector2(3, -36) * q, 1.6, INK)
+
+# ================================================================ 第二稿：工具一级级换成窑 / 16 件器皿
+
+const BLACK_P := Color("342e30")
+
+## 生产器：拍泥木拍 → 慢轮 → 快轮 → 露天烧坑 → 小土窑 → 馒头窑 → 双室陶窑 → 彩陶大窑
+static func _gen_art(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+	match lv:
+		1:
+			## 拍泥木拍：一块带柄的小木拍，拍面刻着交叉纹，拍坯时把纹印在泥上；旁边一小团湿泥
+			var a := Vector2(-28, 32)
+			var b := Vector2(-6, 10)
+			var d := (b - a).normalized()
+			var c := b + d * 15.0
+			var blade := PackedVector2Array(rot_pts(Array(rrect(Rect2(-15, -9, 30, 18), 5, s, 0.4)), d.angle(), c))
+			sil(ci, [raw_rock(Vector2(24, 30), 9, s + 3, RAW, 7, 0.1), stk(a, b + d * 2.0, 3.2, s, WOOD_D), P(blade, PLANK_C, 0)], rim)
+			for k in 7:
+				var o := float(k - 3) * 6.0
+				for dd in [d.rotated(0.8), d.rotated(-0.8)]:
+					var q := c + d.orthogonal() * o
+					for seg in Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([q - (dd as Vector2) * 30.0, q + (dd as Vector2) * 30.0]), blade):
+						ci.draw_polyline(seg, Color(WOOD_D, 0.55), 1.3, true)
+			ci.draw_colored_polygon(ell(a, Vector2(2.4, 2.4), s, 0.0, 10), PLANK_C)
+			for k in 3:
+				ci.draw_arc(Vector2(20.0 + float(k) * 4.0, 26), 2.0, PI, TAU, 5, Color(WOOD_D, 0.5), 1.4, true)
+		2:
+			## 慢轮：手拨着慢慢转的木圆盘，上面坐着一只泥坯
+			_gen_v1(ci, 5, s, rim)
+		3:
+			## 快轮：底下一只大飞轮用脚踢，转得飞快，上面拉起一只高高的湿泥坯，旁边一张小坐凳
+			var prof := [Vector2(9, -42), Vector2(12, -34), Vector2(18, -20), Vector2(16, -8), Vector2(10, -2)]
+			sil(ci, [bx(26, 12, 22, 6, 2, s + 4, PLANK_C), stk(Vector2(30, 18), Vector2(30, 36), 2.6, s + 5, WOOD_D), stk(Vector2(44, 18), Vector2(44, 36), 2.6, s + 6, WOOD_D),
+				ov(Vector2(0, 30), 32, 8, s, WOOD_D, 0.0, 1), stk(Vector2(0, -2), Vector2(0, 30), 3.4, s + 1, WOOD_D), ov(Vector2(0, 0), 26, 6, s + 2, WOOD, 0.0, 1)], rim)
+			for k in 6:
+				var an := TAU * float(k) / 6.0 + 0.3
+				ln(ci, Vector2(0, 30), Vector2(0, 30) + Vector2(cos(an) * 28.0, sin(an) * 6.0), 1.4, Color(WOOD, 0.8), s + k)
+			vessel(ci, prof, RAW.lightened(0.06), s + 3, false)
+			for k in 3:
+				band_at(ci, prof, -30.0 + float(k) * 9.0, Color(RAW.darkened(0.25), 0.7), 1.4)
+			hl(ci, Vector2(-9, -20), 2.0, 8.0, 0.1, 0.55)
+			for k in 3:
+				ci.draw_arc(Vector2(0, 0), 30.0 + float(k) * 4.0, PI * 0.6, PI * 0.85, 6, Color(1, 1, 1, 0.5), 1.8, true)
+		4:
+			## 露天烧坑
+			_gen_v1(ci, 6, s, rim)
+		5:
+			## 小土窑
+			_gen_v1(ci, 7, s, rim)
+		6:
+			## 馒头窑：砖砌的圆顶大窑，顶上一根烟囱，门洞里火正旺，门边码着劈柴
+			var dome := arcp(Vector2(0, 38), Vector2(46, 58), PI, TAU, 22)
+			var col := Color("c98a5a")
+			sil(ci, [stk(Vector2(0, -16), Vector2(0, -30), 7.0, s, TAN_D), pg(dome, s + 1, col, 0),
+				stk(Vector2(-50, 36), Vector2(-26, 36), 3.4, s + 2, WOOD), stk(Vector2(-48, 29), Vector2(-28, 29), 3.4, s + 3, WOOD_D), stk(Vector2(-44, 22), Vector2(-32, 22), 3.4, s + 4, WOOD)], rim)
+			var dp := PackedVector2Array(dome)
+			for r in 5:
+				var y := 30.0 - float(r) * 10.0
+				for seg in Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([Vector2(-50, y), Vector2(50, y)]), dp):
+					ci.draw_polyline(seg, Color(col.darkened(0.35), 0.8), 1.4, true)
+				var half := sqrt(maxf(1.0 - pow((38.0 - y) / 58.0, 2.0), 0.0)) * 46.0
+				var x := -half + (6.0 if r % 2 == 0 else 12.0)
+				while x < half - 4.0:
+					ln(ci, Vector2(x, y), Vector2(x, y + 10.0), 1.3, Color(col.darkened(0.35), 0.8), s + r)
+					x += 12.0
+			var door := arcp(Vector2(4, 38), Vector2(13, 22), PI, TAU, 10)
+			ci.draw_colored_polygon(poly(door, s), HOLE)
+			flame(ci, Vector2(4, 30), 9, 20, s + 5)
+			outline(ci, poly(door, s), 2.0)
+			for p in [Vector2(-24, 4), Vector2(28, 8)]:
+				ci.draw_circle(p, 3.4, HOLE)
+				ci.draw_arc(p, 3.4, 0, TAU, 10, INK, 1.4, true)
+			hl(ci, Vector2(-20, -6), 8, 4, -0.5, 0.35)
+			smoke(ci, Vector2(2, -36), 0.8)
+		7:
+			## 双室陶窑
+			_gen_v1(ci, 8, s, rim)
+		_:
+			## 彩陶大窑
+			_gen_v1(ci, 9, s, rim)
+
+## 陶勺：浅浅的勺头，长柄末端穿了个挂孔
+static func _ladle(ci: CanvasItem, s: int, rim: bool) -> void:
+	sil(ci, [stk(Vector2(4, 14), Vector2(36, -22), 4.2, s, FIRED.darkened(0.06)), ov(Vector2(-12, 20), 22, 12, s + 1, FIRED, 0.0, 0)], rim)
+	var inner := ell(Vector2(-12, 17), Vector2(17, 7), s, 0.0, 16)
+	ci.draw_colored_polygon(inner, FIRED.darkened(0.4))
+	outline(ci, inner, 1.6)
+	ci.draw_circle(Vector2(33, -18), 2.2, HOLE)
+	hl(ci, Vector2(-24, 22), 3.0, 2.0, -0.3, 0.5)
+
+## 黑陶高柄杯：黑亮的薄胎杯，大敞口，细长的高柄中间鼓一个小球，底下圆座
+static func _eggshell_cup(ci: CanvasItem, s: int, rim: bool) -> void:
+	var cup := [Vector2(32, -32), Vector2(28, -24), Vector2(12, -16), Vector2(4, -12)]
+	vessel(ci, cup, BLACK_P, s, rim, [pg(lathe([Vector2(5, 26), Vector2(14, 32), Vector2(20, 36), Vector2(20, 38)]), s + 1, BLACK_P, 1),
+		stk(Vector2(0, -14), Vector2(0, 28), 3.2, s + 2, BLACK_P), ov(Vector2(0, 6), 7, 9, s + 3, BLACK_P, 0.0, 1)])
+	for y in [-6.0, 18.0, 22.0]:
+		ln(ci, Vector2(-3, y), Vector2(3, y), 1.2, Color(1, 1, 1, 0.35), s)
+	pl(ci, [Vector2(-26, -27), Vector2(-14, -20), Vector2(-6, -16)], 2.0, Color(1, 1, 1, 0.45), s)
+	ln(ci, Vector2(-1.5, -10), Vector2(-1.5, 26), 1.2, Color(1, 1, 1, 0.3), s)
+	hl(ci, Vector2(-3, 3), 1.6, 3.4, 0.0, 0.5)
+	hl(ci, Vector2(-12, 34), 4.0, 1.2, 0.0, 0.35)
+
+## 器皿 16 级：从手捏的小泥杯到彩陶、黑陶，最高级是鹰形陶鼎
+static func _main_art(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
+	match lv:
+		1:
+			## 捏制小泥杯
+			_main_v1(ci, 1, s, rim)
+		2:
+			## 捏制小碟
+			_main_v1(ci, 2, s, rim)
+		3:
+			## 陶碗
+			_main_v1(ci, 3, s, rim)
+		4:
+			## 陶勺
+			_ladle(ci, s, rim)
+		5:
+			## 陶灯（原来是工艺品里的）
+			_sub(ci, 8, s, rim)
+		6:
+			## 陶罐
+			_main_v1(ci, 5, s, rim)
+		7:
+			## 陶壶
+			_main_v1(ci, 8, s, rim)
+		8:
+			## 尖底瓶
+			_main_v1(ci, 6, s, rim)
+		9:
+			## 双耳罐
+			_main_v1(ci, 7, s, rim)
+		10:
+			## 三足鼎
+			_main_v1(ci, 9, s, rim)
+		11:
+			## 陶甑
+			_main_v1(ci, 10, s, rim)
+		12:
+			## 黑陶高柄杯
+			_eggshell_cup(ci, s, rim)
+		13:
+			## 大陶缸
+			_main_v1(ci, 11, s, rim)
+		14:
+			## 人面鱼纹盆
+			_main_v1(ci, 12, s, rim)
+		15:
+			## 彩陶大瓮
+			_main_v1(ci, 14, s, rim)
+		_:
+			## 鹰形陶鼎：最珍贵的一件，带金光
+			glow(ci, Vector2(0, 0), 58, GOLD)
+			_sub(ci, 10, s, rim)
+			sparks(ci, [Vector2(-40, -30), Vector2(40, -36), Vector2(44, 26)])

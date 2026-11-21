@@ -1,9 +1,9 @@
 [
-	{"id": "food", "name": "§names.lines.ab2775f0d353§", "gen": "basket", "main": "fruit", "sub": "seed", "unlock": 1},
-	{"id": "tool", "name": "§names.lines.5ca6730d4415§", "gen": "anvil", "main": "tool", "sub": "gem", "unlock": 6},
-	{"id": "cloth", "name": "§names.lines.3a28422f1f71§", "gen": "loom", "main": "cloth", "sub": "armor", "unlock": 8},
-	{"id": "hunt", "name": "§cards.album.5572a0ff6d7b§", "gen": "trap", "main": "beast", "sub": "bird", "unlock": 16, "cooldown": true},
-	{"id": "fire", "name": "§names.lines.714da10d4e05§", "gen": "hearth", "main": "veg", "sub": "roast", "unlock": 24},
-	{"id": "wood", "name": "§names.lines.6321f842d43a§", "gen": "carve", "main": "furn", "sub": "craft", "unlock": 34},
-	{"id": "pot", "name": "§names.lines.558c951ef6bc§", "gen": "kiln", "main": "pot", "sub": "ware", "unlock": 44}
+	{"id": "food", "name": "§names.lines.ab2775f0d353§", "gen": "basket", "products": ["fruit", "seed"], "unlock": 1},
+	{"id": "wood", "name": "§names.lines.6321f842d43a§", "gen": "carve", "products": ["furn", "craft"], "unlock": 6},
+	{"id": "tool", "name": "§names.lines.5ca6730d4415§", "gen": "anvil", "products": ["tool", "gem"], "unlock": 8},
+	{"id": "hunt", "name": "§cards.album.5572a0ff6d7b§", "gen": "trap", "products": ["beast", "bird"], "unlock": 16, "cooldown": true},
+	{"id": "cloth", "name": "§names.lines.3a28422f1f71§", "gen": "loom", "products": ["cloth", "armor"], "unlock": 24},
+	{"id": "fish", "name": "§names.lines.dce37b601a00§", "gen": "weir", "products": ["fish", "clam"], "unlock": 34},
+	{"id": "pot", "name": "§names.lines.558c951ef6bc§", "gen": "kiln", "products": ["pot"], "unlock": 44}
 ]

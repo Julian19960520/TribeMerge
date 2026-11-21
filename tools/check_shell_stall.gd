@@ -6,6 +6,15 @@ func check(ok: bool, label: String) -> void:
 	print(("PASS " if ok else "FAIL ") + label)
 	if not ok: failures += 1
 
+func _unique(rows: Array) -> bool:
+	var seen := {}
+	for d in rows:
+		var id := str(d["id"])
+		if seen.has(id):
+			return false
+		seen[id] = true
+	return not rows.is_empty()
+
 func run() -> void:
 	var g = root.get_node("G")
 	var D = load("res://scripts/Data.gd")
@@ -15,8 +24,8 @@ func run() -> void:
 	g.level = 30
 	var allowed := {}
 	for l in D.unlocked_lines(g.level):
-		for key in ["main", "sub"]:
-			allowed[str(l.get(key, ""))] = key
+		for ch in D.products(l):
+			allowed[ch] = "main" if D.primary(l) == ch else "sub"
 	var stall: Array = g.rules.shop.shell_stall()
 	check(stall.size() == D.STORE_SHELL.size(), "小摊摆满模板的 %d 格" % D.STORE_SHELL.size())
 	var ok_lines := true
@@ -27,6 +36,7 @@ func run() -> void:
 		if D.draw_role(ch) != D.draw_role(D.chain(str(D.STORE_SHELL[k]["id"]))): ok_role = false
 	check(ok_lines, "货都来自已解锁产线：%s" % str(stall.map(func(d): return d["id"])))
 	check(ok_role, "每格主产物 / 副产物和模板一致")
+	check(_unique(stall), "30 级货不重复：%s" % str(stall.map(func(d): return d["id"])))
 	check(JSON.stringify(g.rules.shop.shell_stall()) == JSON.stringify(stall), "同一周期再看，货不变")
 	# 低等级只摆当时开放的产线
 	var g2_level: int = g.level
@@ -39,9 +49,20 @@ func run() -> void:
 		var ch: String = D.chain(str(d["id"]))
 		var open := false
 		for l in D.unlocked_lines(3):
-			if ch == str(l.get("main", "")) or ch == str(l.get("sub", "")): open = true
+			if D.products(l).has(ch): open = true
 		if not open and not D.STORE_SHELL.any(func(t): return str(t["id"]) == str(d["id"])): low_ok = false
 	check(low_ok, "3 级只摆已开放产线的货：%s" % str(low.map(func(d): return d["id"])))
+	check(_unique(low), "3 级货不重复：%s" % str(low.map(func(d): return d["id"])))
+	g.level = 1
+	g.shell_period = ""
+	g._rule_meta().erase("shell_stall")
+	var early: Array = g.rules.shop.shell_stall()
+	check(_unique(early), "1 级货不重复：%s" % str(early.map(func(d): return d["id"])))
+	var fruit_n := 0
+	for d in early:
+		if D.chain(str(d["id"])) == "fruit":
+			fruit_n += 1
+	check(fruit_n <= 1, "1 级樱桃只摆一件")
 	g.level = g2_level
 	g.shell_period = ""
 	g._rule_meta().erase("shell_stall")

@@ -5,6 +5,7 @@ extends Control
 const Layout := preload("res://scripts/config/board_layout.gd")
 const DropRing := preload("res://scripts/ui/board/BoardDropRing.gd")
 const MergeBurst := preload("res://scripts/ui/board/BoardMergeBurst.gd")
+const ProducerSparkle := preload("res://scripts/ui/board/ProducerSparkleFx.gd")
 
 signal selected_changed(i: int)
 signal activated(i: int)
@@ -18,6 +19,8 @@ const BOARD_FRAMES := [preload("res://assets/board/frame_0.png"), preload("res:/
 const ROCK_FRAMES := [preload("res://assets/board/rocks_0.png"), preload("res://assets/board/rocks_1.png"), preload("res://assets/board/rocks_2.png"), preload("res://assets/board/rocks_3.png")]
 const FLOOR_TILE := preload("res://assets/board/floor.png")
 const ROCK_CRACKS := preload("res://assets/board/cracks.png")
+## 锁格密林的草地底层（ROCK_FRAMES 只有树，透明底）
+const FOREST_GROUND := preload("res://assets/board/forest_ground.png")
 const ROCK_BITS := preload("res://assets/board/fragments.png")
 const MAX_CROWN := preload("res://assets/ui/max_crown.svg")
 
@@ -94,6 +97,10 @@ func _ready() -> void:
 		_cell_layers.append(layer)
 	_refresh_continuous_cells()
 	_sync_base()
+	var sparkle := ProducerSparkle.new()
+	sparkle.board = self
+	sparkle.size = size
+	add_child(sparkle)
 	G.board_changed.connect(_redraw_cells)
 	G.changed.connect(_redraw_cells)
 	G.board_changed.connect(queue_redraw)
@@ -670,9 +677,13 @@ func _draw_base(ci: CanvasItem) -> void:
 			elif tone[i] == 1:
 				col = ORDER_PART
 		ci.draw_texture_rect_region(FLOOR_TILE, r, _floor_region(i), col)
+	# 先铺完所有锁格的草地，再画树：下一行的草地不会盖住上一行的树冠
 	for i in G.board.size():
 		if int(G.board[i]["lock"]) == 2:
-			_paint_rock(ci, cell_rect(i), i)
+			_paint_forest_ground(ci, cell_rect(i), i)
+	for i in G.board.size():
+		if int(G.board[i]["lock"]) == 2:
+			_paint_forest_trees(ci, cell_rect(i), i)
 
 func _sync_base() -> void:
 	for phase in _base_layers.size():
@@ -946,6 +957,13 @@ func _draw_rock(r: Rect2, i: int, ci: CanvasItem = null) -> void:
 	_paint_rock(ci, r, i)
 
 func _paint_rock(ci: CanvasItem, r: Rect2, i: int) -> void:
+	_paint_forest_ground(ci, r, i)
+	_paint_forest_trees(ci, r, i)
+
+func _paint_forest_ground(ci: CanvasItem, r: Rect2, i: int) -> void:
+	ci.draw_texture_rect_region(FOREST_GROUND, Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i))
+
+func _paint_forest_trees(ci: CanvasItem, r: Rect2, i: int) -> void:
 	ci.draw_texture_rect_region(ROCK_FRAMES[Art.boil % 4], Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i))
 
 ## floor.png 一行 4 块地砖，按格子错开取，避免整齐重复

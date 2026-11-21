@@ -98,7 +98,7 @@ func run() -> void:
 	check(not main._guide.visible and str(g.rules.onboarding.stage()["key"]) == "free_third", "恢复后不重新弹出已删除的收取引导")
 	g.tutorial_on = false; g.seen_tutorial = true; g.level = 5; g.tips_seen = {}; g.stash = ["fruit_1"]
 	main._guide._refresh(); main.tips._auto()
-	check(not main._guide.visible and g.tips_seen.get("howto", false), "新手结束后不补弹香蕉引导，也不阻塞其他提示")
+	check(not main._guide.visible and g.tips_seen.get("stash", false), "新手结束后不补弹香蕉引导，也不阻塞其他提示")
 	await process_frame
 	main.free(); g.main = null
 	await process_frame

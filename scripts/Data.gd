@@ -30,6 +30,12 @@ static var BOARD: Array = []
 static var LOCKS: Array = []
 static var REWARDS: Dictionary = {}
 static var DISHES: Dictionary = {}
+## 制作产物目录（data/crafts.json）：分类 → 产物和配方。现在只在图鉴里展示，还没接进订单和制作。
+static var CRAFTS: Array = []
+## 所有制作产物：id → 配方那一行（name / mats / secs）
+static var CRAFT_IDS: Dictionary = {}
+## 制作产物的大类，每个大类含几个小类（CRAFTS 里的分类），图鉴里一个大类一个页签
+static var CRAFT_GROUPS: Array = []
 static var RANDOM_CURVES: Array = []
 ## 常驻随机订单每张在「下限～上限」之间的位置，0 是下限（简单单），1 是上限（难单）。
 static var RANDOM_SLOTS: Array = [0.0, 0.3, 0.55, 1.0]
@@ -83,6 +89,7 @@ static var revision := 0
 static var _line_index: Dictionary = {}
 static var _build_index: Dictionary = {}
 static var _gen_cache: Dictionary = {}
+static var _primary_cache: Dictionary = {}
 
 static func _static_init() -> void:
 	refresh()
@@ -137,6 +144,12 @@ static func _load() -> void:
 	REWARDS = board["rewards"]
 	DISHES = {}
 	for row in ConfigFiles.shared(ConfigFiles.DISHES): DISHES[row["id"]] = row
+	CRAFTS = ConfigFiles.shared(ConfigFiles.CRAFTS)["categories"]
+	CRAFT_GROUPS = ConfigFiles.shared(ConfigFiles.CRAFTS).get("groups", [])
+	CRAFT_IDS.clear()
+	for cat in CRAFTS:
+		for row in cat["items"]:
+			CRAFT_IDS[str(row["id"])] = row
 	var random: Dictionary = ConfigFiles.shared(ConfigFiles.RANDOM_ORDERS)
 	RANDOM_SLOTS = random["slots"]
 	ORDER_TIERS = {}
@@ -167,6 +180,7 @@ static func _load() -> void:
 	_build_index = {}
 	for row in BUILDS: _build_index[row["id"]] = row
 	_gen_cache = {}
+	_primary_cache = {}
 
 ## 第 index 档要的积分。下标从 0 起。超出最后一档时用最后一档的积分。
 static func pass_need(index: int) -> int:
@@ -175,8 +189,8 @@ static func pass_need(index: int) -> int:
 	var i := clampi(index, 0, PASS_LEVELS.size() - 1)
 	return maxi(1, int(PASS_LEVELS[i].get("need", 8)))
 
-## 剧情订单在 data/story.json。只有它们给声望。每一级的剧情声望加起来正好等于升到下一级要的声望。
-## 配置以外不补造经验订单，空位由随机订单填充。
+## 手配的剧情订单在 data/story.json，只留 1–5 级。现在的出单流程不再发它们：引导期间用 onboarding.json 的教学单，
+## 引导结束后全部随机出单，随机单按难度档给声望。这里只给老存档里残留的剧情单查声望用。
 static func story_orders(level: int) -> Array:
 	return STORY.get(level, [])
 
@@ -333,9 +347,9 @@ static func level_unlocks(level: int) -> Array:
 	for l in LINES:
 		if int(l.get("unlock", 0)) == level and level > 1:
 			out.append(TextCatalog.fill(TextCatalog.source("notice.data.3c0db30d775a"), str(l.get("name", ""))))
-		var sub := str(l.get("sub", ""))
-		if sub != "" and level > 1 and product_open(level, sub) and not product_open(level - 1, sub):
-			out.append(TextCatalog.fill(TextCatalog.source("notice.data.1f0a007ab89d"), str(CHAINS.get(str(l["sub"]), {}).get("name", ""))))
+		for sub in secondaries(l):
+			if level > 1 and product_open(level, sub) and not product_open(level - 1, sub):
+				out.append(TextCatalog.fill(TextCatalog.source("notice.data.1f0a007ab89d"), str(CHAINS.get(sub, {}).get("name", ""))))
 	if level == int(RULES.get("craft_level", 3)):
 		out.append(TextCatalog.source("notice.data.60f991a1a015"))
 	for id in DISHES:
@@ -359,6 +373,16 @@ static func level_unlocks(level: int) -> Array:
 
 static func is_dish(id: String) -> bool:
 	return DISHES.has(id)
+
+static func is_craft(id: String) -> bool:
+	return CRAFT_IDS.has(id)
+
+## 配方第一次做出来后，图鉴里领的体力：按最高级的材料算，和同级物品的图鉴体力一样
+static func craft_book_energy(id: String) -> int:
+	var top := 1
+	for m in CRAFT_IDS.get(id, {}).get("mats", []):
+		top = maxi(top, lv(str(m)))
+	return 1 if top <= 4 else top - 3
 
 ## 当前等级能接到的制作菜。材料都得是已有物品。
 static func dishes_for(level: int) -> Array:
@@ -437,7 +461,62 @@ static func line(id: String) -> Dictionary:
 static func line_of(id: String) -> Dictionary:
 	return line(str(CHAINS[chain(id)].get("line", "")))
 
-## 现场绘制用的角色。产线的 gen / main / sub 对应 G / M / S
+## 产线配置的产物链，一条线可以配一个、两个或更多。旧格式（存档回放时会用到）的 main / sub 也认。
+static func products(l: Dictionary) -> Array:
+	var out: Array = []
+	if l.get("products") is Array:
+		for ch in l["products"]:
+			if str(ch) != "":
+				out.append(str(ch))
+		return out
+	for key in ["main", "sub"]:
+		var ch := str(l.get(key, ""))
+		if ch != "":
+			out.append(ch)
+	return out
+
+## 产线的主力产物：生产器各级掉率加起来最多的那条产物链，按原来主产物的规则走（订单常要、难度按合成次数算）。
+## 不用单独配置，生产器怎么配掉落，它就是谁；掉率一样时取产物列表里靠前的。
+static func primary(l: Dictionary) -> String:
+	var key := str(l.get("id", ""))
+	if _primary_cache.has(key):
+		return _primary_cache[key]
+	var list := products(l)
+	var weight := {}
+	for ch in list:
+		weight[ch] = 0
+	var prod = CHAINS.get(str(l.get("gen", "")), {}).get("prod", [])
+	if prod is Array:
+		for slot in prod:
+			if not (slot is Dictionary) or not (slot.get("drops") is Array):
+				continue
+			for d in slot["drops"]:
+				if d is Dictionary and weight.has(chain(str(d.get("id", "")))):
+					weight[chain(str(d["id"]))] += int(d.get("p", 0))
+	var best := ""
+	for ch in list:
+		if best == "" or int(weight[ch]) > int(weight[best]):
+			best = ch
+	_primary_cache[key] = best
+	return best
+
+## 产线上主力产物以外的产物：生产器掉得少，按原来副产物的规则走（晚一点进订单、难度按掉率折算）。
+static func secondaries(l: Dictionary) -> Array:
+	var main := primary(l)
+	var out: Array = []
+	for ch in products(l):
+		if ch != main:
+			out.append(ch)
+	return out
+
+## 这条产物链挂在哪条产线上；没挂在任何产线上时返回空字典
+static func line_of_product(ch: String) -> Dictionary:
+	for l in LINES:
+		if products(l).has(ch):
+			return l
+	return {}
+
+## 现场绘制和商店摆货用的角色：生产器 G，主力产物 M，其余产物 S
 static func draw_role(ch: String) -> String:
 	var def: Dictionary = CHAINS.get(ch, {})
 	var l := line(str(def.get("line", "")))
@@ -445,11 +524,9 @@ static func draw_role(ch: String) -> String:
 		return ""
 	if str(l.get("gen", "")) == ch:
 		return "G"
-	if str(l.get("main", "")) == ch:
-		return "M"
-	if str(l.get("sub", "")) == ch:
-		return "S"
-	return ""
+	if not products(l).has(ch):
+		return ""
+	return "M" if primary(l) == ch else "S"
 
 static func unlocked_lines(level: int) -> Array:
 	var out := []
@@ -462,7 +539,7 @@ static func unlocked_lines(level: int) -> Array:
 static func order_chains(level: int) -> Array:
 	var out := []
 	for l in unlocked_lines(level):
-		var ch := str(l.get("main", ""))
+		var ch := primary(l)
 		if ch != "" and product_open(level, ch):
 			out.append(ch)
 	return out
@@ -476,11 +553,11 @@ static func product_open(level: int, chain_id: String) -> bool:
 		if open.is_empty():
 			return false
 		return int(open[mini(level - 1, open.size() - 1)]) != 0
-	for l in LINES:
-		if str(l.get("main", "")) == chain_id:
+	var l := line_of_product(chain_id)
+	if not l.is_empty():
+		if primary(l) == chain_id:
 			return int(l.get("unlock", 1)) <= level
-		if str(l.get("sub", "")) == chain_id:
-			return sub_unlock_level(int(l.get("unlock", 1))) <= level
+		return sub_unlock_level(int(l.get("unlock", 1))) <= level
 	return true
 
 ## 通行证奖励里的棋盘物品：这条链当前等级还没开，就换成已开放产线里同等级的物品。资源、宝箱、卡包保持原样。
@@ -520,9 +597,9 @@ static func _gen_open(level: int, chain_id: String) -> bool:
 	return true
 
 static func _stand_in_item(level: int, id: String) -> String:
-	var pools := _open_chains(level, "sub" if draw_role(chain(id)) == "S" else "main")
+	var pools := _open_chains(level, "S" if draw_role(chain(id)) == "S" else "M")
 	if pools.is_empty():
-		pools = _open_chains(level, "main")
+		pools = _open_chains(level, "M")
 	if pools.is_empty():
 		return ""
 	var ch := str(pools[0])
@@ -537,13 +614,29 @@ static func _stand_in_gen(level: int, id: String) -> String:
 		return ""
 	return "%s_%d" % [ch, clampi(lv(id), 1, max_lv(ch))]
 
-static func _open_chains(level: int, field: String) -> Array:
+## role 为 M 时取各条已开放产线的主力产物，为 S 时取其余产物
+static func _open_chains(level: int, role: String) -> Array:
 	var out: Array = []
 	for l in unlocked_lines(level):
-		var ch := str(l.get(field, ""))
-		if ch != "" and product_open(level, ch):
-			out.append(ch)
+		for ch in ([primary(l)] if role == "M" else secondaries(l)):
+			if ch != "" and product_open(level, ch):
+				out.append(ch)
 	return out
+
+## 制作产物要等它所有材料都能进订单的那一级才开放；有材料永远不开放时返回 0
+static func craft_unlock(mats: Array) -> int:
+	var need := 1
+	for m in mats:
+		var ch := chain(str(m))
+		var at := 0
+		for lv in range(1, 100):
+			if product_open(lv, ch):
+				at = lv
+				break
+		if at == 0:
+			return 0
+		need = maxi(need, at)
+	return need
 
 ## 副产物解锁等级：从产线开放等级往后，第一个个位是 3 或 8 的等级。
 static func sub_unlock_level(line_unlock: int) -> int:
@@ -867,7 +960,7 @@ static func resource_drop(scope: String, roll: float, level: int, merged: String
 		if type_of(merged) != "item" or lv(merged) < 2 or lv(merged) > max_lv(chain(merged)): return ""
 		var allowed := false
 		for line in LINES:
-			if str(line["id"]) in RULES.get("merge_resource_lines", []) and level >= int(line["unlock"]) and chain(merged) in [str(line["main"]), str(line["sub"])]:
+			if str(line["id"]) in RULES.get("merge_resource_lines", []) and level >= int(line["unlock"]) and products(line).has(chain(merged)):
 				allowed = true
 				break
 		if not allowed: return ""

@@ -45,6 +45,28 @@ def energy_price(bought: int) -> int:
     return prices[min(max(int(bought), 0), len(prices) - 1)]
 
 
+def line_products(line: dict) -> list:
+    """A line lists its product chains; old rows (save replays) still say main / sub."""
+    return list(line.get("products") or [c for c in (line.get("main"), line.get("sub")) if c])
+
+
+def line_primary(line: dict, chains: dict) -> str:
+    """The product its generator drops most often; mirrors Data.primary() in the client."""
+    products = line_products(line)
+    weight = {c: 0 for c in products}
+    for slot in chains.get(line.get("gen", ""), {}).get("prod") or []:
+        for drop in (slot or {}).get("drops", []):
+            chain = drop["id"].rsplit("_", 1)[0]
+            if chain in weight:
+                weight[chain] += int(drop.get("p", 0))
+    return max(products, key=lambda c: (weight[c], -products.index(c))) if products else ""
+
+
+def line_secondaries(line: dict, chains: dict) -> list:
+    main = line_primary(line, chains)
+    return [c for c in line_products(line) if c != main]
+
+
 def build(market: str = "CN", data_dir: str | Path | None = None) -> dict:
     p = policy()
     if market not in p["markets"]:
@@ -54,7 +76,10 @@ def build(market: str = "CN", data_dir: str | Path | None = None) -> dict:
     docs = {path.stem: json.loads(path.read_text(encoding="utf-8")) for path in directory.glob("*.json")}
     chains = {r["id"]: r for r in docs["chains"]}
     lines = docs["lines"]
-    subs = {r.get("sub"): r for r in lines}
+    subs = {}
+    for r in lines:
+        for chain in line_secondaries(r, chains):
+            subs[chain] = r
     item_values = {}
     for chain, row in chains.items():
         kind = row.get("type", "")
@@ -135,8 +160,8 @@ def build(market: str = "CN", data_dir: str | Path | None = None) -> dict:
             elif "base_pool" in spec:
                 pool = list(spec["base_pool"])
                 for line in lines:
-                    pool += [f'{line["main"]}_{lv}' for lv in spec.get("main_tiers", [])]
-                    pool += [f'{line["sub"]}_{lv}' for lv in spec.get("sub_tiers", [])]
+                    pool += [f'{line_primary(line, chains)}_{lv}' for lv in spec.get("main_tiers", [])]
+                    pool += [f'{chain}_{lv}' for chain in line_secondaries(line, chains) for lv in spec.get("sub_tiers", [])]
                     pool += [f'{line["gen"]}_{lv}' for lv in spec.get("gen_tiers", [])]
                 value = sum(item_values.get(i, {}).get("value", 0) for i in pool) / max(len(pool), 1) * spec["count"]
                 chance = float(spec.get("gen_chance", 0))

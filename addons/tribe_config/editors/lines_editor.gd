@@ -21,12 +21,9 @@ func refresh() -> void:
 		Ui.lbl(r2, TextCatalog.source("developer.lines_editor.bb7813711819"), 56)
 		var gen := Ui.line(r2, str(line["gen"]), 100)
 		gen.text_changed.connect(_set_field.bind(line, "gen"))
-		Ui.lbl(r2, TextCatalog.source("developer.lines_editor.75a91329bca7"), 56)
-		var main := Ui.line(r2, str(line["main"]), 100)
-		main.text_changed.connect(_set_field.bind(line, "main"))
-		Ui.lbl(r2, TextCatalog.source("developer.lines_editor.429a76426c21"), 56)
-		var sub := Ui.line(r2, str(line["sub"]), 100)
-		sub.text_changed.connect(_set_field.bind(line, "sub"))
+		Ui.lbl(r2, TextCatalog.source("developer.lines_editor.b8666991bd1c"), 120)
+		var prods := Ui.line(r2, ", ".join(PackedStringArray(Data.products(line))), 220)
+		prods.text_changed.connect(_set_products.bind(line))
 		var r3 := Ui.row(g)
 		line.erase("idle")
 		Ui.lbl(r3, TextCatalog.source("developer.board_editor.c14c915da5fb"), 40)
@@ -35,6 +32,17 @@ func refresh() -> void:
 		var cd := Ui.check(r3, bool(line.get("cooldown", false)), TextCatalog.source("developer.lines_editor.6cac16b39789"))
 		cd.toggled.connect(_set_cd.bind(line))
 	Ui.btn(box, TextCatalog.source("developer.lines_editor.537f9fc1679b")).pressed.connect(_add_line)
+
+## 产物链写成一个列表；主力产物由生产器的掉率决定，不在这里配
+func _set_products(text: String, line: Dictionary) -> void:
+	var out: Array = []
+	for part in text.split(","):
+		if part.strip_edges() != "":
+			out.append(part.strip_edges())
+	line["products"] = out
+	line.erase("main")
+	line.erase("sub")
+	touch()
 
 func _set_cd(on: bool, line: Dictionary) -> void:
 	if on:
@@ -48,8 +56,7 @@ func _add_line() -> void:
 		"id": "line_%d" % (data.size() + 1),
 		"name": TextCatalog.source("developer.lines_editor.1b0ae7a1c59f"),
 		"gen": "",
-		"main": "",
-		"sub": "",
+		"products": [],
 		"unlock": 1,
 	})
 	touch()

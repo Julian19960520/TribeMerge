@@ -5,17 +5,16 @@ const PS := preload("res://scripts/sprites/popups.gd")
 ## 只给看得见的几层建控件（POOL_ROWS 层循环复用），格子再多界面节点数也不变。
 const COLS := Data.STORAGE_COLS
 const ROW_H := 126.0
-const POOL_ROWS := 6
+const POOL_ROWS := 8
 const SLOT := 108.0
 const GAP_X := 122.0
 const FR := Rect2(30, 300, 660, 880)
-const VIEW := Rect2(50, 432, 620, 600)
+## 木牌下方到扩建按钮上方。标题下的说明和底部石台去掉后，格子区占满洞口。
+const VIEW := Rect2(50, 372, 620, 676)
 const DRAG_LIFT := Vector2(0, -28)
 var scroll: Scroller
 var slots: Array = []
 var shelves: Array = []
-var capacity: Label
-var next_lbl: Label
 var unlock: TButton
 var _pad: Control
 var _ghost: DrawBox
@@ -32,11 +31,9 @@ var _pops := {}
 
 func _ready() -> void:
 	UI.box(box, Rect2(0, 0, 720, 1480), _paint_frame)
-	UI.title(box, TextCatalog.source("ui.inventorypopup.817cda7be380"), Rect2(230, 322, 260, 64), 42, Color.WHITE)
+	UI.title(box, TextCatalog.source("ui.inventorypopup.817cda7be380"), Rect2(230, 275, 260, 64), 42, Color.WHITE)
 	var close_btn := UI.hit(box, Rect2(FR.end.x - 56, FR.position.y - 18, 70, 70), close)
 	close_btn.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
-	capacity = UI.lbl(box, "", Rect2(70, 388, 300, 38), 24, Color("fbe7c0"), HORIZONTAL_ALIGNMENT_LEFT, 5, Color("2a1a10"))
-	next_lbl = UI.lbl(box, "", Rect2(350, 388, 300, 38), 20, Color("e0c79c"), HORIZONTAL_ALIGNMENT_RIGHT, 4, Color("2a1a10"))
 	scroll = Scroller.new()
 	scroll.position = VIEW.position
 	scroll.size = VIEW.size
@@ -59,9 +56,7 @@ func _ready() -> void:
 	_ghost = UI.box(box, Rect2(Vector2.ZERO, box.size), _paint_ghost, false)
 	_ghost.z_index = 40
 	_ghost.visible = false
-	UI.lbl(box, TextCatalog.source("ui.inventorypopup.29224762de89"), Rect2(66, 1054, 340, 36), 22, Color("fbe7c0"), HORIZONTAL_ALIGNMENT_LEFT, 5, Color("2a1a10"))
-	UI.lbl(box, TextCatalog.source("ui.inventorypopup.7f67efa818e0"), Rect2(66, 1094, 330, 30), 18, Color("d8c4a0"), HORIZONTAL_ALIGNMENT_LEFT)
-	unlock = UI.btn(box, Rect2(410, 1052, 250, 82), "", "green", _expand, 28)
+	unlock = UI.btn(box, Rect2(210, 1064, 300, 82), "", "green", _expand, 28)
 	unlock.res = Art.AMBER_ICON
 	unlock.name = "storage_expand"
 	G.changed.connect(_refresh)
@@ -72,12 +67,10 @@ func _ready() -> void:
 func _paint_frame(ci: CanvasItem, _sz: Vector2) -> void:
 	# 石壁、石块纹理、洞口
 	Sprites.draw(ci, "pop_inv_frame", PS.INV_FRAME)
-	Paint.vgrad(ci, Rect2(VIEW.position + Vector2(10, -50), Vector2(VIEW.size.x - 20, 60)), Color("2c2018"), Color("3a2a1f"))
-	# 洞底阴影 + 底部石台
-	Sprites.draw(ci, "pop_inv_ledge", PS.INV_LEDGE)
+	Paint.vgrad(ci, Rect2(VIEW.position + Vector2(10, -12), Vector2(VIEW.size.x - 20, 40)), Color("2c2018"), Color("3a2a1f"))
 	# 木牌 + 皮袋
 	Sprites.draw(ci, "pop_inv_sign", PS.INV_SIGN)
-	Paint.pouch(ci, Vector2(176, 318), 0.8)
+	Paint.pouch(ci, Vector2(176, 307), 0.8)
 
 ## 一层木搁板：板子横穿整行，两头石钉托着（不再是每格一小截橙条）
 func _paint_shelf(ci: CanvasItem, _sz: Vector2) -> void:
@@ -143,8 +136,6 @@ func _layout(force := false) -> void:
 
 func _refresh() -> void:
 	if scroll == null: return
-	capacity.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.inventorypopup.358c502fecea"), [G.rules.board.inv_filled(), G.inv_cap]))
-	next_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.inventorypopup.0d763b2b0f6d"), int(Data.RULES.get("storage_expand_step", 10))))
 	unlock.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.inventorypopup.4b4bdd4a1307"), G.rules.progression.storage_price()))
 	unlock.enabled = not _busy
 	unlock.queue_redraw()
@@ -167,6 +158,10 @@ func _take(index: int) -> void:
 
 func _expand() -> void:
 	if _busy: return
+	if G.amber < G.rules.progression.storage_price():
+		G.main.toast(TextCatalog.source("ui.inventorypopup.ad2801cad3fd"))
+		Sfx.play("deny")
+		return
 	_busy = true
 	_refresh()
 	var success := await G.expand_storage()

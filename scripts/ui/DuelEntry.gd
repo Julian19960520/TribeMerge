@@ -20,12 +20,12 @@ func _process(delta: float) -> void:
 		DuelRace.tick()
 		btn.queue_redraw()
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
+	# 档期剩余时间；比赛中再画自己的进度，对手的分是条上的红刻度
 	var m: Dictionary=DuelRace.state()["match"]
-	var badge:={"text":TextCatalog.source("ui.duelentry.a75fb7376be1"),"style":"teal"}
-	if not DuelRace.unlocked(): badge={"text":TextCatalog.fill(TextCatalog.source("ui.duelentry.e0cda514ecc2"), int(DuelRace.config()["unlock_level"])),"style":"lock"}
-	elif DuelRace.pending(): badge={"text":TextCatalog.source("ui.duelentry.5375104054f0"),"style":"go"}
-	elif not m.is_empty() and m["status"]=="running":
-		var me:=int(m.get("me",0))
-		var op:=int(m.get("opponent",0))
-		badge={"text":"%d:%d"%[me,op],"style":"gold" if me>op else ("bronze" if me<op else "num")}
-	EventEntryArt.paint(ci,sz,"duel",TextCatalog.source("notice.data.33c9c97e48ba"),badge,not DuelRace.unlocked(),DuelRace.pending(),_bump)
+	var info:={}
+	if not DuelRace.unlocked(): info={"lock":TextCatalog.fill(TextCatalog.source("ui.duelentry.e0cda514ecc2"), int(DuelRace.config()["unlock_level"]))}
+	else:
+		if ActivitySchedule.scheduled("duel"): info["left"]=ActivitySchedule.seconds_left("duel")
+		if not m.is_empty() and m["status"]=="running":
+			info.merge({"have":int(m.get("me",0)),"need":int(m.get("target",0)),"rival":int(m.get("opponent",0)),"icon":"banana"})
+	EventEntryArt.paint(ci,sz,"duel",info,not DuelRace.unlocked(),DuelRace.pending(),_bump)

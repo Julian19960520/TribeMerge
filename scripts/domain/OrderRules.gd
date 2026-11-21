@@ -262,13 +262,15 @@ func _make_order_free(avoid: Array = []) -> Dictionary:
 			var ln: Dictionary = open[context.random_for("orders").randi() % open.size()]
 			var id := ""
 			var add := 0
-			var sub = str(ln.get("sub", ""))
+			var subs := Data.secondaries(ln)
+			# 只有一种其余产物时不多抽随机数，老存档回放的随机序列保持不变
+			var sub := "" if subs.is_empty() else str(subs[0]) if subs.size() == 1 else str(subs[context.random_for("orders").randi() % subs.size()])
 			if state.level >= 2 and sub != "" and Data.product_open(state.level, sub) and _sourced(sub, allowed) and context.random_for("orders").randf() < 0.15:
 				var sl = context.random_for("orders").randi_range(1, mini(3, 1 + state.level / 3))
 				id = "%s_%d" % [sub, sl]
 				add = 12 * int(pow(2, sl - 1)) + context.random_for("orders").randi_range(0, 4)
 			else:
-				var ch: String = ln["main"]
+				var ch: String = Data.primary(ln)
 				if not Data.product_open(state.level, ch) or not _sourced(ch, allowed):
 					continue
 				var l = context.random_for("orders").randi_range(1 if state.level < 2 else 2, mini(top, Data.max_lv(ch)))

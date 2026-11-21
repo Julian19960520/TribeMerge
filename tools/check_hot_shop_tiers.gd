@@ -34,7 +34,7 @@ func run() -> void:
 			previous = rows
 		check(valid and changed, "%d级热卖仅已解锁产物，等级递增且有高阶商品，刷新必定变化" % level)
 		var covered := true
-		for line in Data.unlocked_lines(level): covered = covered and seen_chains.has(str(line["main"]))
+		for line in Data.unlocked_lines(level): covered = covered and seen_chains.has(Data.primary(line))
 		check(covered, "%d级商品池覆盖所有已解锁主产线" % level)
 	var ordered: Array = Goods.from_picks(Data.STORE_HOT, [], 1)
 	for bad in [{"slot": 0, "id": "tool_3"}, {"slot": 0, "id": "fire_3"}, {"slot": 0, "id": "fruit_1"}, {"slot": 4, "id": "fruit_14"}, {"slot": 5, "id": "hearth_1"}]:

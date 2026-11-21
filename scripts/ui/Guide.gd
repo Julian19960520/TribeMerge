@@ -87,8 +87,11 @@ func skip_beat() -> void:
 func _ack() -> void:
 	if _busy: return
 	_busy = true
-	Replay.perform("onboarding_next", {"step": _step})
+	var result = Replay.perform("onboarding_next", {"step": _step})
 	_busy = false
+	# A refused step stays put; retrying from inside _refresh recursed until the
+	# stack overflowed. The next frame's _process tries again instead.
+	if result is Dictionary and result.has("error"): return
 	_refresh()
 
 func _process(dt: float) -> void:
@@ -105,6 +108,13 @@ func _process(dt: float) -> void:
 
 func _refresh() -> void:
 	if not is_instance_valid(_dim) or G.main == null: return
+	# The config editor sits on this same screen. A tutorial veil would swallow Save.
+	if G.main.screen == "cfg":
+		visible = false
+		mouse_filter = MOUSE_FILTER_IGNORE
+		if is_instance_valid(G.main.board_screen) and is_instance_valid(G.main.board_screen.board):
+			G.main.board_screen.board.hide_drag = false
+		return
 	var active: bool = _rules().active()
 	if not active:
 		visible = false
@@ -214,6 +224,13 @@ func _refresh() -> void:
 				var base: Rect2 = main.board_screen._base_btn.get_global_rect()
 				_hole(Rect2(base.position + Vector2(16, 170), Vector2(base.size.x - 24, 36)), false)
 			elif popup != null and popup.has_meta(target): _hole(popup.get_meta(target), false)
+	# An action step with nothing to point at must not hold the whole screen:
+	# let the player play until the board catches up (or the rules skip it).
+	if _holes.is_empty() and _mode not in ["dialog", "banner", "level_close", "recipe_close"]:
+		visible = false
+		mouse_filter = MOUSE_FILTER_IGNORE
+		main.board_screen.board.hide_drag = false
+		return
 	if _holes.size() > 0:
 		_target = _holes[0]
 		for hole in _holes: _target = _target.merge(hole)

@@ -27,11 +27,9 @@ func _chains() -> float:
 	var used = {}
 	for line in lines:
 		y = _chain_head(y, str(line.get("name", "")))
-		var roles = [
-			[TextCatalog.source("developer.configchainspage.48278c8bb296"), str(line.get("gen", ""))],
-			[TextCatalog.source("developer.configchainspage.4ccf6e6cdcc6"), str(line.get("main", ""))],
-			[TextCatalog.source("developer.configchainspage.47a0b44b8447"), str(line.get("sub", ""))],
-		]
+		var roles = [[TextCatalog.source("developer.configchainspage.48278c8bb296"), str(line.get("gen", ""))]]
+		for cid in Data.products(line):
+			roles.append([TextCatalog.source("developer.configchainspage.001cee1360f6"), str(cid)])
 		var qh = 46.0 + sq + 52.0
 		var box_h = 12.0 + roles.size() * qh
 		editor._panel(editor._root, Rect2(12, y, 696, box_h))
@@ -309,8 +307,7 @@ func _line_names() -> Dictionary:
 		if not (line is Dictionary):
 			continue
 		var lname = str(line.get("name", line.get("id", "")))
-		for key in ["gen", "main", "sub"]:
-			var ref = str(line.get(key, ""))
+		for ref in [str(line.get("gen", ""))] + Data.products(line):
 			if ref != "":
 				line_name[ref] = lname
 	return line_name

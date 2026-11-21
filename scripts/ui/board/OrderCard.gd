@@ -250,17 +250,23 @@ func _paint_order(ci: CanvasItem, sz: Vector2) -> void:
 		ci.draw_string_outline(G.font_body, xp_pos, TextCatalog.resolve(xp_n), HORIZONTAL_ALIGNMENT_CENTER, 52, xp_fs, 4, Art.INK)
 		ci.draw_string(G.font_body, xp_pos, TextCatalog.resolve(xp_n), HORIZONTAL_ALIGNMENT_CENTER, 52, xp_fs, Color.WHITE)
 	if craft:
-		var dish_s := DISH_ICON_SIDE
-		var dc := recipe_icon_rect().get_center()
 		var show_mats := phase == "need" or phase == "cook"
 		if show_mats:
+			var dish_s := DISH_ICON_SIDE
+			var dc := recipe_icon_rect().get_center()
 			_paint_formula(ci, o, sz.x)
-		_spot_shadow(ci, dc + Vector2(0, 3), dish_s)
-		Art.item(ci, str(o.get("dish", "")), dc, dish_s)
-		if show_mats:
+			_spot_shadow(ci, dc + Vector2(0, 3), dish_s)
+			Art.item(ci, str(o.get("dish", "")), dc, dish_s)
 			_formula_arrow(ci, dc - Vector2(dish_s * 0.5 + 18, 0))
-		if phase == "ready":
-			Paint.check_tick(ci, dc + Vector2(dish_s * 0.36, dish_s * 0.28), 0.8)
+		else:
+			# Once the materials are used up the dish is the whole order: centred
+			# and full size, like a single-item order.
+			var spot: Dictionary = _order_item_spots({"items": [str(o.get("dish", ""))]}, sz.x)[0]
+			var c: Vector2 = spot["c"]
+			var s: float = float(spot["s"])
+			_spot_shadow(ci, c + Vector2(0, 4), s)
+			Art.item(ci, str(o.get("dish", "")), c, s)
+			if phase == "ready": _ready_mark(ci, c, s, 1.1)
 	else:
 		var spots: Array = _order_item_spots(o, sz.x)
 		var boards := []

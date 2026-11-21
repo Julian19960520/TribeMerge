@@ -36,7 +36,7 @@ func run() -> void:
 			var tally: Dictionary = count[int(row["level"])]
 			tally["craft" if row.has("dish") else "normal"] += 1
 			tally["xp"] += int(row["xp"])
-	check(level_two_fruit_units == 80, "2级果子基础材料量由224降至80")
+	check(level_two_fruit_units == 28, "2级果子按竞品葱3/紫洋葱4/大蒜5，基础材料量降至28")
 	fresh(2)
 	for level in [5, 6, 7]: g.board[level] = {"id": "fruit_%d" % level, "lock": 1}
 	g.rules.onboarding.refill()
@@ -45,7 +45,7 @@ func run() -> void:
 		for id in order["items"]:
 			if Data.chain(str(id)) == "fruit": affordable = affordable and Data.lv(str(id)) <= 6 and not g.rules.orders.vine_plan()["keys"].has(str(id))
 	check(affordable, "连续水果藤蔓也不能把2级订单升级为石榴，改用预算内非藤蔓材料")
-	check(count[3] == {"craft": 1, "normal": 2, "xp": 3} and count[4] == {"craft": 2, "normal": 1, "xp": 5}, "3级1制作+2普通，4级2制作+1普通，各级总经验保持不变")
+	check(count[3] == {"craft": 2, "normal": 1, "xp": 3} and count[4] == {"craft": 2, "normal": 1, "xp": 5}, "3、4级都是2制作+1普通（竞品两张做菜单），各级总经验保持不变")
 	check(Data.DISHES["salad"]["mats"] == ["fruit_5"] and Data.DISHES["fruitbasket"]["mats"] == ["fruit_7"] and Data.DISHES["trailpack"]["mats"] == ["seed_4", "fruit_5"], "制作材料提升至5级果子、7级果子，坚果配方只补一个5级果子")
 	for level in [3, 4]:
 		fresh(level); g.rules.onboarding.refill()
@@ -61,7 +61,7 @@ func run() -> void:
 	var old: Dictionary = g.order_identity({"who": 0, "items": ["fruit_3"], "mats": ["fruit_3"], "kind": "craft", "dish": "berrybowl", "secs": 10, "phase": "need", "story": true, "onboarding": "craft2", "guide_revision": 4, "rw": {"shell": 6, "xp": 1}})
 	g.orders = [old]; var uid := str(old["uid"])
 	g.rules.onboarding._sync_orders()
-	check(not old.has("kind") and old["items"] == ["fruit_6"] and old["rw"]["xp"] == 1 and old["uid"] == uid, "旧3级未开工制作单转普通单，保留经验和身份")
+	check(not old.has("kind") and old["items"] == ["fruit_4"] and old["rw"]["xp"] == 1 and old["uid"] == uid, "旧3级未开工制作单转普通单，保留经验和身份")
 	fresh(4)
 	var ready: Dictionary = g.order_identity({"who": 0, "items": ["seed_4"], "mats": ["seed_4"], "kind": "craft", "dish": "trailpack", "secs": 240, "phase": "need", "story": true, "onboarding": "craft7", "guide_revision": 4, "rw": {"shell": 13, "xp": 2}})
 	g.orders = [ready]; g.board[1]["id"] = "seed_4"

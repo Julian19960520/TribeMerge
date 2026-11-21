@@ -79,8 +79,9 @@ static func wicker_contents(id: String, game) -> Array:
 	var pool: Array = def["base_pool"].duplicate()
 	var opened := Data.unlocked_lines(game.level)
 	for line in opened:
-		for tier in def["main_tiers"]: pool.append("%s_%d" % [line["main"], tier])
-		for tier in def["sub_tiers"]: pool.append("%s_%d" % [line["sub"], tier])
+		for tier in def["main_tiers"]: pool.append("%s_%d" % [Data.primary(line), tier])
+		for sub in Data.secondaries(line):
+			for tier in def["sub_tiers"]: pool.append("%s_%d" % [sub, tier])
 	var rng: RandomNumberGenerator = game.random_for("chests")
 	var out := []
 	for i in int(def["count"]):

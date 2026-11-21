@@ -42,7 +42,7 @@
 		"id": "flintkit",
 		"name": "§names.dishes.79ba687e34b0§",
 		"mats": [
-			"gem_1",
+			"craft_1",
 			"tool_4"
 		],
 		"secs": 30,
@@ -61,8 +61,8 @@
 		"id": "ochrebeads",
 		"name": "§names.dishes.71f3ed999302§",
 		"mats": [
-			"gem_2",
-			"cloth_2",
+			"craft_2",
+			"furn_2",
 			"seed_2"
 		],
 		"secs": 60,
@@ -82,7 +82,7 @@
 		"id": "toolbelt",
 		"name": "§names.dishes.4e79252ed0ae§",
 		"mats": [
-			"cloth_4",
+			"furn_4",
 			"tool_4"
 		],
 		"secs": 90,
@@ -92,8 +92,8 @@
 		"id": "bracer",
 		"name": "§names.dishes.232b1a93d50a§",
 		"mats": [
-			"armor_1",
-			"cloth_3",
+			"gem_1",
+			"furn_3",
 			"tool_3"
 		],
 		"secs": 120,
@@ -104,7 +104,7 @@
 		"name": "§names.dishes.fafa724db359§",
 		"mats": [
 			"gem_3",
-			"cloth_3",
+			"furn_3",
 			"seed_2"
 		],
 		"secs": 180,
@@ -127,7 +127,7 @@
 		"mats": [
 			"beast_1",
 			"tool_4",
-			"cloth_3"
+			"furn_3"
 		],
 		"secs": 300,
 		"unlock": 16
@@ -137,7 +137,7 @@
 		"name": "§names.dishes.5253d8db38a9§",
 		"mats": [
 			"beast_2",
-			"armor_2"
+			"gem_2"
 		],
 		"secs": 360,
 		"unlock": 17
@@ -147,7 +147,7 @@
 		"name": "§names.dishes.3a6907c07b69§",
 		"mats": [
 			"bird_1",
-			"cloth_4",
+			"furn_4",
 			"gem_2"
 		],
 		"secs": 420,
@@ -158,7 +158,7 @@
 		"name": "§names.dishes.2d057d3dbb6f§",
 		"mats": [
 			"fruit_4",
-			"veg_3",
+			"furn_3",
 			"beast_1"
 		],
 		"secs": 480,
@@ -169,7 +169,7 @@
 		"name": "§names.dishes.b3898a570823§",
 		"mats": [
 			"beast_2",
-			"veg_2",
+			"furn_2",
 			"bird_1"
 		],
 		"secs": 540,
@@ -179,8 +179,8 @@
 		"id": "skewer",
 		"name": "§names.dishes.fd5740dcfa93§",
 		"mats": [
-			"roast_3",
-			"veg_4",
+			"beast_2",
+			"furn_4",
 			"seed_2"
 		],
 		"secs": 600,
@@ -192,7 +192,7 @@
 		"mats": [
 			"beast_2",
 			"bird_1",
-			"veg_4",
+			"seed_4",
 			"fruit_5"
 		],
 		"secs": 600,
@@ -235,8 +235,8 @@
 		"name": "§names.dishes.2ef4f7ac026c§",
 		"mats": [
 			"pot_3",
-			"roast_3",
-			"veg_4"
+			"beast_2",
+			"fruit_6"
 		],
 		"secs": 900,
 		"unlock": 44
@@ -245,7 +245,7 @@
 		"id": "drumset",
 		"name": "§names.dishes.ef808d656eca§",
 		"mats": [
-			"ware_2",
+			"armor_3",
 			"craft_3",
 			"furn_4"
 		],
@@ -256,9 +256,9 @@
 		"id": "grandfeast",
 		"name": "§names.dishes.9981c2759fb1§",
 		"mats": [
-			"pot_5",
-			"roast_3",
-			"veg_5",
+			"pot_6",
+			"beast_3",
+			"furn_5",
 			"bird_1"
 		],
 		"secs": 1800,
@@ -269,7 +269,7 @@
 		"name": "§names.dishes.638b523b3525§",
 		"mats": [
 			"craft_3",
-			"ware_3",
+			"pot_6",
 			"armor_3",
 			"cloth_6"
 		],

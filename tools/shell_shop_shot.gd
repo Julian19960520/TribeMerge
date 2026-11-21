@@ -70,7 +70,7 @@ func _run() -> void:
 	_check(ok and g.shells == 62 and int(g.shell_bought.get("shell_0", 0)) == 1 and g.stash.size() == stash0 + 1, "买樱桃：不那那 70→%d，已购 %s" % [g.shells, str(g.shell_bought)])
 	g.shells = 30
 	ok = await PopupsS._buy_offer("seed_1", PopupsS._shell_offer("shell_3"), Vector2(360, 900))
-	_check(not ok and g.shells == 30, "不那那 30 买不起 52 的草籽")
+	_check(not ok and g.shells == 30, "不那那 30 买不起 52 的松子")
 	for _i in 2:
 		await PopupsS._buy_offer("tool_2", PopupsS._shell_offer("shell_1"), Vector2(360, 900))
 	g.shells = 30

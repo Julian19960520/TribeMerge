@@ -131,13 +131,12 @@ func place(i: int, id: String) -> void:
 
 func book_prize(id: String) -> bool:
 	# 1 级物品太多、太好拿，不发图鉴体力（菜没有等级，照发）
-	return id != "" and state.discovered.has(id) and not state.book_claimed.has(id) and (Data.lv(id) != 1 or Data.is_dish(id))
+	return id != "" and state.discovered.has(id) and not state.book_claimed.has(id) and (Data.lv(id) != 1 or Data.is_dish(id) or Data.is_craft(id))
 
 func book_prize_count() -> int:
 	var n = 0
 	for line in Data.LINES:
-		for key in ["gen", "main", "sub"]:
-			var ch = str(line[key])
+		for ch in [str(line["gen"])] + Data.products(line):
 			if not Data.CHAINS.has(ch):
 				continue
 			var items: Array = Data.CHAINS[ch]["items"]
@@ -145,6 +144,9 @@ func book_prize_count() -> int:
 				if book_prize("%s_%d" % [ch, i + 1]):
 					n += 1
 	for id in Data.DISHES:
+		if book_prize(str(id)):
+			n += 1
+	for id in Data.CRAFT_IDS:
 		if book_prize(str(id)):
 			n += 1
 	return n
@@ -155,6 +157,8 @@ func claim_book(id: String) -> int:
 	state.book_claimed[id] = true
 	state.dirty()
 	state.changed.emit()
+	if Data.is_craft(id):
+		return Data.craft_book_energy(id)
 	# 图鉴体力：低级物品只给 1，高级的接近等级（前期新物品多，不能一下送太多体力）
 	return 1 if Data.lv(id) <= 4 else Data.lv(id) - 3
 
@@ -162,7 +166,8 @@ func discover(id: String) -> bool:
 	if Data.is_numeric_resource(id): return false
 	if id == "" or state.discovered.has(id):
 		return false
-	if Data.is_dish(id):
+	# 菜和制作产物没有链：第一次做出来只点亮它自己
+	if Data.is_dish(id) or Data.is_craft(id):
 		state.discovered[id] = true
 		return true
 	var ch = Data.chain(id)

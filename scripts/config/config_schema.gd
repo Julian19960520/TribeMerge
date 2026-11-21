@@ -38,7 +38,8 @@ func _validate() -> void:
 		"ufo_offer": {"enabled": TYPE_BOOL}, "race": {"rewards": TYPE_ARRAY, "shadow": TYPE_DICTIONARY, "names": TYPE_ARRAY},
 		"activity_schedule": {"start_utc": TYPE_STRING, "slots": TYPE_ARRAY},
 		"replay_economy": {"album_reward": TYPE_ARRAY},
-		"replay_build": {"protocol": TYPE_INT, "godot": TYPE_STRING, "code_sha256": TYPE_STRING}}
+		"replay_build": {"protocol": TYPE_INT, "godot": TYPE_STRING, "code_sha256": TYPE_STRING},
+		"crafts": {"categories": TYPE_ARRAY}}
 	for name in required: _fields(docs[name], name, required[name])
 	if not errors.is_empty(): return
 	_items()
@@ -159,12 +160,31 @@ func _items() -> void:
 	for row in docs.dishes:
 		if row is Dictionary and row.get("mats") is Array:
 			for id in row.mats: _item(id, "dishes.mats")
+	var craft_ids := {}
+	for cat in docs.crafts.categories:
+		if not _fields(cat, "crafts.categories", {"id": TYPE_STRING, "name": TYPE_STRING, "items": TYPE_ARRAY}): continue
+		for row in cat["items"]:
+			if not _fields(row, "crafts.items", {"id": TYPE_STRING, "name": TYPE_STRING, "mats": TYPE_ARRAY}): continue
+			_id(row.id, "crafts.items.id", craft_ids)
+			if row.mats.is_empty(): _error("crafts.items.mats", "recipe cannot be empty")
+			for id in row.mats: _item(id, "crafts.items.mats")
+	var cat_ids := {}
+	for cat in docs.crafts.categories: cat_ids[str(cat.get("id", ""))] = true
+	for g in docs.crafts.get("groups", []):
+		if not _fields(g, "crafts.groups", {"id": TYPE_STRING, "name": TYPE_STRING, "categories": TYPE_ARRAY}): continue
+		for cid in g.categories:
+			if not cat_ids.has(str(cid)): _error("crafts.groups.categories", "unknown craft category")
 	for row in docs.lines:
-		if not _fields(row, "lines", {"id": TYPE_STRING, "gen": TYPE_STRING, "main": TYPE_STRING, "sub": TYPE_STRING, "unlock": TYPE_INT}): continue
+		if not _fields(row, "lines", {"id": TYPE_STRING, "gen": TYPE_STRING, "products": TYPE_ARRAY, "unlock": TYPE_INT}): continue
 		_id(row.id, "lines.id", lines)
 		_positive(row.unlock, "lines.unlock")
-		for key in ["gen", "main", "sub"]:
-			if row[key] != "" and not chains.has(row[key]): _error("lines." + key, "unknown chain")
+		if row.gen != "" and not chains.has(row.gen): _error("lines.gen", "unknown chain")
+		if row.products.is_empty(): _error("lines.products", "a line needs at least one product chain")
+		var seen := {}
+		for ch in row.products:
+			if not ch is String or not chains.has(ch): _error("lines.products", "unknown chain")
+			elif seen.has(ch): _error("lines.products", "duplicate product chain")
+			seen[ch] = true
 	if not errors.is_empty(): return
 	for i in docs.chains.size():
 		var row: Dictionary = docs.chains[i]
@@ -417,8 +437,9 @@ func _wicker_chest(row: Dictionary, at: String) -> void:
 		if tiers.is_empty(): _error(at + "." + role + "_tiers", "tier list cannot be empty")
 		for tier in tiers:
 			for line in docs.lines:
-				var chain: Dictionary = chain_rows.get(line[role], {})
-				_number(tier, at + "." + role + "_tiers", 1, chain.get("items", []).size(), true)
+				for ch in line.get("products", []):
+					var chain: Dictionary = chain_rows.get(ch, {})
+					_number(tier, at + "." + role + "_tiers", 1, chain.get("items", []).size(), true)
 	for line in docs.lines:
 		_number(row.gen_tier, at + ".gen_tier", 1, chain_rows[line.gen]["items"].size(), true)
 

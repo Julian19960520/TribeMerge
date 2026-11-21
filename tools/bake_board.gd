@@ -37,20 +37,24 @@ func run() -> void:
 		draw_art.boil = phase
 		await bake(dir + "/rocks_%d.png" % phase, Vector2i(1152, 896), func(ci, _sz):
 			for i in 63:
-				# 石头放大一点，几乎占满格子，挡路的感觉更明确
-				ci.draw_set_transform(Vector2((i % 9) * 128 + 16, (i / 9) * 128 + 16) + Vector2(48, 52) * (1.0 - ROCK_SCALE), 0.0, Vector2.ONE * ROCK_SCALE)
-				art.rock(ci, Rect2(0, 0, 96, 96), i))
+				# 锁格画成密林（旧的巨石 art.rock 留在 BoardBakeArt 里备查）
+				ci.draw_set_transform(Vector2((i % 9) * 128 + 16, (i / 9) * 128 + 16))
+				art.forest(ci, Rect2(0, 0, 96, 96), i))
 		await bake(dir + "/frame_%d.png" % phase, Vector2i(712, 904), func(ci, _sz):
 			ci.draw_set_transform(Vector2(20, 20))
 			art.frame(ci, Vector2(672, 864)))
+	await bake(dir + "/forest_ground.png", Vector2i(1152, 896), func(ci, _sz):
+		for i in 63:
+			ci.draw_set_transform(Vector2((i % 9) * 128 + 16, (i / 9) * 128 + 16))
+			art.forest_ground(ci, Rect2(0, 0, 96, 96), i))
 	await bake(dir + "/cracks.png", Vector2i(1152, 896), func(ci, _sz):
 		for i in 63:
-			ci.draw_set_transform(Vector2((i % 9) * 128 + 16, (i / 9) * 128 + 16) + Vector2(48, 52) * (1.0 - ROCK_SCALE), 0.0, Vector2.ONE * ROCK_SCALE)
-			art.cracks(ci, Rect2(0, 0, 96, 96), i, 0.6))
+			ci.draw_set_transform(Vector2((i % 9) * 128 + 16, (i / 9) * 128 + 16))
+			art.rustle(ci, Rect2(0, 0, 96, 96), i, 0.6))
 	await bake(dir + "/fragments.png", Vector2i(512, 64), func(ci, _sz):
 		for k in 8:
 			ci.draw_set_transform(Vector2(k * 64, 0))
-			art.fragment(ci, k))
+			art.leaf_fragment(ci, k))
 	await bake(dir + "/floor.png", Vector2i(384, 96), func(ci, _sz):
 		for k in 4:
 			ci.draw_set_transform(Vector2(k * 96, 0))

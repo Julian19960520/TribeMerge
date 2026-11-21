@@ -26,7 +26,7 @@ static func entries() -> Array:
 		"draw": func(ci, r): live_pill(ci, r)})
 	out.append({"key": "plus_badge", "w": 34, "h": 34, "pad": 4,
 		"draw": func(ci, r): live_plus_badge(ci, r.get_center())})
-	out.append({"key": "badge_num", "w": 38, "h": 38, "pad": 4,
+	out.append({"key": "badge_num", "w": 46, "h": 46, "pad": 4,
 		"draw": func(ci, r): live_badge_num(ci, r.get_center())})
 	out.append({"key": "check_mark", "w": 34, "h": 34, "pad": 4,
 		"draw": func(ci, r): live_check_mark(ci, r.get_center())})
@@ -204,6 +204,7 @@ static func live_plus_badge(ci: CanvasItem, c: Vector2, seed: int = 6) -> void:
 
 static func live_badge_num(ci: CanvasItem, c: Vector2, seed: int = 7, radius: float = 16.0) -> void:
 	var b := Art.ell(c, Vector2(radius, radius), seed, 0.02, 16)
+	Art.dilate(ci, b, 6.5, Color.WHITE)
 	Art.dilate(ci, b, 2.5, Art.INK)
 	ci.draw_colored_polygon(b, Art.CLAY)
 
@@ -220,8 +221,8 @@ static func live_level_badge(ci: CanvasItem, c: Vector2, s: float, _seed: int = 
 	for o in Geometry2D.offset_polygon(raw, -s * 0.05, Geometry2D.JOIN_ROUND):
 		for o2 in Geometry2D.offset_polygon(o, s * 0.05, Geometry2D.JOIN_ROUND):
 			star = o2
-	Art.dilate(ci, star, s * 0.035, Color(1, 0.98, 0.9, 0.95))
-	Art.dilate(ci, star, s * 0.018, Art.INK)
+	# 线宽按顶栏 s=96 时和集市图标一样粗（外扩 ≈2.1px + 描边 ≈1.7px）
+	Art.dilate(ci, star, s * 0.022, Art.INK)
 	ci.draw_colored_polygon(star, Color("e79a1e"))
 	for o in Geometry2D.offset_polygon(star, -s * 0.045, Geometry2D.JOIN_ROUND):
 		var lifted := PackedVector2Array()
@@ -229,7 +230,7 @@ static func live_level_badge(ci: CanvasItem, c: Vector2, s: float, _seed: int = 
 			lifted.append(p + Vector2(0, -s * 0.015))
 		ci.draw_colored_polygon(lifted, Color("ffc93c"))
 	ci.draw_colored_polygon(Art.ell(c + Vector2(-s * 0.13, -s * 0.17), Vector2(s * 0.07, s * 0.03), 3, 0.0, 12, -0.7, 0.0), Color(1, 1, 1, 0.55))
-	Art.outline(ci, star, s * 0.012, Art.INK)
+	Art.outline(ci, star, s * 0.018, Art.INK)
 
 static func live_bar(ci: CanvasItem, r: Rect2, t: float, col: Color = Art.MOSS, seed: int = 9) -> void:
 	var b := Art.rrect(r, r.size.y * 0.5, seed, 0.5)

@@ -511,10 +511,10 @@
 			"w": 150.0
 		},
 		"paint_pouch": {
-			"frames": 4.0,
-			"h": 124.0,
-			"pad": 6.0,
-			"w": 115.0
+			"frames": 4,
+			"h": 124,
+			"pad": 6,
+			"w": 115
 		},
 		"paint_rock_deer": {
 			"frames": 4.0,

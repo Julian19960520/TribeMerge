@@ -5,10 +5,13 @@ extends RefCounted
 
 ## 藤蔓按格子序号取几种样子（单双数决定镜像）
 const VINE_VARIANTS := 8
-const VINE_STEM := Color("5b7a32")
-const VINE_STEM_HI := Color("a8b878")
-const VINE_LEAF := Color("8fae55")
-const VINE_LEAF_D := Color("62813a")
+const VINE_STEM := Color("6c8749")
+const VINE_STEM_HI := Color("b6c48e")
+const VINE_LEAF := Color("9cb66e")
+const VINE_LEAF_D := Color("74904f")
+## 藤蔓的描边：细、半透明，不压物品
+const VINE_LINE_W := 1.4
+const VINE_LINE := Color(0.23, 0.14, 0.08, 0.85)
 const CARD_DASH := Color(0.65, 0.4, 0.2, 0.45)
 
 static func entries() -> Array:
@@ -151,20 +154,20 @@ static func live_vine(ci: CanvasItem, r: Rect2, i: int, back: bool) -> void:
 	var lo_side: Vector2 = pt.call(84, 64 + j.call(2, 3), 2)
 	if back:
 		# 背后那段：从物品中间（看不见）拉到侧边，和前面那段接上
-		_vine_stroke(ci, _bez(pt.call(46, 30, 3), pt.call(30, 24, 4), pt.call(16, 28, 5), up_side, 10), 5.5 * s, false, false)
-		_vine_stroke(ci, _bez(pt.call(50, 70, 6), pt.call(66, 76, 7), pt.call(80, 72, 8), lo_side, 10), 5.5 * s, false, false)
+		_vine_stroke(ci, _bez(pt.call(46, 30, 3), pt.call(30, 24, 4), pt.call(16, 28, 5), up_side, 10), 3.2 * s, false, false)
+		_vine_stroke(ci, _bez(pt.call(50, 70, 6), pt.call(66, 76, 7), pt.call(80, 72, 8), lo_side, 10), 3.2 * s, false, false)
 		return
 	# 物品整体压淡一点
 	ci.draw_colored_polygon(Art.rrect(r.grow(-5), 14, i, 0.0), Color(0.93, 0.89, 0.8, 0.22))
-	var up := _bez(up_side, pt.call(30, 56 + j.call(3, 4), 9), pt.call(58, 24 + j.call(4, 4), 10), pt.call(82, 34 + j.call(5, 3), 11), 22)
-	var lo := _bez(lo_side, pt.call(66, 86 + j.call(6, 3), 12), pt.call(38, 58 + j.call(7, 4), 13), pt.call(16, 70 + j.call(8, 3), 14), 22)
-	_vine_stroke(ci, up, 6.0 * s, false, true)
-	_vine_stroke(ci, lo, 6.0 * s, false, true)
+	var up := _bez(up_side, pt.call(28, 44 + j.call(3, 4), 9), pt.call(58, 14 + j.call(4, 4), 10), pt.call(82, 24 + j.call(5, 3), 11), 22)
+	var lo := _bez(lo_side, pt.call(66, 90 + j.call(6, 3), 12), pt.call(38, 70 + j.call(7, 4), 13), pt.call(16, 80 + j.call(8, 3), 14), 22)
+	_vine_stroke(ci, up, 3.6 * s, false, true)
+	_vine_stroke(ci, lo, 3.6 * s, false, true)
 	# 藤梢卷须
 	for c in [up, lo]:
 		var cv: PackedVector2Array = c
 		var d: Vector2 = (cv[cv.size() - 1] - cv[cv.size() - 3]).normalized()
-		_curl(ci, cv[cv.size() - 1], d.orthogonal() * (-1.0 if c == up else 1.0) * (-1.0 if flip else 1.0), 6.0 * s, i + (0 if c == up else 1))
+		_curl(ci, cv[cv.size() - 1], d.orthogonal() * (-1.0 if c == up else 1.0) * (-1.0 if flip else 1.0), 4.0 * s, i + (0 if c == up else 1))
 	# 叶子：每根两片，左右错开
 	var n := 0
 	for c in [up, lo]:
@@ -173,7 +176,7 @@ static func live_vine(ci: CanvasItem, r: Rect2, i: int, back: bool) -> void:
 			var tan: Vector2 = (cv[k + 1] - cv[k - 1]).normalized()
 			var side := -1.0 if n % 2 == 0 else 1.0
 			var ang: float = tan.angle() + side * (1.0 + j.call(20 + n, 0.25)) + Art.jit(i * 7 + n) * 0.06
-			_leaf(ci, cv[k], ang, (16.0 + j.call(40 + n, 2.0)) * s)
+			_leaf(ci, cv[k], ang, (10.0 + j.call(40 + n, 1.5)) * s)
 			n += 1
 
 ## 藤条：两头收尖的一条，墨边 + 灰绿芯
@@ -191,7 +194,7 @@ static func _vine_stroke(ci: CanvasItem, c: PackedVector2Array, w: float, taper_
 	right.reverse()
 	var shape := PackedVector2Array(left)
 	shape.append_array(right)
-	Art.dilate(ci, shape, 2.2, Art.INK)
+	Art.dilate(ci, shape, VINE_LINE_W, VINE_LINE)
 	ci.draw_colored_polygon(shape, VINE_STEM)
 	# 高光：偏上一道浅线
 	var hi := PackedVector2Array()
@@ -206,7 +209,7 @@ static func _bez(a: Vector2, b: Vector2, c: Vector2, d: Vector2, n: int) -> Pack
 		out.append(a * u * u * u + b * 3.0 * u * u * t + c * 3.0 * u * t * t + d * t * t * t)
 	return out
 
-## 一片叶子：base 处连茎，朝 ang 方向长 len；上半浅绿、下半深绿，中间一道叶脉 + 两根侧脉。
+## 一片叶子：base 处连茎，朝 ang 方向长 len；上半浅绿、下半深绿，中间一道淡叶脉。
 static func _leaf(ci: CanvasItem, base: Vector2, ang: float, len: float) -> void:
 	var w := len * 0.42
 	var dir := Vector2.from_angle(ang)
@@ -221,18 +224,14 @@ static func _leaf(ci: CanvasItem, base: Vector2, ang: float, len: float) -> void
 		right.append(along - nrm * half)
 	var outline := PackedVector2Array(left)
 	for k in range(right.size() - 1, -1, -1): outline.append(right[k])
-	Art.dilate(ci, outline, 2.2, Art.INK)
+	Art.dilate(ci, outline, VINE_LINE_W, VINE_LINE)
 	ci.draw_colored_polygon(outline, VINE_LEAF)
 	var dark := PackedVector2Array()
 	for k in right.size(): dark.append(right[k])
 	for k in range(right.size() - 1, -1, -1): dark.append(base + dir * (float(k) / 8.0 * len))
 	ci.draw_colored_polygon(dark, VINE_LEAF_D)
 	# 叶脉
-	ci.draw_line(base + dir * len * 0.08, base + dir * len * 0.86, Color(Art.INK, 0.55), 1.4, true)
-	for k in [0.35, 0.6]:
-		var m: Vector2 = base + dir * len * k
-		ci.draw_line(m, m + (dir + nrm * 0.9).normalized() * w * 0.6, Color(Art.INK, 0.4), 1.1, true)
-		ci.draw_line(m, m + (dir - nrm * 0.9).normalized() * w * 0.6, Color(Art.INK, 0.4), 1.1, true)
+	ci.draw_line(base + dir * len * 0.08, base + dir * len * 0.86, Color(Art.INK, 0.45), 1.0, true)
 	# 一点高光
 	ci.draw_line(left[2] - nrm * 1.5, left[5] - nrm * 1.5, Color(1, 1, 0.8, 0.45), 1.4, true)
 
@@ -246,8 +245,8 @@ static func _curl(ci: CanvasItem, at: Vector2, dir: Vector2, r: float, seed: int
 		var t := float(k) / 15.0
 		var a := a0 + spin * t * TAU * 1.25
 		pts.append(c + Vector2.from_angle(a) * r * (1.0 - t * 0.75))
-	ci.draw_polyline(pts, Art.INK, 5.0, true)
-	ci.draw_polyline(pts, VINE_STEM, 2.6, true)
+	ci.draw_polyline(pts, VINE_LINE, 3.2, true)
+	ci.draw_polyline(pts, VINE_STEM, 1.6, true)
 
 # ---------------------------------------------------------------- 棋盘页
 

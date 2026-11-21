@@ -7,13 +7,21 @@ var px := 256.0
 var bake_size := 160.0
 var amp := 1.0
 var phase := 0
+var draw_c := Vector2.ZERO
+var draw_size := 0.0
+## 棋盘物品烘焙时都挪到图片正中；最长边小于 SMALL（占图片边长的比例）的放大一些：
+## 补上差距的 GROW 部分，最多放大到 MAX_GROW 倍。放大时描边不跟着变粗（见 Art.stroke_k）
+const SMALL := 0.47
+const GROW := 0.75
+const MAX_GROW := 1.6
+var fit_log: Array[String] = []
 
 func _draw() -> void:
 	var prev_w := Art.wobble
 	var prev_b := Art.boil
 	Art.wobble = amp
 	Art.boil = phase
-	Art.draw_item(self, item_id, Vector2(px, px) * 0.5, bake_size, rim)
+	Art.draw_item(self, item_id, draw_c, draw_size, rim)
 	Art.wobble = prev_w
 	Art.boil = prev_b
 
@@ -60,6 +68,32 @@ func start(host: Node) -> void:
 	var ok_ids: Array[String] = []
 	for id in ids:
 		var id_ok := true
+		draw_c = Vector2(px, px) * 0.5
+		draw_size = bake_size
+		if _fits(id):
+			# 先按一半大小画一遍量外框，免得大件超出画布量不准
+			draw_size = bake_size * 0.5
+			var box := Rect2()
+			for frame in nframes:
+				item_id = id
+				rim = true
+				phase = frame
+				queue_redraw()
+				await host.get_tree().process_frame
+				await RenderingServer.frame_post_draw
+				var r := _alpha_box(vp.get_texture().get_image())
+				box = r if box.size == Vector2.ZERO else box.merge(r)
+			draw_size = bake_size
+			if box.size != Vector2.ZERO:
+				var long := maxf(box.size.x, box.size.y) * 2.0
+				var grow := 1.0
+				var small := px * SMALL
+				if long < small:
+					grow = minf((long + (small - long) * GROW) / long, MAX_GROW)
+				draw_size = bake_size * grow
+				draw_c = Vector2(px, px) * 0.5 - (box.get_center() - draw_c) * 2.0 * grow
+				Art.stroke_k = grow
+				fit_log.append("%s\t%d\t%.2f" % [id, int(long), grow])
 		for rim_i in [1, 0]:
 			for frame in nframes:
 				item_id = id
@@ -75,6 +109,7 @@ func start(host: Node) -> void:
 					push_error("写图片失败 " + path)
 					id_ok = false
 				done += 1
+		Art.stroke_k = 1.0
 		if id_ok:
 			ok_ids.append(id)
 	var anim := {
@@ -89,6 +124,9 @@ func start(host: Node) -> void:
 	var out := FileAccess.open(ProjectSettings.globalize_path("res://assets/items/anim.json"), FileAccess.WRITE)
 	out.store_string(JSON.stringify(anim, "\t"))
 	out.close()
+	var lf := FileAccess.open("user://bake_fit.tsv", FileAccess.WRITE)
+	lf.store_string("\n".join(fit_log))
+	lf.close()
 	print("BAKED %d items, %d frames, amplitude %.2f" % [ok_ids.size(), nframes, amplitude])
 	panel.queue_free()
 	label.queue_free()
@@ -132,9 +170,21 @@ static func _ids() -> Array[String]:
 			if str(Data.CHAINS[ch]["type"]) == "chest": out.append("%s_%d_open" % [ch, i + 1])
 	for id in Data.DISHES:
 		out.append(str(id))
+	for id in Data.CRAFT_IDS:
+		out.append(str(id))
 	for id in Data.REWARD_RESOURCES:
 		out.append(str(id))
 	return out
+
+## 棋盘上的物品都居中、偏小的放大
+static func _fits(_id: String) -> bool:
+	return true
+
+## 有像素的外框（像素坐标）；全透明时返回空框
+static func _alpha_box(img: Image) -> Rect2:
+	if img == null:
+		return Rect2()
+	return Rect2(img.get_used_rect())
 
 static func _empty_dir(dir: String) -> void:
 	if not DirAccess.dir_exists_absolute(dir):

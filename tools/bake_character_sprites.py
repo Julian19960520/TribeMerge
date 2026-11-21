@@ -10,11 +10,10 @@ import argparse
 import hashlib
 import io
 import json
-import math
 import re
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageOps
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "assets/characters/portraits.json"
@@ -100,51 +99,15 @@ def outputs() -> dict[str, bytes]:
     definitions = {}
     for manifest in (ROOT / "assets/sprites").glob("*.json"):
         definitions.update(json.loads(manifest.read_text(encoding="utf-8")).get("sprites", {}))
-    footer = Image.open(ROOT / "assets/characters/duel_entry_footer.png").convert("RGBA")
     result: dict[str, bytes] = {}
 
     def person(role: int) -> tuple[Image.Image, Image.Image]:
         key = roles[role % len(roles)]
         return paintings[key], heads[key]
 
-    def duel(size: tuple[int, int], gray: bool) -> Image.Image:
-        scale = 4
-        image = Image.new("RGBA", (size[0] * scale, size[1] * scale))
-        image.alpha_composite(footer.resize((footer.width * scale, footer.height * scale), RESAMPLE), (0, 111 * scale))
-        draw = ImageDraw.Draw(image)
-        for side, role in enumerate((8, 1)):
-            cx, cy = (52, 76) if side == 0 else (100, 73)
-            def circle(radius: float, color: str, offset: float = 0) -> None:
-                draw.ellipse(((cx - radius) * scale, (cy + offset - radius) * scale,
-                              (cx + radius) * scale, (cy + offset + radius) * scale), fill=color)
-            circle(27, "#00000033", 3)
-            circle(27, "#3b2314")
-            circle(24.5, "#8cc63f" if side == 0 else "#d2512d")
-            circle(20, "#fff7e6")
-            avatar(image, person(role)[1], (cx * scale, (cy + 2) * scale), 42 * scale)
-        draw = ImageDraw.Draw(image)
-        points = []
-        for i in range(18):
-            angle = -math.pi / 2 + math.pi * i / 9
-            radius = 19 if i % 2 == 0 else 13
-            points.append(((76 + math.cos(angle) * radius) * scale,
-                           (102 + math.sin(angle) * radius) * scale))
-        draw.polygon(points, fill="#d2512d")
-        draw.line(points + [points[0]], fill="#3b2314", width=3 * scale, joint="curve")
-        draw.ellipse((66 * scale, 92 * scale, 86 * scale, 112 * scale), fill="#e8673f")
-        font = ImageFont.truetype(str(ROOT / "assets/fonts/NotoSansCJKsc-Regular.otf"), 16 * scale)
-        draw.text((76 * scale, 102 * scale), "VS", font=font, anchor="mm", fill="white",
-                  stroke_width=2 * scale, stroke_fill="#3b2314")
-        image = image.resize(size, RESAMPLE)
-        if gray:
-            muted = ImageOps.grayscale(image).convert("RGBA")
-            muted.putalpha(image.getchannel("A"))
-            image = Image.blend(image, muted, 0.62)
-        return image
-
     for key, meta in definitions.items():
         selected = key.startswith(("meme_portrait_", "paint_portrait_", "tribe_walker_")) or key in {
-            "paint_hero", "paint_mascot", "paint_mascot_hammer", "ev_entry_duel", "ev_entry_duel_grey"}
+            "paint_hero", "paint_mascot", "paint_mascot_hammer"}
         if not selected:
             continue
         pad = int(meta.get("pad", 0))
@@ -167,8 +130,6 @@ def outputs() -> dict[str, bytes]:
         elif key.startswith("paint_mascot"):
             fitted(image, person(9)[0], (center[0] - .48 * mascot_scale, center[1] - .66 * mascot_scale,
                                        .96 * mascot_scale, 1.28 * mascot_scale))
-        else:
-            image = duel(image.size, key.endswith("_grey"))
         for frame in range(int(meta.get("frames", 1))):
             result[f"assets/sprites/png/{key}_{frame}.png"] = encoded(image)
 

@@ -6,6 +6,7 @@ func _ready() -> void:
 	btn.extra = _paint
 	G.seven_day_changed.connect(func(): btn.queue_redraw())
 func _paint(ci: CanvasItem, sz: Vector2) -> void:
-	var ready := SevenDay.ready()
-	var badge := {"text": TextCatalog.source("ui.duelentry.5375104054f0"), "style": "go"} if ready else {"text": "%d/%d" % [SevenDay.claimed_count(), SevenDay.task_count()], "style": "num"}
-	EventEntryArt.paint(ci, sz, "seven", TextCatalog.source("notice.data.f205a3d7f611"), badge, false, ready)
+	# 剩余时间（从第一天登录算 7 天）+ 积分进度（满分 = 最后一档里程碑）
+	var stages: Array = SevenDay.config()["milestones"]
+	var need := int(stages[-1]["points"]) if not stages.is_empty() else 0
+	EventEntryArt.paint(ci, sz, "seven", {"left": SevenDay.seconds_left(), "have": mini(SevenDay.points(), need), "need": need, "icon": "tag"}, false, SevenDay.ready())

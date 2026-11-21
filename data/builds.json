@@ -17,21 +17,21 @@
 		{"id": "sprouts", "name": "§names.builds.7d8c94339099§", "cost": 277, "rewards": [["seed_5", 1], ["fire_2", 20]], "steps": 4},
 		{"id": "fruittree", "name": "§names.builds.8b440df94287§", "cost": 279, "rewards": [["basket_1", 1], ["fruit_6", 1], ["chest_1", 1]], "steps": 4}
 	]},
-	{"id": "stone", "name": "§names.builds.2baacb2b891d§", "line": "tool", "parts": [
-		{"id": "rockpile", "name": "§names.builds.d2af4e49e30f§", "cost": 281, "rewards": [["tool_2", 2], ["gem_1", 1]], "steps": 3},
-		{"id": "anvilstone", "name": "§names.builds.5942b4666e36§", "cost": 282, "rewards": [["anvil_1", 1], ["fire_2", 15]], "steps": 3},
-		{"id": "flintpit", "name": "§names.builds.fb8da59f78aa§", "cost": 284, "rewards": [["gem_2", 2], ["tool_3", 1]], "steps": 3},
-		{"id": "toolrack", "name": "§names.builds.b6c0a2487e11§", "cost": 286, "rewards": [["tool_4", 1], ["tool_3", 1]], "steps": 3},
-		{"id": "whetstone", "name": "§names.builds.400fa71d3d0b§", "cost": 287, "rewards": [["anvil_1", 1], ["fire_2", 25]], "steps": 4},
-		{"id": "obsidian", "name": "§names.builds.7f99ce77d988§", "cost": 289, "rewards": [["gem_4", 1], ["tool_5", 1], ["chest_1", 1]], "steps": 4}
+	{"id": "wood", "name": "§names.builds.9f35a363fb01§", "line": "wood", "parts": [
+		{"id": "logs", "name": "§names.builds.f26b01f55095§", "cost": 281, "rewards": [["furn_2", 2], ["craft_1", 1]], "steps": 3},
+		{"id": "chopblock", "name": "§names.builds.509654e9f655§", "cost": 282, "rewards": [["carve_1", 1], ["fire_2", 25]], "steps": 3},
+		{"id": "bench", "name": "§names.builds.2f588bb78730§", "cost": 284, "rewards": [["furn_4", 1], ["craft_3", 1]], "steps": 3},
+		{"id": "sawhorse", "name": "§names.builds.7601dd619177§", "cost": 286, "rewards": [["furn_5", 1], ["craft_4", 1]], "steps": 3},
+		{"id": "woodshed", "name": "§names.builds.d5c9abd05eb3§", "cost": 287, "rewards": [["carve_1", 1], ["furn_6", 1]], "steps": 4},
+		{"id": "carvedpole", "name": "§names.builds.7ee3ff9dfc21§", "cost": 289, "rewards": [["craft_8", 1], ["furn_8", 1], ["chest_1", 1]], "steps": 4}
 	]},
-	{"id": "weave", "name": "§names.builds.2822388c5fea§", "line": "cloth", "parts": [
-		{"id": "grassstack", "name": "§names.builds.85d878baec57§", "cost": 292, "rewards": [["cloth_2", 2], ["fire_2", 15]], "steps": 3},
-		{"id": "loomframe", "name": "§names.builds.8d56f59bbaf4§", "cost": 293, "rewards": [["loom_1", 1], ["cloth_3", 1]], "steps": 3},
-		{"id": "dyepot", "name": "§names.builds.5bfe06ef0c6a§", "cost": 295, "rewards": [["cloth_4", 1], ["armor_1", 2]], "steps": 3},
-		{"id": "clothesline", "name": "§names.builds.1c785313b3dd§", "cost": 296, "rewards": [["cloth_5", 1], ["fire_2", 25]], "steps": 3},
-		{"id": "hidetent", "name": "§names.builds.48bf1c3fe949§", "cost": 298, "rewards": [["loom_1", 1], ["armor_3", 1]], "steps": 4},
-		{"id": "featherpole", "name": "§names.builds.c840e2ef0d99§", "cost": 300, "rewards": [["cloth_7", 1], ["armor_4", 1], ["chest_1", 1]], "steps": 4}
+	{"id": "stone", "name": "§names.builds.2baacb2b891d§", "line": "tool", "parts": [
+		{"id": "rockpile", "name": "§names.builds.d2af4e49e30f§", "cost": 292, "rewards": [["tool_2", 2], ["gem_1", 1]], "steps": 3},
+		{"id": "anvilstone", "name": "§names.builds.5942b4666e36§", "cost": 293, "rewards": [["anvil_1", 1], ["fire_2", 15]], "steps": 3},
+		{"id": "flintpit", "name": "§names.builds.fb8da59f78aa§", "cost": 295, "rewards": [["gem_2", 2], ["tool_3", 1]], "steps": 3},
+		{"id": "toolrack", "name": "§names.builds.b6c0a2487e11§", "cost": 296, "rewards": [["tool_4", 1], ["tool_3", 1]], "steps": 3},
+		{"id": "whetstone", "name": "§names.builds.400fa71d3d0b§", "cost": 298, "rewards": [["anvil_1", 1], ["fire_2", 25]], "steps": 4},
+		{"id": "obsidian", "name": "§names.builds.7f99ce77d988§", "cost": 300, "rewards": [["gem_4", 1], ["tool_5", 1], ["chest_1", 1]], "steps": 4}
 	]},
 	{"id": "hunt", "name": "§names.builds.884eb1d84db8§", "line": "hunt", "parts": [
 		{"id": "spears", "name": "§names.builds.41a3d3860b46§", "cost": 302, "rewards": [["beast_1", 2], ["bird_1", 1]], "steps": 3},
@@ -41,28 +41,28 @@
 		{"id": "hunttent", "name": "§names.builds.462e99610ceb§", "cost": 309, "rewards": [["trap_1", 1], ["bird_2", 1]], "steps": 4},
 		{"id": "skullgate", "name": "§names.builds.17d4210924c7§", "cost": 311, "rewards": [["beast_4", 1], ["bird_4", 1], ["chest_1", 1]], "steps": 4}
 	]},
-	{"id": "cook", "name": "§names.builds.6833fe53fdda§", "line": "fire", "parts": [
-		{"id": "stonestove", "name": "§names.builds.be559ed8300a§", "cost": 313, "rewards": [["veg_2", 2], ["roast_1", 1]], "steps": 3},
-		{"id": "spit", "name": "§names.builds.e38e300648bf§", "cost": 315, "rewards": [["hearth_1", 1], ["roast_2", 1]], "steps": 3},
-		{"id": "smokehouse", "name": "§names.builds.1d6bf28049bd§", "cost": 316, "rewards": [["roast_4", 1], ["veg_3", 1]], "steps": 3},
-		{"id": "cookpit", "name": "§names.builds.39b6ba54c705§", "cost": 318, "rewards": [["veg_5", 1], ["fire_2", 35]], "steps": 3},
-		{"id": "firewood", "name": "§names.builds.2c21f701f87b§", "cost": 319, "rewards": [["hearth_1", 1], ["roast_5", 1]], "steps": 4},
-		{"id": "sacredfire", "name": "§names.builds.aa8d8814dd68§", "cost": 322, "rewards": [["veg_8", 1], ["roast_7", 1], ["chest_1", 1]], "steps": 4}
+	{"id": "weave", "name": "§names.builds.2822388c5fea§", "line": "cloth", "parts": [
+		{"id": "grassstack", "name": "§names.builds.85d878baec57§", "cost": 313, "rewards": [["cloth_2", 2], ["fire_2", 15]], "steps": 3},
+		{"id": "loomframe", "name": "§names.builds.8d56f59bbaf4§", "cost": 315, "rewards": [["loom_1", 1], ["cloth_3", 1]], "steps": 3},
+		{"id": "dyepot", "name": "§names.builds.5bfe06ef0c6a§", "cost": 316, "rewards": [["cloth_4", 1], ["armor_1", 2]], "steps": 3},
+		{"id": "clothesline", "name": "§names.builds.1c785313b3dd§", "cost": 318, "rewards": [["cloth_5", 1], ["fire_2", 25]], "steps": 3},
+		{"id": "hidetent", "name": "§names.builds.48bf1c3fe949§", "cost": 319, "rewards": [["loom_1", 1], ["armor_3", 1]], "steps": 4},
+		{"id": "featherpole", "name": "§names.builds.c840e2ef0d99§", "cost": 322, "rewards": [["cloth_7", 1], ["armor_4", 1], ["chest_1", 1]], "steps": 4}
 	]},
-	{"id": "wood", "name": "§names.builds.9f35a363fb01§", "line": "wood", "parts": [
-		{"id": "logs", "name": "§names.builds.f26b01f55095§", "cost": 324, "rewards": [["furn_2", 2], ["craft_1", 1]], "steps": 3},
-		{"id": "chopblock", "name": "§names.builds.509654e9f655§", "cost": 325, "rewards": [["carve_1", 1], ["fire_2", 25]], "steps": 3},
-		{"id": "bench", "name": "§names.builds.2f588bb78730§", "cost": 327, "rewards": [["furn_4", 1], ["craft_3", 1]], "steps": 3},
-		{"id": "sawhorse", "name": "§names.builds.7601dd619177§", "cost": 329, "rewards": [["furn_5", 1], ["craft_4", 1]], "steps": 3},
-		{"id": "woodshed", "name": "§names.builds.d5c9abd05eb3§", "cost": 330, "rewards": [["carve_1", 1], ["furn_6", 1]], "steps": 4},
-		{"id": "carvedpole", "name": "§names.builds.7ee3ff9dfc21§", "cost": 332, "rewards": [["craft_8", 1], ["furn_8", 1], ["chest_1", 1]], "steps": 4}
+	{"id": "cook", "name": "§names.builds.6833fe53fdda§", "line": "fish", "parts": [
+		{"id": "stonestove", "name": "§names.builds.be559ed8300a§", "cost": 324, "rewards": [["fish_2", 2], ["clam_1", 1]], "steps": 3},
+		{"id": "spit", "name": "§names.builds.e38e300648bf§", "cost": 325, "rewards": [["weir_1", 1], ["clam_2", 1]], "steps": 3},
+		{"id": "smokehouse", "name": "§names.builds.1d6bf28049bd§", "cost": 327, "rewards": [["clam_4", 1], ["fish_3", 1]], "steps": 3},
+		{"id": "cookpit", "name": "§names.builds.39b6ba54c705§", "cost": 329, "rewards": [["fish_5", 1], ["fire_2", 35]], "steps": 3},
+		{"id": "firewood", "name": "§names.builds.2c21f701f87b§", "cost": 330, "rewards": [["weir_1", 1], ["clam_5", 1]], "steps": 4},
+		{"id": "sacredfire", "name": "§names.builds.aa8d8814dd68§", "cost": 332, "rewards": [["fish_8", 1], ["clam_7", 1], ["chest_1", 1]], "steps": 4}
 	]},
 	{"id": "kiln", "name": "§names.builds.7a17d1fe80b3§", "line": "pot", "parts": [
-		{"id": "claypit", "name": "§names.builds.bb8593ee2dd8§", "cost": 334, "rewards": [["pot_2", 2], ["ware_1", 1]], "steps": 3},
+		{"id": "claypit", "name": "§names.builds.bb8593ee2dd8§", "cost": 334, "rewards": [["pot_2", 2], ["pot_4", 1]], "steps": 3},
 		{"id": "wheel", "name": "§names.builds.6a17a6e2156e§", "cost": 336, "rewards": [["kiln_1", 1], ["fire_2", 30]], "steps": 3},
-		{"id": "potshelf", "name": "§names.builds.d240058ed94b§", "cost": 338, "rewards": [["pot_4", 1], ["ware_3", 1]], "steps": 3},
+		{"id": "potshelf", "name": "§names.builds.d240058ed94b§", "cost": 338, "rewards": [["pot_4", 1], ["pot_6", 1]], "steps": 3},
 		{"id": "firepit", "name": "§names.builds.c3f72e7eec7a§", "cost": 339, "rewards": [["pot_5", 1], ["fire_2", 40]], "steps": 3},
-		{"id": "kilndome", "name": "§names.builds.5db2ce8e04c8§", "cost": 341, "rewards": [["kiln_1", 1], ["ware_5", 1]], "steps": 4},
-		{"id": "bigjar", "name": "§names.builds.60ac60643fb9§", "cost": 343, "rewards": [["pot_9", 1], ["ware_7", 1], ["chest_1", 1]], "steps": 4}
+		{"id": "kilndome", "name": "§names.builds.5db2ce8e04c8§", "cost": 341, "rewards": [["kiln_1", 1], ["pot_8", 1]], "steps": 4},
+		{"id": "bigjar", "name": "§names.builds.60ac60643fb9§", "cost": 343, "rewards": [["pot_9", 1], ["pot_10", 1], ["chest_1", 1]], "steps": 4}
 	]}
 ]

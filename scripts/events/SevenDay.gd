@@ -36,6 +36,13 @@ static func points() -> int:
 		for task in day["tasks"]:
 			if got(task): total += int(task["points"])
 	return total
+## 剩余时间：从第一天登录（东八区零点）起算，页数那么多天
+static func seconds_left() -> int:
+	var days: Array = state()["days"].keys()
+	days.sort()
+	var first: String = str(days[0]) if not days.is_empty() else str(G.rules.clock.today())
+	var ends: int = int(Time.get_unix_time_from_datetime_string(first + "T00:00:00")) - 28800 + int(config()["days"].size()) * 86400
+	return maxi(0, ends - int(G.now()))
 static func task_count() -> int:
 	var n := 0
 	for day in config()["days"]: n += day["tasks"].size()

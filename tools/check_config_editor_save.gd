@@ -56,12 +56,18 @@ func run() -> void:
 	check(FileAccess.get_sha256(path) == stable_hash and main.board_screen.get_instance_id() == stable_board, "invalid configuration is rejected without a write or session restart")
 	editor.call("_load_pages"); editor.get("_dirty").clear()
 	rules = editor.get("_pages")[path]
+	var stable_bytes := FileAccess.get_file_as_bytes(path)
 	cloud.enabled = true
 	rules["cols"] = original_columns
 	editor.get("_dirty")[path] = true
 	editor.call("_save")
-	check(FileAccess.get_sha256(path) == stable_hash and g.COLS == next_columns, "online Save cannot change files or current gameplay")
+	var online_saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	check(online_saved is Dictionary and int(online_saved["cols"]) == original_columns and g.COLS == next_columns and main.board_screen.get_instance_id() == stable_board, "online Save writes the file without replacing the live session")
 	cloud.enabled = false
+	var restore := FileAccess.open(path, FileAccess.WRITE)
+	restore.store_buffer(stable_bytes)
+	restore.close()
+	load("res://scripts/config/config_files.gd").invalidate()
 	editor.call("_load_pages"); editor.get("_dirty").clear()
 	rules = editor.get("_pages")[path]
 	var state_before: String = replay.digest()

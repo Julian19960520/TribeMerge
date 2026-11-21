@@ -31,6 +31,7 @@ static func normalize(value):
 	return Values.copy(value)
 
 ## 订单补给箱从 10 级缩成 5 级：旧存档里的 6~10 级一律当作 5 级（只改物品 id，就地修改）。
+## 衣服线主产物从 13 级缩成 12 级：旧存档里的 cloth_13 当作 cloth_12。
 static func migrate_ids(state: Dictionary) -> void:
 	var cells = state.get("board")
 	if cells is Array:
@@ -46,6 +47,8 @@ static func migrate_ids(state: Dictionary) -> void:
 static func _migrate_id(id: String) -> String:
 	if id.begins_with("orderbox_") and id.get_slice("_", 1).is_valid_int() and int(id.get_slice("_", 1)) > 5:
 		return "orderbox_5"
+	if id == "cloth_13":
+		return "cloth_12"
 	return id
 
 static func validate(game: Node, state: Dictionary) -> bool:

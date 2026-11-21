@@ -67,6 +67,18 @@ static func live_clock_pill(ci: CanvasItem, sz: Vector2, seed: int = 901) -> voi
 
 # ================================================================ 棋盘活动入口（EventEntryArt）
 
+## 状态小牌底色（以前压在入口图脚下，现在入口改成时间 + 进度条，图留给别处用）
+const PILL := {
+	"num": [Color("fff3d2"), Color("6b3f1d")],
+	"time": [Color("5a3a22"), Color("ffe9a4")],
+	"go": [Color("7cc243"), Color.WHITE],
+	"lock": [Color("9b958b"), Color.WHITE],
+	"teal": [Color("4fa39a"), Color.WHITE],
+	"gold": [Color("ffcf3f"), Color("6b3f1d")],
+	"silver": [Color("dfe3e6"), Color("4a4f55")],
+	"bronze": [Color("e09a5c"), Color("5a2e12")],
+}
+
 static var _grey := false
 static var _xf := Transform2D.IDENTITY
 
@@ -76,11 +88,11 @@ static func _entry_art(out: Array) -> void:
 		for grey in [false, true]:
 			out.append({"key": "ev_entry_%s%s" % [kind, "_grey" if grey else ""], "w": 128, "h": 132, "pad": 12,
 				"draw": func(ci, r): live_entry(ci, kind, grey, r.position + Vector2(64, 120))})
-	for style in EventEntryArt.PILL:
+	for style in PILL:
 		out.append(_e("ev_pill_" + style, Rect2(0, 0, 80, 26), func(ci): live_entry_pill(ci, Rect2(0, 0, 80, 26), style), 6, [14, 13, 14, 13]))
 
 static func live_entry_pill(ci: CanvasItem, r: Rect2, style: String) -> void:
-	var cols: Array = EventEntryArt.PILL.get(style, EventEntryArt.PILL["num"])
+	var cols: Array = PILL.get(style, PILL["num"])
 	Art.fill(ci, Art.rrect(r, 13, 41, 0.5), cols[0], 3)
 	if style in ["go", "gold", "teal"]:
 		ci.draw_line(r.position + Vector2(10, 6), r.position + Vector2(r.size.x - 10, 6), Color(1, 1, 1, 0.45), 3, true)
@@ -104,50 +116,43 @@ static func _c(col: Color) -> Color:
 	var l := col.get_luminance()
 	return Color(l, l, l * 0.96, col.a).lerp(Color("8d877d"), 0.25)
 
+## 入口图统一不描奶白贴纸边：只有墨线外轮廓
 static func _parts(ci: CanvasItem, parts: Array) -> void:
 	for p in parts: p[1] = _c(p[1])
-	Art.sil(ci, parts, true, 3.0)
+	Art.sil(ci, parts, false, 3.0)
 
-## 双人竞速：两根交叉的木棒槌后面立一面兽皮圆盾，左绿右红两半，中间写 VS；脚下一小堆香蕉
+## 双人竞速：两只石轮并排往前滚，前面绿轴的是自己、后面红轴的是对手，身后拖着速度线，脚下扬起尘土
 static func _en_duel(ci: CanvasItem) -> void:
-	var parts := []
-	for sx in [-1.0, 1.0]:
-		var a := Vector2(-44 * sx, -4)
-		var b := Vector2(40 * sx, -100)
-		var rot := (b - a).angle() + PI * 0.5
-		parts.append(Art.P(Art.capsule(a, b, 4.5, 60 + int(sx)), Color("a8693a"), 1))
-		parts.append(Art.P(Art.ell(b, Vector2(11, 17), 62 + int(sx), 0.14, 14, rot), Color("8a5a2b"), 1))
-	var shield := Art.ell(Vector2(0, -52), Vector2(30, 30), 64, 0.03, 26)
-	parts.append(Art.P(shield, Color("e6c98a"), 0))
-	_parts(ci, parts)
-	# 棒槌头上的疙瘩
-	for sx in [-1.0, 1.0]:
-		var b := Vector2(40 * sx, -100)
-		var rot := (b - Vector2(-44 * sx, -4)).angle() + PI * 0.5
-		for k in 3:
-			ci.draw_circle(b + Vector2(-4 + k * 4, -8 + k * 7).rotated(rot), 1.8, Color(0.25, 0.12, 0.04, 0.6))
-	# 盾面：左半绿（自己）右半红（对手），中间一道皮绳
-	var c := Vector2(0, -52)
-	var left := PackedVector2Array()
-	var right := PackedVector2Array()
-	for i in 17:
-		var a := -PI * 0.5 + PI * float(i) / 16.0
-		right.append(c + Vector2(cos(a), sin(a)) * 24.0)
-		left.append(c + Vector2(-cos(a), sin(a)) * 24.0)
-	ci.draw_colored_polygon(left, _c(Art.MOSS))
-	ci.draw_colored_polygon(right, _c(Color("e8673f")))
-	ci.draw_arc(c, 24.0, 0, TAU, 32, Art.INK, 2.2, true)
-	Art.ln(ci, c + Vector2(0, -24), c + Vector2(0, 24), 3.0, Art.INK, 65)
-	for k in 8:
-		var a := TAU * float(k) / 8.0 + 0.2
-		ci.draw_circle(c + Vector2(cos(a), sin(a)) * 27.0, 2.2, _c(Art.LEATHER_D))
-	EventEntryArt.text(ci, "VS", c + Vector2(0, 8), 22, Color.WHITE, 6)
-	for k in 4:
-		var bc := Vector2(-21.0 + k * 14.0, -6.0 + absf(k - 1.5) * 3.0)
-		var rot := -0.5 + k * 0.33
-		Art.dilate(ci, _banana(bc, 28.0, rot), 4.0, Color(1, 0.98, 0.92, 0.96))
-		if _grey: Art.fill(ci, _banana(bc, 28.0, rot), _c(Color("ffd84a")), 2.4)
-		else: Banana.draw(ci, bc, 28.0, rot)
+	var me := Vector2(12, -36)
+	var rival := Vector2(-14, -56)
+	# 速度线（在轮子后面，不出 ±48 的格子）
+	for k in 3:
+		var y := -92.0 + k * 14.0
+		Art.ln(ci, Vector2(-46 + k * 3, y), Vector2(-24 + k * 3, y), 4.2, Art.INK, 200 + k)
+		Art.ln(ci, Vector2(-44 + k * 3, y), Vector2(-26 + k * 3, y), 2.0, _c(Art.BONE), 203 + k)
+	_wheel(ci, rival, 26.0, Art.CLAY, 210)
+	_wheel(ci, me, 34.0, Art.MOSS, 220)
+	# 尘土：两只轮子着地处往后扬
+	if not _grey:
+		for d in [[Vector2(-14, -4), Vector2(11, 7)], [Vector2(-30, -9), Vector2(8, 5)], [Vector2(-40, -20), Vector2(6, 4)]]:
+			Art.fill(ci, Art.ell(d[0], d[1], 230 + int(d[1].x), 0.12, 12), Color("e9d6ae"), 2.0)
+
+## 一只石轮：外圈裹一道彩色兽皮胎（绿 = 自己，红 = 对手），里面是带裂纹的石盘，中间木轴
+static func _wheel(ci: CanvasItem, c: Vector2, r: float, tire: Color, seed: int) -> void:
+	_parts(ci, [Art.P(Art.ell(c, Vector2(r, r), seed, 0.04, 24), tire, 1)])
+	# 胎上的绑绳
+	for k in 6:
+		var a := TAU * float(k) / 6.0 + 0.3
+		Art.ln(ci, c + Vector2(cos(a), sin(a)) * r * 0.74, c + Vector2(cos(a + 0.12), sin(a + 0.12)) * r * 0.98, 2.4, Art.INK, seed + 10 + k)
+	# 石盘
+	var stone := Art.ell(c, Vector2(r * 0.68, r * 0.68), seed + 1, 0.06, 18)
+	Art.fill(ci, stone, _c(Color("c4beb2")), 2.6)
+	ci.draw_arc(c + Vector2(-1, -1), r * 0.52, PI * 1.05, PI * 1.55, 10, Color(1, 1, 1, 0.5), 3.0, true)
+	Art.pl(ci, [c + Vector2(0.18, -0.62) * r, c + Vector2(0.28, -0.42) * r, c + Vector2(0.46, -0.36) * r], 2.0, Art.INK, seed + 2)
+	Art.pl(ci, [c + Vector2(-0.6, 0.2) * r, c + Vector2(-0.4, 0.3) * r, c + Vector2(-0.36, 0.5) * r], 2.0, Art.INK, seed + 3)
+	# 木轴
+	Art.fill(ci, Art.ell(c, Vector2(r * 0.2, r * 0.2), seed + 4, 0.05, 10), _c(Art.WOOD), 2.4)
+	ci.draw_circle(c, r * 0.07, Art.INK)
 
 ## 剑齿虎逃生：贴纸风剑齿虎头，两根长獠牙，眉头皱着，脚下扬起的尘土
 static func _en_tiger(ci: CanvasItem) -> void:
@@ -219,7 +224,7 @@ static func _en_race(ci: CanvasItem) -> void:
 		var rot: float = PI * 0.5 + t
 		bunch.append([rot, stem - Vector2(0.43 * 60.0, 0.6).rotated(rot)])
 	for k in bunch:
-		Art.dilate(ci, _banana(k[1], 60.0, k[0]), 7.0, Color(1, 0.98, 0.92, 0.96))
+		Art.dilate(ci, _banana(k[1], 60.0, k[0]), 3.0, Art.INK)
 	for k in bunch:
 		if _grey:
 			Art.fill(ci, _banana(k[1], 60.0, k[0]), _c(Color("ffd84a")), 3)
@@ -228,7 +233,7 @@ static func _en_race(ci: CanvasItem) -> void:
 	var knob := Art.capsule(stem + Vector2(-2, 6), stem + Vector2(0, -4), 6.5, 53)
 	Art.fill(ci, knob, _c(Color("6b4a2a")), 3)
 
-## 和 Banana.draw 同一个形状，只要轮廓（描白边、置灰用）
+## 和 Banana.draw 同一个形状，只要轮廓（描墨线、置灰用）
 static func _banana(c: Vector2, s: float, rot: float) -> PackedVector2Array:
 	var body := PackedVector2Array()
 	var inner: Array = []

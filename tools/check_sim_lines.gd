@@ -27,7 +27,7 @@ func run() -> void:
 	var totals: Dictionary=bot.production_line_totals()
 	check(totals["gen_total_food"]==6,"level 2 basket plus level 3 basket equals total 6")
 	check(bot.production_line_levels()["gen_max_food"]==3,"highest level is 3 rather than equivalent total 6")
-	check(totals.size()==7 and totals["gen_total_tool"]==0,"all seven lines have independent totals including zero")
+	check(totals.size()==Data.LINES.size() and totals["gen_total_tool"]==0,"every line has an independent total including zero")
 	g.board[2]={"id":"basket_7","lock":1}
 	g.board[3]={"id":"basket_7","lock":2}
 	g.board[4]={"id":"basket_7","lock":3,"bubble":{"expires":g.now()+60}}

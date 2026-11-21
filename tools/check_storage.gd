@@ -29,7 +29,7 @@ func run() -> void:
 	root.add_child(main);main.show_screen("board",true)
 	var p=main.open("inventory")
 	await process_frame
-	check(p.slots.size()==30 and p.scroll.length>p.scroll.size.y,"large storage scrolls with only thirty pooled controls")
+	check(p.slots.size()==40 and p.scroll.length>p.scroll.size.y,"large storage scrolls with a fixed pool of controls")
 	p.scroll.jump_to(3000);p._layout()
 	check(int(p.slots[0].get_meta("slot"))>=95,"scroll recycles controls onto later slots")
 	p._take(124)
@@ -39,7 +39,7 @@ func run() -> void:
 	check(g.inv.size()==124 and g.board[0]["id"]=="fruit_1","take from late storage row reaches free board cell")
 	g.amber=5000
 	await p._expand()
-	check(g.inv_cap==126 and p.unlock.text.contains("290") and p.next_lbl.text=="同排同价，每排 +10","visible expansion keeps the same price within its row")
+	check(g.inv_cap==126 and p.unlock.text.contains("290"),"visible expansion keeps the same price within its row")
 	var tasks=load("res://scripts/events/SevenDay.gd")
 	for day in tasks.config()["days"]:
 		var logins: Array=day["tasks"].filter(func(t):return str(t["metric"])=="login_days")

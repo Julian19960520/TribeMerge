@@ -11,18 +11,17 @@ static func base_flames(lv: int) -> int:
 		return 0
 	return 1 << (lv - 1)
 
+## 产线上主力产物以外的产物（生产器掉得少），难度要按掉率折算
 static func is_sub(ch: String) -> bool:
-	for l in Data.LINES:
-		if str(l.get("sub", "")) == ch:
-			return true
-	return false
+	var l := Data.line_of_product(ch)
+	return not l.is_empty() and Data.primary(l) != ch
 
 ## 这条副产物链的 1 级物品在各级生产器里的平均掉率百分比，用来折算副产物的理论火苗。没有就按 5。
 ## 用平均值而不是第一次出现时的掉率：玩家大部分时间用的是中高级生产器，按最低掉率算会把副产物估得太难。
 static func sub_percent(ch: String) -> float:
 	var needle := "%s_1" % ch
 	for l in Data.LINES:
-		if str(l.get("sub", "")) != ch:
+		if not Data.secondaries(l).has(ch):
 			continue
 		var sum := 0.0
 		var n := 0
@@ -149,8 +148,8 @@ static func _pool(level: int, target: float, allowed: Dictionary = {}, blocked: 
 	var out: Array = []
 	var cheapest: Dictionary = {}
 	for l in Data.unlocked_lines(level):
-		for key in ["main", "sub"]:
-			var ch := str(l.get(key, ""))
+		for ch in Data.products(l):
+			var key := "main" if Data.primary(l) == ch else "sub"
 			if ch == "" or not Data.CHAINS.has(ch) or not Data.product_open(level, ch):
 				continue
 			if not allowed.is_empty() and not allowed.has(ch):

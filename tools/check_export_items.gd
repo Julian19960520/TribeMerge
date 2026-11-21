@@ -40,7 +40,7 @@ func check() -> void:
 		push_error("Item cache did not remain bounded during complete export validation")
 		quit(1)
 		return
-	var board_paths := ["floor", "cracks", "fragments"]
+	var board_paths := ["floor", "cracks", "fragments", "forest_ground"]
 	for frame in 4:
 		board_paths.append("frame_%d" % frame)
 		board_paths.append("rocks_%d" % frame)

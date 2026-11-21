@@ -30,9 +30,51 @@ static func book(tab: int = 0) -> PopupBase:
 		b.extra = func(ci, sz): _book_tab_draw(ci, sz, idx == int(state["line"]), icon, idx)
 		b.set_meta("book_tab", idx)
 		tab_btns.append(b)
-	Popups.live(p, G.changed, func():
-		for button in tab_btns: button.queue_redraw())
 	_book_page(holder, r, int(state["line"]))
+	# 底部两个按钮：材料（各产线的物品）/ 配方（制作产物目录）
+	var mode := {"crafts": false, "cat": 0}
+	# 配方模式右边的大类页签，和产线页签一样大小
+	var cat_btns: Array[TButton] = []
+	for i in Data.CRAFT_GROUPS.size():
+		var idx := i
+		var cicon := str(Data.CRAFT_GROUPS[i].get("icon", ""))
+		var cb := UI.hit(p.box, _book_tab_rect(i, Data.CRAFT_GROUPS.size(), i == 0), func():
+			if idx == int(mode["cat"]):
+				return
+			mode["cat"] = idx
+			_book_place_tabs(cat_btns, idx)
+			_book_crafts(holder, r, mode))
+		cb.extra = func(ci, sz):
+			Sprites.draw(ci, "pop_booktab_on" if idx == int(mode["cat"]) else "pop_booktab_off", Rect2(0, 3, sz.x + 18, sz.y - 6))
+			Art.item(ci, cicon, Vector2(sz.x * 0.5 - 6.0, sz.y * 0.52), 58.0)
+			if _craft_group_has_reward(idx): Paint.badge_num(ci, Vector2(sz.x - 20, 15), 9, 9)
+		cb.visible = false
+		cat_btns.append(cb)
+	var mat_btn := UI.btn(p.box, Rect2(r.get_center().x - 232, r.end.y + 24, 220, 84), TextCatalog.source("ui.itempopups.e140c977bfb9"), "green", Callable(), 32)
+	var rec_btn := UI.btn(p.box, Rect2(r.get_center().x + 12, r.end.y + 24, 220, 84), TextCatalog.source("ui.itempopups.f25ff1efa238"), "grey", Callable(), 32)
+	var switch := func(crafts: bool):
+		if bool(mode["crafts"]) == crafts:
+			return
+		mode["crafts"] = crafts
+		mat_btn.style = "grey" if crafts else "green"
+		rec_btn.style = "green" if crafts else "grey"
+		mat_btn.queue_redraw()
+		rec_btn.queue_redraw()
+		for b in tab_btns: b.visible = not crafts
+		for b in cat_btns: b.visible = crafts
+		if crafts: _book_crafts(holder, r, mode)
+		else: _book_page(holder, r, int(state["line"]))
+	mat_btn.pressed.connect(func(): switch.call(false))
+	rec_btn.pressed.connect(func(): switch.call(true))
+	# 两个按钮右上角的红点：那一边有没领的图鉴奖励
+	var dots := UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
+		if _book_any_line_reward(): Paint.badge_num(ci, mat_btn.position + Vector2(mat_btn.size.x - 10, 8), 9, 9)
+		if _craft_group_has_reward(-1): Paint.badge_num(ci, rec_btn.position + Vector2(rec_btn.size.x - 10, 8), 9, 9))
+	dots.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	Popups.live(p, G.changed, func():
+		for button in tab_btns: button.queue_redraw()
+		for button in cat_btns: button.queue_redraw()
+		dots.queue_redraw())
 	var heading := UI.title(p.box, TextCatalog.source("ui.homescreen.06169ded8b7b"), Rect2(br.position.x + 16, br.position.y + 2, br.size.x - 32, br.size.y - 6), 40, Color.WHITE)
 	var x := UI.hit(p.box, Rect2(r.end.x - 52, r.position.y - 24, 70, 70), p.close)
 	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
@@ -67,10 +109,27 @@ static func _book_has_reward(line_i: int) -> bool:
 		for id in Data.DISHES:
 			if G.rules.board.book_prize(str(id)): return true
 	elif line_i >= 0 and line_i < Data.LINES.size():
-		for key in ["gen", "main", "sub"]:
-			var chain := str(Data.LINES[line_i][key])
+		for chain in [str(Data.LINES[line_i]["gen"])] + Data.products(Data.LINES[line_i]):
 			for lv in Data.CHAINS[chain]["items"].size():
 				if G.rules.board.book_prize("%s_%d" % [chain, lv + 1]): return true
+	return false
+
+static func _book_any_line_reward() -> bool:
+	for i in Data.LINES.size() + 1:
+		if _book_has_reward(i): return true
+	return false
+
+## 配方大类里有没有做出来还没领奖的配方；group 为 -1 时看全部
+static func _craft_group_has_reward(group: int) -> bool:
+	var cats := {}
+	if group >= 0 and group < Data.CRAFT_GROUPS.size():
+		for cid in Data.CRAFT_GROUPS[group]["categories"]:
+			cats[str(cid)] = true
+	for cat in Data.CRAFTS:
+		if group >= 0 and not cats.has(str(cat["id"])):
+			continue
+		for row in cat["items"]:
+			if G.rules.board.book_prize(str(row["id"])): return true
 	return false
 
 ## 每条产线右缘页签上的图。
@@ -84,11 +143,108 @@ static func _book_icon(line: Dictionary) -> String:
 		"fire": "hearth_5",
 		"wood": "furn_10",
 		"pot": "pot_6",
+		"fish": "fish_7",
 	}
 	var id := str(line.get("id", ""))
 	if known.has(id):
 		return str(known[id])
 	return "%s_1" % str(line.get("gen", "fruit"))
+
+## 配方页：一个大类一页，里面按小类用分隔线隔开，每行 4 格。点开看材料和制作时间
+static func _book_crafts(holder: Control, r: Rect2, mode: Dictionary) -> void:
+	for c in holder.get_children():
+		holder.remove_child(c)
+		c.queue_free()
+	if Data.CRAFT_GROUPS.is_empty():
+		return
+	var group: Dictionary = Data.CRAFT_GROUPS[clampi(int(mode["cat"]), 0, Data.CRAFT_GROUPS.size() - 1)]
+	var by_id := {}
+	for cat in Data.CRAFTS:
+		by_id[str(cat["id"])] = cat
+	var top := r.position.y + 58
+	var sc := Scroller.new()
+	sc.position = Vector2(0, top)
+	sc.size = Vector2(630, r.end.y - 20 - top)
+	holder.add_child(sc)
+	var page := sc.content
+	var mid := _book_cell_x(r, 0) + 126.0 * 1.5
+	var y := 16.0
+	for cid in group["categories"]:
+		if not by_id.has(str(cid)):
+			continue
+		var cat: Dictionary = by_id[str(cid)]
+		var items: Array = cat["items"]
+		var known := 0
+		for row in items:
+			if G.discovered.has(str(row["id"])): known += 1
+		Popups.section(page, TextCatalog.fill(TextCatalog.source("ui.itempopups.2a16b06f2781"), [str(cat["name"]), known, items.size()]), y, Color("8a5a30"), mid)
+		y += 52.0
+		for k in items.size():
+			var row: Dictionary = items[k]
+			var cell := Rect2(_book_cell_x(r, k % 4) - 52, y + float(k / 4) * 116.0, 104, 104)
+			_craft_slot(page, cell, row)
+		y += ceilf(items.size() / 4.0) * 116.0 + 26.0
+	sc.set_length(y)
+	_book_focus_reward(sc)
+	holder.modulate.a = 0.0
+	holder.create_tween().tween_property(holder, "modulate:a", 1.0, 0.15)
+
+## 配方格子：没做出来过画问号；做出来了先是礼物，点了领体力，之后才显示图。名字一直显示，点开能看配方
+static func _craft_slot(page: Control, cell: Rect2, row: Dictionary) -> void:
+	var item_id := str(row["id"])
+	var slot := {"b": null}
+	var hit := UI.hit(page, cell, func():
+		var b: TButton = slot["b"]
+		if not G.rules.board.book_prize(item_id):
+			G.main._attach_popup(craft_info(row))
+			return
+		var fire: int = await G.claim_book(item_id)
+		if fire <= 0:
+			return
+		if is_instance_valid(b): b.queue_redraw()
+		Sfx.play("coin")
+		var from := b.get_global_rect().get_center() if is_instance_valid(b) else Vector2(360, 700)
+		RewardPresenter.present([["fire_2", fire]], func(_k): return from))
+	slot["b"] = hit
+	hit.set_meta("book_item", item_id)
+	hit.extra = func(ci, sz):
+		ShopPopups._slot(ci, Rect2(Vector2.ZERO, sz), Color("ecd9b3"))
+		if not G.discovered.has(item_id):
+			ci.draw_string(G.font_title, Vector2(sz.x * 0.5 - 14, sz.y * 0.40 + 18), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 48, Color(0.7, 0.55, 0.35, 0.6))
+		elif G.rules.board.book_prize(item_id):
+			Paint.gift(ci, Vector2(sz.x * 0.5, sz.y * 0.40), 64)
+		elif Items.has_ai(item_id) or Items.has_animation(item_id):
+			# 矢量烘焙图比生图图标留白多，画大一点让两种图看着一样大
+			Art.item(ci, item_id, Vector2(sz.x * 0.5, sz.y * 0.40), 68.0 if Items.has_ai(item_id) else 86.0)
+	var name := UI.lbl(page, str(row["name"]), Rect2(cell.position.x + 4, cell.position.y + cell.size.y - 30, cell.size.x - 8, 26), 16, Color("6b4a2a") if G.discovered.has(item_id) else Color("a08a6a"))
+	name.autowrap_mode = TextServer.AUTOWRAP_OFF
+	name.clip_text = true
+	name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+## 一个配方的详情：要的材料（点了看物品详情）、制作时间、几级开放
+static func craft_info(row: Dictionary) -> PopupBase:
+	var p := PopupBase.new()
+	var mats: Array = row["mats"]
+	var r := Rect2(70, 420, 580, 600)
+	Popups.frame(p, r, str(row["name"]), Art.OCHRE)
+	var craft_id := str(row["id"])
+	UI.box(p.box, Rect2(r.get_center().x - 70, r.position.y + 70, 140, 140), func(ci, sz, iid = craft_id):
+		ShopPopups._slot(ci, Rect2(Vector2.ZERO, sz), Color("ecd9b3"))
+		if G.discovered.has(iid) and (Items.has_ai(iid) or Items.has_animation(iid)):
+			Art.item(ci, iid, sz * 0.5, 108.0 if Items.has_ai(iid) else 136.0)
+		else:
+			ci.draw_string(G.font_title, Vector2(sz.x * 0.5 - 18, sz.y * 0.5 + 22), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 64, Color(0.7, 0.55, 0.35, 0.45)))
+	Popups.section(p.box, TextCatalog.source("ui.itempopups.f945c2740722"), r.position.y + 236, Color("8a5a30"), r.get_center().x)
+	var entries: Array = []
+	for m in mats:
+		entries.append({"id": str(m)})
+	var y := _info_item_grid(p.box, entries, r.position.y + 290, r.get_center().x)
+	var open := Data.craft_unlock(mats)
+	UI.lbl(p.box, TextCatalog.fill(TextCatalog.source("ui.itempopups.9567bc7caaee"), Data.secs_text(int(row.get("secs", 60)))), Rect2(r.position.x, y + 16, r.size.x, 40), 28, Art.INK)
+	UI.lbl(p.box, TextCatalog.fill(TextCatalog.source("ui.itempopups.d8682c3c5305"), open) if open > 0 else TextCatalog.source("ui.progressionpopups.d82d79ae2707"), Rect2(r.position.x, y + 58, r.size.x, 34), 22, Color("a08060"))
+	return p
 
 static func _book_cell_x(r: Rect2, col: int) -> float:
 	return r.position.x + 122.0 + float(col) * 126.0
@@ -111,8 +267,8 @@ static func _book_page(holder: Control, r: Rect2, line_i: int) -> void:
 	var page := sc.content
 	var y := 16.0
 	y = _book_chain(page, r, str(line["gen"]), y)
-	y = _book_chain(page, r, str(line["main"]), y)
-	y = _book_chain(page, r, str(line["sub"]), y)
+	for ch in Data.products(line):
+		y = _book_chain(page, r, str(ch), y)
 	sc.set_length(y + 8.0)
 	_book_focus_reward(sc)
 	holder.modulate.a = 0.0

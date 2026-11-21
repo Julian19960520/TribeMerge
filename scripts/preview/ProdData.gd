@@ -1,7 +1,7 @@
 class_name ProdData
 extends RefCounted
 ## 预览界面用的产线视图。数据本身在 Data.LINES / Data.CHAINS，这里只换成预览需要的形状：
-## 每条产线 = 生产器链 G + 主产物链 M + 副产物链 S。
+## 每条产线 = 生产器链 G + 主力产物链 M + 第一条其余产物链 S（没有时为空）。
 
 static var LINES: Array = _build()
 
@@ -9,10 +9,14 @@ static func _build() -> Array:
 	var out := []
 	for l in Data.LINES:
 		var g: Dictionary = Data.CHAINS[l["gen"]]
+		var main := Data.primary(l)
+		var subs := Data.secondaries(l)
+		var sub := str(subs[0]) if not subs.is_empty() else ""
 		out.append({
 			"id": l["id"], "name": l["name"], "gen": g["name"], "gen_id": l["gen"], "idle": _leading_idle(l["gen"], g["items"].size()),
-			"main_name": Data.CHAINS[l["main"]]["name"], "sub_name": Data.CHAINS[l["sub"]]["name"],
-			"G": g["items"], "M": Data.CHAINS[l["main"]]["items"], "S": Data.CHAINS[l["sub"]]["items"],
+			"main_name": Data.CHAINS[main]["name"], "sub_name": Data.CHAINS[sub]["name"] if sub != "" else "",
+			"main_id": main, "sub_id": sub,
+			"G": g["items"], "M": Data.CHAINS[main]["items"], "S": Data.CHAINS[sub]["items"] if sub != "" else [],
 		})
 	return out
 

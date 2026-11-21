@@ -56,6 +56,7 @@ func _ready() -> void:
 	, false)
 	var back = UI.btn(self, Rect2(16, 34, 120, 72), TextCatalog.source("developer.cfgedit.572cf45ba436"), "hide", _on_back, 28)
 	back.title_font = false
+	back.z_index = 4
 	_title = UI.lbl(self, TextCatalog.source("developer.plugin.148d195e21b0"), Rect2(148, 34, 326, 72), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_LEFT, 8, Art.INK, true)
 	_save_btn = UI.btn(self, Rect2(482, 34, 222, 72), TextCatalog.source("developer.cfgedit.4aed33021440"), "green", _save, 21)
 	_save_btn.title_font = false
@@ -141,8 +142,17 @@ func _page_path(page: String) -> String:
 func _refresh_save() -> void:
 	var path = _page_path(str(_cur()["page"]))
 	_save_btn.visible = path != ""
-	_save_btn.text = TextCatalog.resolve(TextCatalog.source("developer.cfgedit.3a7f151ae221") if path != "" and _dirty.has(path) else TextCatalog.source("developer.cfgedit.4aed33021440"))
-	_save_btn.enabled = not Cloud.enabled
+	var dirty: bool = path != "" and _dirty.has(path)
+	var label := TextCatalog.source("developer.cfgedit.3a7f151ae221") if dirty else TextCatalog.source("developer.cfgedit.4aed33021440")
+	# A live cloud session cannot be replaced, so this button only writes the file.
+	if Cloud.enabled:
+		label = TextCatalog.source("developer.host.59ce804379ac")
+	var shown := TextCatalog.resolve(label)
+	if Cloud.enabled and dirty:
+		shown += "*"
+	_save_btn.text = shown
+	_save_btn.enabled = true
+	_save_btn.z_index = 4
 	_save_btn.queue_redraw()
 
 func _cur() -> Dictionary:
@@ -610,9 +620,6 @@ func _swap(arr: Array, i: int, dir: int) -> void:
 	arr[j] = tmp
 
 func _save() -> void:
-	if Cloud.enabled:
-		G.main.toast(TextCatalog.source("developer.cfgedit.9beb80ac95f9"))
-		return
 	var path := _page_path(str(_cur()["page"]))
 	if path == "": return
 	var paths: Array = [path]
@@ -636,6 +643,19 @@ func _save() -> void:
 	var originals := Files.capture_files(changes.keys())
 	if originals.size() != changes.size():
 		G.main.toast(TextCatalog.source("developer.cfgedit.9efd0e06b0e1"))
+		return
+	if Cloud.enabled:
+		# The live networked session stays. The file is what the next new game reads.
+		var cloud_error := Files.write_batch(changes)
+		var cloud_refreshed := cloud_error == OK and Data.refresh()
+		if not cloud_refreshed:
+			var cloud_restored := Files.restore_files(originals) and Data.refresh()
+			G.main.toast(TextCatalog.source("developer.cfgedit.4bd6f7ff1495") if cloud_restored else TextCatalog.source("developer.cfgedit.1ed234f83b2b"))
+			return
+		for candidate in changes:
+			_dirty.erase(candidate)
+		_refresh_save()
+		G.main.toast(TextCatalog.fill(TextCatalog.source("developer.host.da351f64b0f5"), path))
 		return
 	G.main.prepare_session_restart()
 	var error := Files.write_batch(changes)

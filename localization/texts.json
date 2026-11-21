@@ -5,20 +5,20 @@
     "zh_CN"
   ],
   "stats": {
-    "unique_texts": 1884,
+    "unique_texts": 2360,
     "translated": {
-      "zh_CN": 1884
+      "zh_CN": 2360
     }
   },
   "files": [
     "texts/cards/album.json",
     "texts/cards/albums.json",
     "texts/content/activity_schedule.json",
+    "texts/content/crafts.json",
     "texts/content/daily_deals.json",
     "texts/content/fossil_dig.json",
     "texts/content/gift_chain.json",
     "texts/content/merge_events.json",
-    "texts/content/onboarding.json",
     "texts/content/people.json",
     "texts/content/portraits.json",
     "texts/content/race.json",

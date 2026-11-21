@@ -115,11 +115,9 @@ func _ensure_unlocks() -> Dictionary:
 		if not (line is Dictionary):
 			continue
 		var from_lv = maxi(1, int(line.get("unlock", 1)))
-		for key in ["main", "sub"]:
-			var cid = str(line.get(key, ""))
-			if cid == "":
-				continue
-			var start = from_lv if key == "main" else Data.sub_unlock_level(from_lv)
+		var main_cid := Data.primary(line)
+		for cid in Data.products(line):
+			var start = from_lv if cid == main_cid else Data.sub_unlock_level(from_lv)
 			var row: Dictionary = by_id.get(cid, {})
 			if row.is_empty():
 				row = {"id": cid, "open": []}
@@ -204,9 +202,8 @@ func _story_default_item(level: int) -> String:
 	for line in editor._pages[Files.LINES]:
 		if not (line is Dictionary):
 			continue
-		for key in ["main", "sub"]:
-			var cid = str(line.get(key, ""))
-			if cid != "" and _editor_product_open(level, cid):
+		for cid in Data.products(line):
+			if _editor_product_open(level, cid):
 				return "%s_1" % cid
 	return "fruit_2"
 
