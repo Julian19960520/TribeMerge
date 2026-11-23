@@ -96,9 +96,9 @@ func run() -> void:
 	check(Race.join().get("ok", false), "race joined")
 	check(not Duel.local_action("join").has("error"), "duel joined")
 	check(not Tiger.local_action("join").has("error"), "tiger joined")
-	check(int(Race.state()["current"]["group"].get("pv", 1)) == AP.VERSION and int(Duel.state()["match"].get("pv", 1)) == AP.VERSION and int(Tiger.round_state().get("pv", 1)) == AP.VERSION, "new rounds are tagged pv=%d" % AP.VERSION)
-	check(int(Race.state()["current"]["group"]["target"]) == 750 and int(Duel.state()["match"]["target"]) == 5400 and int(Tiger.round_state()["stages"][0]["points"]) == 1800, "targets: race 750, duel 5400, tiger stage1 1800")
-	check(Duel.state()["match"]["opponent_curve"].size() == Duel.CURVE_STEPS and int(Duel.state()["match"]["opponent_curve"].back()[1]) == 5400, "duel opponent curve in %d steps up to 5400" % Duel.CURVE_STEPS)
+	check(int(Race.state()["current"]["group"].get("pv", 1)) == AP.VERSION and int(Duel.state()["match"].get("pv", 1)) == Duel.DUEL_PV and int(Tiger.round_state().get("pv", 1)) == AP.VERSION, "new rounds are tagged pv")
+	check(int(Race.state()["current"]["group"]["target"]) == 750 and int(Duel.state()["match"]["target"]) == 30 and int(Tiger.round_state()["stages"][0]["points"]) == 1800, "targets: race 750, duel round1 30, tiger stage1 1800")
+	check(Duel.state()["match"]["opponent_curve"].size() == 30 and int(Duel.state()["match"]["opponent_curve"].back()[1]) == 30, "duel round1 opponent curve in 30 steps up to 30")
 
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
@@ -118,7 +118,7 @@ func run() -> void:
 	var r: Dictionary = await replay.perform("drop", {"from": 30, "to": 31})
 	var after := _scores()
 	check(str(r.get("kind", "")) == "merge", "merged to %s_8" % ch)
-	check(after[0] - before[0] == 300 and after[1] - before[1] == 300 and after[2] - before[2] == 300, "lv8 merge: race/duel/tiger each +300 (%s → %s)" % [before, after])
+	check(after[0] - before[0] == 300 and after[1] - before[1] == 8 and after[2] - before[2] == 300, "lv8 merge: race/tiger +300, duel +8 (%s → %s)" % [before, after])
 	var fx_count := 0
 	for c in main.fx_layer.get_children():
 		if c.get_script() == bs._activity_row.ActivityPointsFx: fx_count += 1
@@ -149,9 +149,10 @@ func run() -> void:
 	before = _scores()
 	bs._on_deliver(0)
 	after = _scores()
-	var d0: int = after[1] - before[1]
-	check(d0 >= 200 and d0 <= 600 and after[0] == mini(750, before[0] + d0), "order: race and duel each +%d (%s → %s, duel %s, tiger %s)" % [d0, before, after, Duel.state()["match"]["status"], Tiger.round_state()["status"]])
-	check(after[3] > before[3] or after[2] - before[2] == d0, "order: tiger +%d (%s → %s)" % [d0, before, after])
+	var d_race: int = after[0] - before[0]
+	var d_duel: int = after[1] - before[1]
+	check(d_race >= 200 and d_race <= 600 and d_duel >= 10 and d_duel <= 45, "order: race +%d, duel +%d (%s → %s, duel %s, tiger %s)" % [d_race, d_duel, before, after, Duel.state()["match"]["status"], Tiger.round_state()["status"]])
+	check(after[3] > before[3] or after[2] - before[2] == d_race, "order: tiger +%d (%s → %s)" % [d_race, before, after])
 	main.close_all()
 	if main.get("_guide") != null and is_instance_valid(main._guide): main._guide.visible = false
 	await create_timer(0.3).timeout
@@ -171,13 +172,16 @@ func run() -> void:
 	await _shot("order_fx")
 	await create_timer(1.4).timeout
 
-	# 篝火竞速这一下正好到线：竞速收满，双人竞速和剑齿虎照样加分
+	# 篝火竞速这一下正好到线：竞速收满，pv=2老双人竞速和剑齿虎照样加分
 	Race.state()["current"]["group"]["members"][0]["score"] = 300.0
+	Duel.state()["match"]["pv"] = AP.VERSION
+	Duel.state()["match"]["status"] = "running"
+	Duel.state()["match"]["target"] = 5400
 	Duel.state()["match"]["me"] = 300
 	before = _scores()
 	var gains: Array = AP.grant(450)
 	after = _scores()
-	check(after[0] == 750 and after[1] - before[1] == 450 and (after[2] - before[2] == 450 or after[3] > before[3]), "race hits 750 on the same grant; duel/tiger still +450 (%s → %s, gains %s)" % [before, after, gains])
+	check(after[0] == 750 and after[1] - before[1] == 450 and (after[2] - before[2] == 450 or after[3] > before[3]), "race hits 750 on the same grant; pv=2 duel/tiger still +450 (%s → %s, gains %s)" % [before, after, gains])
 
 	# 老局：没有 pv 的局还按旧规则（交单 +1 / 合成不加）
 	var tm: Dictionary = Tiger.round_state()

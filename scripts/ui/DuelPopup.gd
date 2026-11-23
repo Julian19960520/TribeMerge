@@ -69,11 +69,12 @@ func _new_panel(next: String) -> void:
 
 func _refresh() -> void:
 	if _closing: return
+	DuelRace.sync_window()
 	var next:=_phase()
 	if phase!=next: _new_panel(next)
 	var s:=DuelRace.state()
 	var m: Dictionary=s["match"]
-	var sig:=str([phase,m.get("status","idle"),m.get("me",0),m.get("opponent",0),m.get("claimed",false),s["wins"],s["claimed"]])
+	var sig:=str([phase,m.get("status","idle"),m.get("me",0),m.get("opponent",0),m.get("claimed",false),s["wins"],s["rounds"],s["claimed"],s.get("window","")])
 	if sig==signature: return
 	signature=sig
 	for child in body.get_children(): body.remove_child(child); child.queue_free()
@@ -85,7 +86,7 @@ func _refresh() -> void:
 
 func _start_panel(s: Dictionary) -> void:
 	var again:=int(s.get("rounds",0))>0
-	var target:=int(DuelRace.config()["target"])
+	var target:=DuelRace.next_target()
 	UI.title(body,TextCatalog.source("ui.duelpopup.3aa4e43552f6") if again else TextCatalog.source("ui.duelpopup.b39a809b3c20"),Rect2(90,322,540,56),38,Art.FIRE2)
 	# 对阵擂台：你 VS 未知对手
 	UI.box(body,Rect2(90,388,540,196),func(ci,sz):

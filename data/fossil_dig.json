@@ -1,9 +1,11 @@
 {
   "title": "§ui.fossildigentry.64311488dd2a§",
   "unlock_level": 7,
-  "shovels_per_order": 3,
+  "shovels_per_order": 1,
+  "energy_per_shovel": 120,
+  "tap_drop_chance": 0.05,
   "dig_cost": 1,
-  "stages": 10,
+  "stages": 6,
   "shapes": [
     {"kind": "limb", "name": "§content.fossil_dig.bec1a891ea03§", "w": 1, "h": 2},
     {"kind": "spine", "name": "§content.fossil_dig.08741726d9f9§", "w": 1, "h": 3},
@@ -15,10 +17,11 @@
     {"kind": "ribs", "name": "§content.fossil_dig.910c593b4c46§", "w": 2, "h": 4}
   ],
   "milestones": [
-    {"bones": 2, "rewards": [["fire_2", 20], ["shell_2", 100]]},
-    {"bones": 9, "rewards": [["amber_2", 10], ["sand_2", 5]]},
-    {"bones": 20, "rewards": [["fire_2", 50], ["chest_1", 1]]},
-    {"bones": 35, "rewards": [["amber_2", 25], ["choice_1", 1]]},
-    {"bones": 65, "rewards": [["fire_2", 100], ["amber_2", 50], ["choice_1", 2]]}
+    {"bones": 2, "rewards": [["sand_2", 20], ["fire_2", 20]]},
+    {"bones": 5, "rewards": [["sand_2", 30], ["orderbox_1", 1]]},
+    {"bones": 9, "rewards": [["sand_2", 30], ["orderbox_2", 1]]},
+    {"bones": 14, "rewards": [["fire_2", 40], ["orderbox_2", 1], ["pack_3", 1]]},
+    {"bones": 20, "rewards": [["sand_2", 30], ["premiumbox_2", 1], ["pack_4", 1]]},
+    {"bones": 27, "rewards": [["fire_2", 125], ["amber_2", 15], ["pack_5", 1]]}
   ]
 }

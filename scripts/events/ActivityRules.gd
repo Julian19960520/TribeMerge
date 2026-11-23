@@ -12,7 +12,7 @@ static func registry() -> Array:
 				"order": func(_o): SevenDay.record("orders", 1), "visible": func(): return G.rules.progression.feature_unlocked(Data.feature_level("seven")), "entry_order": 2},
 			{"id": "merge", "initialize": _initialize_merge, "order": MergeEvent.on_order,
 				"visible": func(): return MergeEvent.available(MergeEvent.current()), "entry_order": 1},
-			{"id": "duel", "field": "duel_race", "initial": func(): return {"wins": 0, "rounds": 0, "claimed": [], "match": {}},
+			{"id": "duel", "initialize": DuelRace.initialize,
 				"tick": DuelRace.tick, "tick_order": 1, "order": DuelRace.on_order, "visible": DuelRace.visible, "entry_order": 3},
 			{"id": "tiger", "field": "tiger_escape", "initial": func(): return {"rounds": 0, "round": {}},
 				"tick": TigerEscape.tick, "tick_order": 0, "order": TigerEscape.on_order, "visible": TigerEscape.visible, "entry_order": 4},
@@ -53,11 +53,15 @@ static func on_order(order: Dictionary) -> void:
 	for definition in registry():
 		if definition.has("order"): definition["order"].call(order)
 	var gains: Array = ActivityPoints.grant(ActivityPoints.order_points(order))
+	var duel_pts := DuelRace.order_score(order)
+	if DuelRace.add_duel_points(duel_pts): gains.append({"id": "duel", "n": duel_pts})
 	if not gains.is_empty(): G.present("activity_points", {"source": "order", "gains": gains})
 
 ## 合成：合出高级物品给活动积分，界面从这一格冒分飞进活动入口。
 static func on_merge(id: String, cell: int) -> void:
 	var gains: Array = ActivityPoints.grant(ActivityPoints.merge_points(id))
+	var duel_pts := DuelRace.merge_score(id)
+	if DuelRace.add_duel_points(duel_pts): gains.append({"id": "duel", "n": duel_pts})
 	if not gains.is_empty(): G.present("activity_points", {"source": "merge", "cell": cell, "gains": gains})
 
 static func board_entries() -> Array:

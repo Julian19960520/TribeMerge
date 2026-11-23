@@ -15,36 +15,51 @@ func run() -> void:
 	check(duel.local_action("join").has("error"),"locked player cannot join")
 	g.level=int(JSON.parse_string(FileAccess.get_file_as_string("res://data/duel_race.json"))["unlock_level"])
 	check(duel.order_points({"items":["fruit_1"]})==1 and duel.order_points({"items":["fruit_8"]})==4,"legacy rounds: difficulty uses configured order points")
+	# 新版订单按难度给分（10~45）
+	var easy_pts: int = duel.order_score({"items":["fruit_1"]})
+	var hard_pts: int = duel.order_score({"items":["fruit_10"]})
+	check(easy_pts>=10 and hard_pts<=45 and hard_pts>easy_pts,"order_score scales with difficulty (%d < %d)" % [easy_pts, hard_pts])
 	check(duel.local_action("milestone",2).has("error"),"cannot claim wins in advance")
+	var expected_targets := [30, 60, 100, 150, 210, 280, 360, 400, 400, 400, 400, 400]
+	var first_opp_end := 0.0
+	var last_opp_end := 0.0
 	for round_id in 12:
 		check(not (await duel.act("join")).has("error"),"join round %d"%(round_id+1))
 		check(duel.local_action("join").has("error"),"active round cannot be overwritten")
 		check(duel.local_action("claim").has("error"),"unfinished round cannot pay")
-		# 新局记活动积分（ActivityPoints）：直接按单记分的老入口不再加分
+		# 新局（pv=3）忽略老入口和 200~600 通用积分入口
 		duel.on_order({"items":["fruit_8"]})
 		check(int(duel.state()["match"]["me"])==0,"new rounds ignore legacy per-order points")
+		check(not duel.add_points(300),"pv=3 duel ignores legacy 200~600 activity points")
 		var target:=int(duel.state()["match"]["target"])
-		for i in int(ceil(target/600.0)): duel.add_points(600)
+		check(target==expected_targets[round_id],"round %d target is %d (got %d)"%[round_id+1,expected_targets[round_id],target])
+		var opp_end := float(duel.state()["match"]["opponent_curve"].back()[0])
+		if round_id == 0: first_opp_end = opp_end
+		if round_id == 11: last_opp_end = opp_end
+		for i in int(ceil(target/30.0)): duel.add_duel_points(30)
 		var s: Dictionary=duel.state()
 		check(s["match"]["status"]=="won" and int(s["wins"])==round_id+1,"first to target wins exactly once")
-		check(not duel.add_points(600),"settled match takes no more points")
+		check(not duel.add_duel_points(30),"settled match takes no more points")
 		duel.tick()
 		check(int(s["wins"])==round_id+1,"settled match cannot add another win")
-		var before: int=g.shells
+		var before_e: int=g.energy
+		var before_stash: int=g.stash.size()
 		await duel.act("claim")
-		check(g.shells==before+240,"winner receives configured coins")
-		check((await duel.act("claim")).has("error") and g.shells==before+240,"duplicate reward blocked")
+		check(g.energy==before_e+10 and g.stash.size()==before_stash+1,"winner receives 10 energy + 1 chest")
+		check((await duel.act("claim")).has("error") and g.energy==before_e+10,"duplicate reward blocked")
+	check(last_opp_end > first_opp_end * 2.0,"opponent duration scales up with target (%.0fs -> %.0fs)"%[first_opp_end,last_opp_end])
 	check(duel.ready_milestones()==[2,5,8,12],"all four milestones visible and claimable")
 	for at in [2,5,8,12]:
 		check(not (await duel.act("milestone",at)).has("error"),"claim %d wins"%at)
 		check((await duel.act("milestone",at)).has("error"),"milestone only once")
+	check("premiumbox_1" in g.stash and "fire_3" in g.stash and "fire_4" in g.stash and "premiumbox_3" in g.stash and "scissors_1" in g.stash,"milestone physical rewards delivered to stash")
 	await duel.act("join")
-	g.simulation_time+=4000
-	duel.add_points(600)
+	g.simulation_time+=5000
+	duel.add_duel_points(30)
 	check(duel.state()["match"]["status"]=="lost" and duel.state()["wins"]==12,"elapsed opponent finish wins before late player order")
-	var coins: int=g.shells
+	var e_before: int=g.energy
 	await duel.act("claim")
-	check(g.shells==coins+60,"loser receives smaller configured reward")
+	check(g.energy==e_before+10,"loser receives 10 energy reward")
 	g.simulation_time=-1
 	g.save_game()
 	g.duel_race={}

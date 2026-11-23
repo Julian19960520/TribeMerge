@@ -20,16 +20,33 @@ static func slot_of(activity: String) -> Dictionary:
 	return {}
 
 ## 某档在 at 时刻的这一期：{"slot", "index", "starts", "ends", "activity", "key"}。
+## rotation 里单个活动可配 hours 覆盖 period_hours（如双人竞速 20 小时）。
 static func window(slot: Dictionary, at := -1.0) -> Dictionary:
 	if slot.is_empty(): return {}
 	if at < 0: at = G.now()
-	var period := maxf(1.0, float(slot.get("period_hours", 24))) * 3600.0
 	var start := _start()
-	var index := int(floor((at - start) / period))
 	var rotation: Array = slot.get("rotation", [])
 	if rotation.is_empty(): return {}
-	var row: Dictionary = rotation[posmod(index, rotation.size())]
-	return {"slot": str(slot["id"]), "index": index, "starts": start + index * period, "ends": start + (index + 1) * period,
+	var durations: Array[float] = []
+	var cycle := 0.0
+	for row in rotation:
+		var sec := maxf(1.0, float(row.get("hours", slot.get("period_hours", 24)))) * 3600.0
+		durations.append(sec)
+		cycle += sec
+	var elapsed := at - start
+	var cycle_idx := int(floor(elapsed / cycle))
+	var offset := elapsed - float(cycle_idx) * cycle
+	var acc := 0.0
+	var pos := 0
+	for i in rotation.size():
+		if offset < acc + durations[i] or i == rotation.size() - 1:
+			pos = i
+			break
+		acc += durations[i]
+	var index := cycle_idx * rotation.size() + pos
+	var row: Dictionary = rotation[pos]
+	var starts := start + float(cycle_idx) * cycle + acc
+	return {"slot": str(slot["id"]), "index": index, "starts": starts, "ends": starts + durations[pos],
 		"activity": str(row["activity"]), "key": "%s:%d" % [slot["id"], index]}
 
 ## 活动当前是否在自己的档期里（可以开新局、可以获得进度）。不在档里的活动总是开放。

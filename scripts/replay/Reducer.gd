@@ -271,7 +271,8 @@ func tap(i: int) -> Dictionary:
 		if Data.gen_stats(id).is_empty() or G.rules.board.gen_left(i) == 0: return {"error": TextCatalog.source("notice.reducer.adb84d88ec3d")}
 		var to := G.rules.board.find_empty_near(i)
 		if to < 0: return {"error": TextCatalog.source("notice.reducer.cf76442736ea")}
-		if t == "gen" and not G.rules.progression.spend("energy", G.rules.board.gen_cost()): return {"error": TextCatalog.source("notice.reducer.2eea6537a85c")}
+		var energy_cost := G.rules.board.gen_cost() if t == "gen" else 0
+		if t == "gen" and not G.rules.progression.spend("energy", energy_cost): return {"error": TextCatalog.source("notice.reducer.2eea6537a85c")}
 		G.rules.board.gen_use(i)
 		var out := G.rules.onboarding.scripted_drop(id)
 		var scripted := out != ""
@@ -282,6 +283,9 @@ func tap(i: int) -> Dictionary:
 		G.rules.board.discover(out); G.board[to]["id"] = out
 		var made := {"kind": "produce", "id": out, "to": to}
 		if not lucky.is_empty(): made["lucky"] = int(lucky["steps"])
+		if t == "gen" and not scripted and energy_cost > 0:
+			var shovels := FossilDig.on_produce(energy_cost, i)
+			if shovels > 0: made["fossil_shovels"] = shovels
 		return made
 	if t in ["energy", "shell", "amber", "sand"]:
 		var n := Data.value_of(id)

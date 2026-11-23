@@ -188,7 +188,8 @@ static func _chips(o: Dictionary) -> Array:
 	if rw.has("token") and int(rw["token"]) > 0:
 		out.append([CHIP_ICON["token"], int(rw["token"])])
 	if int(rw.get("sand", 0)) > 0: out.append(["sand_2", int(rw["sand"])])
-	if FossilDig.earning(): out.append(["fossil_shovel", int(FossilDig.config()["shovels_per_order"])])
+	if FossilDig.earning(): out.append(["fossil_shovel", FossilDig.order_shovels(o)])
+	if DuelRace.active_v3(): out.append(["duel_points", DuelRace.order_score(o)])
 	return out
 
 ## 图标占左侧，胶囊右端贴着数字。一位数比原来的 56 窄，位数多了再变宽。
@@ -291,6 +292,7 @@ func _paint_rewards(ci: CanvasItem, sz: Vector2) -> void:
 		var pill_w := _chip_w(int(chips[k][1]))
 		Sprites.draw(ci, "board_chip", Rect2(x, chip_y - 14.0, pill_w, 28.0))
 		if str(chips[k][0]) == "fossil_shovel": FossilArt.shovel(ci, Vector2(x + 12.0, chip_y), 30)
+		elif str(chips[k][0]) == "duel_points": Sprites.at(ci, "ev_entry_duel", Vector2(x + 12.0, chip_y), 0.34)
 		else: Art.item(ci, str(chips[k][0]), Vector2(x + 12.0, chip_y), 36, false)
 		var pos := Vector2(x + 26.0, chip_y + 8.0)
 		ci.draw_string_outline(G.font_body, pos, TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 5, Color.WHITE)

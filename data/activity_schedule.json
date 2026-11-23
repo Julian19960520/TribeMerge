@@ -10,7 +10,7 @@
 			"budget": 2200,
 			"rotation": [
 				{"activity": "race", "doc": "race"},
-				{"activity": "duel", "doc": "duel_race"}
+				{"activity": "duel", "doc": "duel_race", "hours": 20}
 			]
 		},
 		{
@@ -29,7 +29,7 @@
 			"budget": 6000,
 			"rotation": [
 				{"activity": "merge", "doc": "merge_events"},
-				{"activity": "fossil", "doc": "fossil_dig"}
+				{"activity": "fossil", "doc": "fossil_dig", "hours": 44}
 			]
 		},
 		{

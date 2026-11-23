@@ -628,7 +628,7 @@ func show_activity_points(payload: Dictionary) -> void:
 	var gains: Array = payload.get("gains", [])
 	if gains.is_empty():
 		return
-	if str(payload.get("source", "")) == "merge" and int(payload.get("cell", -1)) >= 0:
+	if str(payload.get("source", "")) in ["merge", "produce"] and int(payload.get("cell", -1)) >= 0:
 		_activity_row.points_fly(board.cell_global(int(payload["cell"])), gains)
 		return
 	var origin := _points_origin

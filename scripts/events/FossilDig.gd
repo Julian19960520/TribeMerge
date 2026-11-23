@@ -98,13 +98,44 @@ static func initialize() -> void:
 	var seed := ((G.random_seed if G.random_seed != "" else G.player_id) + ":fossil:" + key).sha256_text().substr(0, 16)
 	G.fossil_dig = {"seed": seed, "window": key, "stage": 1, "shovels": 0, "earned": 0, "spent": 0, "recovered": 0, "claimed": [], "board": make_board(seed, 1)}
 
-static func on_order(_order: Dictionary) -> void:
+## 按订单理论体力（火苗）换算铲子数：每 energy_per_shovel 体力 ≈ 1 把，最少 shovels_per_order（1）把。
+static func order_shovels(order: Dictionary) -> int:
+	var cfg := config()
+	var min_shovels := maxi(1, int(cfg.get("shovels_per_order", 1)))
+	var items = order.get("items", [])
+	if str(order.get("kind", "")) == "craft":
+		items = order.get("mats", [])
+	if not (items is Array) or (items as Array).is_empty():
+		return min_shovels
+	var per := maxf(1.0, float(cfg.get("energy_per_shovel", 120.0)))
+	return maxi(min_shovels, int(round(OrderRoll.total(items) / per)))
+
+static func on_order(order: Dictionary) -> void:
 	if unlocked() and ActivitySchedule.scheduled("fossil"): initialize()
 	if not earning(): return
-	var amount := int(config()["shovels_per_order"])
+	var amount := order_shovels(order)
 	G.fossil_dig["shovels"] = int(G.fossil_dig["shovels"]) + amount
 	G.fossil_dig["earned"] = int(G.fossil_dig["earned"]) + amount
 	G.dirty()
+
+## 消耗体力产出物品时按每点体力独立概率掉落铲子（使用独立随机流 fossil_tap，不影响其他随机流）。
+static func on_produce(energy_spent: int, cell := -1) -> int:
+	if energy_spent <= 0: return 0
+	if unlocked() and ActivitySchedule.scheduled("fossil"): initialize()
+	if not earning(): return 0
+	var chance := clampf(float(config().get("tap_drop_chance", 0.0)), 0.0, 1.0)
+	if chance <= 0.0: return 0
+	var rng: RandomNumberGenerator = G.random_for("fossil_tap")
+	var gained := 0
+	for _k in energy_spent:
+		if rng.randf() < chance: gained += 1
+	if gained <= 0: return 0
+	G.fossil_dig["shovels"] = int(G.fossil_dig["shovels"]) + gained
+	G.fossil_dig["earned"] = int(G.fossil_dig["earned"]) + gained
+	G.dirty()
+	if cell >= 0:
+		G.present("activity_points", {"source": "produce", "cell": cell, "gains": [{"id": "fossil", "n": gained}]})
+	return gained
 
 static func local_action(action: String, value := -1) -> Dictionary:
 	if not unlocked(): return {"error": TextCatalog.fill(TextCatalog.source("notice.fossildig.6d29b18fcbfb"), int(config()["unlock_level"]))}

@@ -25,8 +25,9 @@ func run() -> void:
 	var other_stream: int = g.random_for("cards").state
 	var layouts := []
 	var layouts_valid := true
+	var max_stages: int = int(fossil.config()["stages"])
 	for seed in ["alpha", "beta", "gamma", "delta"]:
-		for stage in range(1, 11):
+		for stage in range(1, max_stages + 1):
 			var layout: Dictionary = fossil.make_board(seed, stage)
 			if layout.is_empty(): layouts_valid = false; continue
 			var occupied := {}
@@ -36,7 +37,7 @@ func run() -> void:
 					occupied[cell] = true
 			if layout["n"] != stage + 2 or layout["pieces"].size() != stage + 1: layouts_valid = false
 			layouts.append({"seed": seed, "stage": stage, "board": layout})
-	check(layouts_valid, "all ten growing stages place every bone inside the grid without overlaps across four seeds")
+	check(layouts_valid and max_stages == 6, "all six growing stages place every bone inside the grid without overlaps across four seeds")
 	check(g.random_for("cards").state == other_stream, "fossil layouts do not advance the card random stream")
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--layouts="):
@@ -49,7 +50,13 @@ func run() -> void:
 	check(fossil.state()["shovels"] == 0, "incomplete main-board order earns no shovels")
 	g.board[0]["id"] = "fruit_1"
 	g.complete_order(0)
-	check(fossil.state()["shovels"] == 3, "accepted main-board order earns exactly three shovels")
+	check(fossil.state()["shovels"] == 1, "easy main-board order earns minimum one shovel")
+	check(fossil.order_shovels({"items": ["fruit_10"]}) == 4, "harder order scales shovels by theoretical energy")
+	var tap_shovels := 0
+	for _t in 200:
+		tap_shovels += fossil.on_produce(1)
+	check(tap_shovels > 0 and fossil.state()["shovels"] == 1 + tap_shovels, "spending energy to produce items has a chance to drop shovels")
+	g.fossil_dig["shovels"] = 3
 	g.board[2]["id"] = "fruit_1"; g.board[3]["id"] = "fruit_1"
 	g.try_drop(2, 3)
 	check(fossil.state()["shovels"] == 3, "merges do not earn order shovels")
@@ -76,9 +83,10 @@ func run() -> void:
 		for cell in fossil.piece_cells(p, 3):
 			if not cell in b["dug"]: fossil.local_action("dig", int(cell))
 	check(fossil.cleared() and fossil.state()["recovered"] == 2, "stage completes when all bones are found without digging all empty cells")
-	var shells_before: int = g.shells
+	var energy_before: int = g.energy
+	var rush_before: int = g.rush
 	var result: Dictionary = await fossil.act("claim", 2)
-	check(not result.has("error") and g.shells == shells_before + 100, "milestone grants its configured currencies through the common reward function")
+	check(not result.has("error") and g.energy == energy_before + 20 and g.rush == rush_before + 20, "milestone grants its configured currencies through the common reward function")
 	check(fossil.local_action("claim", 2).has("error"), "claimed milestone cannot pay twice")
 	var saved: Dictionary = g.business_snapshot().duplicate(true)
 	g.fossil_dig = {}; g.load_snapshot(saved)
@@ -87,8 +95,10 @@ func run() -> void:
 	fossil.local_action("next")
 	check(fossil.board()["n"] == 4 and fossil.board()["pieces"].size() == 3 and fossil.state()["shovels"] == shovels, "next stage grows one row and column and adds a bone while retaining unused shovels")
 	# Full client-command journal is replayed by the independent production worker.
+	load("res://scripts/events/ActivitySchedule.gd").bypass = false
 	replay.active = true; replay.authorized = true; replay.worker = false; replay.pending = []; replay.meta = {"allow_gm": true}; replay.seq = 0; replay.clock = 1794268800
 	g.new_game(); g.tutorial_on = false; g.seen_tutorial = true
+	g.simulation_time = replay.clock
 	g.random_seed = "fossil-worker"; g.random_streams = {}
 	g.level = int(fossil.config()["unlock_level"])
 	for cell in g.board.size(): g.board[cell] = {"id": "", "lock": 0}

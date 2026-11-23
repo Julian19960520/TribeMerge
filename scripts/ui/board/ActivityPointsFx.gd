@@ -88,7 +88,10 @@ func _draw() -> void:
 			return
 	# 底下一圈暖光，让图标从棋盘上跳出来
 	draw_circle(p, 40.0 * s, Color(1.0, 0.9, 0.5, 0.35 * label_a))
-	Sprites.at(self, "ev_entry_" + kind, p, ICON * s)
+	if kind == "fossil":
+		FossilArt.shovel(self, p, 56.0 * s, -0.35)
+	else:
+		Sprites.at(self, "ev_entry_" + kind, p, ICON * s)
 	if label_a <= 0.0:
 		return
 	var font: Font = G.font_title
