@@ -292,6 +292,8 @@ func _sheet_height() -> float:
 	var t = chains_page._chain_type(_sheet_ci)
 	if t == "gen":
 		return 680.0
+	if t == "chest" or t == "choice":
+		return 1080.0
 	var extra = t in VALUED or t == "item"
 	return 500.0 if extra else 420.0
 

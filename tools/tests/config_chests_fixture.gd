@@ -13,9 +13,9 @@ func run() -> void:
 	check(Files.refresh(), "all current chest grades validate")
 	for error in Files.last_errors: print(error)
 	var current: Dictionary = Files.shared(SPECIAL)
-	var counts_ok: bool = current.orderbox.levels.size() == 5
-	for family in ["chest", "energybox", "premiumbox"]: counts_ok = counts_ok and current[family].levels.size() == 5
-	check(counts_ok and Files.shared(CHOICES).size() == 5, "current chest families have every required grade")
+	var counts_ok: bool = current.orderbox.levels.size() == 4
+	for family in ["chest", "energybox", "premiumbox"]: counts_ok = counts_ok and current[family].levels.size() == 4
+	check(counts_ok and Files.shared(CHOICES).size() == 4, "current chest families have every required grade")
 	var changed: Dictionary = Files.read(SPECIAL)
 	changed.premiumbox = changed.premiumbox.levels[0].duplicate(true)
 	rejects(SPECIAL, changed, "flat legacy premium chest definition is rejected")
@@ -50,12 +50,9 @@ func run() -> void:
 	changed.chest.levels[0].gen_chance = 1.5
 	rejects(SPECIAL, changed, "wicker producer probability is bounded")
 	var choices: Dictionary = Files.read(CHOICES)
-	choices.erase("choice_5")
+	choices.erase("choice_4")
 	rejects(CHOICES, choices, "missing choice chest grade is rejected")
 	choices = Files.read(CHOICES)
-	choices.choice_5.choices[0] = "missing_1"
-	rejects(CHOICES, choices, "choice grades reject unknown reward items")
-	choices = Files.read(CHOICES)
-	choices.choice_5.choices[1] = choices.choice_5.choices[0]
-	rejects(CHOICES, choices, "choice chest options must be distinct")
+	choices.choice_4.erase("title")
+	rejects(CHOICES, choices, "choice grades require a title")
 	quit(0 if failures == 0 else 1)

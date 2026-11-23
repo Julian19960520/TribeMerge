@@ -46,33 +46,41 @@ func run() -> void:
 	game.level = 4; game.energy = 0
 	for i in game.board.size(): game.board[i] = {"id": "", "lock": 2}
 	game.board[28] = {"id": "emberpot_1", "lock": 0}
-	game.board[29] = {"id": "", "lock": 0}
-	game.board[30] = {"id": "", "lock": 0}
+	for i in [29, 30, 31]: game.board[i] = {"id": "", "lock": 0}
 	replay.meta["onboarding"]["step"] = game.rules.onboarding.stage_index("free_energy_gift")
 	replay.perform("tick", {}, replay.clock)
-	check(str(game.rules.onboarding.stage()["key"]) == "energy_gift", "体力耗尽时引导点火种罐")
-	var gift: Dictionary = replay.perform("tap", {"cell": 28}, replay.clock)
-	check(gift.get("kind") == "produce" and str(gift.get("id")) == "fire_5" and game.board[28]["id"] == "emberpot_1" and game.rules.board.gen_left(28) == 7, "第一次点火种罐：火种罐留着，掉一份体力堆")
-	var second: Dictionary = replay.perform("tap", {"cell": 28}, replay.clock)
-	check(str(second.get("id")) == "fire_5" and str(game.rules.onboarding.stage()["key"]) == "egen_merge", "第二次再掉一份体力堆，接着教合成")
-	var a := int(gift["to"]); var b := int(second["to"])
-	replay.perform("drop", {"from": a, "to": b}, replay.clock)
-	check(game.board[b]["id"] == "fire_6" and str(game.rules.onboarding.stage()["key"]) == "egen_collect", "两份体力堆合成一筐体力")
-	replay.perform("tap", {"cell": b}, replay.clock)
+	check(str(game.rules.onboarding.stage()["key"]) == "free_energy_gift", "空格不够点4下时先不教火种罐")
+	game.board[32] = {"id": "", "lock": 0}
+	replay.perform("tick", {}, replay.clock)
+	check(str(game.rules.onboarding.stage()["key"]) == "energy_gift", "体力耗尽且有4个空格时引导点火种罐")
+	var taps: Array = []
+	for n in 4: taps.append(replay.perform("tap", {"cell": 28}, replay.clock))
+	check(taps.all(func(t): return t.get("kind") == "produce" and str(t.get("id")) == "fire_4") and game.board[28]["id"] == "emberpot_1", "引导里点4下，每下掉一份15体力，火种罐留着")
+	check(game.rules.board.gen_left(28) == 0 and str(game.rules.onboarding.stage()["key"]) == "egen_merge", "第一轮正好4下就点空，接着教合成")
+	replay.perform("drop", {"from": int(taps[0]["to"]), "to": int(taps[1]["to"])}, replay.clock)
+	replay.perform("drop", {"from": int(taps[2]["to"]), "to": int(taps[3]["to"])}, replay.clock)
+	check(game.board[int(taps[1]["to"])]["id"] == "fire_5" and game.board[int(taps[3]["to"])]["id"] == "fire_5" and str(game.rules.onboarding.stage()["key"]) == "egen_merge", "4份两两合成2份40体力，还在合成这一步")
+	var top := int(taps[3]["to"])
+	replay.perform("drop", {"from": int(taps[1]["to"]), "to": top}, replay.clock)
+	check(game.board[top]["id"] == "fire_6" and str(game.rules.onboarding.stage()["key"]) == "egen_collect", "再合成一筐最高级体力")
+	replay.perform("tap", {"cell": top}, replay.clock)
 	check(game.energy == 100 and str(game.rules.onboarding.stage()["key"]) == "free_level4", "点体力筐正好回满100体力，引导结束（竞品#110–#113）")
+	replay.perform("tick", {}, replay.clock + 720 * 60 + 5)
+	game.simulation_time = replay.clock
+	check(game.rules.board.gen_left(28) == 8, "12小时后火种罐补满，之后每轮8下")
 	# The pot is a level-4 reward in the stash: players may tap it before running dry.
 	_fresh(replay, game, 0)
 	game.level = 4; game.energy = 3
 	for i in game.board.size(): game.board[i] = {"id": "", "lock": 2}
 	game.board[28] = {"id": "emberpot_1", "lock": 0}
-	for i in [29, 30, 31]: game.board[i] = {"id": "", "lock": 0}
+	for i in [29, 30, 31, 32]: game.board[i] = {"id": "", "lock": 0}
 	replay.meta["onboarding"]["step"] = game.rules.onboarding.stage_index("free_energy_gift")
-	var early_a: Dictionary = replay.perform("tap", {"cell": 28}, replay.clock)
-	var early_b: Dictionary = replay.perform("tap", {"cell": 28}, replay.clock)
-	check(str(early_a.get("id")) == "fire_5" and str(early_b.get("id")) == "fire_5" and str(game.rules.onboarding.stage()["key"]) == "egen_merge", "提前点火种罐也掉两份体力堆，接上合成这一步")
-	game.board[int(early_a["to"])]["id"] = ""
+	var early: Array = []
+	for n in 4: early.append(replay.perform("tap", {"cell": 28}, replay.clock))
+	check(early.all(func(t): return str(t.get("id")) == "fire_4") and str(game.rules.onboarding.stage()["key"]) == "egen_merge", "提前点火种罐也掉4份15体力，接上合成这一步")
+	for n in 3: game.board[int(early[n]["to"])]["id"] = ""
 	replay.perform("tick", {}, replay.clock)
-	check(str(game.rules.onboarding.stage()["key"]) == "free_level4", "体力堆已经用掉时跳过合成和领取，不卡住棋盘")
+	check(str(game.rules.onboarding.stage()["key"]) == "free_level4", "体力堆已经用掉、凑不成一对时跳过合成和领取，不卡住棋盘")
 
 	_fresh(replay, game, 1)
 	game.xp = 2

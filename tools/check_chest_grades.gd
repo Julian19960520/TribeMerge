@@ -29,19 +29,28 @@ func run() -> void:
 	g.random_seed = "graded-chests"; g.random_streams = {}
 	replay.advance(); replay.executing = false
 	check(Data.name_of("shell_2") == "不那那" and Data.CHAINS["shell"]["name"] == "不那那", "currency and physical rewards use the current banana name")
-	for chain in ["energybox", "premiumbox", "chest", "choice"]:
-		check(Data.max_lv(chain) == 5, "%s has five grades" % chain)
-		for grade in range(1, 6):
+	for chain in ["energybox", "amberbox", "premiumbox", "chest", "choice"]:
+		check(Data.max_lv(chain) == 4, "%s has four grades" % chain)
+		for grade in range(1, 5):
 			var id := "%s_%d" % [chain, grade]
 			check(not Data.describe(id).is_empty() and FileAccess.file_exists("res://assets/items/png/%s_r1_0.png" % id), "%s has a description and exported icon" % id)
 			clear_board(); g.board[0]["id"] = id
 			if chain == "choice":
-				var picks: Array = choice.definition(id)["choices"]
-				check(picks.size() == 3 and picks.all(func(item): return Data.is_board_item(str(item))), "%s offers three valid rewards" % id)
+				var offered: Dictionary = replay.perform("choice_offer", {"cell": 0})
+				var picks: Array = offered.get("choices", [])
+				var seen := {}
+				var picks_ok := picks.size() == 3
+				for item in picks:
+					var chain_id := Data.chain(str(item))
+					picks_ok = picks_ok and Data.type_of(str(item)) == "item" and Data.lv(str(item)) == choice.item_level(grade, chain_id) and not seen.has(chain_id)
+					seen[chain_id] = true
+				check(picks_ok, "%s offers three product lines at the grade-adjusted level" % id)
+				if grade == 4: check(choice.item_level(4, "fruit") == 4 and choice.item_level(4, "seed") == 3, "common products match the chest grade and rare products are one level lower")
 				for option in picks.size():
 					clear_board(); g.board[0]["id"] = id
+					var again: Dictionary = replay.perform("choice_offer", {"cell": 0})
 					var selected: Dictionary = replay.perform("choice", {"cell": 0, "option": option})
-					check(not selected.has("error") and selected.get("id") == picks[option] and g.rules.board.cell_id(0) == picks[option], "%s choice %d delivers its configured physical reward once" % [id, option + 1])
+					check(not selected.has("error") and selected.get("id") == again.get("choices", [])[option] and g.rules.board.cell_id(0) == selected.get("id"), "%s choice %d delivers the offered product once" % [id, option + 1])
 			else:
 				var count := SpecialChests.count(id)
 				var wallet := [g.energy, g.amber, g.shells, g.rush]
@@ -52,16 +61,16 @@ func run() -> void:
 				check(valid and g.rules.board.empty_count() == g.board.size() - count and wallet == [g.energy, g.amber, g.shells, g.rush], "%s dispenses all configured contents as physical items through commands" % id)
 			clear_board(); g.board[0]["id"] = id; g.board[1]["id"] = id
 			var merged: Dictionary = replay.perform("drop", {"from": 0, "to": 1})
-			check(merged.get("kind") == "merge" and g.rules.board.cell_id(1) == "%s_%d" % [chain, grade + 1] if grade < 5 else merged.get("kind") != "merge", "%s follows the configured merge ceiling" % id)
+			check(merged.get("kind") == "merge" and g.rules.board.cell_id(1) == "%s_%d" % [chain, grade + 1] if grade < 4 else merged.get("kind") != "merge", "%s follows the configured merge ceiling" % id)
 	var previous := 0
-	for grade in range(1, 6):
+	for grade in range(1, 5):
 		var total := 0
 		for id in SpecialChests.definition("energybox_%d" % grade)["items"]: total += Data.value_of(str(id))
-		check(total > previous * 2, "energy chest %d rewards waiting to merge two lower boxes" % grade)
+		check(total > previous, "energy chest %d is worth more than the previous grade without skipping to the top tier" % grade)
 		previous = total
-	clear_board(); g.board[0]["id"] = "energybox_5"; g.board[1]["id"] = "energybox_5"
+	clear_board(); g.board[0]["id"] = "energybox_4"; g.board[1]["id"] = "energybox_4"
 	var first: Dictionary = replay.perform("tap", {"cell": 0})
-	check(first.get("remaining") == 29 and first.get("id") == "fire_6", "highest energy box dispenses exactly one drop per tap")
+	check(first.get("remaining") == 5 and first.get("id") == "fire_3", "highest energy box dispenses exactly one low-tier drop per tap")
 	var left: Array = g.board[0]["chest"].duplicate()
 	check(replay.perform("drop", {"from": 0, "to": 1}).get("kind") != "merge", "partially opened chests cannot merge to refresh contents")
 	var chest_cell: int = 0 if g.board[0].has("chest") else 1
@@ -74,12 +83,12 @@ func run() -> void:
 	g.board[destination].erase("chest")
 	check(replay.restore(JSON.parse_string(JSON.stringify(snapshot))) and g.board[destination]["chest"] == left, "partial contents roundtrip in the strict current snapshot")
 	for cell in g.board: cell["id"] = "fruit_1"
-	g.board[0] = {"id": "premiumbox_5", "lock": 0}
+	g.board[0] = {"id": "premiumbox_4", "lock": 0}
 	var random_before: Dictionary = g.random_save().duplicate(true)
 	check(replay.perform("tap", {"cell": 0}).has("error") and not g.board[0].has("chest") and g.random_save() == random_before, "full board preserves unopened contents and random state")
 	# Output a real current-client command sequence for independent server replay.
 	clear_board(); g.inv = []; g.inv_chests = {}; g.stash = []
-	for pair in [[0,"energybox_2"],[1,"energybox_2"],[5,"premiumbox_4"],[8,"chest_5"],[12,"choice_5"]]: g.board[pair[0]]["id"] = pair[1]
+	for pair in [[0,"energybox_2"],[1,"energybox_2"],[5,"premiumbox_4"],[8,"chest_4"],[12,"choice_4"]]: g.board[pair[0]]["id"] = pair[1]
 	replay.worker = false; replay.seq = 0; replay.meta = {"allow_gm": true}; replay.pending = []; replay.inflight = {}
 	g.random_seed = "graded-chests-fixture"; g.random_streams = {}
 	var fixture: Dictionary = replay.snapshot().duplicate(true)

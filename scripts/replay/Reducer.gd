@@ -60,8 +60,8 @@ func _dispatch(name: String, a: Dictionary):
 				G.board[i]["id"] = ""
 				G.rules.progression.add_currency("energy", sell_n)
 				return {"sold": true, "energy": sell_n}
-			meta["trash"] = {"cell": i, "id": G.rules.board.cell_id(i), "chest": G.board[i].get("chest", []).duplicate()}
-			G.board[i]["id"] = ""; G.board[i].erase("chest")
+			meta["trash"] = {"cell": i, "id": G.rules.board.cell_id(i), "chest": G.board[i].get("chest", []).duplicate(), "offer": G.board[i].get("offer", []).duplicate()}
+			G.board[i]["id"] = ""; G.board[i].erase("chest"); G.board[i].erase("offer")
 			return {}
 		"discard_finish": settle_trash(); return {}
 		"undo":
@@ -69,6 +69,7 @@ func _dispatch(name: String, a: Dictionary):
 			if t.is_empty() or G.rules.board.cell_id(int(t["cell"])) != "": return {"error": TextCatalog.source("notice.reducer.0901e1ab6cca")}
 			G.board[int(t["cell"])]["id"] = t["id"]
 			if not t.get("chest", []).is_empty(): G.board[int(t["cell"])]["chest"] = t["chest"].duplicate()
+			if t.get("offer", []) is Array and not t.get("offer", []).is_empty(): G.board[int(t["cell"])]["offer"] = t["offer"].duplicate()
 			meta.erase("trash"); return {}
 		"order":
 			if i < 0 or i >= G.orders.size() or not G.rules.orders.order_ready(G.orders[i]): return {"error": TextCatalog.source("notice.reducer.c725f5672f44")}
@@ -152,6 +153,7 @@ func _dispatch(name: String, a: Dictionary):
 			if str(a.get("key", "")) == "deal_ad": return {"error": TextCatalog.source("notice.dailyshop.b5b1db41e829")}
 			return DailyShop.claim(str(a.get("key", "")))
 		"seven": return SevenDay.claim(str(a.get("id", "")), bool(a.get("stage", false)))
+		"choice_offer": return ChoiceChest.offer(i)
 		"choice": return ChoiceChest.choose(i, G.rules.board.cell_id(i) if valid_cell(i) else "", int(a.get("option", -1)))
 		"activity":
 			var c := MergeEvent.definition(str(a.get("season", "")))

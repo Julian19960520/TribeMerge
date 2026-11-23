@@ -29,6 +29,7 @@ var _fps_shown := -1
 
 func _ready() -> void:
 	G.main = self
+	if get_tree().get_script() == null: preload("res://scripts/ui/WindowFit.gd").fit.call_deferred(get_window())
 	if get_tree().get_script() == null and not OS.has_feature("web"):
 		await preload("res://scripts/net/EconomyClient.gd").refresh(self)
 	G.presentation_event.connect(_on_presentation)

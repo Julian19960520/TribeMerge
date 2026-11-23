@@ -1,6 +1,6 @@
 {
   "unlock_level": 9,
-  "_target": "本期渐进目标分：第1局30分，按 30→60→100→150→210→280→360→400 递增，最高400分；订单按难度给 order_point_range(10~45)分，合成7级以上给 merge_base~merge_max(5~20)分。order_thresholds / order_points 只给老存档里没打完的那局用",
+  "_target": "本期渐进目标分按自己的胜场取档：0胜30分，每再赢1场升一档 30→60→100→150→210→280→360→400，最高400分；输了不升档。订单按难度给 order_point_range(10~45)分，合成7级以上给 merge_base~merge_max(5~20)分。order_thresholds / order_points 只给老存档里没打完的那局用",
   "target": 400,
   "round_targets": [30, 60, 100, 150, 210, 280, 360, 400],
   "order_point_range": [10, 45],

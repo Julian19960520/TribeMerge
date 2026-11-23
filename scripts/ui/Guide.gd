@@ -191,7 +191,11 @@ func _refresh() -> void:
 			if popup != null:
 				for rect in popup.get_meta("build_rects", []): _hole(rect, true)
 		"merge":
-			var pair := _pair(str(s["pair"][0]))
+			# 一步可以列多组（先合低级再合高级），用第一组还凑得出来的
+			var pair := Vector2i(-1, -1)
+			for p in s.get("pairs", [s.get("pair", [""])]):
+				pair = _pair(str(p[0]))
+				if pair.x >= 0 and pair.y >= 0: break
 			_merge_a = pair.x; _merge_b = pair.y
 			if pair.x >= 0:
 				_hole(_cell_rect(pair.x), true); _hole(_cell_rect(pair.y), true)

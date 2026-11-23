@@ -13,7 +13,7 @@ func run() -> void:
 	g = root.get_node("G"); replay = root.get_node("Replay")
 	g.new_game(); g.set_process(false); replay.set_process(false); root.get_node("Cloud").set_process(false)
 	g.level = 10; g.seen_tutorial = true; g.tutorial_on = false
-	check(Data.max_lv("pack") == 5 and Data.max_lv("orderbox") == 5, "five pack grades and five order chest grades are registered")
+	check(Data.max_lv("pack") == 5 and Data.max_lv("orderbox") == 4, "five pack grades and four order chest grades are registered")
 	for grade in range(1, 6):
 		var id := "pack_%d" % grade
 		var chances := CardPacks.probabilities(id)
@@ -31,10 +31,10 @@ func run() -> void:
 		check(valid, "%s consumes the right pack and draws two cards from allowed star pools" % id)
 	clear_board(); g.board[0]["id"] = "pack_1"; g.board[1]["id"] = "pack_1"
 	check(g.try_drop(0, 1) == "merge" and g.rules.board.cell_id(1) == "pack_2", "two unopened card packs merge to the next grade")
-	for grade in range(1, 6):
+	for grade in range(1, 5):
 		check(SpecialChests.contents("orderbox_%d" % grade).size() == int(SpecialChests.config()["orderbox"]["levels"][grade - 1]["count"]), "order chest %d has its configured number of uses" % grade)
 	var low := SpecialChests.order_weights("orderbox_1", {"fruit_2": 1, "fruit_8": 1})
-	var high := SpecialChests.order_weights("orderbox_5", {"fruit_2": 1, "fruit_8": 1})
+	var high := SpecialChests.order_weights("orderbox_4", {"fruit_2": 1, "fruit_8": 1})
 	check(float(high["fruit_8"]) / float(high["fruit_2"]) > float(low["fruit_8"]) / float(low["fruit_2"]), "higher chest grades favor higher-level order requirements")
 	clear_board(); g.inv = []; g.inv_chests = {}; g.stash = []
 	g.orders = [{"items": ["fruit_2", "tool_3"], "who": 0, "rw": {"shell": 1}}]
@@ -47,25 +47,25 @@ func run() -> void:
 	var last: Dictionary = await g.dispense_chest(0)
 	check(next.get("id") == "seed_3" and last.get("id") == "fruit_3" and int(last["to"]) != 0 and g.rules.board.cell_id(0) == "", "last chest item uses another cell before the empty box disappears")
 	clear_board(); g.orders = [{"items": ["fruit_6"], "who": 0, "rw": {"shell": 1}}]
-	g.board[0]["id"] = "orderbox_5"
+	g.board[0]["id"] = "orderbox_4"
 	await g.dispense_chest(0)
 	var left: Array = g.board[0]["chest"].duplicate()
 	var blocked: Dictionary = await g.dispense_chest(0)
 	check(blocked.has("error") and g.board[0]["chest"] == left, "satisfied orders preserve all unused chest charges")
 	check(g.rules.board.store_cell(0) and g.rules.board.take_inventory(0, 0) and g.board[0]["chest"] == left, "order chest charges survive storage")
 	var premium: Array = await g.rules.board.open_chest("premiumbox_1")
-	check(premium.size() == 8 and Data.chain(premium[0]) == "fire" and Data.chain(premium[1]) == "amber" and premium.all(func(id): return Data.chain(id) in ["fire", "amber"] and Data.lv(id) >= 2 and Data.lv(id) <= 6), "premium chest contains eight physical energy and gem drops across valid grades")
+	check(premium.size() == 3 and Data.chain(premium[0]) == "fire" and Data.chain(premium[1]) == "amber" and premium.all(func(id): return Data.chain(id) in ["fire", "amber"] and Data.lv(id) >= 2 and Data.lv(id) <= 3), "premium chest contains three low-tier physical energy and gem drops")
 	clear_board(); g.board[0]["id"] = "premiumbox_1"
 	var wallet := [g.energy, g.amber]
-	for i in 8: await g.dispense_chest(0)
-	check(g.rules.board.empty_count() == 55 and wallet == [g.energy, g.amber] and g.rules.board.cell_id(0) == "", "premium chest emits all eight physical drops outside its own cell")
+	for i in 3: await g.dispense_chest(0)
+	check(g.rules.board.empty_count() == 60 and wallet == [g.energy, g.amber] and g.rules.board.cell_id(0) == "", "premium chest emits all three physical drops outside its own cell")
 	for target in ["fruit_4", "basket_4", "pack_4", "orderbox_4", "fire_5"]:
 		clear_board(); g.board[0]["id"] = "upgrade_1"; g.board[1]["id"] = target
 		var higher := Data.next_id(target)
 		check(g.try_drop(0, 1) == "upgrade" and g.rules.board.cell_id(0) == "" and g.rules.board.cell_id(1) == higher, "upgrade tool raises %s by one level and is consumed" % target)
 	clear_board(); g.board[0]["id"] = "upgrade_1"; g.board[1]["id"] = "fire_6"
 	check(g.try_drop(0, 1) == "" and g.rules.board.cell_id(0) == "upgrade_1", "maximum-level targets keep the upgrade tool")
-	for target in ["fruit_5", "basket_5", "pack_5", "orderbox_5", "fire_5"]:
+	for target in ["fruit_5", "basket_5", "pack_5", "orderbox_4", "fire_5"]:
 		for cell in g.board: cell["id"] = "fruit_1"
 		g.board[0]["id"] = "scissors_1"; g.board[1]["id"] = target
 		var lower := "%s_%d" % [Data.chain(target), Data.lv(target) - 1]

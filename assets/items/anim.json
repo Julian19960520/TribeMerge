@@ -689,7 +689,17 @@
 		"ritual_14",
 		"ritual_15",
 		"xp_1",
-		"token_1"
+		"token_1",
+		"amberbox_1",
+		"amberbox_1_open",
+		"amberbox_2",
+		"amberbox_2_open",
+		"amberbox_3",
+		"amberbox_3_open",
+		"amberbox_4",
+		"amberbox_4_open",
+		"amberbox_5",
+		"amberbox_5_open"
 	],
 	"pattern": "png/{id}_r{rim}_{frame}.png",
 	"px": 256

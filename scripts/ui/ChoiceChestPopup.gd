@@ -1,8 +1,7 @@
 extends PopupBase
 const PS := preload("res://scripts/sprites/popups.gd")
 ## 自选宝箱：三张卡片三选一。点卡片先选中（抬起 + 金边 + 勾），再点「就要它」确认，
-## 选中的物品替换棋盘上宝箱那一格。每张卡写清楚给多少（40 体力 / 15 琥珀 / 3 件随机物品）
-## 和用途小签，三项价值相近（见 data/choice_chests.json），让玩家按眼下需要挑。
+## 选中的物品替换棋盘上宝箱那一格。三件是点开时抽到的产线物品，宝箱等级决定物品等级。
 const R := Rect2(40, 370, 640, 740)
 const CARD_W := 184.0
 const CARD_H := 316.0
@@ -18,7 +17,7 @@ var _choices: Array = []
 func _ready() -> void:
 	var c := ChoiceChest.definition(box_id)
 	Popups.frame(self, R, str(c.get("title", TextCatalog.source("ui.choicechestpopup.ac914ad13619"))), Art.TEAL)
-	_choices = c.get("choices", [])
+	_choices = ChoiceChest.offer(cell).get("choices", [])
 	# 顶部：发光的宝箱
 	UI.box(box, Rect2(260, 400, 200, 146), func(ci, sz):
 		var cc := Vector2(sz.x * 0.5, 74)

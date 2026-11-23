@@ -90,6 +90,9 @@ func run() -> void:
 	_clear_board()
 	g.board[CELL]["id"] = GEN
 	g.energy = 37
+	# 第一轮（新手引导那轮）只有 first_charges 次，由 check_onboarding_stages 覆盖；这里从第二轮开始测整批 8 次
+	g.rules.starter.grant()
+	g.rules.starter.progress()["started_at"] = g.simulation_time - float(refill_sec)
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	await create_timer(0.5).timeout

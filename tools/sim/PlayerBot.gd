@@ -32,8 +32,19 @@ var resource_earned: Dictionary = {}
 var schedule: Dictionary = {}
 var lv_acc: Dictionary = {}
 var level_rows: Array = []
+## 每天结束时的七日任务进度（累计值）、领了几个任务、等级，用来调七日任务难度
+var day_rows: Array = []
+var last_day := 0
+
+func snapshot_day(day: int) -> void:
+	var s: Dictionary = SevenDay.state()
+	day_rows.append({"day": day, "level": G.level, "stats": (s.get("stats", {}) as Dictionary).duplicate(), "claimed": SevenDay.claimed_count(), "points": SevenDay.points()})
 var regen_pending := 0
 var in_session := true
+## 上线方式（配置 login）：到点或体力满就上线，在线不限时，体力用完才下线。
+## {"mode":"times","times":["08:00","20:00"]} 或 {"mode":"full","awake":["08:00","23:00"]}
+var login: Dictionary = {}
+var online := true
 # 占位活动（tools/sim/placeholder_events.json）：活动还没做时用来预留体力预算。现在四个档期都有真活动，默认关闭，配置 placeholder_events 指向文件才启用
 var ph_events: Array = []
 var ph_state: Dictionary = {}
@@ -44,6 +55,28 @@ var prof := {"command": 0, "record": 0}
 var summary_only := false
 var before_energy := 0
 var event_count := 0
+## ---- 带画面模式（统一演算 autoplay.gd 用）：接着当前局面玩，每步刷新真实界面
+var live := false
+## 正在显示的 Main 场景
+var ui_main: Node
+## 每步之间停多久（秒）；0 表示每帧走 live_batch 步
+var live_delay := 0.0
+var live_batch := 1
+var live_paused := false
+var live_stop := false
+## 下线等跳时间的动作，画面上多停一会儿
+var live_hold := 0.0
+## 最近一条记录的标题，界面上显示「正在干什么」
+var status := ""
+## 后台批量时每隔一段写一次进度（等级、天数），给统一演算的进度页看
+var progress_path := ""
+
+func write_progress(done: bool) -> void:
+	if progress_path == "": return
+	var f := FileAccess.open(progress_path, FileAccess.WRITE)
+	if f == null: return
+	f.store_string(JSON.stringify({"level": G.level, "day": play_day(), "actions": action_count, "done": done, "finish_reason": finish_reason if done else ""}))
+	f.close()
 
 func run() -> int:
 	var config_path := "res://tools/sim/config.json"
@@ -54,12 +87,17 @@ func run() -> int:
 	if not raw is Dictionary:
 		push_error("Invalid simulation config: " + config_path)
 		return 2
+	return await run_with(raw)
+
+## live=true 时不新开局，从当前局面（新手引导刚走完）接着玩，并保留 G.main 的画面
+func run_with(raw: Dictionary) -> int:
 	cfg = raw
 	summary_only = bool(cfg.get("summary_only", false))
 	# The run uses the configuration loaded at startup, even if files are edited later.
 	for file in DirAccess.get_files_at("res://data"):
 		if file.ends_with(".json"): source_hashes[file] = FileAccess.get_sha256("res://data/" + file)
 	schedule = cfg.get("schedule", {}) if cfg.get("schedule", {}) is Dictionary else {}
+	login = cfg.get("login", {}) if cfg.get("login", {}) is Dictionary else {}
 	var ph_path:=str(cfg.get("placeholder_events",""))
 	if ph_path!="" and FileAccess.file_exists(ph_path):
 		var ph=JSON.parse_string(FileAccess.get_file_as_string(ph_path))
@@ -73,8 +111,9 @@ func run() -> int:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output.get_base_dir()))
 	stream = FileAccess.open(output.get_basename() + ".jsonl", FileAccess.WRITE)
 	if stream == null: return 2
-	G.set_process(false)
-	G.main = null
+	if not live:
+		G.set_process(false)
+		G.main = null
 	Cloud.enabled = false
 	Cloud.set_process(false)
 	Rank.set_process(false)
@@ -163,6 +202,7 @@ func snap() -> Dictionary:
 
 func record(cat: String, title: String, _reason: String, detail: Dictionary = {}, reward_source: String = "") -> void:
 	var t0 := Time.get_ticks_usec()
+	if live and cat in ["produce", "merge", "order", "build", "level", "offline", "stuck", "wait", "reward", "craft", "unlock", "milestone", "event"]: status = title
 	_record(cat, title, detail, reward_source)
 	prof["record"] = int(prof["record"]) + Time.get_ticks_usec() - t0
 
@@ -272,13 +312,40 @@ func local_tod() -> float:
 
 ## 当前时段剩余秒数；不在线返回 0。没配置作息就视为一直在线。
 func session_left() -> float:
+	if not login.is_empty(): return INF if online else 0.0
 	if schedule.is_empty(): return INF
 	var t:=local_tod()
 	for s in sessions_today():
 		if t>=float(s[0]) and t<float(s[1]): return float(s[1])-t
 	return 0.0
 
+func _hm(text: String) -> float:
+	var hm:=text.split(":")
+	return float(int(hm[0])*3600+int(hm[1])*60)
+
+## 按上线方式算下次上线还要等多久
+func secs_to_login() -> float:
+	var t:=local_tod()
+	if str(login.get("mode",""))=="full":
+		var awake: Array=login.get("awake",["08:00","23:00"])
+		var wake:=_hm(str(awake[0]))
+		var sleep:=_hm(str(awake[1]))
+		var wait:=maxf(60.0,float(G.rules.clock.energy_full_left()))
+		var at:=fmod(t+wait,86400.0)
+		if at>=wake and at<sleep: return wait
+		# 体力满的时候在睡觉：第二天起床再上
+		var to_wake:=wake-t if t<wake else 86400.0-t+wake
+		return maxf(wait,to_wake) if wait<86400.0 else wait
+	var times: Array=login.get("times",["08:00","20:00"])
+	var best:=INF
+	for x in times:
+		var d:=_hm(str(x))-t
+		if d<=0: d+=86400.0
+		best=minf(best,d)
+	return best
+
 func secs_to_next_session() -> float:
+	if not login.is_empty(): return secs_to_login()
 	var t:=local_tod()
 	for s in sessions_today():
 		if float(s[0])>t: return float(s[0])-t
@@ -293,8 +360,10 @@ func go_offline(why: String) -> void:
 	if seconds<=0: return
 	var began:=G.now()-start
 	tick(seconds,"offline")
+	if live: live_hold = maxf(live_hold, 0.8)
 	record("offline","下线 "+G.fmt_time(int(seconds)),why,{"seconds":seconds,"from":began,"why":why})
 	in_session=false
+	online=true
 
 func target_level_reached() -> bool:
 	var limit:=int(cfg.get("stop_level",40))
@@ -357,15 +426,21 @@ func play() -> void:
 	Replay.worker = true
 	Replay.authorized = true
 	Replay.executing = true
-	Replay.meta = {"allow_gm": false}
-	Replay.seq = 0
-	Replay.base = 0
-	Replay.clock = int(start)
-	Replay.pending = []
-	Replay.inflight = {}
-	G.replay_meta = Replay.meta
-	G.new_game()
-	var resume_path := str(cfg.get("start_snapshot", ""))
+	if live:
+		# 接着新手引导结束时的局面：保留已领过的免费体力等记录
+		start = float(Replay.clock)
+		G.simulation_time = start
+		G.replay_meta = Replay.meta
+	else:
+		Replay.meta = {"allow_gm": false}
+		Replay.seq = 0
+		Replay.base = 0
+		Replay.clock = int(start)
+		Replay.pending = []
+		Replay.inflight = {}
+		G.replay_meta = Replay.meta
+		G.new_game()
+	var resume_path := "" if live else str(cfg.get("start_snapshot", ""))
 	if resume_path != "":
 		var saved = JSON.parse_string(FileAccess.get_file_as_string(resume_path))
 		if not saved is Dictionary or not Replay.restore(saved):
@@ -398,7 +473,10 @@ func play() -> void:
 	before = snap()
 	before_energy = G.energy
 	level_rows=[]
+	day_rows=[]
+	last_day=0
 	regen_pending=0
+	online=true
 	in_session=session_left()>0
 	lv_acc=new_level_acc()
 	lv_acc["sessions"]=1 if in_session else 0
@@ -409,6 +487,14 @@ func play() -> void:
 			target_dirty=true
 			record("milestone","配置主线完成","之后继续副线、活动和部落建造",{"last_configured_level":main_limit})
 		observe_level()
+		if play_day() != last_day:
+			if last_day > 0: snapshot_day(last_day)
+			last_day = play_day()
+		if live:
+			await live_frame()
+			if live_stop:
+				finish_reason = "stopped"
+				break
 		if target_level_reached():
 			finish_reason = "target_level"
 			break
@@ -449,19 +535,37 @@ func play() -> void:
 		var tt := Time.get_ticks_usec()
 		tick(minf(float(cfg["action_seconds"]),maxf(0,float(cfg["cycle_days"])*86400-(G.now()-start))))
 		prof["tick"] = int(prof.get("tick", 0)) + Time.get_ticks_usec() - tt
-		if action_count % 1000 == 0:
+		if action_count % 1000 == 0 and not is_instance_valid(ui_main):
+			write_progress(false)
 			print("SIM_PROGRESS run=", run_id, " actions=", action_count, " day=", snappedf((G.now()-start)/86400,0.01), " level=",G.level)
 			await get_tree().process_frame
 	if finish_reason!="target_level" and action_count >= int(cfg["max_actions"]): finish_reason = "action_limit"
-	record("end", "本轮结束", {"duration_limit":"达到配置的模拟时长", "action_limit":"达到动作上限", "target_level":"达到目标等级", "invariant_failed":"状态校验失败"}[finish_reason], {"reason":finish_reason})
+	record("end", "本轮结束", {"duration_limit":"达到配置的模拟时长", "action_limit":"达到动作上限", "target_level":"达到目标等级", "invariant_failed":"状态校验失败", "stopped":"手动停止"}[finish_reason], {"reason":finish_reason})
 	close_level_row(true)
-	var summary := {"run":run_id,"seed":int(cfg["seed"])+run_id-1,"duration":G.now()-start,"actions":action_count,"state":snap(),"counts":totals.duplicate(),"finish_reason":finish_reason,"resource_initial":resource_initial.duplicate(),"levels":level_rows.duplicate(true)}
+	snapshot_day(last_day)
+	var summary := {"days": day_rows.duplicate(true), "run":run_id,"seed":int(cfg["seed"])+run_id-1,"duration":G.now()-start,"actions":action_count,"state":snap(),"counts":totals.duplicate(),"finish_reason":finish_reason,"resource_initial":resource_initial.duplicate(),"levels":level_rows.duplicate(true)}
 	summaries.append(summary)
 	var state_file := FileAccess.open(output.get_basename()+"-run%d-save.json"%run_id,FileAccess.WRITE)
 	state_file.store_string(JSON.stringify(G.save_dict()))
 	state_file.close()
 	stream.flush()
 	write_report()
+	write_progress(true)
+
+## 带画面模式每步一次：刷新界面、收掉弹窗，按速度等待
+func live_frame() -> void:
+	if not is_instance_valid(ui_main): return
+	if ui_main.screen != "board" and not ui_main.home.is_building(): ui_main.show_screen("board", true)
+	if ui_main.popup_layer.top() != null: ui_main.close_all()
+	ui_main._rw_q.clear()
+	if action_count % maxi(live_batch, 1) == 0 or live_hold > 0.0 or live_delay > 0.0:
+		Replay.notify_restored()
+		var wait := maxf(live_delay, live_hold)
+		live_hold = 0.0
+		if wait > 0.0: await get_tree().create_timer(wait).timeout
+		else: await get_tree().process_frame
+	while live_paused and not live_stop:
+		await get_tree().create_timer(0.1).timeout
 
 func timed(key: String, f: Callable) -> bool:
 	var t0 := Time.get_ticks_usec()
@@ -562,8 +666,10 @@ func rewards() -> bool:
 			command("pack", {"id": id, "cell": i})
 			record_reward("cards", "打开典藏卡包", "典藏卡已解锁")
 			return true
-		if not ChoiceChest.definition(id).is_empty():
-			var choices: Array = ChoiceChest.definition(id)["choices"]
+		if kind == "choice":
+			var offered := command("choice_offer", {"cell": i})
+			var choices: Array = offered.get("choices", [])
+			if choices.is_empty(): continue
 			var option := 0
 			for j in choices.size():
 				if useful(str(choices[j])): option=j; break
@@ -1194,6 +1300,15 @@ func wait_next() -> void:
 		elif G.rules.board.is_merge_bubble(i): wait=G.rules.board.bubble_left(i)
 		if wait>0 and wait<seconds: seconds=wait; why="等待制作、生产器冷却或气泡消失"
 	seconds=minf(maxf(seconds,1),float(cfg["cycle_days"])*86400-(G.now()-start))
+	if not login.is_empty():
+		# 在线不限时：体力用完就下线；有体力却要空等太久（棋盘卡住）也下线
+		if G.energy<1 or seconds>float(cfg.get("quit_idle_minutes",5))*60:
+			if G.energy>=1:
+				lv_acc["stuck"]=int(lv_acc["stuck"])+1
+				record("stuck","没事可做："+why,"有体力但空等太久，下线",{"wait_needed":seconds,"energy":G.energy})
+			online=false
+			go_offline("体力用完" if G.energy<1 else "卡住："+why)
+			return
 	# 真人没事干要等太久就下线；等体力这种算「卡体力」
 	if not schedule.is_empty() and (seconds>float(schedule.get("quit_idle_minutes",5))*60 or seconds>=session_left()):
 		lv_acc["stuck"]=int(lv_acc["stuck"])+1

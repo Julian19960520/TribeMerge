@@ -92,7 +92,7 @@ def test_building_and_level_codex_pass_rewards_are_single_claims(game):
 def test_choice_chest_and_seven_day_claim_cannot_repeat(game):
     game['board'][0]['id']='choice_1'
     state=confirm(game,[('choice',{'cell':0,'option':2}),('seven',{'id':'d1_1','stage':False})])
-    assert state['board'][0]['id']=='chest_1'
+    assert state['board'][0]['id'] not in ('', 'choice_1')
     assert state['seven_day']['claimed']['d1_1']
     rejects(state,'choice',{'cell':0,'option':2})
     rejects(state,'seven',{'id':'d1_1','stage':False})

@@ -24,20 +24,24 @@ def known_item(item):
 
 
 @pytest.mark.parametrize('chain', ['chest', 'energybox', 'premiumbox', 'choice'])
-@pytest.mark.parametrize('grade', range(1, 6))
+@pytest.mark.parametrize('grade', range(1, 5))
 def test_every_grade_settles_once_and_keeps_rewards_physical(game, chain, grade):
     item = f'{chain}_{grade}'
     fixture = copy.deepcopy(game)
     fixture['board'][0]['id'] = item
     balances = {field:fixture[field] for field in ['energy', 'shells', 'amber', 'rush']}
     if chain == 'choice':
-        choices = configuration('choice_chests')[item]['choices']
+        offered = confirm(copy.deepcopy(fixture), [('choice_offer', {'cell': 0})])
+        choices = offered['board'][0]['offer']
+        assert len(choices) == 3 and len({item.rpartition('_')[0] for item in choices}) == 3
         for option, expected in enumerate(choices):
-            state = confirm(copy.deepcopy(fixture), [('choice', {'cell':0, 'option':option})])
+            chain_name, _, raw_level = expected.rpartition('_')
+            assert known_item(expected) and int(raw_level) <= grade and chain_name
+            state = confirm(copy.deepcopy(offered), [('choice', {'cell': 0, 'option': option})])
             outputs = [cell['id'] for cell in state['board'] if cell['id']]
-            assert outputs == [expected] and known_item(expected)
-            assert {field:state[field] for field in balances} == balances
-            rejects(state, 'choice', {'cell':0, 'option':option})
+            assert outputs == [expected]
+            assert {field: state[field] for field in balances} == balances
+            rejects(state, 'choice', {'cell': 0, 'option': option})
         return
 
     definition = configuration('special_chests')[chain]['levels'][grade - 1]
@@ -61,12 +65,12 @@ def test_energy_and_premium_merges_increase_total_reward_value():
     definitions = configuration('special_chests')
     fire_values = next(row['value'] for row in configuration('chains') if row['id'] == 'fire')
     previous_energy = previous_premium = 0
-    for grade in range(5):
+    for grade in range(4):
         energy = sum(fire_values[int(item.rsplit('_', 1)[1]) - 1]
                      for item in definitions['energybox']['levels'][grade]['items'])
         premium_definition = definitions['premiumbox']['levels'][grade]
         weights = premium_definition['tier_weights']
         premium = sum(value * weight for value, weight in zip(fire_values, weights)) / sum(weights) * premium_definition['count']
-        assert energy > previous_energy * 2
-        assert premium > previous_premium * 2
+        assert energy > previous_energy
+        assert premium > previous_premium
         previous_energy, previous_premium = energy, premium

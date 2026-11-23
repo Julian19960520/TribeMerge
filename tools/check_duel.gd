@@ -67,5 +67,21 @@ func run() -> void:
 	check(duel.state()["wins"]==12 and duel.ready_milestones().is_empty(),"reload preserves wins and claimed milestones")
 	g.new_game()
 	check(duel.state()["wins"]==0,"new game resets duel progression")
+	g.level=int(JSON.parse_string(FileAccess.get_file_as_string("res://data/duel_race.json"))["unlock_level"])
+	g.simulation_time=1793577600
+	g.rng.seed=7
+	check(not (await duel.act("join")).has("error"),"join first match at 0 wins")
+	check(int(duel.state()["match"]["target"])==30 and duel.next_target()==30,"0 wins keeps the 30 target")
+	g.simulation_time+=5000
+	duel.tick()
+	check(duel.state()["match"]["status"]=="lost" and int(duel.state()["wins"])==0,"losing does not add a win")
+	await duel.act("claim")
+	check(duel.next_target()==30,"a loss does not raise the next target")
+	check(not (await duel.act("join")).has("error"),"rejoin after a loss")
+	check(int(duel.state()["match"]["target"])==30,"second match stays at 30 after a loss")
+	for i in 2: duel.add_duel_points(30)
+	check(duel.state()["match"]["status"]=="won" and int(duel.state()["wins"])==1,"winning once raises the win count")
+	await duel.act("claim")
+	check(duel.next_target()==60,"one win raises the next target to 60")
 	print("RESULT: ",failures," failures")
 	quit(1 if failures else 0)

@@ -198,6 +198,8 @@ func try_drop(a: int, b: int) -> String:
 		var nx = str(state.board[b]["id"])
 		state.board[a].erase("gm")
 		state.board[b].erase("gm")
+		state.board[a].erase("offer")
+		state.board[b].erase("offer")
 		discover(nx)
 		state.opened = unlock_around(b)
 		_maybe_spawn_bubble(nx, b)
@@ -275,7 +277,7 @@ func _sync_cook_cells() -> void:
 			o["cell"] = int(at[uid])
 
 func _swap_item_state(a: int, b: int) -> void:
-	for key in ["gm", "chest"]:
+	for key in ["gm", "chest", "offer"]:
 		var va = state.board[a].get(key)
 		var vb = state.board[b].get(key)
 		state.board[a].erase(key)
@@ -483,6 +485,7 @@ func store_cell(i: int) -> bool:
 	state.inv[slot] = cell_id(i)
 	state.board[i]["id"] = ""
 	state.board[i].erase("chest")
+	state.board[i].erase("offer")
 	return true
 
 ## 取走一格，后面的物品留在原位。末尾空格会收掉。
@@ -501,6 +504,7 @@ func take_inventory(index: int, to: int) -> bool:
 	state.board[to]["id"] = str(state.inv[index])
 	state.inv[index] = ""
 	state.board[to].erase("chest")
+	state.board[to].erase("offer")
 	if contents is Array: state.board[to]["chest"] = contents.duplicate()
 	_inv_trim()
 	discover(cell_id(to))

@@ -32,6 +32,8 @@ func time_left() -> int:
 func left() -> int:
 	if expired(): return 0
 	var cap := int(Data.gen_stats(str(config()["item"]))["charges"])
+	# 第一轮（新手引导里那轮）只有 first_charges 次，之后每轮按配置的次数
+	if progress().is_empty() or _cycle() == 0: cap = int(config().get("first_charges", cap))
 	if progress().is_empty() or int(progress()["cycle"]) != _cycle(): return cap
 	return maxi(0, cap - int(progress()["used"]))
 

@@ -174,7 +174,9 @@ func run() -> void:
 	g.board[20]["id"] = "choice_1"
 	check((await choice.choose(20,"choice_1",4)).has("error") and g.board[20]["id"] == "choice_1", "invalid choice retains chest")
 	energy = g.energy
-	check((await choice.choose(20,"choice_1",0)).get("id") == "fire_5" and g.board[20]["id"] == "fire_5" and g.energy == energy, "choice replaces original cell even when board is full; resource remains physical")
+	var picked: Dictionary = await choice.choose(20, "choice_1", 0)
+	var got := str(picked.get("id", ""))
+	check(not picked.has("error") and Data.type_of(got) == "item" and Data.lv(got) == 1 and g.board[20]["id"] == got and g.energy == energy, "choice replaces original cell with a level-1 product even when the board is full")
 	check((await choice.choose(20,"choice_1",1)).has("error"), "used chest cannot choose again")
 	g.board[20]["id"] = "choice_1"
 	var main = load("res://main.tscn").instantiate()

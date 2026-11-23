@@ -30,8 +30,10 @@ static func capture(game: Node, include_local: bool = true) -> Dictionary:
 static func normalize(value):
 	return Values.copy(value)
 
-## 订单补给箱从 10 级缩成 5 级：旧存档里的 6~10 级一律当作 5 级（只改物品 id，就地修改）。
+## 宝箱从 5 级缩成 4 级：旧存档里超过 4 级的一律当作 4 级（只改物品 id，就地修改）。
 ## 衣服线主产物从 13 级缩成 12 级：旧存档里的 cloth_13 当作 cloth_12。
+const CHEST_FAMILIES := ["choice", "chest", "orderbox", "premiumbox", "energybox", "amberbox"]
+
 static func migrate_ids(state: Dictionary) -> void:
 	var cells = state.get("board")
 	if cells is Array:
@@ -43,10 +45,22 @@ static func migrate_ids(state: Dictionary) -> void:
 		if items is Array:
 			for i in items.size():
 				if items[i] is String: items[i] = _migrate_id(items[i])
+	var discovered = state.get("discovered")
+	if discovered is Dictionary:
+		var renamed := {}
+		for key in discovered.keys():
+			var next := _migrate_id(str(key))
+			if next != str(key): renamed[str(key)] = next
+		for key in renamed:
+			var value = discovered[key]
+			discovered.erase(key)
+			if not discovered.has(renamed[key]): discovered[renamed[key]] = value
 
 static func _migrate_id(id: String) -> String:
-	if id.begins_with("orderbox_") and id.get_slice("_", 1).is_valid_int() and int(id.get_slice("_", 1)) > 5:
-		return "orderbox_5"
+	var family := id.get_slice("_", 0)
+	var grade := id.get_slice("_", 1)
+	if family in CHEST_FAMILIES and grade.is_valid_int() and int(grade) > 4:
+		return "%s_4" % family
 	if id == "cloth_13":
 		return "cloth_12"
 	return id

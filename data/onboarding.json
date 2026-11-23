@@ -429,7 +429,7 @@
 			"mode": "energy_gen",
 			"text": "§dialogue.hero_voice.365775cd0600§",
 			"wait": {
-				"egen_taps": 2
+				"egen_taps": 4
 			}
 		},
 		{
@@ -439,9 +439,15 @@
 			"wait": {
 				"has": "fire_6"
 			},
-			"pair": [
-				"fire_5",
-				"fire_5"
+			"pairs": [
+				[
+					"fire_4",
+					"fire_4"
+				],
+				[
+					"fire_5",
+					"fire_5"
+				]
 			]
 		},
 		{
@@ -1247,5 +1253,6 @@
 		"craft6",
 		"level4_last"
 	],
-	"energy_gift_drop": "fire_5"
+	"energy_gift_drop": "fire_4",
+	"energy_gift_taps": 4
 }

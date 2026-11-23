@@ -1,6 +1,6 @@
 class_name DuelRace
 extends RefCounted
-## First-to-target practice race, with per-window win milestones and scaling round targets.
+## First-to-target practice race, with per-window win milestones and targets that scale with wins.
 const CURVE_STEPS := 40
 ## pv=1: 老版每单1~4分；pv=2: 200~600活动积分；pv=3: 双人竞速独立难度积分（匹配 30→300 渐进目标）
 const DUEL_PV := 3
@@ -50,18 +50,18 @@ static func active_v3() -> bool:
 	var m: Dictionary = state().get("match", {})
 	return not m.is_empty() and str(m.get("status", "")) == "running" and int(m.get("pv", 1)) >= DUEL_PV
 
-## 第 round_num 局（从 1 开始）的目标分：第 1 局 30 分，递增至第 12 局 300 分。
-static func target_for_round(round_num: int) -> int:
+## 当前胜场对应的目标分：0 胜 30 分，每赢 1 场升一档，封顶 400 分。输了不升档。
+static func target_for_wins(wins: int) -> int:
 	var targets: Array = config().get("round_targets", [])
 	if not targets.is_empty():
-		var idx := clampi(round_num - 1, 0, targets.size() - 1)
+		var idx := clampi(wins, 0, targets.size() - 1)
 		return int(targets[idx])
 	return int(config()["target"])
 
-## 下一局的目标分（给开始界面显示）。
+## 下一局的目标分（给开始界面显示），只看已经赢了几场。
 static func next_target() -> int:
 	sync_window()
-	return target_for_round(int(state().get("rounds", 0)) + 1)
+	return target_for_wins(int(state().get("wins", 0)))
 
 ## 根据本局目标分插值计算对手完赛时间区间 [min_sec, max_sec]。
 static func opponent_seconds_for(target: int) -> Array:
@@ -195,7 +195,7 @@ static func local_action(action: String, milestone := 0) -> Dictionary:
 			if not m.is_empty() and (m["status"] == "running" or not m.get("claimed", false)): return {"error": TextCatalog.source("notice.duelrace.285eedc7ae25")}
 			if not ActivitySchedule.scheduled("duel"): return {"error": ActivitySchedule.closed_message("duel")}
 			var next_round := int(s["rounds"]) + 1
-			var target := target_for_round(next_round)
+			var target := target_for_wins(int(s["wins"]))
 			var seconds: Array = opponent_seconds_for(target)
 			var duration := G.random_for("duel").randf_range(float(seconds[0]), float(seconds[1]))
 			var curve := []

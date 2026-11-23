@@ -291,7 +291,7 @@ static func draw_item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: 
 	var s: int = abs(ch.hash()) % 97 + lv * 7
 	match ch:
 		"fire", "shell", "amber", "sand": _currency(ci, ch, lv, s, rim)
-		"chest", "energybox", "premiumbox", "orderbox": _box(ci, ch, lv, s, rim, id.ends_with("_open"))
+		"chest", "energybox", "amberbox", "premiumbox", "orderbox": _box(ci, ch, lv, s, rim, id.ends_with("_open"))
 		"choice": _choice_box(ci, id, lv, s, rim)
 		"pack": _pack(ci, lv, s, rim)
 		"upgrade": _upgrade(ci, s, rim)
@@ -814,6 +814,7 @@ static func _emberpot(ci: CanvasItem, s: int, rim: bool) -> void:
 ## 订单补给箱 = 木板条箱、自选宝箱 = 三个小窗的箱子。正面的徽章画着里面会出的东西。
 ## 档次一眼区分：1 素 → 2 草绳箍 → 3 铜箍铆钉 → 4 深色箱身 + 金箍 + 宝石 → 5 金饰 + 皇冠 + 光晕星光。
 const BOX_PURPLE := Color("8a5cc9")
+const BOX_AMBER := Color("e8962a")
 const BOX_TRIM := [Color("7a4a22"), Color("7a4a22"), Color("e6c98a"), Color("c9803a"), Color("f0b93a"), Color("f7cf4a")]
 const BOX_SCALE := [0.0, 0.8, 0.86, 0.92, 0.97, 1.0]
 
@@ -854,6 +855,7 @@ static func _box(ci: CanvasItem, ch: String, lv: int, s: int, rim: bool, opened 
 	match ch:
 		"energybox": _box_barrel(ci, tier, s, rim, opened)
 		"premiumbox": _box_casket(ci, tier, s, rim, opened)
+		"amberbox": _box_casket(ci, tier, s, rim, opened, BOX_AMBER)
 		"orderbox": _box_crate(ci, tier, lv, s, rim, opened)
 		_: _box_trunk(ci, tier, s, rim, opened)
 	_box_end(ci, tier, prev, s)
@@ -1125,8 +1127,9 @@ static func _box_barrel(ci: CanvasItem, tier: int, s: int, rim: bool, opened := 
 
 # ---------- 高级宝箱：紫色尖顶匣，徽章是琥珀
 
-static func _box_casket(ci: CanvasItem, tier: int, s: int, rim: bool, opened := false) -> void:
-	var col := BOX_PURPLE
+## 宝石匣：高级宝箱是紫色；琥珀宝箱同一个匣子，蜂蜜琥珀色，箱口探出的全是琥珀
+static func _box_casket(ci: CanvasItem, tier: int, s: int, rim: bool, opened := false, base := BOX_PURPLE) -> void:
+	var col := base
 	if tier == 4: col = col.darkened(0.3)
 	var trim: Color = BOX_TRIM[tier]
 	var parts := []
@@ -1179,8 +1182,9 @@ static func _box_casket(ci: CanvasItem, tier: int, s: int, rim: bool, opened := 
 		var mc := Vector2(0, 2)
 		var mr := Vector2(38, 8)
 		_mouth(ci, mc, mr, band_col, s + 20)
-		_peek(ci, "amber_2", mc + Vector2(-10, -13), 50.0, -0.25)
-		_peek(ci, "amber_2", mc + Vector2(13, -10), 40.0, 0.3)
+		var gem := "amber_5" if base == BOX_AMBER else "amber_2"
+		_peek(ci, gem, mc + Vector2(-10, -13), 50.0, -0.25)
+		_peek(ci, "amber_4" if base == BOX_AMBER else "amber_2", mc + Vector2(13, -10), 40.0, 0.3)
 		_mouth_lip(ci, mc, mr, band_col, s + 20)
 		_peek_glints(ci, mc, s + 30)
 

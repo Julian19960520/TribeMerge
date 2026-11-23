@@ -98,7 +98,7 @@ func run() -> void:
 	var count_before: int=bot.events.size()
 	check(bot.merge_main(),"merge can reveal a covered neighbor")
 	check(g.board[2]["lock"]==1 and bot.events.size()==count_before+1 and bot.events[-1]["category"]=="merge","revealing a vine beneath cover is not recorded as unlocking it")
-	check(bot.reward_summary([["fire_3",2,"item"],["shell_2",60],["chest_1",1]])=="体力×10、不那那×60、1级藤编宝箱×1","reward summary follows credited resource units and physical item quantities")
+	check(bot.reward_summary([["fire_3",2,"item"],["shell_2",60],["chest_1",1]])=="体力×10、不那那×60、低级物品宝箱×1","reward summary follows credited resource units and physical item quantities")
 	g.level=2
 	bot.claimed_levels={}
 	await bot.rewards()

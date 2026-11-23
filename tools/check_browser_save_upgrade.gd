@@ -40,7 +40,7 @@ func run() -> void:
 		var valid: bool = replay.authorized and replay.recovery_error == "" and game.loaded_save
 		valid = valid and replay.digest() == FileAccess.get_file_as_string(game.save_path + ".expected")
 		valid = valid and game.level == 12 and game.amber == 527 and game.shells == 3891
-		valid = valid and game.player_id == "existing-browser-player" and game.stash == [owned_generator, "orderbox_5"]
+		valid = valid and game.player_id == "existing-browser-player" and game.stash == [owned_generator, "orderbox_4"]
 		valid = valid and game.inv_cap == 9 and game.inv == ["fruit_1", "tool_2"] and game.rules.progression.storage_price() == 50
 		valid = valid and replay.pending.is_empty() and replay.inflight.is_empty() and replay.seq == 0
 		valid = valid and replay.journal()["rules"] == replay.rules_hash()

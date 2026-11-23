@@ -32,7 +32,7 @@ func _validate() -> void:
 		"tiger_escape": {"stages": TYPE_ARRAY, "bots": TYPE_DICTIONARY},
 		"fossil_dig": {"shapes": TYPE_ARRAY, "milestones": TYPE_ARRAY},
 		"store_shell": {"items": TYPE_ARRAY, "refresh_hours": TYPE_INT, "refresh_amber": TYPE_INT},
-		"special_chests": {"orderbox": TYPE_DICTIONARY, "premiumbox": TYPE_DICTIONARY, "energybox": TYPE_DICTIONARY, "chest": TYPE_DICTIONARY},
+		"special_chests": {"orderbox": TYPE_DICTIONARY, "premiumbox": TYPE_DICTIONARY, "energybox": TYPE_DICTIONARY, "amberbox": TYPE_DICTIONARY, "chest": TYPE_DICTIONARY},
 		"offers": {"spree": TYPE_DICTIONARY, "energy": TYPE_DICTIONARY},
 		"gift_chain": {"cycle_days": TYPE_INT, "anchor_weekday": TYPE_INT, "visible": TYPE_INT, "steps": TYPE_ARRAY},
 		"ufo_offer": {"enabled": TYPE_BOOL}, "race": {"rewards": TYPE_ARRAY, "shadow": TYPE_DICTIONARY, "names": TYPE_ARRAY},
@@ -356,7 +356,7 @@ func _progression() -> void:
 
 ## Every chest grade has one explicit definition; there is no flat legacy format.
 func _chests() -> void:
-	for family in ["orderbox", "premiumbox", "energybox", "chest"]:
+	for family in ["orderbox", "premiumbox", "energybox", "amberbox", "chest"]:
 		var at: String = "special_chests." + family
 		var definition: Dictionary = docs.special_chests[family]
 		if not _fields(definition, at, {"levels": TYPE_ARRAY}): continue
@@ -374,13 +374,15 @@ func _chests() -> void:
 				_error(level_at, "expected object")
 				continue
 			var count := 0
-			if family == "energybox":
+			if family in ["energybox", "amberbox"]:
+				# 体力宝箱只装体力，琥珀宝箱只装琥珀，都是固定清单
+				var only := "energy" if family == "energybox" else "amber"
 				if not _fields(row, level_at, {"items": TYPE_ARRAY}): continue
 				count = row["items"].size()
 				for id in row["items"]:
 					_item(id, level_at + ".items")
 					var resource: Dictionary = chain_rows.get(str(id).get_slice("_", 0), {})
-					if resource.get("type") != "energy": _error(level_at + ".items", "energy chests can contain only energy items")
+					if resource.get("type") != only: _error(level_at + ".items", "%s chests can contain only %s items" % [family, only])
 			else:
 				if not _fields(row, level_at, {"count": TYPE_INT}): continue
 				count = row.count
@@ -401,13 +403,7 @@ func _chests() -> void:
 			_error("choice_chests." + id, "missing grade definition")
 			continue
 		var row: Variant = docs.choice_chests[id]
-		if not _fields(row, "choice_chests." + id, {"title": TYPE_STRING, "choices": TYPE_ARRAY, "icon": TYPE_STRING}): continue
-		if row.choices.size() != 3: _error("choice_chests." + id + ".choices", "expected exactly three choices")
-		var seen := {}
-		for choice in row.choices:
-			_item(choice, "choice_chests." + id + ".choices")
-			if seen.has(choice): _error("choice_chests." + id + ".choices", "choices must be distinct")
-			seen[choice] = true
+		if not _fields(row, "choice_chests." + id, {"title": TYPE_STRING, "icon": TYPE_STRING}): continue
 	for id in docs.choice_chests:
 		if not str(id).begins_with("choice_") or not items.has(id): _error("choice_chests." + str(id), "unknown choice chest grade")
 

@@ -62,7 +62,7 @@ static func contents(id: String, game = null) -> Array:
 		out.fill(ORDER_SLOT)
 		return out
 	var def := definition(id)
-	if Data.chain(id) == "energybox": return def.get("items", []).duplicate()
+	if Data.chain(id) in ["energybox", "amberbox"]: return def.get("items", []).duplicate()
 	if Data.chain(id) == "chest": return wicker_contents(id, game)
 	if Data.chain(id) != "premiumbox": return []
 	var rng: RandomNumberGenerator = game.random_for("premium_chests")

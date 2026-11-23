@@ -65,7 +65,7 @@ func run() -> void:
 	check(first_six >= 30 and first_six <= 36, "不靠宝箱碎片时最早%d级凑出6级（%s）兜底，28级前后靠宝箱碎片补齐" % [first_six, first_line])
 	check(int(fixed_budget(28)["basket"]) == 30, "食物线28级固定30份，差2份一级碎片即可合出第一个6级")
 	g.level = 29
-	for tier in range(1, 6):
+	for tier in range(1, 5):
 		g.random_seed = "producer-pacing:%d" % tier; g.random_streams = {}
 		var id := "chest_%d" % tier
 		var draws := 0; var generators := 0; var only_fragments := true
@@ -77,7 +77,7 @@ func run() -> void:
 					only_fragments = only_fragments and Data.lv(str(item)) == 1 and int(Data.line_of(str(item))["unlock"]) <= g.level
 		var expected := float(SpecialChests.definition(id)["gen_chance"])
 		var actual := float(generators) / float(draws)
-		check(only_fragments and absf(actual - expected) < 0.005, "%d级宝箱实际产出仅一级碎片，概率%.2f%%（配置%.0f%%）" % [tier, actual * 100, expected * 100])
+		check(only_fragments and absf(actual - expected) < 0.005, "%d档宝箱实际产出仅一级碎片，概率%.2f%%（配置%.0f%%）" % [tier, actual * 100, expected * 100])
 	g.stash = ["basket_6"]; g.level = 6
 	var claim: Dictionary = replay.perform("level", {"level": 6}, replay.clock)
 	check(not claim.has("error") and g.stash.count("anvil_5") == 1 and g.stash.has("basket_6"), "新奖励实际到账，已拥有的6级生产器不回收")

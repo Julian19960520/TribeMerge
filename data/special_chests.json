@@ -2,31 +2,46 @@
 	"orderbox": {
 		"levels": [
 			{
+				"count": 2,
+				"high_tier_bias": 0.4
+			},
+			{
 				"count": 3,
-				"high_tier_bias": 0.5
+				"high_tier_bias": 0.8
+			},
+			{
+				"count": 4,
+				"high_tier_bias": 1.2
 			},
 			{
 				"count": 5,
-				"high_tier_bias": 1.5
-			},
-			{
-				"count": 7,
-				"high_tier_bias": 2.5
-			},
-			{
-				"count": 9,
-				"high_tier_bias": 3.5
-			},
-			{
-				"count": 12,
-				"high_tier_bias": 4.5
+				"high_tier_bias": 1.6
 			}
 		]
 	},
 	"premiumbox": {
 		"levels": [
 			{
-				"count": 8,
+				"count": 3,
+				"resource_weights": {
+					"fire": 65,
+					"amber": 35
+				},
+				"tier_weights": [
+					0,
+					70,
+					30,
+					0,
+					0,
+					0
+				],
+				"guaranteed_resources": [
+					"fire",
+					"amber"
+				]
+			},
+			{
+				"count": 4,
 				"resource_weights": {
 					"fire": 65,
 					"amber": 35
@@ -34,86 +49,48 @@
 				"tier_weights": [
 					0,
 					40,
-					30,
-					18,
+					45,
+					15,
+					0,
+					0
+				],
+				"guaranteed_resources": [
+					"fire",
+					"amber"
+				]
+			},
+			{
+				"count": 5,
+				"resource_weights": {
+					"fire": 65,
+					"amber": 35
+				},
+				"tier_weights": [
+					0,
+					15,
+					50,
+					35,
+					0,
+					0
+				],
+				"guaranteed_resources": [
+					"fire",
+					"amber"
+				]
+			},
+			{
+				"count": 6,
+				"resource_weights": {
+					"fire": 65,
+					"amber": 35
+				},
+				"tier_weights": [
+					0,
 					10,
-					2
-				],
-				"guaranteed_resources": [
-					"fire",
-					"amber"
-				]
-			},
-			{
-				"count": 12,
-				"resource_weights": {
-					"fire": 65,
-					"amber": 35
-				},
-				"tier_weights": [
-					0,
-					15,
-					30,
-					30,
-					20,
-					5
-				],
-				"guaranteed_resources": [
-					"fire",
-					"amber"
-				]
-			},
-			{
-				"count": 16,
-				"resource_weights": {
-					"fire": 65,
-					"amber": 35
-				},
-				"tier_weights": [
-					0,
-					0,
-					15,
-					30,
+					50,
 					40,
-					15
-				],
-				"guaranteed_resources": [
-					"fire",
-					"amber"
-				]
-			},
-			{
-				"count": 24,
-				"resource_weights": {
-					"fire": 65,
-					"amber": 35
-				},
-				"tier_weights": [
 					0,
-					0,
-					0,
-					20,
-					40,
-					40
-				],
-				"guaranteed_resources": [
-					"fire",
-					"amber"
-				]
-			},
-			{
-				"count": 36,
-				"resource_weights": {
-					"fire": 65,
-					"amber": 35
-				},
-				"tier_weights": [
-					0,
-					0,
-					0,
-					0,
-					25,
-					75
+					0
 				],
 				"guaranteed_resources": [
 					"fire",
@@ -126,83 +103,36 @@
 		"levels": [
 			{
 				"items": [
-					"fire_5",
-					"fire_5",
-					"fire_5"
+					"fire_2",
+					"fire_2",
+					"fire_3"
 				]
 			},
 			{
 				"items": [
-					"fire_5",
-					"fire_5",
-					"fire_5",
-					"fire_6",
-					"fire_6"
+					"fire_2",
+					"fire_3",
+					"fire_3",
+					"fire_3"
 				]
 			},
 			{
 				"items": [
-					"fire_5",
-					"fire_5",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6"
+					"fire_3",
+					"fire_3",
+					"fire_3",
+					"fire_3",
+					"fire_4"
 				]
 			},
 			{
 				"items": [
-					"fire_5",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6"
-				]
-			},
-			{
-				"items": [
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6",
-					"fire_6"
+					"fire_3",
+					"fire_3",
+					"fire_3",
+					"fire_4",
+					"fire_4",
+					"fire_4"
 				]
 			}
 		]
@@ -212,10 +142,45 @@
 			{
 				"count": 3,
 				"base_pool": [
-					"fire_4",
-					"shell_4",
+					"fire_2",
+					"shell_2",
 					"amber_2",
 					"sand_2"
+				],
+				"main_tiers": [
+					1,
+					2
+				],
+				"sub_tiers": [
+					1
+				],
+				"gen_tier": 1,
+				"gen_chance": 0.02
+			},
+			{
+				"count": 4,
+				"base_pool": [
+					"fire_2",
+					"shell_2",
+					"amber_2",
+					"sand_2"
+				],
+				"main_tiers": [
+					2
+				],
+				"sub_tiers": [
+					1
+				],
+				"gen_tier": 1,
+				"gen_chance": 0.02
+			},
+			{
+				"count": 5,
+				"base_pool": [
+					"fire_3",
+					"shell_3",
+					"amber_3",
+					"sand_3"
 				],
 				"main_tiers": [
 					2,
@@ -230,8 +195,8 @@
 			{
 				"count": 6,
 				"base_pool": [
-					"fire_5",
-					"shell_5",
+					"fire_3",
+					"shell_3",
 					"amber_3",
 					"sand_3"
 				],
@@ -243,61 +208,45 @@
 					2
 				],
 				"gen_tier": 1,
-				"gen_chance": 0.04
+				"gen_chance": 0.03
+			}
+		]
+	},
+	"amberbox": {
+		"levels": [
+			{
+				"items": [
+					"amber_2",
+					"amber_2",
+					"amber_3"
+				]
 			},
 			{
-				"count": 9,
-				"base_pool": [
-					"fire_6",
-					"shell_6",
+				"items": [
+					"amber_2",
+					"amber_3",
+					"amber_3",
+					"amber_3"
+				]
+			},
+			{
+				"items": [
+					"amber_3",
+					"amber_3",
+					"amber_3",
+					"amber_3",
+					"amber_4"
+				]
+			},
+			{
+				"items": [
+					"amber_3",
+					"amber_3",
+					"amber_3",
 					"amber_4",
-					"sand_4"
-				],
-				"main_tiers": [
-					4,
-					5
-				],
-				"sub_tiers": [
-					3
-				],
-				"gen_tier": 1,
-				"gen_chance": 0.05
-			},
-			{
-				"count": 12,
-				"base_pool": [
-					"fire_6",
-					"shell_6",
-					"amber_5",
-					"sand_5"
-				],
-				"main_tiers": [
-					5,
-					6
-				],
-				"sub_tiers": [
-					4
-				],
-				"gen_tier": 1,
-				"gen_chance": 0.06
-			},
-			{
-				"count": 18,
-				"base_pool": [
-					"fire_6",
-					"shell_6",
-					"amber_6",
-					"sand_6"
-				],
-				"main_tiers": [
-					6,
-					7
-				],
-				"sub_tiers": [
-					5
-				],
-				"gen_tier": 1,
-				"gen_chance": 0.08
+					"amber_4",
+					"amber_4"
+				]
 			}
 		]
 	}

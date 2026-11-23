@@ -730,13 +730,14 @@ static func describe(id: String) -> String:
 	if is_numeric_resource(id): return str(REWARD_RESOURCES[id]["description"])
 	if type_of(id) == "upgrade": return TextCatalog.source("notice.data.83eb30deb5bb")
 	if type_of(id) == "scissors": return TextCatalog.source("notice.data.befb6f57c800")
-	if Data.chain(id) == "orderbox": return TextCatalog.fill(TextCatalog.source("notice.data.c14a2bd6dafb"), int(SpecialChests.order_definition(id)["count"]))
-	if Data.chain(id) == "premiumbox": return TextCatalog.fill(TextCatalog.source("notice.data.7c86baa46882"), [lv(id), SpecialChests.count(id)])
-	if Data.chain(id) == "energybox":
+	if Data.chain(id) == "orderbox": return TextCatalog.fill(TextCatalog.source("notice.data.c14a2bd6dafb"), [name_of(id), int(SpecialChests.order_definition(id)["count"])])
+	if Data.chain(id) == "premiumbox": return TextCatalog.fill(TextCatalog.source("notice.data.7c86baa46882"), [name_of(id), SpecialChests.count(id)])
+	if Data.chain(id) in ["energybox", "amberbox"]:
 		var total := 0
 		for item in SpecialChests.definition(id)["items"]: total += value_of(str(item))
-		return TextCatalog.fill(TextCatalog.source("notice.data.57a9680ca8c6"), [lv(id), SpecialChests.count(id), total])
-	if Data.chain(id) == "chest": return TextCatalog.fill(TextCatalog.source("notice.data.f531c7922f96"), [lv(id), SpecialChests.count(id)])
+		var line := "notice.data.57a9680ca8c6" if Data.chain(id) == "energybox" else "notice.data.8718219c205f"
+		return TextCatalog.fill(TextCatalog.source(line), [name_of(id), SpecialChests.count(id), total])
+	if Data.chain(id) == "chest": return TextCatalog.fill(TextCatalog.source("notice.data.f531c7922f96"), [name_of(id), SpecialChests.count(id)])
 	if DISHES.has(id):
 		var d: Dictionary = DISHES[id]
 		var bits: PackedStringArray = []
@@ -793,7 +794,7 @@ static func describe(id: String) -> String:
 		"sand":
 			return TextCatalog.fill(TextCatalog.source("notice.data.e6c372cc495b"), [value_of(id), rush_text(), tail])
 		"choice":
-			return TextCatalog.fill(TextCatalog.source("notice.data.10ea43411057"), lv(id))
+			return TextCatalog.fill(TextCatalog.source("notice.data.10ea43411057"), name_of(id))
 		"chest":
 			return TextCatalog.source("notice.data.83a2fa3dc002")
 		"pack":

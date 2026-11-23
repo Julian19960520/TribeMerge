@@ -9,6 +9,7 @@ const Layout := preload("res://scripts/config/board_layout.gd")
 const PickSheetSc := preload("res://scripts/ui/PickSheet.gd")
 
 const VALUED := ["energy", "shell", "amber", "sand"]
+const BOX_ORDER := ["choice", "chest", "orderbox", "premiumbox", "energybox", "amberbox"]
 const REWARD_COLS := 5
 const REWARD_SQ := 120.0
 const REWARD_PITCH_X := 132.0
@@ -42,11 +43,25 @@ func _chains() -> float:
 			qy += qh
 		y += box_h + 22.0
 	var rest: Array = []
+	var boxes := {}
 	var arr: Array = editor._pages[Files.CHAINS]
 	for i in arr.size():
 		var cid = str(arr[i].get("id", ""))
-		if not used.has(cid):
+		if used.has(cid):
+			continue
+		if cid in BOX_ORDER:
+			boxes[cid] = i
+		else:
 			rest.append(i)
+	if not boxes.is_empty():
+		y = _chain_head(y, TextCatalog.source("developer.configchainspage.63a9d95616f9"))
+		for cid in BOX_ORDER:
+			if not boxes.has(cid):
+				continue
+			var box: Dictionary = arr[int(boxes[cid])]
+			_queue(y, str(box.get("name", cid)), int(boxes[cid]), sq)
+			y += 46.0 + sq + 52.0
+		y += 8.0
 	if not rest.is_empty():
 		y = _chain_head(y, TextCatalog.source("ui.picksheet.d2909f1647e7"))
 		for ci in rest:
@@ -203,6 +218,8 @@ func _fill_item() -> void:
 			chain["value"][ii] = n
 			editor._touch(Files.CHAINS))
 		y += 72
+	if str(chain.get("type", "")) in ["chest", "choice"]:
+		y = _chest_sheet(y, chain, ii)
 	editor._sheet_sc.set_length(y + 24)
 
 func _fill_gen(chain: Dictionary, ii: int) -> void:
@@ -499,6 +516,110 @@ func _swap_prod(chain: Dictionary, i: int, dir: int) -> void:
 	if not chain.has("prod"):
 		return
 	editor._swap(chain["prod"], i, dir)
+
+func _chest_sheet(y: float, chain: Dictionary, ii: int) -> float:
+	var cid := str(chain.get("id", ""))
+	var id := "%s_%d" % [cid, ii + 1]
+	var taps := 0
+	var drops: Array = []
+	var note := ""
+	if str(chain.get("type", "")) == "choice":
+		taps = 1
+		drops = ChoiceChest.candidates(id)
+		note = TextCatalog.source("developer.configchainspage.b55356134cb5")
+	else:
+		var levels: Array = SpecialChests.config().get(cid, {}).get("levels", [])
+		if ii < 0 or ii >= levels.size() or not (levels[ii] is Dictionary):
+			note = TextCatalog.source("developer.configchainspage.b5cae94cabf2")
+		else:
+			var row: Dictionary = levels[ii]
+			if row.get("items") is Array:
+				taps = row["items"].size()
+				drops = row["items"]
+			else:
+				taps = int(row.get("count", 0))
+				if cid == "orderbox":
+					note = TextCatalog.source("developer.configchainspage.b93c9ecc4fa7")
+				elif cid == "premiumbox":
+					drops = _premium_items(row)
+				elif cid == "chest":
+					drops = _wicker_items(row)
+	var taps_label = UI.lbl(editor._sheet_root, TextCatalog.fill(TextCatalog.source("developer.configchainspage.f25e91bed761"), taps), Rect2(24, y, 680, 48), 26, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
+	taps_label.clip_text = true
+	y += 52
+	if note != "":
+		var note_label = UI.lbl(editor._sheet_root, note, Rect2(24, y, 680, 64), 22, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
+		note_label.clip_text = true
+		y += 68
+	if drops.is_empty():
+		return y
+	var title = UI.lbl(editor._sheet_root, TextCatalog.source("developer.configchainspage.c6460ffa1a51"), Rect2(24, y, 680, 40), 26, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
+	title.clip_text = true
+	y += 44
+	return _preview_drops(y, drops)
+
+func _preview_drops(y: float, drops: Array) -> float:
+	var counts := {}
+	var order: Array = []
+	for entry in drops:
+		var id := str(entry)
+		if id == "":
+			continue
+		if not counts.has(id):
+			order.append(id)
+			counts[id] = 0
+		counts[id] = int(counts[id]) + 1
+	var sq := 108.0
+	var pitch := 128.0
+	var sc := Scroller.new()
+	sc.horizontal = true
+	sc.position = Vector2(16, y)
+	sc.size = Vector2(688, sq + 72.0)
+	editor._sheet_root.add_child(sc)
+	for i in order.size():
+		var id := str(order[i])
+		var x := float(i) * pitch
+		editor._icon(sc.content, Rect2(x, 0, sq, sq), id)
+		var caption := Data.name_of(id)
+		if int(counts[id]) > 1:
+			caption = "%s ×%d" % [caption, int(counts[id])]
+		var cap = UI.lbl(sc.content, caption, Rect2(x, sq + 4, sq, 56), 16, Color("6b4a2a"))
+		cap.clip_text = true
+	sc.set_length(float(order.size()) * pitch + 8.0)
+	return y + sq + 84.0
+
+func _premium_items(row: Dictionary) -> Array:
+	var out: Array = []
+	var weights: Dictionary = row.get("resource_weights", {})
+	var tiers: Array = row.get("tier_weights", [])
+	for resource in weights:
+		if int(weights[resource]) <= 0:
+			continue
+		for i in tiers.size():
+			if int(tiers[i]) <= 0:
+				continue
+			out.append("%s_%d" % [str(resource), i + 1])
+	return out
+
+func _wicker_items(row: Dictionary) -> Array:
+	var out: Array = []
+	for id in row.get("base_pool", []):
+		out.append(str(id))
+	var gen_tier := int(row.get("gen_tier", 0))
+	for line in Data.LINES:
+		if not (line is Dictionary):
+			continue
+		var main := Data.primary(line)
+		for tier in row.get("main_tiers", []):
+			if main != "":
+				out.append("%s_%d" % [main, int(tier)])
+		for sub in Data.secondaries(line):
+			for tier in row.get("sub_tiers", []):
+				out.append("%s_%d" % [str(sub), int(tier)])
+		var gen := str(line.get("gen", ""))
+		if gen != "" and gen_tier > 0:
+			out.append("%s_%d" % [gen, gen_tier])
+	return out
 
 func _chain_icon(cid: String) -> String:
 	if cid == "":

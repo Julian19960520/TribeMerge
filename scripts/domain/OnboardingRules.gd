@@ -51,13 +51,15 @@ func advance() -> void:
 		if str(current.get("key", "")) in ["free_energy_gift", "energy_gift", "egen_merge", "egen_collect"] and context.starter.expired():
 			_next()
 			continue
-		# The two drops may already be merged, spent or claimed by hand; a lesson
-		# step whose items are gone would otherwise hold the board forever.
-		var drop := str(config().get("energy_gift_drop", ""))
-		var basket := Data.next_id(drop) if drop != "" else ""
-		if str(current.get("key", "")) == "egen_merge" and count(basket) == 0 and count(drop) < 2:
-			_next()
-			continue
+		# The drops may already be merged, spent or claimed by hand; a lesson
+		# step with no pair left to merge would otherwise hold the board forever.
+		if str(current.get("key", "")) == "egen_merge" and not _satisfied(current.get("wait", {})):
+			var pair_left := false
+			for pair in current.get("pairs", [current.get("pair", [])]):
+				if (pair as Array).size() > 0 and count(str(pair[0])) >= 2: pair_left = true
+			if not pair_left:
+				_next()
+				continue
 		if str(current.get("mode", "")) == "complete":
 			state.tutorial_on = false
 			state.seen_tutorial = true
@@ -105,7 +107,9 @@ func _satisfied(w: Dictionary) -> bool:
 		var free_slots := 0
 		for cell in state.board:
 			if int(cell["lock"]) == 0 and str(cell["id"]) == "" and not cell.has("ck"): free_slots += 1
-		return bool(progress()["energy_gift"]) or energy_lesson_needed() and count(str(config()["energy_generator"])) > 0 and free_slots >= 1 and context.starter.left() > 0
+		# Every lesson tap needs its own empty cell; merging is locked until the taps finish.
+		var taps := int(config().get("energy_gift_taps", 2))
+		return bool(progress()["energy_gift"]) or energy_lesson_needed() and count(str(config()["energy_generator"])) > 0 and free_slots >= taps and context.starter.left() >= taps
 	return false
 
 func energy_lesson_needed() -> bool:
@@ -249,11 +253,11 @@ func scripted_drop(gen_id: String) -> String:
 	if not active(): return ""
 	if str(stage().get("key", "")) == "gen_tap" and gen_id == str(config()["upgraded_generator"]):
 		return str(config()["upgrade_first_drop"])
-	# Like the reference game's gift box: the lesson's first two pots merge into
-	# one full basket of stamina (40 + 40 -> 100), refilling an empty bar.
+	# Like the reference game's gift box: the lesson's four drops merge pairwise
+	# into one full basket of stamina (4 x 15 -> 2 x 40 -> 100), refilling an empty bar.
 	# The pot can be taken from the stash and tapped before stamina runs out, so
-	# the first two taps give the lesson's drop whenever they happen.
-	if gen_id == str(config()["energy_generator"]) and int(progress().get("egen_taps", 0)) < 2 and int(progress()["step"]) <= stage_index("energy_gift"):
+	# the first taps give the lesson's drop whenever they happen.
+	if gen_id == str(config()["energy_generator"]) and int(progress().get("egen_taps", 0)) < int(config().get("energy_gift_taps", 2)) and int(progress()["step"]) <= stage_index("energy_gift"):
 		return str(config().get("energy_gift_drop", ""))
 	# Only the single new-product lesson is scripted. All subsequent production
 	# uses the exact drops displayed by Data.gen_stats, including the configured secondary rate.

@@ -127,9 +127,9 @@ func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 		var w := font.get_string_size(TextCatalog.resolve(tag), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		ci.draw_string(font, pill.position + Vector2((tw - w) / 2, 19), TextCatalog.resolve(tag), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if state == 1 else Color("bfe3df"))
 
-## 节点上展示的奖励：自选宝箱 > 体力宝箱 > 卡包 > 宝箱 > 第一项。
+## 节点上展示的奖励：自选宝箱 > 体力宝箱 > 琥珀宝箱 > 卡包 > 宝箱 > 第一项。
 func _featured(rewards: Array) -> String:
-	for prefix in ["choice", "energybox", "pack", "chest"]:
+	for prefix in ["choice", "energybox", "amberbox", "pack", "chest"]:
 		for rw in rewards:
 			if str(rw[0]).begins_with(prefix): return str(rw[0])
 	return str(rewards[0][0]) if not rewards.is_empty() else "chest_1"

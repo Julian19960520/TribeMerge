@@ -51,5 +51,5 @@
       ]
     ]
   },
-  "start_snapshot": "res://tools/sim/after_guide.json"
+  "start_snapshot": ""
 }

@@ -1,8 +1,9 @@
 """Open the simulation timeline in the browser.
 
-python tools/sim/view.py              newest finished batch in tools/sim/results (falls back to web/)
+python tools/sim/view.py              newest finished run in tools/sim/results (falls back to web/)
 python tools/sim/view.py <folder>     a batch folder (has simulation-report.json.gz or report.json)
 python tools/sim/view.py <report.json>
+python tools/sim/view.py <folder> --publish   copy that report into web/ for the next web export
 Ctrl+C stops the local server.
 """
 from functools import partial
@@ -12,8 +13,24 @@ import sys
 import tempfile
 import webbrowser
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from run import ROOT, publish_report  # noqa: E402
+import gzip
+import json
+import shutil
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def publish_report(report, destination):
+    """Package a report.json next to the timeline page (simulation.html) so a browser can load it."""
+    destination.mkdir(parents=True, exist_ok=True)
+    payload = Path(report).read_bytes()
+    if not json.loads(payload).get('runs'):
+        raise ValueError('No completed runs in report')
+    (destination / 'simulation-report.json.gz').write_bytes(gzip.compress(payload, mtime=0))
+    for name in ('simulation.html', 'simulation-events.js'):
+        source = ROOT / 'web' / name
+        if source.resolve() != (destination / name).resolve():
+            shutil.copyfile(source, destination / name)
 
 
 class NoCacheHandler(SimpleHTTPRequestHandler):
@@ -28,8 +45,14 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
 
 def newest_batch():
     results = ROOT / 'tools/sim/results'
-    found = [p.parent for p in results.glob('*/simulation-report.json.gz')] if results.exists() else []
-    return max(found, key=lambda p: (p / 'simulation-report.json.gz').stat().st_mtime) if found else ROOT / 'web'
+    # 统一演算的结果：单局在 autoplay-*/，批量在 autoplay-batch-*/<每一局>/
+    found = [p.parent for p in results.glob('**/report.json')] if results.exists() else []
+    if not found:
+        return ROOT / 'web'
+    newest = max(found, key=lambda p: (p / 'report.json').stat().st_mtime)
+    if not (newest / 'simulation-report.json.gz').exists():
+        publish_report(newest / 'report.json', newest)
+    return newest
 
 
 def folder_for(arg):
@@ -47,7 +70,13 @@ def folder_for(arg):
 
 
 def main():
-    folder = folder_for(sys.argv[1]) if len(sys.argv) > 1 else newest_batch()
+    args = [a for a in sys.argv[1:] if a != '--publish']
+    folder = folder_for(args[0]) if args else newest_batch()
+    if '--publish' in sys.argv:
+        # 把这一局的报告放进 web/，随下次网页导出一起发布
+        publish_report(folder / 'report.json', ROOT / 'web')
+        print(f'已发布到 {ROOT / "web"}')
+        return
     if not (folder / 'simulation.html').exists():  # older batch folders: borrow the page from web/
         publish_report(folder / 'report.json', folder) if (folder / 'report.json').exists() else sys.exit(f'{folder} 里没有 simulation.html')
     handler = partial(NoCacheHandler, directory=str(folder))

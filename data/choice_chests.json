@@ -1,48 +1,19 @@
 {
 	"choice_1": {
 		"title": "§names.chains.55e5f3c68649§",
-		"_说明": "三选一，所选物品替换宝箱所在格。等级越高，三个选项的内容越好。",
-		"choices": [
-			"fire_5",
-			"amber_4",
-			"chest_1"
-		],
+		"_说明": "点开随机三件产线物品。宝箱等级就是物品等级，生产器掉率低于 20 的低一级，低于 5 的再低一级。抽到的三件记在格子上，没选就关掉还是这三件。",
 		"icon": "res://assets/ui/items/choice_1.svg"
 	},
 	"choice_2": {
 		"title": "§names.chains.370d1f8c27f8§",
-		"choices": [
-			"fire_6",
-			"amber_5",
-			"chest_2"
-		],
 		"icon": "res://assets/ui/items/choice_2.svg"
 	},
 	"choice_3": {
 		"title": "§names.chains.0feeec8b2b62§",
-		"choices": [
-			"energybox_2",
-			"amber_6",
-			"chest_3"
-		],
 		"icon": "res://assets/ui/items/choice_3.svg"
 	},
 	"choice_4": {
 		"title": "§names.chains.26447da44480§",
-		"choices": [
-			"energybox_3",
-			"premiumbox_3",
-			"chest_4"
-		],
 		"icon": "res://assets/ui/items/choice_4.svg"
-	},
-	"choice_5": {
-		"title": "§names.chains.2a6feb83d7fe§",
-		"choices": [
-			"energybox_4",
-			"premiumbox_4",
-			"chest_5"
-		],
-		"icon": "res://assets/ui/items/choice_5.svg"
 	}
 }

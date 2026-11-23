@@ -4,28 +4,27 @@
 
 ## 运行
 
-需要 Godot 4.6.3 与 Python 3，首次打开工程需完成 Godot 资源导入。
+双击工程根目录的 `统一演算.bat`（需要 Godot 4.6.3；看时间轴还需要 Python 3）。先出参数界面，上次填的会记住：
 
-Windows 可双击工程根目录的 `自动演算.bat`，默认沿用 `运行游戏.bat` 的 Godot 路径；
-也可设置环境变量 `GODOT_BIN`。命令行运行 `自动演算.bat --forever` 会持续循环。
+- **运行方式**：
+  - 看画面（单局）：全程显示游戏画面，底部可暂停、换速度、停止。不放背景音乐，窗口自动等比放大到屏幕上下边缘。
+  - 后台批量：不显示画面，选中的每档强度各开一个后台 Godot 进程同时跑（同一个种子），跑完出各档对比表。
+- **目标等级 / 最多演算几天**：任一达到就停。随机种子不用填，每次开跑随机取一个，写在结果页和 summary.txt 里。
+- **每天玩的强度**：每天两次（8、20 点）、每天三次（8、13、20 点）、体力满就上线（8～23 点醒着）。每次上线不限时，玩到体力用完才下线，不花琥珀买体力。
+- **参加活动 / 使用储物洞**：开关。
+- **时间轴**（批量时）：选上才记每一步、能看时间轴，慢几倍；不选只出按等级汇总。
 
-```bash
-python tools/sim/run.py --godot /path/to/godot --runs 1 --days 7 --publish-report
-python tools/sim/run.py --godot /path/to/godot --forever
-```
+每一局都是先由 `GuideBot.gd` 点真实界面走完新手引导，再由 `PlayerBot.gd` 接着当前局面玩。用临时存档（`user://autoplay_run`、`user://autoplay_batch/jN`），不碰真实存档。
 
-调节奏时用快速模式，几个配置、几个种子并排跑：
+| 文件 | 作用 |
+| --- | --- |
+| `autoplay.gd` | 参数界面、单局流程、底部状态条、结果页；`--job-dir=` 时作为批量里的一局运行 |
+| `AutoplayBatch.gd` | 后台批量：排队启动、读进度、汇总对比表 |
+| `GuideBot.gd` | 新手引导机器人，`tools/check_guide_playthrough.gd` 也用它 |
+| `PlayerBot.gd` | 策略机器人 |
+| `config.json` | 其余策略配置的默认值（见下表）；目标等级、天数、强度等由参数界面覆盖，种子每次随机 |
 
-```bash
-python tools/sim/run.py --godot /path/to/godot --config tools/sim/config_heavy.json tools/sim/config_light.json --fast
-python tools/sim/run.py --godot /path/to/godot --config tools/sim/config_heavy.json --seeds 4 --fast
-```
-
-- `--fast`：只出按等级汇总（`levels.md`），不存逐条事件，没有可视时间轴；规则和决策与完整模式完全相同，汇总表一致。不能与 `--publish-report` 同用。
-- `--config` 可给多个；`--seeds N` 每个配置用连续 N 个种子各跑一份。它们各开一个 Godot 进程并排跑（`--jobs` 限制并行数，默认不超过 CPU 核数），每份有自己的存档文件，跑完打印一行一份的概览（到几级、20/25/30 级在第几天、28～32 级每天几级）。
-- `engine.log` 末尾的 `profile_sec` 是用时分解（秒），用来查慢在哪。
-
-默认每次只运行 1 轮，达到 40 级即停止，不再继续跑到时长上限。`--forever` 会在每轮结束后不断从初始棋盘重开，种子递增；Ctrl+C 停止。每批结果独立保存到 `tools/sim/results/batch-*/`。完成的轮次以及当前批的 JSONL 已执行动作日志都保留。配置默认 `tools/sim/config.json`，也可用 `--config` 指向另一份。
+结果在 `tools/sim/results/`：单局 `autoplay-<时间>/`，批量 `autoplay-batch-<时间>/<强度>/`，批量根目录另有 `summary.txt`。
 
 | 配置 | 含义 |
 | --- | --- |
@@ -37,7 +36,7 @@ python tools/sim/run.py --godot /path/to/godot --config tools/sim/config_heavy.j
 | story_first | 优先可生产的主线；保护其材料，避免被副线抢用 |
 | play_events | 参与当前档期的活动：篝火/双人竞速、剑齿虎、月石遗迹或火光岩画（含颜料、画笔、收取）、化石、通行证；不在档期的活动不报名 |
 | fast_tick | 默认 true：每个动作之后的时间推进直接执行和正式「推进时间」命令相同的规则，省掉前后两次完整存档快照（演算不写操作日志、推进时间不会失败）。结果与 false 逐条一致 |
-| summary_only | 默认 false；`--fast` 会打开：只记按等级汇总 |
+| summary_only | 批量时不选「时间轴」就打开：只记按等级汇总 |
 | use_boost | 默认 true：18 级解锁双倍体力后，缺的目标物品比生产器产物高时开着（2 体力出高 1 级，省点击） |
 | placeholder_events | 默认空（关闭）。活动没做时用来预留体力的占位活动文件 `tools/sim/placeholder_events.json`；现在各档期都有真活动，不再默认启用 |
 | use_storage | 满盘时优先保留高价值闲置物品到储物洞 |
@@ -45,20 +44,20 @@ python tools/sim/run.py --godot /path/to/godot --config tools/sim/config_heavy.j
 | delete_max_level | 只丢弃不属于当前目标产线、等级不超过此值的普通物品，按生产成本从低到高选择；默认 10，生产器始终保留 |
 | wait_energy_batch | 没体力时计划恢复多少点再继续；更近的计时事件可提前唤醒 |
 | stop_level | 默认 40，达到后立即结束本轮；大于 0 时为等级终点 |
-| start_snapshot | 默认 `res://tools/sim/after_guide.json`（新手引导结束时的快照；新版引导需要界面操作，自动玩家从这里开始）。可选：从共享规则生成的真实快照接着演算。起始时间和角色等级采用快照值，仍按配置 seed 使用独立随机流；不补发已经领取的等级奖励。用于将完整界面新手回归的结果继续演算到中后期。 |
+| start_snapshot | 统一演算不用（从真实走完的新手引导接着玩）。命令行单独跑 PlayerBot 时可指定一份快照 |
 | stop_generator | 可选的生产器终点，如 `{"chain":"basket","level":6}`，拥有指定等级时结束；与 stop_level 任一满足即可停止，用于校准首次合出生产器的进度。 |
-| schedule.days | 每天的在线时段，北京时间 `["HH:MM", 分钟]`；第 N 天用第 N 项，超出后一直用最后一项。不配 schedule 就是 24 小时连续在线 |
-| schedule.quit_idle_minutes | 在线时没事可做、需要空等超过这么久（或等到时段结束），就记一次「卡住」并下线到下一段 |
+| login | 上线方式，由参数界面的「强度」生成：`{"mode":"times","times":["08:00","20:00"]}` 到点上线，`{"mode":"full","awake":["08:00","23:00"]}` 醒着时体力满就上线。在线不限时，体力用完下线；有体力却要空等超过 quit_idle_minutes 也下线（记「卡住」） |
+| schedule | 旧的按时段在线、每次限时的作息；统一演算不用 |
 
 ## 产物
 
 - `report.json`：配置、全部事件、轮次汇总及 data/*.json 的 SHA-256。
-- `levels.md`：按等级汇总表（第几天升到、累计/本级在线时长、订单与经验单、生产与体力收支按来源、自然恢复、满体力浪费、卡住/卡体力次数、本级新解锁内容）及按天汇总；也可 `python tools/sim/levels.py report.json` 单独生成。数据来自 `report.json` 的 `runs[].levels`。
+- 结果页 / 对比表：每级第几天到、本级耗时、上线次数。数据来自 `report.json` 的 `runs[].levels`。
 - `report.jsonl`：逐条写入的完整动作流水，意外中断也能查看已执行动作。
 - `report-runN-save.json`：每轮结束时的独立状态快照。
 - `simulation.html` + `simulation-report.json.gz`：可视时间轴。用任意静态服务器打开目录，或打开已发布的 `/simulation.html`。页面仅保留时间线／资源进度区和事件详情区，支持缩放平移、点选事件、指标切换和下载记录；多轮报告才显示轮次选择。订单、升级部落使用独立轨道，领奖按来源分轨显示；记录用 `reward_source` 标记奖励来源。
-- 一键查看：双击 `tools/sim/view.bat`（或 `python tools/sim/view.py [批次目录|report.json]`），默认打开 `tools/sim/results` 里最新跑完的一批，没有就打开 `web/` 里的；也可以把批次目录或 report.json 拖到 view.bat 上。
-- `--publish-report` 把报告放到 `web/`，随后常规 `tools/export_web.py` 自动带入发布包。
+- 看时间轴：结果页的「看时间轴」按钮，或双击 `tools/sim/view.bat`（`python tools/sim/view.py [结果目录|report.json]`），默认打开最新跑完的一局；也可以把目录或 report.json 拖到 view.bat 上。
+- `python tools/sim/view.py <结果目录> --publish` 把这一局放到 `web/`，随后常规 `tools/export_web.py` 自动带入发布包。
 
 ## 页面下载
 
@@ -90,17 +89,18 @@ python tools/sim/run.py --godot /path/to/godot --config tools/sim/config_heavy.j
 
 目标选择优先可生产的带经验订单，再考虑主线和低成本制作，适配同一级中经验固定在原订单上的规则，避免反复交便宜的无经验订单而无法升级。手动取菜订单先点击设备取出，再提交。
 
-新手阶段使用初始教学订单与引导提供的松子订单，跳过界面指引和动画。所有生产、合成、开箱、交单、建造、活动消耗与奖励使用本地正式规则；未解锁卡包保留，不能跳过解锁条件。副线完成不了时会记录阻塞而非增加资源。
+新手阶段由 GuideBot 点真实界面走完，PlayerBot 从引导结束的局面接手。所有生产、合成、开箱、交单、建造、活动消耗与奖励使用本地正式规则；未解锁卡包保留，不能跳过解锁条件。副线完成不了时会记录阻塞而非增加资源。
 
-作息模型：只在 `schedule` 的在线时段操作，时段外快进（`offline` 事件，体力照常恢复、满了就浪费）；在线时空等太久提前下线（`stuck` 事件，体力为 0 时另计「卡体力」）。
+作息模型：到上线时间才操作，在线玩到体力用完下线，离线时快进（`offline` 事件，体力照常恢复、满了就浪费）。
 
 虚拟时钟会推进体力恢复、生产器冷却、料理、气泡过期、跨日免费补给与对手成绩。模拟不付费、不看广告；不使用付费 UFO、额外买体力或通行证会员。对手使用当前试玩版的模拟曲线。该策略可复现，但不保证最优，也不等同于真人游玩耗时。原始配置奖励很充足时，连续自动操作会显著快于真人。
 
 ## 验证
 
+`tools/check_guide_playthrough.gd`（新手引导全程）、`tools/check_sim_lines.gd`、`tools/check_sim_policy.gd`（策略机器人）。运行时务必带临时存档参数，例如：
+
 ```bash
-python tools/sim/check.py /path/to/report.json
-python tools/sim/check.py /path/to/report-a.json /path/to/report-b.json
+godot --headless --path . --script tools/check_guide_playthrough.gd -- --replay-test --cloud-off --save=user://chk/s.json --cloud-state=user://chk/c.json --rank-state=user://chk/r.json --hot-file=user://chk/h.json
 ```
 
-第二种用法要求相同配置和种子，比较两次完整事件流的决定、资源和进度（排除不影响规则的气泡 UID）。测试用 `max_actions` 可缩短验证时间。普通局部测试另见 `tools/check_duel.gd`、`tools/check_card_unlock.gd`、`tools/check_merge_event.gd`。
+普通局部测试另见 `tools/check_duel.gd`、`tools/check_card_unlock.gd`、`tools/check_merge_event.gd`。

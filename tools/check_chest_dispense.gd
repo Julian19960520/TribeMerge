@@ -50,9 +50,9 @@ func run() -> void:
 	g.board[0] = {"id": "energybox_1", "lock": 0}
 	var blocked: Dictionary = await g.dispense_chest(0)
 	check(blocked.has("error") and not g.board[0].has("chest"), "a full board cannot consume an unopened chest")
-	g.board[0]["chest"] = ["fire_5"]
+	g.board[0]["chest"] = ["fire_3"]
 	var final_full: Dictionary = await g.dispense_chest(0)
-	check(final_full.get("id") == "fire_5" and g.rules.board.cell_id(0) == "fire_5", "last drop can use the chest's own cell on a full board")
+	check(final_full.get("id") == "fire_3" and g.rules.board.cell_id(0) == "fire_3", "last drop can use the chest's own cell on a full board")
 	# Exercise the actual replay branch and its existing flight dispatcher.
 	replay.active = true; replay.authorized = true; replay.pending = []
 	replay.clock = int(root.get_node("Cloud").server_now()); replay.seq = 0
@@ -70,12 +70,12 @@ func run() -> void:
 	check(g.rules.board.cell_id(0) == "energybox_1" and not g.random_streams.has("chests"), "replay stash delivery does not open or roll a chest")
 	bs.board._tap(0)
 	await process_frame
-	check(g.rules.board.cell_id(0) == "energybox_1" and g.board[0].get("chest", []) == ["fire_5", "fire_5"], "replay UI releases only the first energy item")
+	check(g.rules.board.cell_id(0) == "energybox_1" and g.board[0].get("chest", []) == ["fire_2", "fire_3"], "replay UI releases only the first energy item")
 	g.try_drop(0, 7)
 	bs._on_drop_outside(7, bs._pouch.get_global_rect().get_center())
 	replay.perform("inventory", {"index": 0})
 	await bs._on_activate(0); await bs._on_activate(0)
-	check(g.rules.board.cell_id(0) == "fire_5" and not g.board[0].has("chest") and g.inv.is_empty(), "replay move, storage and later clicks preserve all three fixed drops")
+	check(g.rules.board.cell_id(0) == "fire_3" and not g.board[0].has("chest") and g.inv.is_empty(), "replay move, storage and later clicks preserve all three fixed drops")
 	for arg in OS.get_cmdline_user_args():
 		if not arg.begins_with("--output="): continue
 		var ops := []

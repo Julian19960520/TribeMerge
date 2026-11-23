@@ -213,7 +213,8 @@
 	"starter_generator": {
 		"item": "emberpot_1",
 		"lifetime_sec": 604800,
-		"reward_level": 4
+		"reward_level": 4,
+		"first_charges": 4
 	},
 	"storage_expand_price": 50,
 	"storage_expand_step": 10,

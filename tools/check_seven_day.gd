@@ -56,7 +56,13 @@ func run() -> void:
 	for t in all + cfg["milestones"]:
 		for rw in t["rewards"]: rewards_ok = rewards_ok and load("res://scripts/Data.gd").is_known(str(rw[0])) and int(rw[1]) > 0
 	check(rewards_ok,"every reward id is a real item")
-	tasks.record("orders",75)
+	# 七日奖励只发体力、体力物品、琥珀、琥珀物品、卡包、琥珀/体力/心愿宝箱，不发不那那
+	var allowed := ["fire", "amber", "pack", "amberbox", "energybox", "orderbox"]
+	var kinds_ok := true
+	for t in all + cfg["milestones"]:
+		for rw in t["rewards"]: kinds_ok = kinds_ok and allowed.has(str(rw[0]).get_slice("_", 0))
+	check(kinds_ok,"seven-day rewards are energy, amber, packs and the three chest kinds only")
+	tasks.record("orders",int(tasks.find_entry("d7_2",false)["target"]))
 	check(tasks.done(tasks.find_entry("d7_2",false)),"seventh page progress counts early")
 	var d7_pts := int(tasks.find_entry("d7_2",false)["points"])
 	var pts_before: int = tasks.points()
@@ -67,7 +73,7 @@ func run() -> void:
 	d7_pts = pts_before + d7_pts
 	check((await tasks.claim("d7_2")).has("error") and tasks.points() == d7_pts,"duplicate claim blocked")
 	check((await tasks.claim("p120",true)).has("error"),"unreached milestone blocked")
-	for metric in ["orders","merges","xp","cards","shell","amber","amber_spent"]: tasks.record(metric,10000)
+	for metric in ["orders","merges","xp","cards","shell","amber","amber_spent"]: tasks.record(metric,100000)
 	tasks.record("paid_cents",3000)
 	check(not tasks.state()["stats"].has("paid_cents"),"offline purchase never fakes real payment")
 	for day_number in range(3,8): tasks.login("2026-11-%02d" % day_number)
@@ -76,8 +82,9 @@ func run() -> void:
 			if tasks.done(t) and not tasks.got(t): await tasks.claim(str(t["id"]))
 	var top := int(cfg["milestones"][-1]["points"])
 	check(tasks.points() >= top,"all milestones accessible without paid tasks")
-	var chests: int = g.stash.count("choice_1")
-	check((await tasks.claim("p560",true)).get("ok",false) and g.stash.count("choice_1") == chests + 3,"milestone rewards use shared delivery")
+	var chests: int = g.stash.count("amberbox_3")
+	var grand: Dictionary = await tasks.claim("p560",true)
+	check(grand.get("ok",false) and g.stash.count("amberbox_3") == chests + 1,"milestone rewards use shared delivery")
 	check((await tasks.claim("p560",true)).has("error"),"milestone pays once")
 	var saved: Dictionary = g.seven_day.duplicate(true)
 	g.save_game()

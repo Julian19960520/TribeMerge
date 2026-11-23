@@ -38,7 +38,17 @@ func start(host: Node) -> void:
 	amp = amplitude
 	var ids := _ids()
 	var dir := ProjectSettings.globalize_path("res://assets/items/png")
-	_empty_dir(dir)
+	# --bake-only=amberbox,pack_ 只重画这些前缀的物品，别的图和清单原样保留
+	var only := PackedStringArray()
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--bake-only="): only = a.trim_prefix("--bake-only=").split(",", false)
+	var kept: Array = []
+	if only.is_empty():
+		_empty_dir(dir)
+	else:
+		ids = ids.filter(func(id): return Array(only).any(func(p): return id.begins_with(p)))
+		var old = JSON.parse_string(FileAccess.get_file_as_string("res://assets/items/anim.json"))
+		if old is Dictionary: kept = (old.get("ids", []) as Array).filter(func(id): return not ids.has(str(id)))
 	DirAccess.make_dir_recursive_absolute(dir)
 
 	var vp := SubViewport.new()
@@ -119,7 +129,7 @@ func start(host: Node) -> void:
 		"px": side,
 		"bake_size": fitted,
 		"pattern": "png/{id}_r{rim}_{frame}.png",
-		"ids": ok_ids,
+		"ids": kept + ok_ids,
 	}
 	var out := FileAccess.open(ProjectSettings.globalize_path("res://assets/items/anim.json"), FileAccess.WRITE)
 	out.store_string(JSON.stringify(anim, "\t"))

@@ -59,12 +59,13 @@ func run() -> void:
 	rejects({Files.RULES: rules}, "wrong probability types are rejected without runtime errors")
 	check(Files.write("res://data/../rules.json", rules) == ERR_INVALID_PARAMETER, "editor writes are restricted to registered canonical paths")
 	var chest_descriptions_ok := true
-	for grade in range(1, 6):
-		for family in ["chest", "energybox", "premiumbox", "choice"]:
-			var description: String = Data.describe("%s_%d" % [family, grade])
-			chest_descriptions_ok = chest_descriptions_ok and description.contains("%d级" % grade)
+	for grade in range(1, 5):
+		for family in ["chest", "energybox", "amberbox", "premiumbox", "choice"]:
+			var id := "%s_%d" % [family, grade]
+			var description: String = Data.describe(id)
+			chest_descriptions_ok = chest_descriptions_ok and description.contains(Data.name_of(id))
 			if family != "choice":
-				var capacity: int = SpecialChests.count("%s_%d" % [family, grade])
+				var capacity: int = SpecialChests.count(id)
 				var capacity_text: String = "共%d件" % capacity
 				chest_descriptions_ok = chest_descriptions_ok and description.contains(capacity_text)
 	check(chest_descriptions_ok, "all graded chest descriptions match the current grade and capacity")

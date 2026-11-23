@@ -14,45 +14,46 @@
      "rewards": [
       [
        "fire_3",
-       10
+       20
       ]
      ]
     },
     {
      "id": "d1_2",
      "metric": "orders",
-     "target": 8,
-     "title": "§content.seven_day.c03674e89b80§",
+     "target": 40,
+     "title": "§content.seven_day.8041acd080dd§",
      "points": 10,
      "rewards": [
       [
-       "shell_3",
-       200
+       "orderbox_1",
+       1
       ]
      ]
     },
     {
      "id": "d1_3",
      "metric": "merges",
-     "target": 150,
-     "title": "§content.seven_day.e7e0e0839b0a§",
+     "target": 1200,
+     "title": "§content.seven_day.a512f42a388d§",
      "points": 10,
      "rewards": [
       [
-       "fire_3",
-       10
+       "fire_5",
+       1,
+       "physical"
       ]
      ]
     },
     {
      "id": "d1_4",
      "metric": "xp",
-     "target": 8,
-     "title": "§content.seven_day.9414053dac2d§",
+     "target": 60,
+     "title": "§content.seven_day.8645cb89f80d§",
      "points": 10,
      "rewards": [
       [
-       "amber_2",
+       "amber_3",
        10
       ]
      ]
@@ -60,12 +61,12 @@
     {
      "id": "d1_5",
      "metric": "shell",
-     "target": 300,
-     "title": "§content.seven_day.e4ac37402afd§",
+     "target": 3000,
+     "title": "§content.seven_day.5b4ad222be40§",
      "points": 10,
      "rewards": [
       [
-       "chest_1",
+       "energybox_1",
        1
       ]
      ]
@@ -84,67 +85,60 @@
      "rewards": [
       [
        "fire_3",
-       15
+       30
       ]
      ]
     },
     {
      "id": "d2_2",
      "metric": "orders",
-     "target": 20,
-     "title": "§content.seven_day.5e5421b79778§",
+     "target": 120,
+     "title": "§content.seven_day.7ed0cce5ff3d§",
      "points": 15,
      "rewards": [
       [
-       "shell_4",
-       300
-      ],
-      [
-       "fire_3",
-       10
+       "orderbox_2",
+       1
       ]
      ]
     },
     {
      "id": "d2_3",
      "metric": "merges",
-     "target": 600,
-     "title": "§content.seven_day.ba24e117035a§",
+     "target": 3500,
+     "title": "§content.seven_day.2d22b927d25f§",
      "points": 15,
      "rewards": [
       [
-       "fire_3",
-       15
-      ],
-      [
-       "chest_1",
-       1
+       "fire_5",
+       2,
+       "physical"
       ]
      ]
     },
     {
      "id": "d2_4",
      "metric": "xp",
-     "target": 20,
-     "title": "§content.seven_day.be707af4a014§",
+     "target": 120,
+     "title": "§content.seven_day.3ebbc8c92c1c§",
      "points": 15,
      "rewards": [
       [
-       "amber_3",
-       15
+       "amberbox_1",
+       1
       ]
      ]
     },
     {
      "id": "d2_5",
      "metric": "amber",
-     "target": 10,
-     "title": "§content.seven_day.73ff3c758350§",
+     "target": 150,
+     "title": "§content.seven_day.d4705ca6cb53§",
      "points": 15,
      "rewards": [
       [
-       "fire_4",
-       20
+       "energybox_1",
+       1
       ]
      ]
     }
@@ -161,38 +155,38 @@
      "points": 10,
      "rewards": [
       [
-       "fire_4",
-       20
+       "fire_3",
+       40
       ]
      ]
     },
     {
      "id": "d3_2",
      "metric": "orders",
-     "target": 35,
-     "title": "§content.seven_day.2120031e3cde§",
+     "target": 150,
+     "title": "§content.seven_day.053f5687e352§",
      "points": 20,
      "rewards": [
       [
-       "shell_4",
-       500
+       "orderbox_2",
+       1
       ],
       [
-       "chest_1",
-       1
+       "amber_3",
+       15
       ]
      ]
     },
     {
      "id": "d3_3",
      "metric": "shell",
-     "target": 2000,
-     "title": "§content.seven_day.689b08e7387c§",
+     "target": 12000,
+     "title": "§content.seven_day.4eed11a42478§",
      "points": 20,
      "rewards": [
       [
-       "fire_4",
-       30
+       "energybox_1",
+       1
       ]
      ]
     },
@@ -204,12 +198,13 @@
      "points": 20,
      "rewards": [
       [
-       "amber_3",
-       15
+       "amberbox_1",
+       1
       ],
       [
-       "chest_1",
-       1
+       "amber_5",
+       1,
+       "physical"
       ]
      ]
     },
@@ -221,11 +216,11 @@
      "points": 20,
      "rewards": [
       [
-       "amber_4",
-       60
+       "amberbox_2",
+       1
       ],
       [
-       "choice_1",
+       "pack_1",
        1
       ]
      ]
@@ -243,37 +238,35 @@
      "points": 10,
      "rewards": [
       [
-       "fire_4",
+       "fire_3",
        40
       ],
       [
-       "amber_2",
-       10
+       "amber_4",
+       1,
+       "physical"
       ]
      ]
     },
     {
      "id": "d4_2",
      "metric": "merges",
-     "target": 1500,
-     "title": "§content.seven_day.482546c83fa9§",
+     "target": 5000,
+     "title": "§content.seven_day.1204e248c2b6§",
      "points": 20,
      "rewards": [
       [
-       "fire_4",
-       60
-      ],
-      [
-       "sand_3",
-       5
+       "fire_6",
+       1,
+       "physical"
       ]
      ]
     },
     {
      "id": "d4_3",
      "metric": "xp",
-     "target": 42,
-     "title": "§content.seven_day.202346951c3a§",
+     "target": 190,
+     "title": "§content.seven_day.65de1b825fd4§",
      "points": 20,
      "rewards": [
       [
@@ -282,15 +275,15 @@
       ],
       [
        "amber_3",
-       15
+       20
       ]
      ]
     },
     {
      "id": "d4_4",
      "metric": "cards",
-     "target": 6,
-     "title": "§content.seven_day.b965942723e2§",
+     "target": 60,
+     "title": "§content.seven_day.143508bcbd89§",
      "points": 20,
      "rewards": [
       [
@@ -302,12 +295,12 @@
     {
      "id": "d4_5",
      "metric": "amber",
-     "target": 25,
-     "title": "§content.seven_day.8dbcf42b4248§",
+     "target": 350,
+     "title": "§content.seven_day.8437a0d85023§",
      "points": 20,
      "rewards": [
       [
-       "choice_1",
+       "amberbox_2",
        1
       ]
      ]
@@ -325,7 +318,7 @@
      "points": 10,
      "rewards": [
       [
-       "fire_4",
+       "fire_3",
        50
       ]
      ]
@@ -333,16 +326,12 @@
     {
      "id": "d5_2",
      "metric": "orders",
-     "target": 55,
-     "title": "§content.seven_day.26faa1aef32d§",
+     "target": 190,
+     "title": "§content.seven_day.9fdcf08eda01§",
      "points": 25,
      "rewards": [
       [
-       "shell_5",
-       800
-      ],
-      [
-       "chest_1",
+       "orderbox_3",
        1
       ]
      ]
@@ -350,21 +339,21 @@
     {
      "id": "d5_3",
      "metric": "shell",
-     "target": 3600,
-     "title": "§content.seven_day.ac08362f2082§",
+     "target": 16000,
+     "title": "§content.seven_day.132340272cc2§",
      "points": 25,
      "rewards": [
       [
-       "fire_4",
-       80
+       "energybox_2",
+       1
       ]
      ]
     },
     {
      "id": "d5_4",
      "metric": "cards",
-     "target": 12,
-     "title": "§content.seven_day.12e69bb0ede9§",
+     "target": 110,
+     "title": "§content.seven_day.a18ade2a6e8a§",
      "points": 25,
      "rewards": [
       [
@@ -376,17 +365,18 @@
     {
      "id": "d5_5",
      "metric": "amber_spent",
-     "target": 80,
-     "title": "§content.seven_day.88a739497cf3§",
+     "target": 100,
+     "title": "§content.seven_day.95fd7fa50078§",
      "points": 25,
      "rewards": [
       [
-       "amber_3",
-       30
+       "amberbox_2",
+       1
       ],
       [
-       "chest_1",
-       1
+       "amber_5",
+       1,
+       "physical"
       ]
      ]
     }
@@ -403,37 +393,35 @@
      "points": 10,
      "rewards": [
       [
-       "fire_4",
+       "fire_3",
        50
       ],
       [
-       "amber_2",
-       10
+       "amber_5",
+       1,
+       "physical"
       ]
      ]
     },
     {
      "id": "d6_2",
      "metric": "merges",
-     "target": 2400,
-     "title": "§content.seven_day.8d5dc15b6ff2§",
+     "target": 6000,
+     "title": "§content.seven_day.e30aac58298c§",
      "points": 25,
      "rewards": [
       [
-       "fire_5",
-       100
-      ],
-      [
-       "sand_3",
-       10
+       "fire_6",
+       2,
+       "physical"
       ]
      ]
     },
     {
      "id": "d6_3",
      "metric": "xp",
-     "target": 60,
-     "title": "§content.seven_day.8645cb89f80d§",
+     "target": 240,
+     "title": "§content.seven_day.d0f85b7414ba§",
      "points": 25,
      "rewards": [
       [
@@ -441,7 +429,7 @@
        1
       ],
       [
-       "chest_1",
+       "amberbox_2",
        1
       ]
      ]
@@ -449,13 +437,13 @@
     {
      "id": "d6_4",
      "metric": "amber",
-     "target": 45,
-     "title": "§content.seven_day.fd266a8d9dc4§",
+     "target": 500,
+     "title": "§content.seven_day.8c9bb3671c98§",
      "points": 25,
      "rewards": [
       [
-       "choice_1",
-       2
+       "energybox_1",
+       1
       ]
      ]
     },
@@ -467,8 +455,8 @@
      "points": 25,
      "rewards": [
       [
-       "amber_5",
-       150
+       "amberbox_3",
+       1
       ],
       [
        "pack_1",
@@ -489,7 +477,7 @@
      "points": 10,
      "rewards": [
       [
-       "fire_4",
+       "fire_3",
        60
       ],
       [
@@ -501,42 +489,39 @@
     {
      "id": "d7_2",
      "metric": "orders",
-     "target": 75,
-     "title": "§content.seven_day.008d99387e89§",
+     "target": 240,
+     "title": "§content.seven_day.c29958db33c3§",
      "points": 30,
      "rewards": [
       [
-       "shell_5",
-       1200
+       "orderbox_3",
+       1
       ],
       [
-       "chest_1",
-       2
+       "energybox_2",
+       1
       ]
      ]
     },
     {
      "id": "d7_3",
      "metric": "merges",
-     "target": 3000,
-     "title": "§content.seven_day.c60aa0d033df§",
+     "target": 7000,
+     "title": "§content.seven_day.eed6ac8bd0ed§",
      "points": 30,
      "rewards": [
       [
-       "fire_5",
-       120
-      ],
-      [
-       "sand_3",
-       10
+       "fire_6",
+       2,
+       "physical"
       ]
      ]
     },
     {
      "id": "d7_4",
      "metric": "cards",
-     "target": 20,
-     "title": "§content.seven_day.21665227ad08§",
+     "target": 160,
+     "title": "§content.seven_day.ba2f1765f4dc§",
      "points": 30,
      "rewards": [
       [
@@ -545,20 +530,20 @@
       ],
       [
        "amber_3",
-       20
+       10
       ]
      ]
     },
     {
      "id": "d7_5",
      "metric": "shell",
-     "target": 5400,
-     "title": "§content.seven_day.bc72081368e2§",
+     "target": 20000,
+     "title": "§content.seven_day.6c2c3b4f77f6§",
      "points": 30,
      "rewards": [
       [
-       "choice_1",
-       2
+       "amberbox_3",
+       1
       ]
      ]
     }
@@ -576,7 +561,7 @@
      10
     ],
     [
-     "chest_1",
+     "energybox_1",
      1
     ]
    ]
@@ -591,8 +576,8 @@
      30
     ],
     [
-     "chest_1",
-     2
+     "orderbox_2",
+     1
     ]
    ]
   },
@@ -606,7 +591,7 @@
      2
     ],
     [
-     "choice_1",
+     "amberbox_1",
      1
     ]
    ]
@@ -617,12 +602,13 @@
    "title": "§content.seven_day.23582e63304c§",
    "rewards": [
     [
-     "fire_5",
-     150
+     "fire_3",
+     120
     ],
     [
-     "sand_3",
-     5
+     "fire_6",
+     1,
+     "physical"
     ]
    ]
   },
@@ -632,8 +618,8 @@
    "title": "§content.seven_day.cee245967320§",
    "rewards": [
     [
-     "amber_4",
-     60
+     "amberbox_1",
+     1
     ],
     [
      "pack_1",
@@ -647,12 +633,13 @@
    "title": "§content.seven_day.580383acd2b2§",
    "rewards": [
     [
-     "choice_1",
-     2
+     "energybox_1",
+     1
     ],
     [
-     "chest_1",
-     2
+     "amber_6",
+     2,
+     "physical"
     ]
    ]
   },
@@ -662,16 +649,16 @@
    "title": "§content.seven_day.4de70712e803§",
    "rewards": [
     [
-     "amber_5",
-     150
+     "amberbox_3",
+     1
     ],
     [
-     "choice_1",
-     3
+     "energybox_2",
+     1
     ],
     [
      "pack_1",
-     3
+     2
     ]
    ],
    "grand": true

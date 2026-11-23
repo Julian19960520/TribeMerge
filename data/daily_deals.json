@@ -16,7 +16,7 @@
 	},
 	{
 		"key": "deal_energybox",
-		"_说明": "300 不那那购买1级体力宝箱，共3个体力堆（各40体力）。宝箱内容统一配置在 special_chests.json。",
+		"_说明": "300 不那那购买低级体力宝箱。开出的是低级体力，要在棋盘上合成。内容在 special_chests.json。",
 		"id": "energybox_1",
 		"title": "§names.chains.7c5a559c6379§",
 		"price": 300,

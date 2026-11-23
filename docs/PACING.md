@@ -150,8 +150,4 @@
 
 高低强度的速度差只能来自自然恢复：两者拿到的活动、等级奖励、棋盘体力差不多，高强度一天能收约 580 点恢复，一天上线 3 次的玩家约 350 点，最多只差 1.7 倍；一天上线 2 次（约 230 点）才拉开到 2.5 倍左右。
 
-`tools/sim/config_heavy.json` 和 `tools/sim/config_light.json` 从新手引导结束的快照 `tools/sim/after_guide.json` 开始演算。快照可用下面的命令重新生成：
-
-```sh
-godot --headless --path . --script tools/check_guide_playthrough.gd -- --replay-test --cloud-off --checkpoint-out=tools/sim/after_guide.json
-```
+以上结果出自已删除的旧自动演算（当时按时段上线、每次限时，从新手引导结束的快照开始）。现在用根目录的 `统一演算.bat`：先真实走一遍新手引导再接着玩，强度改为「每天两次 / 每天三次 / 体力满就上线」，每次上线玩到体力用完。选「后台批量」可以几档强度×几个种子并排跑。
