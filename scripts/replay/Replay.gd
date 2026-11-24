@@ -79,7 +79,8 @@ func _ready() -> void:
 	# The client is authoritative for single-player progress: play starts at once,
 	# online or not, and the cloud only stores snapshots.
 	authorized = true
-	if not Cloud.enabled: meta["allow_gm"] = true
+	# GM 和新开局同一条规则：离线或调试版本（编辑器/本地运行）都开，只有正式导出包按存档里的值。
+	if not Cloud.enabled or OS.is_debug_build(): meta["allow_gm"] = true
 	if G.random_seed == "": G.random_seed = Crypto.new().generate_random_bytes(32).hex_encode()
 	var skip_journal := false
 	var economy_update := PriceBook.ready() and str(saved.get("rules_code", "")) == str(Data.ConfigFiles.shared("res://data/replay_build.json").get("code_sha256", ""))

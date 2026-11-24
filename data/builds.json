@@ -49,13 +49,13 @@
 		{"id": "hidetent", "name": "§names.builds.48bf1c3fe949§", "cost": 319, "rewards": [["loom_1", 1], ["armor_3", 1]], "steps": 4},
 		{"id": "featherpole", "name": "§names.builds.c840e2ef0d99§", "cost": 322, "rewards": [["cloth_7", 1], ["armor_4", 1], ["chest_1", 1]], "steps": 4}
 	]},
-	{"id": "cook", "name": "§names.builds.6833fe53fdda§", "line": "fish", "parts": [
-		{"id": "stonestove", "name": "§names.builds.be559ed8300a§", "cost": 324, "rewards": [["fish_2", 2], ["clam_1", 1]], "steps": 3},
-		{"id": "spit", "name": "§names.builds.e38e300648bf§", "cost": 325, "rewards": [["weir_1", 1], ["clam_2", 1]], "steps": 3},
-		{"id": "smokehouse", "name": "§names.builds.1d6bf28049bd§", "cost": 327, "rewards": [["clam_4", 1], ["fish_3", 1]], "steps": 3},
-		{"id": "cookpit", "name": "§names.builds.39b6ba54c705§", "cost": 329, "rewards": [["fish_5", 1], ["fire_2", 35]], "steps": 3},
-		{"id": "firewood", "name": "§names.builds.2c21f701f87b§", "cost": 330, "rewards": [["weir_1", 1], ["clam_5", 1]], "steps": 4},
-		{"id": "sacredfire", "name": "§names.builds.aa8d8814dd68§", "cost": 332, "rewards": [["fish_8", 1], ["clam_7", 1], ["chest_1", 1]], "steps": 4}
+	{"id": "fishing", "name": "§names.builds.9aa3defc7b50§", "line": "fish", "parts": [
+		{"id": "netrack", "name": "§names.builds.d00bdf1e0e7f§", "cost": 333, "rewards": [["fish_2", 2], ["weir_1", 1]], "steps": 3},
+		{"id": "fishrack", "name": "§content.crafts.0ab0b1d1e542§", "cost": 335, "rewards": [["fish_4", 1], ["clam_2", 1]], "steps": 3},
+		{"id": "fishtrap", "name": "§names.builds.d32feae53fc2§", "cost": 336, "rewards": [["weir_1", 1], ["fish_3", 1]], "steps": 3},
+		{"id": "shellpile", "name": "§names.builds.29556075c5f6§", "cost": 338, "rewards": [["clam_4", 1], ["fire_2", 35]], "steps": 3},
+		{"id": "canoe", "name": "§cards.albums.6661d030b2ff§", "cost": 339, "rewards": [["fish_6", 1], ["clam_5", 1]], "steps": 4},
+		{"id": "stilthut", "name": "§names.builds.ed18e76aa5fa§", "cost": 341, "rewards": [["fish_9", 1], ["clam_8", 1], ["chest_1", 1]], "steps": 4}
 	]},
 	{"id": "kiln", "name": "§names.builds.7a17d1fe80b3§", "line": "pot", "parts": [
 		{"id": "claypit", "name": "§names.builds.bb8593ee2dd8§", "cost": 334, "rewards": [["pot_2", 2], ["pot_4", 1]], "steps": 3},

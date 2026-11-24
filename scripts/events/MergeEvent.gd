@@ -59,10 +59,25 @@ static func fresh(c: Dictionary) -> Dictionary:
 		if depth >= 0 and depth < rows - 1: cells[(rows - 2 - depth) * cols + int(sp["col"])]["id"] = str(sp["id"])
 	if c.has("brush"):
 		cells[(rows - 1) * cols + clampi(int(b.get("brush_col", cols / 2)), 0, cols - 1)]["id"] = str(c["brush"]["id"])
-		out["rules_version"] = 4
-		out["brush"] = {"charges": 0, "fed": 0}
+		out["rules_version"] = 5
+		out["brush"] = {"charges": 0, "fed": 0, "load": []}
 		out["queue"] = []
+		out["made"] = 0
+		out["codex"] = {}
 	return out
+
+## 老存档补字段：气泡队列、合成过的最高级、生产器待产清单、图鉴领取记录。
+static func _upgrade(c: Dictionary, s: Dictionary) -> void:
+	if s.is_empty() or int(s.get("rules_version", 0)) >= 5 or not c.has("brush"): return
+	if not s.has("queue"): s["queue"] = []
+	if not s.has("codex"): s["codex"] = {}
+	if not s.has("made"): s["made"] = unlocked_tier(c, s)
+	var brush: Dictionary = s.get("brush", {"charges": 0, "fed": 0})
+	if not brush.has("load"):
+		brush["load"] = _batch(c, brush_index(c, s)).slice(0, int(brush.get("charges", 0)))
+		brush["charges"] = brush["load"].size()
+	s["brush"] = brush
+	s["rules_version"] = 5
 
 ## Locked item tier at a depth (0 = row right above the open bottom row). Deeper layers hold higher relics.
 ## Shared integer hash keeps client and worker boards identical.
@@ -87,15 +102,23 @@ static func next_id(c: Dictionary, id: String) -> String:
 	for chain in [c["chain"], c.get("mural", [])]:
 		for k in chain.size() - 1:
 			if str(chain[k]["id"]) == id: return str(chain[k + 1]["id"])
+	# 卡包碎片：最高级的两片合成一个能打开的卡包。
+	var shards: Array = c.get("shards", [])
+	for k in shards.size():
+		if str(shards[k]["id"]) == id: return str(shards[k + 1]["id"]) if k + 1 < shards.size() else str(c.get("shard_result", ""))
+	# 体力、琥珀、箱子等主游戏物品：和主棋盘一样按各自产线合成。
+	if kind(c, id) == "reward": return Data.next_id(id)
 	return ""
 
-## 活动棋盘上的物品属于哪一类：light（产线一）、mural（产线二）、brush（画笔）、paint（颜料）、reward（主游戏的资源或箱子）。
+## 活动棋盘上的物品属于哪一类：light（产线一）、mural（特殊物品）、shard（卡包碎片）、brush（生产器）、paint（宝石）、reward（主游戏的资源或箱子）。
 static func kind(c: Dictionary, id: String) -> String:
 	if id == "": return ""
 	for row in c["chain"]:
 		if str(row["id"]) == id: return "light"
 	for row in c.get("mural", []):
 		if str(row["id"]) == id: return "mural"
+	for row in c.get("shards", []):
+		if str(row["id"]) == id: return "shard"
 	if c.has("brush") and id == str(c["brush"]["id"]): return "brush"
 	for row in c.get("paints", []):
 		if str(row["id"]) == id: return "paint"
@@ -108,25 +131,40 @@ static func is_bubble(c: Dictionary, id: String) -> bool:
 static func item(c: Dictionary, id: String) -> Dictionary:
 	for row in c["chain"]:
 		if str(row["id"]) == id: return row
-	for row in c.get("mural", []) + c.get("paints", []):
+	for row in c.get("mural", []) + c.get("shards", []) + c.get("paints", []):
 		if str(row["id"]) == id: return row
 	if c.has("brush") and id == str(c["brush"]["id"]): return brush_level(c, state(c))
 	return {}
 
-## 画笔当前等级那一档配置（名字、图标、掉落）；s 为空时按 0 级。
+## 生产器当前等级那一档配置（名字、图标、产出清单）：喂一颗宝石升一级，满级后再喂就按满级重新装填。
 static func brush_level(c: Dictionary, s: Dictionary) -> Dictionary:
 	var levels: Array = c.get("brush", {}).get("levels", [])
 	if levels.is_empty(): return {}
-	var fed := int(s.get("brush", {}).get("fed", 0))
-	var out: Dictionary = levels[0]
-	for row in levels:
-		if fed >= int(row["fed"]): out = row
-	return out
+	return levels[brush_index(c, s)]
 
 static func brush_index(c: Dictionary, s: Dictionary) -> int:
-	return c.get("brush", {}).get("levels", []).find(brush_level(c, s))
+	var levels: Array = c.get("brush", {}).get("levels", [])
+	return clampi(int(s.get("brush", {}).get("fed", 0)), 0, maxi(0, levels.size() - 1))
 
-## 这一下点画笔能不能画出一幅（有颜料、旁边有空格）；只在能画时才抽随机数，回放两端保持一致。
+## 某一级生产器一次装填的产出：按配置各行轮流排开（特殊物品、体力、钻石、碎片穿插着出）。
+static func _batch(c: Dictionary, level: int) -> Array:
+	var levels: Array = c.get("brush", {}).get("levels", [])
+	if levels.is_empty(): return []
+	var rows: Array = levels[clampi(level, 0, levels.size() - 1)].get("batch", [])
+	var left: Array = []
+	for rw in rows: left.append(int(rw[1]))
+	var out: Array = []
+	var more := true
+	while more:
+		more = false
+		for k in rows.size():
+			if int(left[k]) <= 0: continue
+			out.append(str(rows[k][0]))
+			left[k] = int(left[k]) - 1
+			more = true
+	return out
+
+## 这一下点生产器能不能产出（还有存货、旁边有空格）。
 static func can_brush(c: Dictionary, s: Dictionary, at: int) -> bool:
 	if s.is_empty() or not s.has("brush") or int(s["brush"]["charges"]) <= 0: return false
 	var cells: Array = s["cells"]
@@ -152,17 +190,31 @@ static func _place(c: Dictionary, s: Dictionary, ids: Array, origin: int, lo: in
 			continue
 		cells[to]["id"] = str(id)
 		cells[to]["lock"] = 0
-		if kind(c, str(id)) in ["light", "mural"]: s["discovered"][str(id)] = true
+		if kind(c, str(id)) in ["light", "mural", "shard"]: s["discovered"][str(id)] = true
 		placed.append({"to": to, "id": str(id), "from": origin})
 	return placed
 
-static func _flush(c: Dictionary, s: Dictionary, lo: int, hi: int) -> Array:
-	if not s.has("queue") or s["queue"].is_empty(): return []
-	var waiting: Array = s["queue"]
-	s["queue"] = []
-	var placed := _place(c, s, waiting, hi - int(c["board"]["cols"]) / 2 - 1, lo, hi)
-	for p in placed: p["from"] = -1
-	return placed
+## 气泡里还剩几件（订单奖励、推进时收起来的物品、摆不下的掉落）+ 老积分还能换几件。
+static func supply(c: Dictionary, s: Dictionary) -> int:
+	if s.is_empty(): return 0
+	return s.get("queue", []).size() + int(s["points"]) / maxi(1, int(c["points"]["spawn_cost"]))
+
+## 气泡下一件发射出来的物品。
+static func next_supply(c: Dictionary, s: Dictionary) -> String:
+	var q: Array = s.get("queue", [])
+	if not q.is_empty(): return str(q[0])
+	return str(c["chain"][int(c["points"]["spawn_tier"]) - 1]["id"])
+
+## 订单奖励：按难度（最高物品等级 + 多出来的件数）给若干个某一级的活动物品。
+static func order_bundle(c: Dictionary, order: Dictionary) -> Dictionary:
+	var score := 1
+	var ids: Array = order.get("items", [])
+	for id in ids: score = maxi(score, Data.lv(str(id)))
+	score += maxi(0, ids.size() - 1)
+	var out := {}
+	for row in c["points"].get("order_bundles", []):
+		if score >= int(row["score"]): out = row
+	return out
 
 static func _expand(rows: Array) -> Array:
 	var out: Array = []
@@ -185,10 +237,29 @@ static func on_order(order: Dictionary) -> int:
 	var c := current()
 	if not available(c): return 0
 	var s := state(c)
+	_upgrade(c, s)
+	s["orders"] = int(s["orders"]) + 1
+	if c["points"].has("order_bundles"):
+		var bundle := order_bundle(c, order)
+		var count := int(bundle.get("count", 0))
+		var id := str(c["chain"][clampi(int(bundle.get("tier", 1)) - 1, 0, c["chain"].size() - 1)]["id"])
+		for _k in count: s["queue"].append(id)
+		s["earned"] = int(s["earned"]) + count
+		_changed()
+		return count
 	var n := order_points(c, order)
 	s["points"] = int(s["points"]) + n
 	s["earned"] = int(s["earned"]) + n
-	s["orders"] = int(s["orders"]) + 1
+	_changed()
+	return n
+
+## GM 调试：给当期活动直接加积分（只经 Replay 的 gm 动作调用）。
+static func gm_points(n: int) -> int:
+	var c := current()
+	var s := state(c)
+	if not available(c) or s.is_empty(): return 0
+	s["points"] = int(s["points"]) + n
+	s["earned"] = int(s["earned"]) + n
 	_changed()
 	return n
 
@@ -250,12 +321,43 @@ static func unlocked_tier(c: Dictionary, s: Dictionary) -> int:
 
 static func advance_target(c: Dictionary, s: Dictionary) -> int:
 	var rows := 0
-	var tier := unlocked_tier(c, s)
-	for stage in c["board"].get("advance_by_tier", []):
+	var by_merge: bool = c["board"].has("advance_on_merge")
+	var tier := int(s.get("made", 0)) if by_merge else unlocked_tier(c, s)
+	for stage in c["board"].get("advance_on_merge" if by_merge else "advance_by_tier", []):
 		if tier >= int(stage["tier"]): rows += maxi(0, int(stage["rows"]))
 	return maxi(0, int(c["board"]["total_rows"]) - int(c["board"]["visible_rows"]) - rows)
 
+## 首次合成出指定等级时推进：底下移出视野的物品（锁着的也算）全部收进气泡，生产器挪到新视野里的空格。
+static func _advance_on_merge(c: Dictionary, s: Dictionary) -> int:
+	var target := advance_target(c, s)
+	var view := int(s["view"])
+	if view <= target: return 0
+	var cols := int(c["board"]["cols"])
+	var rows := int(c["board"]["visible_rows"])
+	var cells: Array = s["cells"]
+	var stashed: Array = []
+	var brushes := 0
+	for k in range((target + rows) * cols, (view + rows) * cols):
+		var id := str(cells[k]["id"])
+		if kind(c, id) == "brush": brushes += 1
+		elif id != "": stashed.append(id)
+		cells[k] = {"id": "", "lock": 0}
+	s["view"] = target
+	s["min_view"] = target
+	var lo := target * cols
+	var hi := lo + rows * cols
+	for _k in brushes:
+		var to := MergeGrid.nearest_empty(cells, cols, hi - cols / 2 - 1, func(k): return k >= lo and k < hi)
+		if to >= 0: cells[to]["id"] = str(c["brush"]["id"])
+		else: stashed.push_front(str(c["brush"]["id"]))
+	stashed.append_array(s["queue"])
+	s["queue"] = stashed
+	return stashed.size()
+
 static func _advance(c: Dictionary, s: Dictionary) -> void:
+	if c["board"].has("advance_on_merge"):
+		_advance_on_merge(c, s)
+		return
 	var cols := int(c["board"]["cols"])
 	var rows := int(c["board"]["visible_rows"])
 	var cells: Array = s["cells"]
@@ -289,42 +391,49 @@ static func _advance(c: Dictionary, s: Dictionary) -> void:
 
 ## Returns an error string or a result with animation cell indices.
 static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dictionary = {}, drop_roll := -1.0) -> Dictionary:
+	_upgrade(c, s)
 	var cells: Array = s["cells"]
 	var cols := int(c["board"]["cols"])
 	var view := int(s["view"])
-	if action != "claim" and int(args.get("view", view)) != view: return {"error": TextCatalog.source("notice.mergeevent.1690899b5094")}
+	if not action in ["claim", "codex"] and int(args.get("view", view)) != view: return {"error": TextCatalog.source("notice.mergeevent.1690899b5094")}
 	var lo := view * cols
 	var hi := lo + int(c["board"]["visible_rows"]) * cols
 	var result := {}
-	if action != "claim" and bool(s["claimed"]): return {"error": TextCatalog.source("notice.mergeevent.382e6cd7a7d1")}
+	if not action in ["claim", "codex"] and bool(s["claimed"]): return {"error": TextCatalog.source("notice.mergeevent.382e6cd7a7d1")}
 	s["view"] = view
+	var queued_before: int = s.get("queue", []).size()
 	if action == "spawn":
+		# 气泡：先发射排队的物品，排空了再用老积分换一级物品。
 		var cost := int(c["points"]["spawn_cost"])
-		if int(s["points"]) < cost: return {"error": TextCatalog.source("notice.mergeevent.61192eec0f98")}
+		var waiting: Array = s.get("queue", [])
+		if waiting.is_empty() and int(s["points"]) < cost: return {"error": TextCatalog.source("notice.mergeevent.61192eec0f98")}
 		var to := MergeGrid.nearest_empty(cells, cols, hi - cols + cols / 2, func(k): return k >= lo and k < hi)
 		if to < 0: return {"error": TextCatalog.source("notice.mergeevent.634a45c3f2c5")}
-		var id := str(c["chain"][int(c["points"]["spawn_tier"]) - 1]["id"])
-		s["points"] = int(s["points"]) - cost
-		s["spent"] = int(s["spent"]) + cost
+		var id := next_supply(c, s)
+		if not waiting.is_empty():
+			waiting.pop_front()
+		else:
+			s["points"] = int(s["points"]) - cost
+			s["spent"] = int(s["spent"]) + cost
 		cells[to]["id"] = id
-		s["discovered"][id] = true
+		if kind(c, id) in ["light", "mural", "shard"]: s["discovered"][id] = true
 		result = {"kind": "spawn", "to": to, "id": id}
 	elif action == "drop":
 		var a := int(args.get("from", -1))
 		var b := int(args.get("to", -1))
 		if a < lo or a >= hi or b < lo or b >= hi: return {"error": ""}
 		if int(cells[b]["lock"]) == 2: return {"error": TextCatalog.source("notice.mergeevent.6609aa98c87b")}
-		# 颜料拖到画笔上：充能。
+		# 宝石拖到生产器上：升一级并装满这一级的产出（满级后按满级重新装填）。
 		if kind(c, str(cells[a]["id"])) == "paint" and kind(c, str(cells[b]["id"])) == "brush" and int(cells[a]["lock"]) == 0 and int(cells[b]["lock"]) == 0:
 			var brush: Dictionary = s["brush"]
-			var cap := int(c["brush"].get("max_charges", 8))
-			if int(brush["charges"]) >= cap: return {"error": TextCatalog.source("notice.mergeevent.4fd1a3eda0b7")}
+			if int(brush["charges"]) > 0: return {"error": TextCatalog.source("notice.mergeevent.4fd1a3eda0b7")}
 			var before := brush_index(c, s)
 			var paint := str(cells[a]["id"])
-			brush["charges"] = mini(cap, int(brush["charges"]) + int(item(c, paint).get("charges", 1)))
 			brush["fed"] = int(brush["fed"]) + 1
+			brush["load"] = _batch(c, brush_index(c, s))
+			brush["charges"] = brush["load"].size()
 			cells[a]["id"] = ""
-			result = {"kind": "feed", "from": a, "to": b, "id": paint, "charges": int(brush["charges"]), "level_up": brush_index(c, s) > before}
+			result = {"kind": "feed", "from": a, "to": b, "id": paint, "charges": int(brush["charges"]), "level_up": brush_index(c, s) > before, "level": brush_index(c, s) + 1}
 		else:
 			var next := func(id): return next_id(c, id)
 			var how := MergeGrid.drop_kind(cells, a, b, next)
@@ -340,6 +449,13 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 			s["discovered"][str(cells[b]["id"])] = true
 			if locked: s["discovered"][under] = true
 			result = {"kind": how, "from": a, "to": b, "id": id, "under": under, "unlocked": locked, "revealed": revealed}
+			if how == "merge" and kind(c, str(cells[b]["id"])) == "light" and s.has("made"):
+				var tier := 1
+				for k in c["chain"].size():
+					if str(c["chain"][k]["id"]) == str(cells[b]["id"]): tier = k + 1
+				if tier > int(s["made"]):
+					s["made"] = tier
+					result["first_tier"] = tier
 			if how == "merge" and c.has("mural"):
 				# 三条线的活动：奖励都留在活动棋盘上，不直接进主棋盘。
 				var row := _row_of(c, str(cells[b]["id"]))
@@ -355,20 +471,11 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		if int(s["brush"]["charges"]) <= 0: return {"error": TextCatalog.source("notice.mergeevent.5eb3bdaef09b")}
 		var to := MergeGrid.nearest_empty(cells, cols, at, func(k): return k >= lo and k < hi)
 		if to < 0: return {"error": TextCatalog.source("notice.mergeevent.c898da2e69e9")}
-		var weights: Array = brush_level(c, s).get("tiers", [[1, 1]])
-		var total := 0.0
-		for w in weights: total += float(w[1])
-		var roll := (drop_roll if drop_roll >= 0 else G.rng.randf()) * total
-		var tier := int(weights[-1][0])
-		for w in weights:
-			roll -= float(w[1])
-			if roll < 0:
-				tier = int(w[0])
-				break
-		var id := str(c["mural"][clampi(tier - 1, 0, c["mural"].size() - 1)]["id"])
-		s["brush"]["charges"] = int(s["brush"]["charges"]) - 1
+		var load: Array = s["brush"]["load"]
+		var id := str(load.pop_front())
+		s["brush"]["charges"] = load.size()
 		cells[to]["id"] = id
-		s["discovered"][id] = true
+		if kind(c, id) in ["light", "mural", "shard"]: s["discovered"][id] = true
 		result = {"kind": "brush", "from": at, "to": to, "id": id, "charges": int(s["brush"]["charges"])}
 	elif action == "collect":
 		var at := int(args.get("cell", -1))
@@ -394,14 +501,60 @@ static func local_action(c: Dictionary, s: Dictionary, action: String, args: Dic
 		s["got"] = have
 		if have.has(milestones(c).size() - 1): s["claimed"] = true
 		result = {"kind": "claim", "milestones": ready, "rewards": claim_rewards(c, ready)}
+	elif action == "codex":
+		var id := str(args.get("id", ""))
+		if not codex_ready(c, s, id): return {"error": ""}
+		s["codex"][id] = true
+		result = {"kind": "codex", "id": id, "rewards": c.get("codex_reward", []).duplicate(true)}
 	else: return {"error": TextCatalog.source("notice.duelrace.f242d2db4cea")}
 	if action in ["drop", "spawn", "recycle", "brush", "collect"]:
 		_advance(c, s)
 		result["advance_rows"] = view - int(s["view"])
-		var nlo := int(s["view"]) * cols
-		var flushed := _flush(c, s, nlo, nlo + int(c["board"]["visible_rows"]) * cols)
-		if not flushed.is_empty(): result["flushed"] = flushed
+		var stashed: int = s.get("queue", []).size() - queued_before
+		if result["advance_rows"] > 0 and stashed > 0: result["stashed"] = stashed
 	return result
+
+# ---------------------------------------------------------------- 图鉴：活动物品、生产器、特殊物品三条线
+
+## 图鉴每一页：[{title, ids}]；生产器各级用 "brush#等级" 当编号。
+static func codex_lines(c: Dictionary) -> Array:
+	var out: Array = []
+	var light: Array = []
+	for row in c["chain"]: light.append(str(row["id"]))
+	out.append({"key": "light", "title": str(c.get("chain_title", TextCatalog.source("notice.mergeevent.f892078afded"))), "ids": light})
+	if c.has("brush"):
+		var gens: Array = []
+		for k in c["brush"]["levels"].size(): gens.append("brush#%d" % (k + 1))
+		out.append({"key": "brush", "title": TextCatalog.source("developer.lines_editor.bb7813711819"), "ids": gens})
+	if c.has("mural"):
+		var murals: Array = []
+		for row in c["mural"]: murals.append(str(row["id"]))
+		out.append({"key": "mural", "title": TextCatalog.source("notice.mergeevent.9f9003edc0bc"), "ids": murals})
+	return out
+
+## 图鉴格子的名字和图标（生产器按等级取）。
+static func codex_entry(c: Dictionary, id: String) -> Dictionary:
+	if id.begins_with("brush#"):
+		return c["brush"]["levels"][clampi(int(id.get_slice("#", 1)) - 1, 0, c["brush"]["levels"].size() - 1)]
+	return item(c, id)
+
+static func codex_unlocked(c: Dictionary, s: Dictionary, id: String) -> bool:
+	if s.is_empty(): return false
+	if id.begins_with("brush#"): return c.has("brush") and int(id.get_slice("#", 1)) <= brush_index(c, s) + 1
+	return s["discovered"].has(id)
+
+static func codex_ready(c: Dictionary, s: Dictionary, id: String) -> bool:
+	if not s.has("codex") or s["codex"].has(id) or c.get("codex_reward", []).is_empty(): return false
+	for line in codex_lines(c):
+		if (line["ids"] as Array).has(id): return codex_unlocked(c, s, id)
+	return false
+
+static func codex_pending(c: Dictionary, s: Dictionary) -> int:
+	var n := 0
+	for line in codex_lines(c):
+		for id in line["ids"]:
+			if codex_ready(c, s, str(id)): n += 1
+	return n
 
 static func act(c: Dictionary, action: String, args: Dictionary = {}) -> Dictionary:
 	var input := args.duplicate()

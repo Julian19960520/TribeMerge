@@ -348,6 +348,10 @@ func gm(args: Dictionary) -> Dictionary:
 		G.rules.progression.unlock_all_features()
 		ActivityRules.initialize()
 		return {}
+	if action == "event_points":
+		var added := MergeEvent.gm_points(clampi(int(args.get("points", 10)), 1, 1000))
+		if added <= 0: return {"error": TextCatalog.source("notice.reducer.749653a39991")}
+		return {"points": added}
 	if action != "card": return {"error": TextCatalog.source("notice.reducer.749653a39991")}
 	if not G.rules.progression.feature_unlocked(Data.CARD_LEVEL): return {"error": TextCatalog.source("notice.reducer.0d7677cd4279")}
 	var selected_album := int(args.get("album", -1))

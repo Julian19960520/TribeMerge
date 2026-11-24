@@ -26,7 +26,7 @@ static func draw_item(ci: CanvasItem, cfg: Dictionary, id: String, center: Vecto
 	else: Art.item(ci, id, center, size * 0.86)
 
 static func _icon(cfg: Dictionary, id: String) -> String:
-	for row in cfg.get("chain", []) + cfg.get("mural", []) + cfg.get("paints", []):
+	for row in cfg.get("chain", []) + cfg.get("mural", []) + cfg.get("shards", []) + cfg.get("paints", []):
 		if str(row["id"]) == id: return str(row.get("icon", ""))
 	if cfg.has("brush") and id == str(cfg["brush"]["id"]):
 		return str(MergeEvent.brush_level(cfg, MergeEvent.state(cfg)).get("icon", ""))

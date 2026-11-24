@@ -100,5 +100,5 @@ func _draw() -> void:
 	var fs := int(round(30.0 * s))
 	var tag := TextCatalog.resolve("+%d" % amount)
 	var at := p + Vector2(-80, 58.0 * s)
-	draw_string_outline(font, at, tag, HORIZONTAL_ALIGNMENT_CENTER, 160, fs, 7, Color(Art.INK, label_a))
-	draw_string(font, at, tag, HORIZONTAL_ALIGNMENT_CENTER, 160, fs, Color(GOLD, label_a))
+	draw_string_outline(font, at, TextCatalog.resolve(tag), HORIZONTAL_ALIGNMENT_CENTER, 160, fs, 7, Color(Art.INK, label_a))
+	draw_string(font, at, TextCatalog.resolve(tag), HORIZONTAL_ALIGNMENT_CENTER, 160, fs, Color(GOLD, label_a))

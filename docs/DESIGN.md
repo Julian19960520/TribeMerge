@@ -611,7 +611,7 @@ server/
 
 ### 本地启动
 
-- **不用 Docker**：双击 `server/启动服务器.bat`（第一次会 `pip install -r requirements.txt`），或 `python server/run.py`。它先跑 `alembic upgrade head` 再起 Uvicorn，监听 `127.0.0.1:8765`，数据在 `server/tribe.db`（SQLite）。接口文档在 http://127.0.0.1:8765/docs。
+- **不用 Docker**：双击 `启动服务器.bat`（或 `server/启动服务器.bat`；第一次会 `pip install -r requirements.txt`）。服务器在后台跑，不开黑窗口，右下角托盘出现「合」图标：右键可以打开接口文档、看日志（`server/server.log` / `server.err.log`）、重启、关闭；托盘退出时服务器一起关（`tools/server_tray.ps1`）。也可以直接 `python server/run.py`。它先跑 `alembic upgrade head` 再起 Uvicorn，监听 `127.0.0.1:8765`，数据在 `server/tribe.db`（SQLite）。接口文档在 http://127.0.0.1:8765/docs。
 - **Docker**：`cd server && docker compose up --build`，起 app + PostgreSQL 16，端口同上。
 - 配置：复制 `server/.env.example` 为 `server/.env` 再改。游戏连哪个地址由 `data/rules.json` 的 `rank_server` 决定。
 - 改了表结构：`cd server && alembic revision --autogenerate -m "说明"`，检查生成的迁移后提交。

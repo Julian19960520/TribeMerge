@@ -1155,7 +1155,7 @@ func events_step(play: bool) -> bool:
 		for i in range(lo,hi):
 			if int(cells[i]["lock"])==0 and str(me.kind(c,str(cells[i]["id"])))=="brush": brush_at=i; break
 		if brush_at>=0:
-			if int(s["brush"]["charges"])<int(c["brush"].get("max_charges",8)):
+			if int(s["brush"]["charges"])<=0:
 				for i in range(lo,hi):
 					if int(cells[i]["lock"])==0 and str(me.kind(c,str(cells[i]["id"])))=="paint":
 						var fed := command("activity", {"season": c["key"], "action": "drop", "from": i, "to": brush_at})
@@ -1188,7 +1188,7 @@ func events_step(play: bool) -> bool:
 			var after: Dictionary=MergeEvent.state(c)
 			if int(after["cells"][b]["lock"])==0: record_unlock("moon",b,item,str(after["cells"][b]["id"]),int(c["board"]["cols"]))
 		return true
-	if int(s["points"])>=int(c["points"]["spawn_cost"]):
+	if int(me.supply(c,s))>0:
 		var result := command("activity", {"season": c["key"], "action": "spawn"})
 		if not result.has("error"):
 			record("event","月石活动生产","使用订单获得的活动积分",result)

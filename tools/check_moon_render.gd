@@ -31,7 +31,7 @@ func run() -> void:
 	var source := FileAccess.get_file_as_string(path).replace("\r\n", "\n").replace("class_name MergeEventBoard\n", "")
 	source = source.replace("extends Control\n", "extends Control\nvar draw_usec := 0\n")
 	source = source.replace("func _draw() -> void:\n", "func _draw() -> void:\n\tvar started := Time.get_ticks_usec()\n")
-	source = source.replace("\nfunc _pop(", "\n\tdraw_usec = Time.get_ticks_usec() - started\n\nfunc _pop(")
+	source = source.replace("\nfunc _brush_ready(", "\n\tdraw_usec = Time.get_ticks_usec() - started\n\nfunc _brush_ready(")
 	var measured := GDScript.new()
 	measured.source_code = source
 	assert(measured.reload() == OK)

@@ -252,6 +252,36 @@
 			"pad": 12.0,
 			"w": 340.0
 		},
+		"board_order_glow": {
+			"frames": 4,
+			"h": 58,
+			"nine": [
+				34,
+				28,
+				34,
+				28
+			],
+			"pad": 10,
+			"w": 180
+		},
+		"board_order_slab": {
+			"frames": 4,
+			"h": 58,
+			"nine": [
+				32,
+				30,
+				32,
+				26
+			],
+			"pad": 8,
+			"w": 180
+		},
+		"board_order_stump": {
+			"frames": 4,
+			"h": 100,
+			"pad": 6,
+			"w": 100
+		},
 		"board_plate": {
 			"frames": 4.0,
 			"h": 76.0,
@@ -307,100 +337,100 @@
 			"w": 106.0
 		},
 		"board_vine_b0": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b1": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b2": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b3": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b4": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b5": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b6": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_b7": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f0": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f1": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f2": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f3": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f4": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f5": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f6": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		},
 		"board_vine_f7": {
-			"frames": 4,
-			"h": 96,
-			"pad": 20,
-			"w": 96
+			"frames": 4.0,
+			"h": 96.0,
+			"pad": 20.0,
+			"w": 96.0
 		}
 	}
 }

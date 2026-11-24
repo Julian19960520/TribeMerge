@@ -31,6 +31,9 @@ func run() -> void:
 	var first: Control = review.box.get_node("received_card_0")
 	var second: Control = review.box.get_node("received_card_1")
 	check(first.visible and not second.visible and first.scale.is_equal_approx(Vector2.ONE * 1.7) and absf(first.get_rect().get_center().x - 360.0) < 2.0 and view.text == "下一张", "查看把第一张新卡放大到正中，底部变成下一张")
+	var line: Label = review.box.get_node_or_null("card_line")
+	check(not review.box.get_node("card_album_0").visible and not review.box.get_node("card_badge_0").visible, "放大后卡册名和新卡字样收起，不压在卡面上")
+	check(line != null and line.text == load("res://scripts/ui/UI.gd").resource_text(load("res://scripts/ui/CardArtwork.gd").caption(0, 0)) and line.text != "" and line.get_rect().position.y > first.get_global_rect().end.y - review.box.global_position.y - 4.0, "卡下方显示这张卡的台词")
 	view.pressed.emit()
 	await create_timer(0.4).timeout
 	check(second.visible and not first.visible and view.text == "确定", "再点翻到下一张，按钮变成确定")

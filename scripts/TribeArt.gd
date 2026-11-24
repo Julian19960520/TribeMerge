@@ -23,7 +23,7 @@ const VS := 0.8
 ## 区域在部落大地图上的中心（篝火广场居中，其余按建造顺序绕一圈）；parts 是每件部件相对中心的落地点（按 builds.json 里的部件顺序）；tag 是区域牌子的位置。
 ## 高的部件尽量放在后排两角，给牌子让出中间。
 const AREAS := {
-	"fire": {"at": Vector2(800, 1250), "tag": Vector2(0, 100), "parts": [
+	"fire": {"at": Vector2(800, 1290), "tag": Vector2(0, 100), "parts": [
 		Vector2(0, 6), Vector2(-104, 34), Vector2(98, 40), Vector2(-118, -34), Vector2(96, -54), Vector2(-14, -66), Vector2(-132, 92), Vector2(134, 92)]},
 	"gather": {"at": Vector2(800, 930), "tag": Vector2(0, -124), "parts": [
 		Vector2(0, -46), Vector2(-66, -24), Vector2(-46, 40), Vector2(62, -22), Vector2(6, 8), Vector2(88, 36)]},
@@ -33,10 +33,10 @@ const AREAS := {
 		Vector2(0, -44), Vector2(-64, -24), Vector2(-46, 40), Vector2(4, 6), Vector2(48, 42), Vector2(90, -8)]},
 	"hunt": {"at": Vector2(470, 1460), "tag": Vector2(0, -124), "parts": [
 		Vector2(-92, 14), Vector2(0, -46), Vector2(-44, 44), Vector2(4, 4), Vector2(62, -22), Vector2(56, 46)]},
-	"cook": {"at": Vector2(1130, 1460), "tag": Vector2(0, -124), "parts": [
-		Vector2(0, -44), Vector2(-46, 42), Vector2(-62, -18), Vector2(8, 10), Vector2(62, -22), Vector2(52, 44)]},
 	"wood": {"at": Vector2(590, 1790), "tag": Vector2(0, -124), "parts": [
 		Vector2(-48, 40), Vector2(0, -44), Vector2(6, 8), Vector2(62, -22), Vector2(-62, -18), Vector2(70, 42)]},
+	"fishing": {"at": Vector2(1190, 1450), "tag": Vector2(0, -124), "parts": [
+		Vector2(-84, -30), Vector2(-76, 54), Vector2(-6, 8), Vector2(0, -58), Vector2(62, 54), Vector2(84, -34)]},
 	"kiln": {"at": Vector2(1010, 1790), "tag": Vector2(0, -124), "parts": [
 		Vector2(-46, 40), Vector2(0, -44), Vector2(-62, -22), Vector2(8, 8), Vector2(62, -20), Vector2(54, 44)]},
 }
@@ -76,14 +76,69 @@ static func part(ci: CanvasItem, kind: String, c: Vector2, s: float = 1.0, squas
 	Sprites.draw(ci, "tribe_" + k + variant, part_box(k, bs), mod)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-## 建到一半的部件：frac（0..1）是已建比例。底下已建的那截是真图，上面露出淡淡的轮廓，外面搭着木脚手架；
-## frac 越大真图越高、脚手架越少，建满就是完整的部件。
+## 每件部件画了几个建造阶段（scripts/sprites/tribe.gd 里按 _on(阶段) 分层画）。没写的只有 1 个阶段。
+## 跟 builds.json 的 steps 对不上也能用：按已建比例换算成最近的阶段。
+const STAGES := {
+	"totem": 3, "chiefhut": 3, "spears": 3, "featherpole": 4,
+	"berrybush": 3, "basketrack": 3, "dryingmat": 3, "seedjar": 3, "sprouts": 4, "fruittree": 4,
+	"logs": 3, "chopblock": 3, "bench": 3, "sawhorse": 3, "woodshed": 4, "carvedpole": 4,
+	"rockpile": 3, "anvilstone": 3, "flintpit": 3, "toolrack": 3, "whetstone": 4, "obsidian": 4,
+	"snare": 3, "meatrack": 3, "hidedry": 3, "hunttent": 4, "skullgate": 4,
+	"grassstack": 3, "loomframe": 3, "dyepot": 3, "clothesline": 3, "hidetent": 4,
+	"stonestove": 3, "spit": 3, "smokehouse": 3, "cookpit": 3, "firewood": 4, "sacredfire": 4,
+	"claypit": 3, "wheel": 3, "potshelf": 3, "firepit": 3, "kilndome": 4, "bigjar": 4,
+	"netrack": 3, "fishrack": 3, "fishtrap": 3, "shellpile": 3, "canoe": 4, "stilthut": 4,
+}
+
+static func stages_of(kind: String) -> int:
+	return int(STAGES.get(kind, 1))
+
+## 已建比例 frac 对应画到第几个阶段（0 = 还没动工）
+static func stage_at(kind: String, frac: float) -> int:
+	var n := stages_of(kind)
+	if frac >= 0.999:
+		return n
+	if frac <= 0.001:
+		return 0
+	return clampi(roundi(frac * float(n)), 1, n - 1)
+
+static func stage_key(kind: String, st: int, variant := "") -> String:
+	return "tribe_%s_s%d%s" % [kind, st, variant]
+
+## 第 st 阶段新加的零件（只在村庄画法里有，落成动画用）
+static func delta_key(kind: String, st: int) -> String:
+	return "tribe_%s_d%d" % [kind, st]
+
+## 画第 st 阶段新加的那几件零件；只有 1 个阶段的部件就是整件
+static func part_delta(ci: CanvasItem, kind: String, st: int, c: Vector2, s: float, squash: Vector2 = Vector2.ONE, mod: Color = Color.WHITE) -> void:
+	if stages_of(kind) <= 1 or not Sprites.has(delta_key(kind, st)):
+		part(ci, kind, c, s, squash, "", mod)
+		return
+	var bs: float = VAR_SCALE[""]
+	ci.draw_set_transform(c, 0.0, squash * (s / bs))
+	Sprites.draw(ci, delta_key(kind, st), part_box(kind, bs), mod)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+## 建到一半的部件：frac（0..1）是已建比例。每个阶段有自己画好的样子（先打底、再起墙、再封顶、最后装饰），
+## 后面没建的部分留一层淡淡的轮廓提示。没有阶段图的老部件退回「下半截真图 + 木脚手架」。
 static func part_stage(ci: CanvasItem, kind: String, c: Vector2, s: float, frac: float, variant: String = "", squash: Vector2 = Vector2.ONE) -> void:
 	if frac >= 0.999:
 		part(ci, kind, c, s, squash, variant)
 		return
 	var k := kind if has_art(kind) else "rubble"
 	frac = clampf(frac, 0.0, 1.0)
+	var st := stage_at(k, frac)
+	if st == 0:
+		# 还没动工：只有轮廓
+		part(ci, k, c, s, squash, "_flat", Color(0.42, 0.3, 0.18, 0.22))
+		return
+	if Sprites.has(stage_key(k, st, variant)):
+		part(ci, k, c, s, squash, "_flat", Color(0.42, 0.3, 0.18, 0.16))
+		var vbs: float = VAR_SCALE.get(variant, 1.0)
+		ci.draw_set_transform(c, 0.0, squash * (s / vbs))
+		Sprites.draw(ci, stage_key(k, st, variant), part_box(k, vbs))
+		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		return
 	# 还没建的部分：淡色轮廓
 	part(ci, k, c, s, squash, "_flat", Color(0.42, 0.3, 0.18, 0.22))
 	var bs: float = VAR_SCALE.get(variant, 1.0)
@@ -159,8 +214,7 @@ static func village(ci: CanvasItem, builds: Dictionary, level: int, hide: Dictio
 		var open := lot_open(id, level)
 		if not open and st == 0:
 			continue
-		var at := area_at(id)
-		clearing(ci, at, id)
+		# 空地和土路画在静止的地面层（Paint.village_ground）
 		var order: Array = []
 		for k in st:
 			if hide.has(id) and int(hide[id]) == k:
@@ -223,6 +277,7 @@ const _HEIGHT := {
 	"stonestove": 58, "spit": 76, "smokehouse": 112, "cookpit": 40, "firewood": 62, "sacredfire": 130,
 	"logs": 58, "chopblock": 66, "bench": 40, "sawhorse": 56, "woodshed": 110, "carvedpole": 150,
 	"claypit": 34, "wheel": 64, "potshelf": 92, "firepit": 56, "kilndome": 104, "bigjar": 92,
+	"netrack": 92, "fishrack": 80, "fishtrap": 50, "shellpile": 40, "canoe": 44, "stilthut": 136,
 	"rubble": 40,
 }
 const _WIDTH := {
@@ -234,6 +289,7 @@ const _WIDTH := {
 	"stonestove": 88, "spit": 104, "smokehouse": 96, "cookpit": 100, "firewood": 92, "sacredfire": 86,
 	"logs": 100, "chopblock": 84, "bench": 104, "sawhorse": 90, "woodshed": 124, "carvedpole": 90,
 	"claypit": 100, "wheel": 76, "potshelf": 100, "firepit": 100, "kilndome": 110, "bigjar": 80,
+	"netrack": 104, "fishrack": 112, "fishtrap": 100, "shellpile": 92, "canoe": 136, "stilthut": 116,
 	"rubble": 70,
 }
 
@@ -288,5 +344,11 @@ const BOUNDS := {
 	"firepit": [-57, -88, 57, 14],
 	"kilndome": [-59, -151, 59, 16],
 	"bigjar": [-45, -97, 45, 12],
+	"netrack": [-56, -100, 56, 14],
+	"fishrack": [-64, -90, 64, 14],
+	"fishtrap": [-52, -58, 56, 14],
+	"shellpile": [-50, -50, 52, 14],
+	"canoe": [-74, -66, 74, 16],
+	"stilthut": [-64, -146, 64, 16],
 	"rubble": [-41, -43, 38, 12],
 }

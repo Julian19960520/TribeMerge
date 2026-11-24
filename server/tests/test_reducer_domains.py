@@ -108,7 +108,7 @@ def test_order_credits_progress_and_all_active_events(game):
     assert state['pass_pts'] > game['pass_pts']
     assert state['local_race']['current']['group']['members'][0]['score'] > 0
     active=list(state['merge_events'].values())
-    assert active and active[0]['points'] > 0
+    assert active and len(active[0]['queue']) > 0
 
 
 def test_duel_wins_and_milestone_rewards_persist(game):

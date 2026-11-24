@@ -30,7 +30,6 @@ var _undo_cell := -1
 var _undo_id := ""
 var _inv_lbl: Label
 var _xp_lbl: Label
-var _lv_lbl: Label
 var _stash_btn: TButton
 var _stash_wrap: Control
 var _base_btn: TButton
@@ -77,11 +76,11 @@ func _ready() -> void:
 	_stash_btn.extra = _paint_stash
 	_base_btn = UI.hit(_orders.content, BASE_RECT, func(): G.main.open("level"))
 	_base_btn.extra = _paint_hero
-	_lv_lbl = UI.lbl(_base_btn, "", Rect2(0, 139, BASE_RECT.size.x, 30), 18, Color("5a3a1e"))
 	_xp_lbl = UI.lbl(_base_btn, "", Rect2(26, 174, BASE_RECT.size.x - 34, 28), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	_hammer_btn = UI.hit(_orders.content, Rect2(ORDER_X, BASE_RECT.position.y, HAMMER_W, BASE_RECT.size.y), _on_hammer)
 	_hammer_btn.extra = _paint_hammer
 	_hammer_btn.pivot_offset = Vector2(HAMMER_W, BASE_RECT.size.y) * 0.5
+	UI.btn(_hammer_btn, Rect2(8, 170, HAMMER_W - 16, 50), TextCatalog.source("ui.homescreen.cefdf764cd74"), "orange", _on_hammer, 24)
 	_hammer_btn.visible = false
 	_cards_root = OrderStrip.new()
 	_cards_root.craft_requested.connect(_on_craft)
@@ -192,31 +191,23 @@ func _paint_stash(ci: CanvasItem, sz: Vector2) -> void:
 			var bob := 4.0 * sin(Time.get_ticks_msec() / 200.0)
 			Sprites.draw(ci, "board_stash_arrow", Rect2(sz.x * 0.5 - 16, sz.y - 30 + bob, 32, 22))
 
-## 主角阿焰的等级卡
+## 主角阿焰：不要卡片，半身像直接站在订单条左头，下面一条经验进度压住底部
 func _paint_hero(ci: CanvasItem, sz: Vector2) -> void:
-	Sprites.draw(ci, "board_hero_card", Rect2(Vector2.ZERO, sz))
-	Meme.draw_chest(ci, Meme.HERO, Rect2(14, 28, sz.x - 28, 112))
+	# 半身像往下坐，腰部被经验条盖住
+	Meme.draw_chest(ci, Meme.HERO, Rect2(0, 30, sz.x, 166))
 	Paint.bar(ci, Rect2(12, 176, sz.x - 24, 24), float(G.xp) / float(G.rules.progression.xp_need()), Art.MOSS)
 	Art.item(ci, "xp_1", Vector2(16, 188), 36)
 
 ## 不那那够建下一段部落时出现，点了回村庄升级
 func _paint_hammer(ci: CanvasItem, sz: Vector2) -> void:
-	Sprites.draw(ci, "board_hammer_card", Rect2(Vector2.ZERO, sz))
-	var title := TextCatalog.source("ui.boardscreen.94996ca62233")
-	var tfs := 22
-	var tw := G.font_title.get_string_size(TextCatalog.resolve(title), HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x
-	var tp := Vector2((sz.x - tw) * 0.5, 46)
-	ci.draw_string_outline(G.font_title, tp, TextCatalog.resolve(title), HORIZONTAL_ALIGNMENT_LEFT, -1, tfs, 5, Art.INK)
-	ci.draw_string(G.font_title, tp, TextCatalog.resolve(title), HORIZONTAL_ALIGNMENT_LEFT, -1, tfs, Color("fff1c4"))
-	Paint.hammer(ci, Vector2(sz.x * 0.5, 114), 0.82)
-	var id := G.rules.progression.next_build_id()
-	var cost := G.rules.progression.build_cost(id) if id != "" else 0
-	Art.item(ci, "shell_2", Vector2(sz.x * 0.5 - 34, 186), 40)
-	var text := str(cost)
-	var fs := 22
-	var pos := Vector2(sz.x * 0.5 - 6, 186 + (G.font_body.get_ascent(fs) - G.font_body.get_descent(fs)) * 0.5)
-	ci.draw_string_outline(G.font_body, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
-	ci.draw_string(G.font_body, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	# 和左边活动入口、主角一个路数：不要卡片，一把大锤子带暖光和星点，下面是「建造」按钮
+	var hc := Vector2(sz.x * 0.5, 132)
+	for k in 4:
+		ci.draw_circle(hc, 56.0 - k * 12.0, Color(1, 0.85, 0.35, 0.1 + k * 0.05))
+	Paint.hammer(ci, hc, 1.1)
+	for v in [Vector2(-44, -40), Vector2(42, -30), Vector2(-40, 26), Vector2(46, 30)]:
+		var sp: Vector2 = hc + v
+		ci.draw_colored_polygon(Art.star_pts(sp, 8.0, 3.0, 4, int(v.x)), Color(1, 0.97, 0.8))
 
 func _paint_info(ci: CanvasItem, sz: Vector2) -> void:
 	Sprites.draw(ci, "board_info_panel", Rect2(Vector2.ZERO, sz))
@@ -264,8 +255,8 @@ func _on_deliver(oi: int) -> void:
 	if oi < 0 or oi >= G.orders.size() or oi >= _cards.size():
 		return
 	var card_pos := _cards[oi].get_global_rect().get_center()
-	# 头像顶端（OrderCard 里头像中心在 (46,37)，边长 74）
-	var head_top: Vector2 = _cards[oi].get_global_transform() * Vector2(46, 2)
+	# 气泡从订单顶上冒出来（木桩上的成品 / 石板上方）
+	var head_top: Vector2 = _cards[oi].get_global_transform() * Vector2(_cards[oi].size.x * 0.5, 24)
 	_points_origin = card_pos
 	var fossil_earned := FossilDig.earning()
 	var result: Dictionary = Replay.perform("order", {"cell": oi})
@@ -371,7 +362,6 @@ func _refresh_hud() -> void:
 	if not is_visible_in_tree(): return
 	_refresh_bubble_offer()
 	_inv_lbl.text = TextCatalog.resolve("%d/%d" % [G.rules.board.inv_filled(), G.inv_cap])
-	_lv_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.boardscreen.e6da3dfb89c6"), G.level))
 	_xp_lbl.text = TextCatalog.resolve("%d/%d" % [G.xp, G.rules.progression.xp_need()])
 	_sync_boost()
 	_activity_row.refresh()

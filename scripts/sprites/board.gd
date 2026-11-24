@@ -85,6 +85,14 @@ static func entries() -> Array:
 		"draw": func(ci, r): live_head(ci, r.get_center(), 62, true)})
 	out.append({"key": "board_head_npc", "w": 76, "h": 76, "pad": 6,
 		"draw": func(ci, r): live_head(ci, r.get_center(), 62, false)})
+	# 订单：后面一截木桩（放制作产物），前面一块石板（放原料），左右拉长石板用九宫格
+	out.append({"key": "board_order_stump", "w": 100, "h": 100, "pad": 6,
+		"draw": func(ci, r): live_order_stump(ci, r)})
+	out.append({"key": "board_order_slab", "w": 180, "h": 58, "pad": 8, "nine": [32, 30, 32, 26],
+		"draw": func(ci, r): live_order_slab(ci, r)})
+	# 石板下的一圈光（白色，运行时染色：备齐绿、可制作黄、剧情金）
+	out.append({"key": "board_order_glow", "w": 180, "h": 58, "pad": 10, "nine": [34, 28, 34, 28],
+		"draw": func(ci, r): live_order_glow(ci, r)})
 	out.append({"key": "board_spot_shadow", "w": 80, "h": 68, "pad": 4,
 		"draw": func(ci, r): ci.draw_colored_polygon(Art.ell(r.get_center(), r.size * 0.5, 63, 0.03, 18), Color(0.8, 0.65, 0.4, 0.35))})
 	out.append({"key": "board_chip", "w": 80, "h": 28, "pad": 3, "nine": [16, 14, 16, 14],
@@ -334,6 +342,68 @@ static func live_order_card(ci: CanvasItem, r: Rect2, oi: int, bg: Color) -> voi
 	Art.dilate(ci, b, 3.0, Art.INK)
 	ci.draw_colored_polygon(b, bg)
 	Art.dashed(ci, Art.rrect(r.grow(-6), 12, 61 + oi, 0.0), 8, 6, CARD_DASH, 2.0)
+
+## 订单木桩：树皮桩身 + 两只树根，顶上一圈浅色截面带年轮。r 是 100×100 的内容区，截面中心在 r.y + 20。
+static func live_order_stump(ci: CanvasItem, r: Rect2) -> void:
+	var cx := r.get_center().x
+	var top := r.position.y + 20.0
+	var bot := r.end.y - 6.0
+	var body := Art.poly([
+		Vector2(cx - 44, top), Vector2(cx - 45, top + 34), Vector2(cx - 47, bot - 14), Vector2(cx - 58, bot - 2),
+		Vector2(cx - 40, bot + 2), Vector2(cx - 22, bot - 4), Vector2(cx, bot + 2), Vector2(cx + 24, bot - 3),
+		Vector2(cx + 42, bot + 2), Vector2(cx + 57, bot - 3), Vector2(cx + 46, bot - 16), Vector2(cx + 45, top + 34), Vector2(cx + 44, top)], 81, 0.4)
+	var face := Art.ell(Vector2(cx, top), Vector2(44, 15), 82, 0.02, 24, 0.0, 0.3)
+	# 地上的影子
+	ci.draw_colored_polygon(Art.ell(Vector2(cx, bot), Vector2(56, 8), 83, 0.0, 18), Color(0.2, 0.1, 0.03, 0.28))
+	Art.dilate(ci, body, 3.0, Art.INK)
+	Art.dilate(ci, face, 3.0, Art.INK)
+	ci.draw_colored_polygon(body, Art.WOOD)
+	# 左亮右暗：右边一条暗面
+	var dark := Art.poly([Vector2(cx + 20, top + 6), Vector2(cx + 44, top), Vector2(cx + 45, top + 34), Vector2(cx + 46, bot - 16),
+		Vector2(cx + 57, bot - 3), Vector2(cx + 42, bot + 2), Vector2(cx + 24, bot - 3), Vector2(cx + 24, top + 40)], 84, 0.3)
+	ci.draw_colored_polygon(dark, Color(Art.WOOD_D, 0.55))
+	# 树皮竖纹
+	for k in 5:
+		var x := cx - 32.0 + k * 15.0 + (Art.srnd(85 + k) - 0.5) * 6.0
+		Art.pl(ci, [Vector2(x, top + 18 + Art.srnd(86 + k) * 8), Vector2(x + 2, top + 40), Vector2(x - 1, bot - 14 - Art.srnd(87 + k) * 10)], 2.0, Color(Art.INK, 0.45), 88 + k)
+	Art.outline(ci, body, 2.2, Art.INK)
+	# 截面：浅木色，年轮，一道裂缝
+	ci.draw_colored_polygon(face, Color("f2c98a"))
+	for k in 3:
+		var rk := 1.0 - float(k + 1) * 0.24
+		Art.outline(ci, Art.ell(Vector2(cx + 2, top + 1), Vector2(44, 15) * rk, 90 + k, 0.03, 20, 0.0, 0.3), 1.6, Color("c98a4c"))
+	Art.pl(ci, [Vector2(cx + 4, top - 1), Vector2(cx + 18, top - 4), Vector2(cx + 30, top - 2)], 1.8, Color("b07438"), 94)
+	ci.draw_colored_polygon(Art.ell(Vector2(cx - 18, top - 5), Vector2(14, 3.5), 95, 0.0, 12, -0.1), Color(1, 1, 1, 0.35))
+	Art.outline(ci, face, 2.2, Art.INK)
+
+## 订单石板：灰石块。上面一条亮台面（需要的物品立在上面），前面一块侧面（奖励写在上面）。
+## 台面高 TOP_H；九宫格中段只有平涂，两头放裂纹和斑点。
+const SLAB_TOP_H := 32.0
+static func live_order_slab(ci: CanvasItem, r: Rect2) -> void:
+	var body := Art.rrect(r, 16, 96, 0.3, 30.0)
+	var top := Art.rrect(Rect2(r.position + Vector2(4, 3), Vector2(r.size.x - 8, SLAB_TOP_H)), 13, 97, 0.3, 30.0)
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 6), r.size), 16, 96, 0.0, 30.0), Color(0.2, 0.1, 0.03, 0.3))
+	Art.dilate(ci, body, 3.0, Art.INK)
+	ci.draw_colored_polygon(body, Art.STONE)
+	# 侧面靠下一截压暗
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position.x + 3, r.end.y - 10, r.size.x - 6, 7), 4, 103, 0.2, 30.0), Color(Art.STONE_D, 0.35))
+	ci.draw_colored_polygon(top, Color("d3cdc1"))
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(16, 8), Vector2(22, 6)), 3, 98, 0.0), Color(1, 1, 1, 0.5))
+	# 台面和侧面交界的一道亮边
+	var lip := r.position.y + SLAB_TOP_H + 3.0
+	ci.draw_line(Vector2(r.position.x + 14, lip + 2), Vector2(r.end.x - 14, lip + 2), Color(1, 1, 1, 0.3), 2.0, true)
+	# 侧面两头的裂纹，台面上的斑点
+	Art.pl(ci, [Vector2(r.position.x + 12, r.end.y - 3), Vector2(r.position.x + 18, r.end.y - 12), Vector2(r.position.x + 16, lip + 4)], 1.8, Art.STONE_D, 99)
+	Art.pl(ci, [Vector2(r.end.x - 20, r.end.y - 3), Vector2(r.end.x - 16, r.end.y - 11)], 1.8, Art.STONE_D, 100)
+	for v in [Vector2(r.end.x - 26, r.position.y + 14), Vector2(r.end.x - 16, r.position.y + 24), Vector2(r.position.x + 24, r.position.y + 26)]:
+		ci.draw_circle(v, 1.8, Color(Art.STONE_D, 0.6))
+	Art.outline(ci, top, 1.8, Color(Art.STONE_D, 0.8))
+	Art.outline(ci, body, 2.2, Art.INK)
+
+static func live_order_glow(ci: CanvasItem, r: Rect2) -> void:
+	var pts := Art.rrect(r.grow(6), 22, 101, 0.0, 30.0)
+	ci.draw_colored_polygon(pts, Color(1, 1, 1, 0.45))
+	Art.outline(ci, pts, 4.0, Color.WHITE)
 
 ## 订单人头像的底圆
 static func live_head(ci: CanvasItem, c: Vector2, seed: int, story: bool) -> void:

@@ -470,12 +470,16 @@ static func village_ground(ci: CanvasItem, builds: Dictionary, level: int) -> vo
 	for i in 46:
 		var p := Vector2(60 + Art.srnd(i * 7 + 1) * 1380.0, hz + 180.0 + Art.srnd(i * 7 + 2) * (W.y - hz - 220.0))
 		ci.draw_colored_polygon(Art.ell(p, Vector2(60, 22) * (0.6 + Art.srnd(i * 7 + 3)), i, 0.1, 14), Color(0.75, 0.86, 0.45, 0.35))
-	# 从篝火广场通往各个开放地块的土路
+	# 开放地块的空地（不画土路）：先一圈踩秃的草边，再空地
 	var opened := _opened(builds, level)
+	var lots: Array = []
 	for b in Data.BUILDS:
 		var id := str(b.get("id", ""))
-		if id == "fire" or not bool(opened[id]): continue
-		_dirt_path(ci, hub, TribeArt.area_at(id), absi(id.hash()) % 7)
+		if bool(opened[id]) or id == "fire": lots.append(id)
+	for id in lots:
+		_lot_halo(ci, TribeArt.area_at(id), _lot_seed(id))
+	for id in lots:
+		_lot_floor(ci, TribeArt.area_at(id), _lot_seed(id), id == "fire")
 	# 后排树（没开放的地块盖着的密林、空地上的树）
 	for t in _village_trees(builds, level, false):
 		forest_tree(ci, t[0], int(t[1]))
@@ -486,8 +490,9 @@ static func _clear_ground(p: Vector2, opened: Dictionary, hub: Vector2) -> bool:
 		if not bool(opened[id]): continue
 		var c := TribeArt.area_at(str(id))
 		# 按树干上方一点算（树冠往上长）：下边的树冠不压住空地，上边的树贴到空地边上
-		var q := (p + Vector2(0, -30) - c - Vector2(0, 10)) / Vector2(TribeArt.LOT_R * 1.2, TribeArt.LOT_R * 0.74)
+		var q := (p + Vector2(0, -30) - c - Vector2(0, 10)) / (Vector2(TribeArt.LOT_R * 1.2, TribeArt.LOT_R * 0.74) * (1.15 if str(id) == "fire" else 1.0))
 		if q.length() < 1.0: return true
+		# 篝火广场到各地块之间留一条草地（不画路），树不长在这里，免得挡住两边的建筑
 		if str(id) != "fire" and Geometry2D.get_closest_point_to_segment(p, hub, c).distance_to(p) < 78.0: return true
 	return false
 
@@ -502,21 +507,45 @@ static func forest_tree(ci: CanvasItem, base: Vector2, seed: int) -> void:
 		ci.draw_colored_polygon(Art.ell(c, Vector2(44 - k * 9, 34 - k * 7) * s, seed + k, 0.12, 16), greens[k])
 	ci.draw_circle(base + Vector2(-10, -98) * s, 7.0 * s, Color(1, 1, 1, 0.12))
 
-## 从 a 到 b 的一条弯弯的土路
-static func _dirt_path(ci: CanvasItem, a: Vector2, b: Vector2, seed: int) -> void:
-	var n := 14
-	var side := (b - a).normalized().orthogonal()
-	var left := PackedVector2Array()
-	var right := PackedVector2Array()
-	for k in n + 1:
-		var t := float(k) / float(n)
-		var p := a.lerp(b, t) + side * sin(t * PI) * (20.0 + float(seed) * 4.0)
-		var w := 22.0 - 6.0 * t
-		left.append(p + side * w)
-		right.append(p - side * w)
-	right.reverse()
-	left.append_array(right)
-	ci.draw_colored_polygon(left, Color("d9b778"))
+# ---------------------------------------------------------------- 部落空地和土路（静止的地面层，不抖动）
+
+const DIRT_BASE := Color("c3ab74")
+const DIRT_LIGHT := Color("cbb582")
+const DIRT_FIRE := Color("c8ad76")
+const GRASS_WORN := Color("a5c25e")
+
+static func _lot_seed(id: String) -> int:
+	return absi(id.hash()) % 997
+
+## 圆滑的不规则一团：几段低频起伏叠出来，边不会锯齿
+static func blob(c: Vector2, r: Vector2, seed: int, n: int = 48, wob: float = 1.0) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var p1 := Art.srnd(seed * 7 + 1) * TAU
+	var p2 := Art.srnd(seed * 7 + 2) * TAU
+	var p3 := Art.srnd(seed * 7 + 3) * TAU
+	for k in n:
+		var a := TAU * float(k) / float(n)
+		var m := 1.0 + wob * (0.055 * sin(3.0 * a + p1) + 0.035 * sin(5.0 * a + p2) + 0.02 * sin(9.0 * a + p3))
+		pts.append(c + Vector2(cos(a) * r.x, sin(a) * r.y) * m)
+	return pts
+
+## 空地大小
+static func _lot_r() -> Vector2:
+	return Vector2(TribeArt.LOT_R * 1.05, TribeArt.LOT_R * 0.62)
+
+## 空地外面一圈被踩黄、踩稀的草
+static func _lot_halo(ci: CanvasItem, at: Vector2, seed: int) -> void:
+	# 空地外面一圈颜色稍浅的草，硬边
+	ci.draw_colored_polygon(blob(at + Vector2(0, 10), _lot_r() * 1.07, seed + 11), GRASS_WORN)
+
+## 空地：硬边的平涂土地，三层颜色很接近：外圈稍深、主体、中间稍亮。没有描边、没有细节
+static func _lot_floor(ci: CanvasItem, at: Vector2, seed: int, fire: bool) -> void:
+	var c := at + Vector2(0, 10)
+	var r := _lot_r()
+	var base := DIRT_FIRE if fire else DIRT_BASE
+	ci.draw_colored_polygon(blob(c, r, seed + 1), base.darkened(0.07))
+	ci.draw_colored_polygon(blob(c + Vector2(0, 5), r * Vector2(0.93, 0.88), seed + 2), base)
+	ci.draw_colored_polygon(blob(c + Vector2(0, 9), r * Vector2(0.62, 0.54), seed + 4), DIRT_LIGHT if not fire else DIRT_LIGHT.lightened(0.04))
 
 static func _spot_hut(ci: CanvasItem, c: Vector2, st: int) -> void:
 	if st == 0:

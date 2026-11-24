@@ -91,20 +91,6 @@
 					}
 				],
 				"goal": "unlock_all",
-				"advance_by_tier": [
-					{
-						"tier": 4,
-						"rows": 3
-					},
-					{
-						"tier": 6,
-						"rows": 3
-					},
-					{
-						"tier": 8,
-						"rows": 4
-					}
-				],
 				"brush_col": 2,
 				"specials": [
 					{
@@ -114,8 +100,13 @@
 					},
 					{
 						"depth": 2,
+						"col": 4,
+						"id": "mural_1"
+					},
+					{
+						"depth": 3,
 						"col": 1,
-						"id": "paint_1"
+						"id": "mural_1"
 					},
 					{
 						"depth": 4,
@@ -124,23 +115,28 @@
 					},
 					{
 						"depth": 5,
-						"col": 0,
-						"id": "paint_1"
+						"col": 3,
+						"id": "mural_1"
 					},
 					{
 						"depth": 6,
-						"col": 5,
-						"id": "paint_1"
+						"col": 0,
+						"id": "mural_1"
 					},
 					{
 						"depth": 7,
 						"col": 2,
-						"id": "paint_1"
+						"id": "paint_2"
 					},
 					{
-						"depth": 9,
-						"col": 4,
-						"id": "paint_2"
+						"depth": 8,
+						"col": 5,
+						"id": "mural_1"
+					},
+					{
+						"depth": 10,
+						"col": 2,
+						"id": "mural_2"
 					},
 					{
 						"depth": 11,
@@ -148,14 +144,32 @@
 						"id": "paint_2"
 					},
 					{
-						"depth": 13,
-						"col": 3,
-						"id": "paint_2"
+						"depth": 12,
+						"col": 4,
+						"id": "mural_2"
 					},
 					{
-						"depth": 15,
-						"col": 5,
-						"id": "paint_2"
+						"depth": 14,
+						"col": 0,
+						"id": "mural_2"
+					}
+				],
+				"advance_on_merge": [
+					{
+						"tier": 7,
+						"rows": 3
+					},
+					{
+						"tier": 9,
+						"rows": 3
+					},
+					{
+						"tier": 11,
+						"rows": 2
+					},
+					{
+						"tier": 12,
+						"rows": 2
 					}
 				]
 			},
@@ -170,7 +184,39 @@
 					3
 				],
 				"spawn_cost": 1,
-				"spawn_tier": 1
+				"spawn_tier": 1,
+				"order_bundles": [
+					{
+						"score": 1,
+						"tier": 1,
+						"count": 2
+					},
+					{
+						"score": 4,
+						"tier": 1,
+						"count": 4
+					},
+					{
+						"score": 6,
+						"tier": 2,
+						"count": 3
+					},
+					{
+						"score": 8,
+						"tier": 2,
+						"count": 5
+					},
+					{
+						"score": 10,
+						"tier": 3,
+						"count": 5
+					},
+					{
+						"score": 11,
+						"tier": 3,
+						"count": 8
+					}
+				]
 			},
 			"chain": [
 				{
@@ -250,10 +296,6 @@
 						[
 							"mural_4",
 							1
-						],
-						[
-							"paint_1",
-							1
 						]
 					]
 				},
@@ -304,7 +346,7 @@
 					"icon": "res://assets/events/cave/mural_3.svg",
 					"rewards": [
 						[
-							"amber_2",
+							"sand_2",
 							1
 						]
 					]
@@ -314,6 +356,10 @@
 					"name": "§names.chains.b63c3bf55b5f§",
 					"icon": "res://assets/events/cave/mural_4.svg",
 					"rewards": [
+						[
+							"amber_2",
+							1
+						],
 						[
 							"fire_3",
 							1
@@ -326,7 +372,11 @@
 					"icon": "res://assets/events/cave/mural_5.svg",
 					"rewards": [
 						[
-							"amber_3",
+							"sand_3",
+							1
+						],
+						[
+							"fire_3",
 							1
 						]
 					]
@@ -336,6 +386,10 @@
 					"name": "§content.merge_events.c394c5a36c68§",
 					"icon": "res://assets/events/cave/mural_6.svg",
 					"rewards": [
+						[
+							"amber_3",
+							1
+						],
 						[
 							"energybox_1",
 							1
@@ -352,7 +406,11 @@
 							1
 						],
 						[
-							"fire_3",
+							"fire_4",
+							1
+						],
+						[
+							"sand_4",
 							1
 						]
 					]
@@ -379,62 +437,125 @@
 			],
 			"brush": {
 				"id": "brush",
-				"max_charges": 8,
 				"levels": [
 					{
-						"fed": 0,
 						"name": "§content.merge_events.d25886af44cf§",
 						"icon": "res://assets/events/cave/brush_1.svg",
-						"tiers": [
-							[
-								1,
-								70
-							],
-							[
-								2,
-								25
-							],
-							[
-								3,
-								5
-							]
-						]
+						"batch": []
 					},
 					{
-						"fed": 4,
 						"name": "§content.merge_events.ae40e821d055§",
 						"icon": "res://assets/events/cave/brush_2.svg",
-						"tiers": [
+						"batch": [
 							[
-								1,
-								50
+								"mural_1",
+								6
 							],
 							[
-								2,
-								35
+								"fire_3",
+								1
 							],
 							[
-								3,
-								15
+								"amber_3",
+								1
+							],
+							[
+								"shard_4",
+								4
+							],
+							[
+								"shard_5",
+								2
 							]
 						]
 					},
 					{
-						"fed": 9,
 						"name": "§content.merge_events.d801e595f0a5§",
 						"icon": "res://assets/events/cave/brush_3.svg",
-						"tiers": [
+						"batch": [
 							[
-								2,
-								55
+								"mural_2",
+								5
 							],
 							[
-								3,
-								35
+								"fire_3",
+								3
 							],
 							[
-								4,
-								10
+								"amber_3",
+								1
+							],
+							[
+								"shard_4",
+								1
+							],
+							[
+								"shard_5",
+								1
+							]
+						]
+					},
+					{
+						"name": "§content.merge_events.00da2b06213d§",
+						"icon": "res://assets/events/cave/brush_4.svg",
+						"batch": [
+							[
+								"mural_3",
+								5
+							],
+							[
+								"fire_4",
+								1
+							],
+							[
+								"fire_3",
+								2
+							],
+							[
+								"amber_3",
+								2
+							],
+							[
+								"shard_5",
+								2
+							],
+							[
+								"shard_6",
+								1
+							]
+						]
+					},
+					{
+						"name": "§content.merge_events.7e843562e514§",
+						"icon": "res://assets/events/cave/brush_5.svg",
+						"batch": [
+							[
+								"mural_4",
+								5
+							],
+							[
+								"fire_4",
+								2
+							],
+							[
+								"fire_3",
+								2
+							],
+							[
+								"amber_4",
+								1
+							],
+							[
+								"amber_3",
+								1
+							],
+							[
+								"shard_5",
+								2
+							],
+							[
+								"shard_6",
+								2
 							]
 						]
 					}
@@ -444,15 +565,52 @@
 				{
 					"id": "paint_1",
 					"name": "§content.merge_events.8d80194993d7§",
-					"icon": "res://assets/events/cave/paint_1.svg",
-					"charges": 2
+					"icon": "res://assets/events/cave/paint_1.svg"
 				},
 				{
 					"id": "paint_2",
 					"name": "§content.merge_events.ceffd7355de4§",
-					"icon": "res://assets/events/cave/paint_2.svg",
-					"charges": 4
+					"icon": "res://assets/events/cave/paint_2.svg"
 				}
+			],
+			"shards": [
+				{
+					"id": "shard_1",
+					"name": "§content.merge_events.9a9ab624f2e7§",
+					"icon": "res://assets/events/cave/shard_1.svg"
+				},
+				{
+					"id": "shard_2",
+					"name": "§content.merge_events.13c5d918f553§",
+					"icon": "res://assets/events/cave/shard_2.svg"
+				},
+				{
+					"id": "shard_3",
+					"name": "§content.merge_events.6e61ce2d03b8§",
+					"icon": "res://assets/events/cave/shard_3.svg"
+				},
+				{
+					"id": "shard_4",
+					"name": "§content.merge_events.6598919012bb§",
+					"icon": "res://assets/events/cave/shard_4.svg"
+				},
+				{
+					"id": "shard_5",
+					"name": "§content.merge_events.07ca971b6a98§",
+					"icon": "res://assets/events/cave/shard_5.svg"
+				},
+				{
+					"id": "shard_6",
+					"name": "§content.merge_events.5671aea3004a§",
+					"icon": "res://assets/events/cave/shard_6.svg"
+				}
+			],
+			"shard_result": "pack_2",
+			"codex_reward": [
+				[
+					"fire_2",
+					1
+				]
 			],
 			"milestones": [
 				{

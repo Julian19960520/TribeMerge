@@ -441,8 +441,8 @@ func _open_next_build() -> void:
 func is_building() -> bool:
 	return _build_fx != null and is_instance_valid(_build_fx)
 
-## 部件从地基里敲出来：锤子敲三下扬起尘土 → 部件弹起落地 → 星星散开 → 领奖。
-## 分几次建的部件：from/to 是这次建之前、之后的进度（0..1），没建满时长到半成品，标题写 step（如「2/3」）。
+## 部件从地基里敲出来：锤子敲三下扬起尘土（要加的新零件在原处半透明闪着）→ 新零件一件件从上面落下、压扁回弹、扬尘 → 星星散开 → 领奖。
+## 分几次建的部件：from/to 是这次建之前、之后的进度（0..1），每个建造阶段有自己的样子，这次只落下新加的那几件；标题写 step（如「2/3」）。
 func play_build(area: String, idx: int, kind: String, part_name: String, rewards: Array, from := 0.0, to := 1.0, step := "") -> void:
 	if is_building():
 		_build_fx.queue_free()
@@ -456,8 +456,9 @@ func play_build(area: String, idx: int, kind: String, part_name: String, rewards
 	fx.mouse_filter = MOUSE_FILTER_STOP
 	_world.add_child(fx)
 	_build_fx = fx
-	var st := {"t": 0.0, "hits": 0, "popped": false}
-	var dur := 2.3
+	var lands := _land_times(kind, from, to)
+	var st := {"t": 0.0, "hits": 0, "landed": 0}
+	var dur := maxf(2.3, float(lands[-1]) + 1.1)
 	var box := UI.box(fx, Rect2(Vector2.ZERO, TribeArt.WORLD), func(ci, _sz): _paint_build(ci, at, kind, h, float(st["t"]), from, to), false)
 	var title := TextCatalog.fill(TextCatalog.source("ui.homescreen.28c5830c2172"), part_name) if step == "" else "%s %s" % [TextCatalog.resolve(part_name), step]
 	var lbl := UI.lbl(fx, title, Rect2(at.x - 200, at.y - h - 70, 400, 50), 32, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
@@ -473,15 +474,17 @@ func play_build(area: String, idx: int, kind: String, part_name: String, rewards
 			Sfx.play("tap", 0.8 + 0.15 * float(st["hits"]))
 			if int(st["hits"]) == 1:
 				Sfx.play("crumble")
-		if t >= 1.05 and not bool(st["popped"]):
-			st["popped"] = true
-			Sfx.play("pop")
-			Sfx.play("merge", 1.1)
-			lbl.scale = Vector2(0.6, 0.6)
-			var lt := lbl.create_tween().set_parallel(true)
-			lt.tween_property(lbl, "modulate:a", 1.0, 0.18)
-			lt.tween_property(lbl, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			lt.tween_property(lbl, "position:y", lbl.position.y - 26.0, 1.0)
+		while int(st["landed"]) < lands.size() and t >= float(lands[int(st["landed"])]):
+			var n := int(st["landed"])
+			st["landed"] = n + 1
+			Sfx.play("pop", 1.0 + 0.12 * float(n))
+			if n == lands.size() - 1:
+				Sfx.play("merge", 1.1)
+				lbl.scale = Vector2(0.6, 0.6)
+				var lt := lbl.create_tween().set_parallel(true)
+				lt.tween_property(lbl, "modulate:a", 1.0, 0.18)
+				lt.tween_property(lbl, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				lt.tween_property(lbl, "position:y", lbl.position.y - 26.0, 1.0)
 		box.queue_redraw()
 	, 0.0, dur, dur)
 	tw.tween_callback(func():
@@ -493,38 +496,71 @@ func play_build(area: String, idx: int, kind: String, part_name: String, rewards
 		if not rewards.is_empty():
 			G.main.present_rewards(rewards))
 
+## 这次新加的建造阶段（from 之后到 to 为止）
+func _new_stages(kind: String, from: float, to: float) -> Array:
+	var s0 := TribeArt.stage_at(kind, from)
+	var s1 := maxi(TribeArt.stage_at(kind, to), s0 + 1)
+	return range(s0 + 1, s1 + 1)
+
+const DROP_START := 1.05
+const DROP_FALL := 0.24
+const DROP_GAP := 0.2
+
+## 每批新零件落地的时刻
+func _land_times(kind: String, from: float, to: float) -> Array:
+	var out: Array = []
+	var n := _new_stages(kind, from, to).size()
+	for i in n:
+		out.append(DROP_START + DROP_GAP * float(i) + DROP_FALL)
+	return out
+
 func _paint_build(ci: CanvasItem, at: Vector2, kind: String, h: float, t: float, from := 0.0, to := 1.0) -> void:
-	var glow_a := clampf(t / 0.2, 0.0, 1.0) * (1.0 - clampf((t - 1.8) / 0.5, 0.0, 1.0))
+	var news := _new_stages(kind, from, to)
+	var lands := _land_times(kind, from, to)
+	var last: float = lands[-1]
+	var glow_a := clampf(t / 0.2, 0.0, 1.0) * (1.0 - clampf((t - last - 0.6) / 0.5, 0.0, 1.0))
 	ci.draw_colored_polygon(Art.ell(at, Vector2(70, 26), 3, 0.0, 24, 0.0, 0.0), Color(1, 0.9, 0.5, 0.35 * glow_a))
-	if t < 1.05:
-		# 施工中：半透明剪影一点点长高，锤子敲三下
-		var grow := clampf(t / 1.0, 0.0, 1.0)
+	var vs := TribeArt.VS
+	if t >= last + 0.42:
+		# 全部落定：换成这一阶段的整图
+		TribeArt.part_stage(ci, kind, at, vs, to)
+	else:
+		# 已有的部分纹丝不动
 		if from > 0.0:
-			# 已经建过几次：先画现在的半成品，上面一层剪影跟着敲击慢慢长
-			TribeArt.part_stage(ci, kind, at, TribeArt.VS, from)
-			TribeArt.part(ci, kind, at, TribeArt.VS, Vector2(1.0, lerpf(from, to, grow)), "_flat", Color(1, 0.97, 0.88, 0.18 + 0.1 * sin(t * 30.0)))
-		else:
-			TribeArt.part(ci, kind, at, TribeArt.VS, Vector2(1.0, (0.15 + 0.55 * grow) * to), "_flat", Color(1, 0.97, 0.88, 0.4 + 0.15 * sin(t * 30.0)))
+			TribeArt.part_stage(ci, kind, at, vs, from)
+		var drop_h := 80.0 + h * 0.35
+		for i in news.size():
+			var sg: int = news[i]
+			var t0 := DROP_START + DROP_GAP * float(i)
+			if t < t0:
+				# 还没落：要加的零件在原处半透明闪着
+				var a := (0.22 + 0.12 * sin(t * 30.0)) * clampf(t / 0.25, 0.0, 1.0)
+				TribeArt.part_delta(ci, kind, sg, at, vs, Vector2.ONE, Color(1, 0.97, 0.88, a))
+				continue
+			var p := clampf((t - t0) / DROP_FALL, 0.0, 1.0)
+			var off := -drop_h * (1.0 - p * p)
+			var sq := Vector2.ONE
+			if p >= 1.0:
+				# 落地压扁再回弹
+				var u := clampf((t - float(lands[i])) / 0.4, 0.0, 1.0)
+				var sy := 1.0 - sin(u * PI * 2.0) * 0.2 * (1.0 - u)
+				sq = Vector2(1.0 - (sy - 1.0) * 0.7, sy)
+			else:
+				sq = Vector2(0.92, 1.1)
+			TribeArt.part_delta(ci, kind, sg, at + Vector2(0, off), vs, sq, Color(1, 1, 1, clampf(p * 3.0, 0.0, 1.0)))
+	if t < DROP_START:
 		Sprites.draw(ci, "tribe_build_ring", Rect2(at - Vector2(40, 17), Vector2(80, 34)))
 		var swing := -1.2
 		if t >= 0.12:
 			var ph := fmod(t - 0.12, 0.3) / 0.3
 			swing = -1.2 + 1.6 * pow(ph, 2.2) if ph < 0.75 else 0.4 - 1.6 * (ph - 0.75) / 0.25
 		_hammer_at(ci, at + Vector2(54, -h * 0.4 - 24), -swing)
-	else:
-		# 弹出来：先拉高再压扁再回正
-		var u := clampf((t - 1.05) / 0.5, 0.0, 1.0)
-		var sy := 1.0 + sin(u * PI * 2.2) * 0.22 * (1.0 - u)
-		var sx := 1.0 - (sy - 1.0) * 0.6
-		if u < 0.16:
-			sy = lerpf(0.5, 1.22, u / 0.16)
-			sx = lerpf(1.2, 0.88, u / 0.16)
-		TribeArt.part_stage(ci, kind, at, TribeArt.VS, to, "", Vector2(sx, sy))
 	for k in 3:
 		_dust(ci, at, t - (0.12 + 0.3 * float(k) + 0.22), 4, k * 11)
-	_dust(ci, at, t - 1.05, 8, 50)
-	if t > 1.05:
-		var u := clampf((t - 1.05) / 1.0, 0.0, 1.0)
+	for i in lands.size():
+		_dust(ci, at, t - float(lands[i]), 6 if i < lands.size() - 1 else 8, 50 + i * 13)
+	if t > last:
+		var u := clampf((t - last) / 1.0, 0.0, 1.0)
 		var c := at + Vector2(0, -h * 0.5)
 		var ring := Art.ell(c, Vector2(1, 1) * (30.0 + u * 120.0), 7, 0.0, 28, 0.0, 0.0)
 		Art.outline(ci, ring, 5.0 * (1.0 - u) + 0.5, Color(1, 0.95, 0.7, 0.8 * (1.0 - u)))

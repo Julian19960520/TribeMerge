@@ -294,13 +294,79 @@ def entry():  # 活动入口：岩板上的手印 + 火把
     return svg(slab() + hand + stick(70, 88, 78, 54, 7) + flame(79, 54, 30, 22) + spark(64, 22, 4), 0.55)
 
 
+def brush_4():  # 羽毛彩笔：骨管上扎一束彩羽，笔尖蘸着赭红和金黄
+    feathers = ''.join(f'<path d="M58 38Q{66 + dx} {24 - dy} {74 + dx} {10 + dy}Q{70 + dx * 0.5} {26} 58 38Z" fill="{c}" stroke="{INK}" stroke-width="3" stroke-linejoin="round"/>'
+                       for dx, dy, c in ((-10, 4, "#e0a030"), (-2, 0, RED), (6, 4, "#5aa0b8")))
+    return svg(shadow(cx=40, rx=20) +
+               f'<path d="M22 80L56 40" stroke="{INK}" stroke-width="16" stroke-linecap="round"/>'
+               f'<path d="M22 80L56 40" stroke="#efe6d2" stroke-width="9" stroke-linecap="round"/>'
+               f'<path d="M34 66L40 60" stroke="{RED}" stroke-width="5" stroke-linecap="round"/>'
+               f'<path d="M42 56L48 50" stroke="#e0a030" stroke-width="5" stroke-linecap="round"/>' + feathers + spark(84, 30, 4) + spark(30, 30, 3), 0.4)
+
+
+def brush_5():  # 火神笔：笔头燃着一簇火苗，笔杆缠金
+    return svg(shadow(cx=40, rx=22) +
+               f'<path d="M20 82L54 42" stroke="{INK}" stroke-width="18" stroke-linecap="round"/>'
+               f'<path d="M20 82L54 42" stroke="#c8903a" stroke-width="11" stroke-linecap="round"/>'
+               f'<path d="M28 68L36 74M36 58L44 64M44 50L50 55" stroke="#ffd66a" stroke-width="3.5" stroke-linecap="round"/>'
+               f'<path d="M50 44Q52 34 60 30Q66 36 62 46Z" fill="#7a5a3a" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>'
+               + flame(66, 32, 28, 22) + spark(84, 52, 4.5) + spark(30, 22, 4), 0.75, "#ffe7a0")
+
+
+# ---------------------------------------------------------------- 卡包碎片：主游戏绿卡包撕下来的残片，越高级越完整
+PACK = (f'<path d="M23 16Q48 8 74 16L77 76Q49 87 20 76Z" fill="#76b47a" stroke="{INK}" stroke-width="4" stroke-linejoin="round"/>'
+        f'<path d="M23 16L29 22L34 16L40 22L46 15L52 22L58 15L64 22L74 16" fill="none" stroke="{INK}" stroke-width="3" stroke-linejoin="round"/>'
+        f'<path d="M28 31Q49 25 68 32L68 62Q49 69 28 62Z" fill="#f3dfb6" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/>'
+        f'<path d="M39 37L59 37L56 53L43 55Z" fill="#9a6241" stroke="{INK}" stroke-width="3" stroke-linejoin="round"/>'
+        f'<path d="M41 41L57 41M46 47L54 47" stroke="#f7d772" stroke-width="2.5" stroke-linecap="round"/>')
+
+
+def _tear(x0, y0, x1, y1, n, amp, seed):
+    """从 (x0,y0) 到 (x1,y1) 的锯齿撕口。"""
+    pts = []
+    for k in range(n + 1):
+        t = k / n
+        j = 0 if k in (0, n) else (amp if (k + seed) % 2 else -amp) * (0.6 + 0.4 * ((k * 7 + seed) % 3) / 2)
+        dx, dy = y1 - y0, x0 - x1
+        ln = math.hypot(dx, dy) or 1
+        pts.append((x0 + (x1 - x0) * t + dx / ln * j, y0 + (y1 - y0) * t + dy / ln * j))
+    return pts
+
+
+def shard(level):
+    """撕口折线 = 碎片轮廓的一边；其余边沿用卡包外形（被裁剪出来）。"""
+    cuts = {  # 每级保留的区域：多边形外框 + 撕口
+        1: [(0, 0)] + _tear(46, 0, 0, 40, 6, 3.5, 1),
+        2: [(0, 0)] + _tear(56, 0, 0, 56, 7, 3.5, 2),
+        3: [(0, 0)] + _tear(52, 0, 44, 96, 8, 3.5, 3) + [(0, 96)],
+        4: [(0, 0)] + _tear(62, 0, 58, 96, 8, 3.5, 4) + [(0, 96)],
+        5: [(0, 0), (96, 0)] + _tear(96, 52, 52, 96, 6, 3.5, 5) + [(0, 96)],
+        6: [(0, 0), (96, 0)] + _tear(96, 66, 66, 96, 4, 3, 6) + [(0, 96)],
+    }
+    poly = cuts[level]
+    d = "M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in poly) + "Z"
+    tear = [p for p in poly if 0 < p[0] < 96 or 0 < p[1] < 96]
+    edge = "M" + "L".join(f"{x:.1f} {y:.1f}" for x, y in tear)
+    body = (f'<defs><clipPath id="c"><path d="{d}"/></clipPath>'
+            f'<clipPath id="k"><path d="M23 16Q48 8 74 16L77 76Q49 87 20 76Z"/></clipPath></defs>' + shadow(rx=16 + level * 2) +
+            f'<g clip-path="url(#c)">{PACK}</g>'
+            f'<g clip-path="url(#k)"><path d="{edge}" fill="none" stroke="{INK}" stroke-width="3.5" stroke-linejoin="round"/></g>')
+    sparks = "".join(spark(x, y, r) for x, y, r in ((82, 18, 4), (14, 46, 3))[: max(0, level - 4)])
+    return svg(body + sparks, 0.12 * max(0, level - 3), "#c8f0a0")
+
+
 ICONS = {f"glow_{k}": globals()[f"glow_{k}"] for k in range(1, 13)}
 ICONS.update({f"mural_{k}": globals()[f"mural_{k}"] for k in range(1, 9)})
 ICONS.update({"brush_1": brush_1, "brush_2": brush_2, "brush_3": brush_3, "paint_1": paint_1, "paint_2": paint_2, "entry": entry})
+ICONS.update({"brush_4": brush_4, "brush_5": brush_5})
+ICONS.update({f"shard_{k}": (lambda k=k: shard(k)) for k in range(1, 7)})
 
 if __name__ == "__main__":
+    import sys
     os.makedirs(OUT, exist_ok=True)
+    only = set(sys.argv[1:])  # 传名字就只写这几张，不动已有图标
     for name, fn in ICONS.items():
+        if only and name not in only: continue
         with open(os.path.join(OUT, name + ".svg"), "w", encoding="utf-8") as f:
             f.write(fn())
     print(f"wrote {len(ICONS)} icons to {os.path.normpath(OUT)}")

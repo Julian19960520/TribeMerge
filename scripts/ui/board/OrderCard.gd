@@ -3,14 +3,20 @@ extends DrawBox
 ## One persistent order card; callbacks follow the current order index after sorting.
 signal craft_requested(index: int)
 signal delivery_requested(index: int)
-const Meme := preload("res://scripts/Meme.gd")
 const CHIP_ICON := {"shell": "shell_2", "pack": "pack_1", "token": "token_1"}
-const DISH_ICON_SIDE := 58.0
+const DISH_ICON_SIDE := 62.0
+## 木桩截面中心（制作产物立在上面）、石板区域、石板上物品的中心高度、下面活动积分那一排
+const STUMP_TOP := 94.0
+const DISH_Y := 72.0
+const SLAB_Y := 134.0
+const SLAB_H := 58.0
+const SLAB_ITEM_Y := 133.0
+const POINTS_Y := 178.0
+const SLAB_PAD := 14.0
 var order_index := -1
 var order: Dictionary = {}
 var _state_signature := ""
 var _shape_signature := ""
-var _name: Label
 var _make_host: Control
 var _deliver_host: Control
 var _recipe_button: Control
@@ -77,10 +83,6 @@ func _build_content() -> void:
 		child.queue_free()
 	_mat_hits = []
 	size = Vector2(width_for(order), 216.0)
-	var name_w := size.x - 96.0
-	if str(order.get("kind", "")) == "craft": name_w = size.x - 144.0
-	elif int(order["rw"].get("xp", 0)) > 0: name_w = size.x - 144.0
-	_name = UI.lbl(self, Meme.customer_name(int(order["who"]), true), Rect2(92, 30, name_w, 32), 20, Art.INK, HORIZONTAL_ALIGNMENT_LEFT)
 	var craft := str(order.get("kind", "")) == "craft"
 	var spots := _formula_spots(order, size.x) if craft else _order_item_spots(order, size.x)
 	for spot in spots:
@@ -89,34 +91,34 @@ func _build_content() -> void:
 		var side := float(spot["s"])
 		var hit := UI.hit(self, Rect2(at - Vector2.ONE * side * 0.5, Vector2.ONE * side), func(): G.main.open("item_info", id))
 		if craft: _mat_hits.append(hit)
-	_deliver_host = _action_host(Vector2(72, 72), Vector2(size.x * 0.5 - 36, size.y - 40))
+	_deliver_host = _action_host(Vector2(64, 64), Vector2(size.x * 0.5 - 32, SLAB_Y - 30))
 	var deliver := UI.btn(_deliver_host, Rect2(Vector2.ZERO, _deliver_host.size), "", "green", func(): delivery_requested.emit(order_index))
 	deliver.is_round = true
 	deliver.sound = "coin"
 	deliver.extra = func(ci, sz):
 		var center: Vector2 = sz * 0.5
-		var points := PackedVector2Array([center + Vector2(-16, 1), center + Vector2(-4, 14), center + Vector2(18, -12)])
+		var points := PackedVector2Array([center + Vector2(-14, 1), center + Vector2(-3, 12), center + Vector2(16, -11)])
 		ci.draw_polyline(points, Color.WHITE, 6.0, true)
 		for point in points: ci.draw_circle(point, 3.0, Color.WHITE)
 	_recipe_button = UI.hit(self, recipe_icon_rect().grow(17), func(): G.main.open("recipe", str(order.get("dish", ""))))
 	_recipe_button.visible = str(order.get("kind", "")) == "craft"
-	_status = UI.lbl(self, "", Rect2(88, 62, size.x - 100, 22), 16, Art.INK)
+	_status = UI.lbl(self, "", Rect2(8, SLAB_Y + 8, size.x - 16, 26), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	# 加速键骑在卡片下沿正中：沙漏在左，份数贴在图标右下角，文字在右
-	_skip_button = UI.btn(self, Rect2(size.x * 0.5 - 64, size.y - 36, 128, 50), "", "teal", func(): G.main.board_screen._on_rush(int(order.get("cell", -1))), 22)
+	_skip_button = UI.btn(self, Rect2(size.x * 0.5 - 64, SLAB_Y + SLAB_H + 4, 128, 50), "", "teal", func(): G.main.board_screen._on_rush(int(order.get("cell", -1))), 22)
 	UI.icon(_skip_button, "sand_2", Vector2(28, 24), 40, false)
 	_skip_cost = UI.lbl(_skip_button, "", Rect2(32, 24, 30, 24), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	UI.lbl(_skip_button, TextCatalog.source("ui.ordercard.fc50a99caae0"), Rect2(52, 0, 70, 46), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	_rewards_layer = UI.box(self, Rect2(0, 150, size.x, 40), _paint_rewards, false)
-	_time_bar = UI.box(self, Rect2(12, 142, size.x - 24, 34), _paint_cook_time, false)
-	# 材料齐了才出现。放在奖励层之后，重叠处盖住奖励。
-	_make_host = _action_host(Vector2(112, 52), Vector2(size.x * 0.5 - 56, size.y - 48))
+	_rewards_layer = UI.box(self, Rect2(0, POINTS_Y - 20, size.x, 40), _paint_rewards, false)
+	_time_bar = UI.box(self, Rect2(10, POINTS_Y - 17, size.x - 20, 34), _paint_cook_time, false)
+	# 对勾和制作键压在石板台面上：盖住材料和木桩下半截，侧面的奖励露出来。
+	move_child(_deliver_host, -1)
+	_make_host = _action_host(Vector2(112, 52), Vector2(size.x * 0.5 - 56, SLAB_Y - 20))
 	var make := UI.btn(_make_host, Rect2(Vector2.ZERO, _make_host.size), TextCatalog.source("ui.ordercard.da2dadcd3ff9"), "orange", func(): craft_requested.emit(order_index), 28)
 	make.sound = "pop"
 	_was_ready = false
 
 func recipe_icon_rect() -> Rect2:
-	var span := _formula_span(order)
-	return Rect2(Vector2((size.x + span) * 0.5 - DISH_ICON_SIDE * 0.5, 112) - Vector2.ONE * DISH_ICON_SIDE * 0.5, Vector2.ONE * DISH_ICON_SIDE)
+	return Rect2(Vector2(size.x * 0.5, DISH_Y) - Vector2.ONE * DISH_ICON_SIDE * 0.5, Vector2.ONE * DISH_ICON_SIDE)
 
 func recipe_icon_global_rect() -> Rect2:
 	return get_global_transform() * recipe_icon_rect()
@@ -163,11 +165,10 @@ func _start_breath(host: Control) -> void:
 	_breath.tween_property(host, "scale", Vector2.ONE * 1.08, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_breath.tween_property(host, "scale", Vector2.ONE, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
+## 石板侧面那一排：经验、贝壳以外的所有奖励（礼包、token、沙漏、活动积分），图标 + 数字
 static func _chips(o: Dictionary) -> Array:
 	var out := []
 	var rw: Dictionary = o["rw"]
-	if rw.has("shell") and int(rw["shell"]) > 0:
-		out.append([CHIP_ICON["shell"], int(rw["shell"])])
 	var seen := {}
 	var order: Array = []
 	var rewards: Array = rw.get("rewards", [])
@@ -192,15 +193,22 @@ static func _chips(o: Dictionary) -> Array:
 	if DuelRace.active_v3(): out.append(["duel_points", DuelRace.order_score(o)])
 	return out
 
-## 图标占左侧，胶囊右端贴着数字。一位数比原来的 56 窄，位数多了再变宽。
+## 右上角的小牌：经验在上，贝壳在下（「+8」）
+static func _badges(o: Dictionary) -> Array:
+	var out := []
+	var rw: Dictionary = o["rw"]
+	if int(rw.get("xp", 0)) > 0: out.append(["xp_1", str(int(rw["xp"])), Color("f08a2c")])
+	if int(rw.get("shell", 0)) > 0: out.append([CHIP_ICON["shell"], "+%d" % int(rw["shell"]), Color("8a5a32")])
+	return out
 
-static func _chip_text_w(t: String) -> float:
+static func _text_w(t: String, fs: int) -> float:
 	if G.font_body == null:
 		return 12.0 * float(t.length())
-	return G.font_body.get_string_size(TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+	return G.font_body.get_string_size(TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 
+## 图标 30，数字压在图标右下角
 static func _chip_w(count: int) -> float:
-	return 38.0 + _chip_text_w(str(count))
+	return maxf(30.0, 20.0 + _text_w(str(count), 18))
 
 static func _chips_span(chips: Array) -> float:
 	if chips.is_empty():
@@ -211,13 +219,23 @@ static func _chips_span(chips: Array) -> float:
 	total += 6.0 * float(chips.size() - 1)
 	return total
 
+static func _badge_w(text: String) -> float:
+	return 40.0 + _text_w(text, 20)
+
+static func _badges_w(o: Dictionary) -> float:
+	var w := 0.0
+	for b in _badges(o): w = maxf(w, _badge_w(str(b[1])))
+	return w
+
 static func width_for(o: Dictionary) -> float:
-	var chips_w := 20.0 + _chips_span(_chips(o))
+	var chips_w := 16.0 + _chips_span(_chips(o))
+	var badges_w := _badges_w(o)
 	if str(o.get("kind", "")) == "craft":
-		return maxf(maxf(_formula_span(o) + 28.0, chips_w), 200.0)
-	var n: int = o["items"].size()
-	var items_w := 24.0 + n * 78.0 if n > 1 else 160.0
-	return maxf(maxf(items_w, chips_w), 160.0)
+		# 小牌贴在木桩右上，左边缘不压住成品太多
+		var stump_w := 2.0 * (badges_w + DISH_ICON_SIDE * 0.5 - 4.0) if badges_w > 0.0 else 120.0
+		return maxf(maxf(_formula_span(o) + SLAB_PAD * 2.0 + 12.0, chips_w), maxf(stump_w, 150.0))
+	var items_w := _items_span(o) + SLAB_PAD * 2.0 + 12.0
+	return maxf(maxf(items_w, chips_w), maxf(badges_w + 24.0, 130.0))
 
 func _paint_order(ci: CanvasItem, sz: Vector2) -> void:
 	if order.is_empty(): return
@@ -226,61 +244,56 @@ func _paint_order(ci: CanvasItem, sz: Vector2) -> void:
 	var craft := str(o.get("kind", "")) == "craft"
 	var phase := str(o.get("phase", "need"))
 	var ready := G.rules.orders.order_ready(o)
-	var r := Rect2(4, 20, sz.x - 8, sz.y - 24)
-	Sprites.draw(ci, "board_card_base", r)
-	var bg := Color("fbf0d6")
-	if story:
-		bg = Color("ffe9a8")
-	if craft and phase in ["cook", "finished"]:
-		bg = Color("ffe4c4")
-	elif craft and G.rules.orders.craft_mats_ready(o):
-		bg = Color("fff3c4")
-	if ready:
-		bg = Color("eaf6c8")
-	Sprites.draw(ci, "board_card_fill", r, bg)
-	Sprites.draw(ci, "board_card_dash", r)
-	Sprites.at(ci, "board_head_story" if story else "board_head_npc", Vector2(46, 38))
-	Meme.portrait(ci, int(o["who"]), Vector2(46, 37), 74)
-	if o["rw"].has("xp") and int(o["rw"]["xp"]) > 0:
-		var star := Vector2(sz.x - 20, 36)
-		Art.item(ci, "xp_1", star, 52)
-		var xp_n := str(int(o["rw"]["xp"]))
-		var xp_fs := 22
-		var xp_base := star.y + (G.font_body.get_ascent(xp_fs) - G.font_body.get_descent(xp_fs)) * 0.5
-		var xp_pos := Vector2(star.x - 26, xp_base)
-		ci.draw_string_outline(G.font_body, xp_pos, TextCatalog.resolve(xp_n), HORIZONTAL_ALIGNMENT_CENTER, 52, xp_fs, 4, Art.INK)
-		ci.draw_string(G.font_body, xp_pos, TextCatalog.resolve(xp_n), HORIZONTAL_ALIGNMENT_CENTER, 52, xp_fs, Color.WHITE)
+	var slab := Rect2(6, SLAB_Y, sz.x - 12, SLAB_H)
+	# 状态光：能交绿、材料齐黄、剧情单金
+	var glow := Color(0, 0, 0, 0)
+	if ready: glow = Color("8fe05a")
+	elif craft and phase == "need" and G.rules.orders.craft_mats_ready(o): glow = Color("ffd23f")
+	elif story: glow = Color("ffb347")
 	if craft:
-		var show_mats := phase == "need" or phase == "cook"
-		if show_mats:
-			var dish_s := DISH_ICON_SIDE
-			var dc := recipe_icon_rect().get_center()
-			_paint_formula(ci, o, sz.x)
-			_spot_shadow(ci, dc + Vector2(0, 3), dish_s)
-			Art.item(ci, str(o.get("dish", "")), dc, dish_s)
-			_formula_arrow(ci, dc - Vector2(dish_s * 0.5 + 18, 0))
-		else:
-			# Once the materials are used up the dish is the whole order: centred
-			# and full size, like a single-item order.
-			var spot: Dictionary = _order_item_spots({"items": [str(o.get("dish", ""))]}, sz.x)[0]
-			var c: Vector2 = spot["c"]
-			var s: float = float(spot["s"])
-			_spot_shadow(ci, c + Vector2(0, 4), s)
-			Art.item(ci, str(o.get("dish", "")), c, s)
-			if phase == "ready": _ready_mark(ci, c, s, 1.1)
+		var cx := sz.x * 0.5
+		if glow.a > 0.0:
+			ci.draw_colored_polygon(Art.ell(Vector2(cx, STUMP_TOP - 14), Vector2(54, 40), 102, 0.0, 24), Color(glow, 0.3))
+		Sprites.draw(ci, "board_order_stump", Rect2(cx - 50, STUMP_TOP - 20, 100, 100))
+	if glow.a > 0.0: Sprites.draw(ci, "board_order_glow", slab, Color(glow, 0.85))
+	Sprites.draw(ci, "board_order_slab", slab)
+	if craft:
+		var dc := recipe_icon_rect().get_center()
+		Art.item(ci, str(o.get("dish", "")), dc, DISH_ICON_SIDE)
+		if phase == "ready": _ready_mark(ci, dc, DISH_ICON_SIDE, 1.0)
+		if phase == "need" or phase == "cook": _paint_formula(ci, o, sz.x)
 	else:
 		var spots: Array = _order_item_spots(o, sz.x)
 		var boards := []
 		var slots := []
-		for ik in spots.size():
-			var spot: Dictionary = spots[ik]
+		for spot in spots:
 			var id := str(spot["id"])
 			var c: Vector2 = spot["c"]
 			var s: float = float(spot["s"])
-			_spot_shadow(ci, c + Vector2(0, 4), s)
+			_spot_shadow(ci, c + Vector2(0, s * 0.34), s)
 			Art.item(ci, id, c, s)
 			if not G.rules.orders.claim_supply(id, boards, slots).is_empty():
-				_ready_mark(ci, c, s, 1.1)
+				_ready_mark(ci, c, s, 0.9)
+	_paint_badges(ci, sz)
+
+## 经验 / 贝壳小牌：墨边圆角牌，图标压在左端，白字带墨边
+func _paint_badges(ci: CanvasItem, sz: Vector2) -> void:
+	var y := 50.0
+	# 几块牌右边缘对齐。制作单贴着木桩右上（压住成品一点边）；普通单靠右
+	var right := sz.x - 6.0
+	if str(order.get("kind", "")) == "craft":
+		right = minf(right, sz.x * 0.5 + DISH_ICON_SIDE * 0.5 - 10.0 + _badges_w(order))
+	for b in _badges(order):
+		var text := str(b[1])
+		var w := _badge_w(text)
+		var r := Rect2(right - w, y - 14.0, w, 28.0)
+		Sprites.draw(ci, "board_epill_ink", r)
+		Sprites.draw(ci, "board_epill_fill", r, b[2])
+		Art.item(ci, str(b[0]), Vector2(r.position.x + 14.0, y), 34, false)
+		var pos := Vector2(r.position.x + 32.0, y + (G.font_body.get_ascent(20) - G.font_body.get_descent(20)) * 0.5)
+		ci.draw_string_outline(G.font_body, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 5, Art.INK)
+		ci.draw_string(G.font_body, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color.WHITE)
+		y += 34.0
 
 func _paint_rewards(ci: CanvasItem, sz: Vector2) -> void:
 	if order.is_empty(): return
@@ -289,15 +302,15 @@ func _paint_rewards(ci: CanvasItem, sz: Vector2) -> void:
 	var x := sz.x * 0.5 - _chips_span(chips) * 0.5
 	for k in chips.size():
 		var t := str(chips[k][1])
-		var pill_w := _chip_w(int(chips[k][1]))
-		Sprites.draw(ci, "board_chip", Rect2(x, chip_y - 14.0, pill_w, 28.0))
-		if str(chips[k][0]) == "fossil_shovel": FossilArt.shovel(ci, Vector2(x + 12.0, chip_y), 30)
-		elif str(chips[k][0]) == "duel_points": Sprites.at(ci, "ev_entry_duel", Vector2(x + 12.0, chip_y), 0.34)
-		else: Art.item(ci, str(chips[k][0]), Vector2(x + 12.0, chip_y), 36, false)
-		var pos := Vector2(x + 26.0, chip_y + 8.0)
-		ci.draw_string_outline(G.font_body, pos, TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 5, Color.WHITE)
-		ci.draw_string(G.font_body, pos, TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Art.INK)
-		x += pill_w + 6.0
+		var id := str(chips[k][0])
+		var ic := Vector2(x + 15.0, chip_y - 3.0)
+		if id == "fossil_shovel": FossilArt.shovel(ci, ic, 26)
+		elif id == "duel_points": Sprites.at(ci, "ev_entry_duel", ic, 0.3)
+		else: Art.item(ci, id, ic, 30, false)
+		var pos := Vector2(x + 20.0, chip_y + 11.0)
+		ci.draw_string_outline(G.font_body, pos, TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Art.INK)
+		ci.draw_string(G.font_body, pos, TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+		x += _chip_w(int(chips[k][1])) + 6.0
 
 func cooking_progress() -> float:
 	if str(order.get("phase", "need")) == "need": return 0.0
@@ -336,60 +349,58 @@ func _paint_clock(ci: CanvasItem, c: Vector2, r: float) -> void:
 
 func _paint_formula(ci: CanvasItem, o: Dictionary, width: float) -> void:
 	var spots: Array = _formula_spots(o, width)
-	if spots.is_empty():
-		return
 	var boards := []
 	var slots := []
 	var phase := str(o.get("phase", "need"))
-	for k in spots.size():
-		var spot: Dictionary = spots[k]
+	for spot in spots:
 		var id := str(spot["id"])
 		var c: Vector2 = spot["c"]
 		var icon: float = float(spot["s"])
-		_spot_shadow(ci, c + Vector2(0, 4), icon)
+		_spot_shadow(ci, c + Vector2(0, icon * 0.34), icon)
 		Art.item(ci, id, c, icon)
 		if phase == "need" and not G.rules.orders.claim_supply(id, boards, slots).is_empty():
 			_ready_mark(ci, c, icon, 0.72)
 
+## 石板上一排物品，居中，不重叠
 static func _order_item_spots(o: Dictionary, width: float) -> Array:
 	var items: Array = o.get("items", [])
 	var n := items.size()
 	var out: Array = []
-	if n == 0:
-		return out
-	var s: float = 80.0 if n == 1 else 68.0
+	var s: float = 60.0 if n == 1 else 54.0
 	for ik in n:
-		var x: float = width * 0.5 if n == 1 else width * 0.5 + (float(ik) - float(n - 1) * 0.5) * 78.0
-		out.append({"id": str(items[ik]), "c": Vector2(x, 116.0), "s": s})
+		var x: float = width * 0.5 + (float(ik) - float(n - 1) * 0.5) * (s + 6.0)
+		out.append({"id": str(items[ik]), "c": Vector2(x, SLAB_ITEM_Y), "s": s})
 	return out
 
+static func _items_span(o: Dictionary) -> float:
+	var n: int = o.get("items", []).size()
+	if n == 0: return 0.0
+	var s: float = 60.0 if n == 1 else 54.0
+	return s + float(n - 1) * (s + 6.0)
+
+## 制作原料：石板上一排，略微叠着
 static func _formula_spots(o: Dictionary, width: float) -> Array:
 	var mats: Array = o.get("mats", [])
 	var n := mats.size()
 	var out: Array = []
-	if n == 0:
-		return out
-	var icon: float = 50.0 if n >= 4 else 58.0
-	var step: float = icon * 0.62
+	var icon: float = 50.0 if n >= 4 else 54.0
+	var step: float = icon * 0.72
 	var left: float = (width - _formula_span(o)) * 0.5
 	for k in n:
-		out.append({"id": str(mats[k]), "c": Vector2(left + icon * 0.5, 112), "s": icon})
+		out.append({"id": str(mats[k]), "c": Vector2(left + icon * 0.5, SLAB_ITEM_Y), "s": icon})
 		left += step
 	return out
 
 static func _formula_span(o: Dictionary) -> float:
 	var n: int = o.get("mats", []).size()
-	var icon: float = 50.0 if n >= 4 else 58.0
-	return icon + float(maxi(n - 1, 0)) * icon * 0.62 + 36.0 + DISH_ICON_SIDE
+	if n == 0: return 0.0
+	var icon: float = 50.0 if n >= 4 else 54.0
+	return icon + float(n - 1) * icon * 0.72
 
 ## 材料已在棋盘上：单独一个绿色对勾，在物品右下角。
 static func _ready_mark(ci: CanvasItem, c: Vector2, item_s: float, scale: float) -> void:
 	Paint.check_tick(ci, Vector2(c.x + item_s * 0.32, c.y + item_s * 0.5 - 8.0 * scale), scale)
 
+## 石板台面上物品脚下的一小片影子
 static func _spot_shadow(ci: CanvasItem, c: Vector2, s: float) -> void:
-	Sprites.draw(ci, "board_spot_shadow", Rect2(c - Vector2(s * 0.5, s * 0.42), Vector2(s, s * 0.84)))
-
-static func _formula_arrow(ci: CanvasItem, c: Vector2) -> void:
-	var paths := [PackedVector2Array([c + Vector2(-13, -4), c + Vector2(1, -4)]), PackedVector2Array([c + Vector2(-13, 4), c + Vector2(1, 4)]), PackedVector2Array([c + Vector2(1, -11), c + Vector2(13, 0), c + Vector2(1, 11)])]
-	for path in paths: ci.draw_polyline(path, Color("fff8e8"), 7.0, true)
-	for path in paths: ci.draw_polyline(path, Art.INK, 3.0, true)
+	ci.draw_colored_polygon(Art.ell(c + Vector2(0, s * 0.1), Vector2(s * 0.38, s * 0.1), 104, 0.0, 16), Color(0.25, 0.2, 0.15, 0.25))

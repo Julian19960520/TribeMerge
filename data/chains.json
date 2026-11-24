@@ -36,5 +36,5 @@
 	{"id": "pack", "name": "§names.chains.f4aa1b362f6d§", "type": "pack", "items": ["§names.chains.dfafb5a02dfb§", "§names.chains.ca8cae2d4793§", "§names.chains.45ef7e199aae§", "§names.chains.2ce9a6a93ff7§", "§names.chains.7dc18e800010§"]},
 	{"id": "upgrade", "name": "§names.chains.1dcb7ee0387c§", "type": "upgrade", "items": ["§names.chains.c09135640bdb§"]},
 	{"id": "scissors", "name": "§names.chains.003e6674d0fe§", "type": "scissors", "items": ["§names.chains.46485491d16a§"]},
-	{"id": "emberpot", "name": "§names.chains.67f725a44c78§", "type": "egen", "items": ["§names.chains.67f725a44c78§"], "prod": [{"drops": [{"id": "fire_2", "p": 40}, {"id": "fire_3", "p": 40}, {"id": "fire_4", "p": 20}], "charges": 8, "refill_min": 720}]}
+	{"id": "emberpot", "name": "§names.chains.67f725a44c78§", "type": "egen", "items": ["§names.chains.67f725a44c78§"], "prod": [{"drops": [{"id": "fire_1", "p": 25}, {"id": "fire_2", "p": 30}, {"id": "fire_3", "p": 25}, {"id": "fire_4", "p": 13}, {"id": "fire_5", "p": 7}], "charges": 8, "refill_min": 720}]}
 ]

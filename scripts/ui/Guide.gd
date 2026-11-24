@@ -265,7 +265,7 @@ func _text_height(width: float) -> float:
 	var lines := 0
 	for para in plain.split("
 "):
-		var w := font.get_string_size(para, HORIZONTAL_ALIGNMENT_LEFT, -1, 25).x
+		var w := font.get_string_size(TextCatalog.resolve(para), HORIZONTAL_ALIGNMENT_LEFT, -1, 25).x
 		lines += maxi(1, int(ceil(w / maxf(1.0, width - 4.0))))
 	return font.get_height(25) * lines + 4.0 * (lines - 1)
 
@@ -360,7 +360,7 @@ func _paint_formula(ci: CanvasItem, sz: Vector2) -> void:
 		if i < n - 1:
 			var ox := cx + FORMULA_STEP * 0.5
 			var op := TextCatalog.resolve("+" if i < n - 2 else "→")
-			ci.draw_string(G.font_title, Vector2(ox - 30, cy + 14), op, HORIZONTAL_ALIGNMENT_CENTER, 60, 40, Art.INK)
+			ci.draw_string(G.font_title, Vector2(ox - 30, cy + 14), TextCatalog.resolve(op), HORIZONTAL_ALIGNMENT_CENTER, 60, 40, Art.INK)
 
 func _paint_pointer(ci: CanvasItem, _sz: Vector2) -> void:
 	if _holes.is_empty(): return

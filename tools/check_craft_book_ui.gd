@@ -52,10 +52,10 @@ func run() -> void:
 	var card = main.board_screen._cards.back()
 	var spots: Array = card._formula_spots(recipe, card.size.x)
 	var dish: Rect2 = card.recipe_icon_rect()
-	var aligned := true
-	for spot in spots: aligned = aligned and is_equal_approx(spot["c"].y, dish.get_center().y)
-	check(aligned and spots.size() == 4 and spots[1]["c"].x - spots[0]["c"].x < spots[0]["s"], "多原料适度重叠，与右侧产物保持同一排")
-	check(card.size.x < 300 and spots.back()["c"].x + spots.back()["s"] * 0.5 < dish.position.x - 30, "四种材料卡片仍紧凑，中央留出独立箭头位置")
+	var on_slab := true
+	for spot in spots: on_slab = on_slab and is_equal_approx(spot["c"].y, card.SLAB_ITEM_Y) and spot["c"].y - spot["s"] * 0.5 > dish.end.y - 12
+	check(on_slab and spots.size() == 4 and spots[1]["c"].x - spots[0]["c"].x < spots[0]["s"], "多原料适度重叠，摆在石板上，产物在上方木桩")
+	check(card.size.x < 300 and spots[0]["c"].x - spots[0]["s"] * 0.5 > 6 and spots.back()["c"].x + spots.back()["s"] * 0.5 < card.size.x - 6 and is_equal_approx(dish.get_center().x, card.size.x * 0.5), "四种材料不出石板，产物居中")
 	for delta in [Vector2.ZERO, Vector2(-30, 0), Vector2(30, 0), Vector2(0, -30), Vector2(0, 30), Vector2(-21, -21), Vector2(21, 21), Vector2(38, 0), Vector2(0, 38), Vector2(26, 26)]:
 		g.rules.onboarding.progress()["step"] = g.rules.onboarding.stage_index("recipe_open")
 		main._guide._refresh()

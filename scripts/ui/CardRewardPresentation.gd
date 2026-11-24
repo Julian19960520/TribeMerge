@@ -30,6 +30,7 @@ static func fill(p: PopupBase, rewards: Array) -> void:
 		var rect := Rect2(x - 115, 520, 230, 320)
 		var card := UI.hit(p.box, rect, func(): pass)
 		card.name = "received_card_%d" % k
+		card.set_meta("card", [album, index])
 		card.extra = func(ci, sz): Paint.card(ci, Rect2(Vector2(6, 12), sz - Vector2(12, 18)), album, index, true)
 		UI.lbl(card, CardArtwork.card_name(album, index), Rect2(20, 252, 190, 50), 24, Color("5a3a1e"))
 		var heading := UI.lbl(p.box, CardArtwork.title(album), Rect2(rect.position.x - 8, 466, 246, 40), 23, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
@@ -100,16 +101,26 @@ static func _focus(state: Dictionary, index: int) -> void:
 		(albums[k] as Control).hide()
 		(badges[k] as Control).hide()
 	var card: Control = cards[index]
-	var album: Label = albums[index]
 	if card.has_meta("intro") and (card.get_meta("intro") as Tween).is_valid():
 		(card.get_meta("intro") as Tween).kill()
+	# 放大后卡册名和“新卡！”会压在卡面上，收起来；底部换成这张卡的台词
+	(albums[index] as Control).hide()
+	(badges[index] as Control).hide()
 	card.show()
 	card.enabled = false
 	card.pivot_offset = card.size * 0.5
-	var dest := Vector2(360, 700) - card.size * 0.5
-	album.show()
-	album.position = Vector2(110, dest.y - 52)
-	album.size = Vector2(500, 44)
+	var dest := Vector2(360, 645) - card.size * 0.5
+	var line: Label = state.get("line")
+	if line == null:
+		line = UI.lbl(card.get_parent(), "", Rect2(60, 930, 600, 130), 32, Color("fff3d6"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+		line.name = "card_line"
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		line.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		state["line"] = line
+	var reward_key: Array = card.get_meta("card")
+	line.text = UI.resource_text(CardArtwork.caption(int(reward_key[0]), int(reward_key[1])))
+	line.modulate.a = 0.0
+	line.create_tween().tween_property(line, "modulate:a", 1.0, 0.25).set_delay(0.18)
 	var tw := card.create_tween()
 	tw.set_parallel(true)
 	tw.tween_property(card, "position", dest, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)

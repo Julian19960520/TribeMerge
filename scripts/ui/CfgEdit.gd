@@ -150,7 +150,7 @@ func _refresh_save() -> void:
 	var shown := TextCatalog.resolve(label)
 	if Cloud.enabled and dirty:
 		shown += "*"
-	_save_btn.text = shown
+	_save_btn.text = TextCatalog.resolve(shown)
 	_save_btn.enabled = true
 	_save_btn.z_index = 4
 	_save_btn.queue_redraw()

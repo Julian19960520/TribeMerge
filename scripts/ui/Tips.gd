@@ -222,7 +222,7 @@ func _text_height(width: float) -> float:
 	var lines := 0
 	for para in plain.split("
 "):
-		var w := font.get_string_size(para, HORIZONTAL_ALIGNMENT_LEFT, -1, TEXT_SIZE).x
+		var w := font.get_string_size(TextCatalog.resolve(para), HORIZONTAL_ALIGNMENT_LEFT, -1, TEXT_SIZE).x
 		lines += maxi(1, int(ceil(w / maxf(1.0, width - 4.0))))
 	var line_h := font.get_height(TEXT_SIZE)
 	return line_h * lines + LINE_GAP * (lines - 1)

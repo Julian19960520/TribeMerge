@@ -4,7 +4,6 @@ extends Control
 
 const Layout := preload("res://scripts/config/board_layout.gd")
 const DropRing := preload("res://scripts/ui/board/BoardDropRing.gd")
-const MergeBurst := preload("res://scripts/ui/board/BoardMergeBurst.gd")
 const ProducerSparkle := preload("res://scripts/ui/board/ProducerSparkleFx.gd")
 
 signal selected_changed(i: int)
@@ -44,18 +43,26 @@ var _drag_layer: DrawBox
 var drag_from := -1
 var drag_pos := Vector2.ZERO
 var drag_vis := Vector2.ZERO
-var pops := {}
-var hid := {}
-var flights: Array = []
+## 滑入、飞入、回弹、晃动、爆点：和活动棋盘共用一套（BoardMotion）。下面几个名字给外部和检查脚本读。
+var motion := BoardMotion.new()
+var pops: Dictionary:
+	get: return motion.pops
+var hid: Dictionary:
+	get: return motion.hid
+var flights: Array:
+	get: return motion.flights
+var moves: Array:
+	get: return motion.moves
+var bursts: Array:
+	get: return motion.bursts
+var shakes: Dictionary:
+	get: return motion.shakes
 var chest_shells: Dictionary = {}
-var moves: Array = []
-var bursts: Array = []
 var crumbles: Array = []
 var gathers: Array = []
 ## 同一帧裂开的奖励收成一批，再弹出全屏领取面板
 var _reward_q: Array = []
 var _reward_flush := false
-var shakes := {}
 ## 关掉物品信息后，来源生产器放大再收回
 var bounces := {}
 var _t := 0.0
@@ -65,8 +72,8 @@ var _hint_b := -1
 var _hint_t := 0.0
 var _hint_dirty := true
 
-const DRAG_LIFT := Vector2(0, -14)
-const MOVE_DUR := 0.26
+const DRAG_LIFT := BoardMotion.DRAG_LIFT
+const MOVE_DUR := BoardMotion.MOVE_DUR
 ## 物品只是某张订单的一部分，底色用普通绿。
 const ORDER_PART := Color("a8d86a")
 ## 和上面同一个色相，更亮一些，饱和度只略高。这单需求已经齐了才用。
@@ -79,6 +86,7 @@ const HINT_WAIT := 5.0
 
 func _ready() -> void:
 	size = Vector2(G.COLS * CELL, G.ROWS * CELL)
+	motion.landed = _landed
 	mouse_filter = MOUSE_FILTER_STOP
 	G.boil_tick.connect(_on_boil)
 	G.board_changed.connect(_invalidate_base)
@@ -134,12 +142,8 @@ func _process(delta: float) -> void:
 	if dragging:
 		drag_vis = drag_pos
 	_tick_drop_ring(delta)
-	for m in moves:
-		m["t"] += delta / float(m["dur"])
-	for m in moves.duplicate():
-		if m["t"] >= 1.0:
-			moves.erase(m)
-			_move_done(m)
+	var busy := dragging or selected >= 0 or motion.busy() or not crumbles.is_empty() or not gathers.is_empty()
+	motion.tick(delta)
 	for g in gathers:
 		if float(g.get("delay", 0.0)) > 0.0:
 			g["delay"] = maxf(float(g["delay"]) - delta, 0.0)
@@ -153,31 +157,10 @@ func _process(delta: float) -> void:
 			burst(int(i))
 			pop(int(i))
 		G.cooked_pop.clear()
-	var busy := dragging or selected >= 0 or not flights.is_empty() or not bursts.is_empty() or not moves.is_empty() or not crumbles.is_empty() or not gathers.is_empty()
-	for k in pops.keys():
-		pops[k] += delta
-		if pops[k] > 0.35:
-			pops.erase(k)
-	for k in shakes.keys():
-		shakes[k] += delta
-		if shakes[k] > 0.35:
-			shakes.erase(k)
 	for k in bounces.keys():
 		bounces[k] = float(bounces[k]) + delta
 		if float(bounces[k]) > 0.42:
 			bounces.erase(k)
-	for f in flights:
-		if float(f.get("delay", 0.0)) > 0.0:
-			f["delay"] = maxf(float(f["delay"]) - delta, 0.0)
-			continue
-		f["t"] += delta / 0.28
-	for f in flights.duplicate():
-		if f["t"] >= 1.0:
-			flights.erase(f)
-			_finish_flight(f)
-	for b in bursts:
-		b["t"] += delta
-	bursts = bursts.filter(func(b): return b["t"] < 0.6)
 	var left: Array = []
 	var cracked := false
 	for c in crumbles:
@@ -213,16 +196,11 @@ func set_active(active: bool) -> void:
 		drag_from = -1
 		press_cell = -1
 		selected = -1
-		hid.clear()
-		moves.clear()
-		flights.clear()
+		motion.clear()
 		chest_shells.clear()
 		gathers.clear()
 		crumbles.clear() # Unclaimed stone rewards remain in business state.
-		pops.clear()
 		bounces.clear()
-		shakes.clear()
-		bursts.clear()
 		_clear_drop_ring()
 		_clear_hint()
 		_sync_drag_ghost()
@@ -281,7 +259,7 @@ func cell_at(p: Vector2) -> int:
 	return MergeGrid.cell_at(p, CELL, G.COLS, G.ROWS)
 
 func pop(i: int) -> void:
-	pops[i] = 0.0
+	motion.pop(i)
 
 ## 关掉物品面板后，能马上生产、且没被藤蔓锁住的生产器各放大一次。面板先收起，所以晚一拍再开始。
 func pulse_chain(chain_id: String) -> void:
@@ -301,10 +279,10 @@ func pulse_chain(chain_id: String) -> void:
 		queue_redraw()
 
 func shake(i: int) -> void:
-	shakes[i] = 0.0
+	motion.shake(i)
 
 func burst(i: int) -> void:
-	bursts.append({"p": cell_center(i), "t": 0.0, "seed": randi() % 1000})
+	motion.burst(cell_center(i))
 
 ## 石头已经不在了，奖励还挂着：上次裂到一半就存档，进棋盘时补发。
 func _grant_loose_rewards() -> void:
@@ -372,8 +350,7 @@ func crumble(i: int, delay: float = 0.0) -> void:
 	queue_redraw()
 
 func fly_in(from_i: int, to_i: int, id: String) -> void:
-	hid[to_i] = int(hid.get(to_i, 0)) + 1
-	flights.append({"from": cell_center(from_i), "to": to_i, "id": id, "t": 0.0})
+	motion.fly(id, cell_center(from_i), to_i)
 
 func fly_chest(from_i: int, to_i: int, id: String, box_id: String, last: bool) -> void:
 	fly_in(from_i, to_i, id)
@@ -382,11 +359,14 @@ func fly_chest(from_i: int, to_i: int, id: String, box_id: String, last: bool) -
 		flights.back()["chest_from"] = from_i
 	queue_redraw()
 
-func _finish_flight(f: Dictionary) -> void:
-	_unhide(int(f["to"]))
-	pop(int(f["to"]))
-	if f.has("chest_from"):
-		var source := int(f["chest_from"])
+## 滑入或飞入落地（BoardMotion 回调，hid 已经减过）。
+func _landed(e: Dictionary) -> void:
+	if e["kind"] == "move":
+		_move_done(e)
+		return
+	pop(int(e["to"]))
+	if e.has("chest_from"):
+		var source := int(e["chest_from"])
 		chest_shells.erase(source)
 		burst(source)
 
@@ -402,11 +382,10 @@ func play_gather(parts: Array) -> void:
 	queue_redraw()
 
 func fly_in_from(global_from: Vector2, to_i: int, id: String, delay: float = 0.0) -> void:
-	hid[to_i] = int(hid.get(to_i, 0)) + 1
-	flights.append({"from": get_global_transform().affine_inverse() * global_from, "to": to_i, "id": id, "t": 0.0, "delay": delay})
+	motion.fly(id, get_global_transform().affine_inverse() * global_from, to_i, delay)
 
 func conceal(i: int) -> void:
-	hid[i] = int(hid.get(i, 0)) + 1
+	motion.conceal(i)
 
 func arrive(i: int) -> void:
 	_unhide(i)
@@ -420,9 +399,8 @@ func select(i: int) -> void:
 
 ## 物品从 from（本地坐标）滑到格子 to，带 back 缓动；滑动期间该格不绘制。cook 非空时滑的是制作中的锅。
 func slide(id: String, from: Vector2, to: int, under: String = "", done: String = "pop", dur: float = MOVE_DUR, cook: Dictionary = {}) -> void:
-	hid[to] = int(hid.get(to, 0)) + 1
 	var visual := Art.chest_visual(id, str(G.board[to]["id"]) == id and G.board[to].has("chest"))
-	moves.append({"id": visual, "from": from, "to": to, "under": under, "done": done, "t": 0.0, "dur": dur, "cook": cook})
+	motion.slide(visual, from, to, dur, {"under": under, "done": done, "cook": cook})
 
 func cancel_slides(i: int) -> void:
 	for m in moves.duplicate():
@@ -443,27 +421,15 @@ func _settle(i: int) -> bool:
 		else:
 			kept.append(c)
 	crumbles = kept
-	for m in moves.duplicate():
-		if m["to"] == i:
-			moves.erase(m)
-			_move_done(m)
-	for f in flights.duplicate():
-		if f["to"] == i:
-			flights.erase(f)
-			_finish_flight(f)
+	motion.settle(i)
 	queue_redraw()
 	return not hid.has(i)
 
 func _unhide(i: int) -> void:
-	var n := int(hid.get(i, 0)) - 1
-	if n <= 0:
-		hid.erase(i)
-	else:
-		hid[i] = n
+	motion.unhide(i)
 
 func _move_done(m: Dictionary) -> void:
 	var i: int = m["to"]
-	_unhide(i)
 	match m["done"]:
 		"merge":
 			Sfx.play("merge", 0.9 + 0.08 * float(Data.lv(G.rules.board.cell_id(i))))
@@ -474,7 +440,7 @@ func _move_done(m: Dictionary) -> void:
 	queue_redraw()
 
 static func ease_back(t: float) -> float:
-	return MergeGrid.ease_back(t)
+	return BoardMotion.ease_back(t)
 
 # ---------------------------------------------------------------- 输入
 
@@ -544,7 +510,7 @@ func _gui_input(e: InputEvent) -> void:
 			_sync_drag_ghost()
 			queue_redraw()
 	elif e is InputEventMouseMotion and press_cell >= 0:
-		if not dragging and e.position.distance_to(press_pos) > 10.0:
+		if not dragging and e.position.distance_to(press_pos) > BoardMotion.DRAG_START:
 			var c: Dictionary = G.board[press_cell]
 			var held: bool = str(c["id"]) != "" or G.rules.orders.cooking(press_cell)
 			if held and G.rules.board.can_move(press_cell) and _settle(press_cell):
@@ -700,7 +666,7 @@ func _draw() -> void:
 	var sel_c := cell_center(selected) if selected >= 0 else Vector2.ZERO
 	for m in moves:
 		var to := cell_center(m["to"])
-		var p: Vector2 = m["from"].lerp(to, ease_back(clampf(m["t"], 0.0, 1.0)))
+		var p := BoardMotion.move_pos(m, to)
 		if m["under"] != "":
 			Art.item(self, m["under"], to, ITEM)
 		var cook: Dictionary = m.get("cook", {})
@@ -709,23 +675,16 @@ func _draw() -> void:
 		elif G.rules.board.is_merge_bubble(int(m["to"])):
 			_draw_merge_bubble(int(m["to"]), p, 1.0)
 		else:
-			Art.item(self, m["id"], p, ITEM * lerpf(1.15, 1.0, clampf(m["t"] * 1.5, 0.0, 1.0)))
+			Art.item(self, m["id"], p, ITEM * BoardMotion.move_scale(m))
 		if m["to"] == selected and m["under"] == "":
 			sel_c = p
 	if selected >= 0 and not dragging:
-		var pulse := 1.0 + 0.04 * sin(_t * 6.0)
-		var sz := Vector2(CELL, CELL) * pulse
-		Paint.cell_bracket(self, Rect2(sel_c - sz * 0.5, sz).grow(-4))
+		BoardMotion.draw_selection(self, sel_c, CELL, _t)
 	for source in chest_shells:
 		Art.item(self, Art.chest_visual(str(chest_shells[source]), true), cell_center(int(source)), ITEM)
 	for f in flights:
-		if float(f.get("delay", 0.0)) > 0.0:
-			continue
-		var t: float = f["t"]
-		var e := 1.0 - pow(1.0 - t, 3.0)
-		var to := cell_center(f["to"])
-		var p: Vector2 = f["from"].lerp(to, e) + Vector2(0, -80.0 * sin(PI * t))
-		Art.item(self, f["id"], p, ITEM * (0.7 + 0.3 * e))
+		if BoardMotion.waiting(f): continue
+		Art.item(self, f["id"], BoardMotion.fly_pos(f, cell_center(f["to"])), ITEM * BoardMotion.fly_scale(f))
 	for g in gathers:
 		if float(g.get("delay", 0.0)) > 0.0:
 			Art.item(self, str(g["id"]), g["from"], ITEM)
@@ -736,8 +695,7 @@ func _draw() -> void:
 		var gp: Vector2 = (g["from"] as Vector2).lerp(gto, ge)
 		gp.y -= 40.0 * sin(PI * gt)
 		Art.item(self, str(g["id"]), gp, ITEM * lerpf(1.0, 0.28, gt))
-	for b in bursts:
-		_draw_burst(b)
+	motion.draw_bursts(self)
 	for c in crumbles:
 		if float(c["delay"]) <= 0.0 and float(c["t"]) >= CRUMBLE_HOLD:
 			_draw_crumble(c)
@@ -764,7 +722,7 @@ func _paint_drag_ghost(ci: CanvasItem, _sz: Vector2) -> void:
 		_draw_merge_bubble(drag_from, at, 1.15, ci)
 	else:
 		var tilt := clampf((drag_pos.x - drag_vis.x) * 0.004, -0.25, 0.25)
-		Art.item(ci, Art.chest_visual(str(G.board[drag_from]["id"]), G.board[drag_from].has("chest")), at, ITEM * 1.15, true, tilt)
+		Art.item(ci, Art.chest_visual(str(G.board[drag_from]["id"]), G.board[drag_from].has("chest")), at, ITEM * BoardMotion.DRAG_SCALE, true, tilt)
 
 func _exit_tree() -> void:
 	if _drag_layer != null and is_instance_valid(_drag_layer) and _drag_layer.get_parent() != self:
@@ -776,16 +734,12 @@ func _draw_cell(i: int, ci: CanvasItem = null) -> void:
 	var c: Dictionary = G.board[i]
 	var r := cell_rect(i)
 	var ctr := r.get_center()
-	var sc := 1.0
-	if pops.has(i):
-		var t: float = pops[i] / 0.35
-		sc = 1.0 + 0.28 * sin(PI * t) * (1.0 - t * 0.5)
+	var sc := motion.pop_scale(i)
 	if bounces.has(i):
 		var bt: float = float(bounces[i])
 		if bt >= 0.0:
 			sc *= 1.0 + 0.34 * sin(PI * clampf(bt / 0.42, 0.0, 1.0))
-	if shakes.has(i):
-		ctr.x += sin(shakes[i] * 60.0) * 6.0 * (1.0 - shakes[i] / 0.35)
+	ctr += motion.shake_offset(i)
 	var cu := _crumble_for(i)
 	var cracking := not cu.is_empty() and float(cu["delay"]) <= 0.0 and float(cu["t"]) < CRUMBLE_HOLD
 	if c["lock"] == 2 or (not cu.is_empty() and float(cu["delay"]) > 0.0) or cracking:
@@ -1019,9 +973,6 @@ func _draw_fragment(k: int, pos: Vector2, rotation_value: float, scale_value: fl
 func _draw_vine(r: Rect2, i: int, back: bool, ci: CanvasItem = null) -> void:
 	if ci == null: ci = self
 	Sprites.draw(ci, "board_vine_%s%d" % ["b" if back else "f", posmod(i, 8)], r)
-
-func _draw_burst(b: Dictionary) -> void:
-	MergeBurst.paint(self, b["p"], float(b["t"]) / 0.6, float(b["seed"]))
 
 # ---------------------------------------------------------------- 停手提示
 

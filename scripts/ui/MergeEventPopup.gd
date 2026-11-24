@@ -12,6 +12,7 @@ var orders_btn: TButton
 var claim_btn: TButton
 var collection: DrawBox
 var track: DrawBox
+var codex_btn: TButton
 var fx: Fx
 var _clock := 0.0
 var _decor_clock := 0.0
@@ -61,6 +62,12 @@ func _build() -> void:
 		Sprites.draw(ci, sp(cfg, "timer_line"), Rect2(Vector2.ZERO, sz), Color(_c("glow", "bff3f0"), 0.35))
 		Paint.glyph(ci, "clock", Vector2(24, sz.y / 2), 0.9))
 	timer = UI.lbl(box, "", Rect2(244, 224, 256, 36), 20, Color("d6f3ef"))
+	codex_btn = UI.btn(box, Rect2(58, 184, 104, 84), "", "hide", _open_codex)
+	codex_btn.name = "event_codex"
+	codex_btn.extra = func(ci, sz):
+		Paint.book(ci, Vector2(sz.x * 0.5, 30), 0.55)
+		if MergeEvent.codex_pending(cfg, MergeEvent.state(cfg)) > 0: Paint.badge_num(ci, Vector2(sz.x - 14, 12), 5, 13)
+	UI.lbl(codex_btn, TextCatalog.source("ui.homescreen.06169ded8b7b"), Rect2(0, 52, 104, 30), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, INK, true)
 	_build_track()
 	_build_board()
 	_build_bottom()
@@ -170,30 +177,37 @@ func _build_bottom() -> void:
 	points = UI.lbl(spawn_btn, "", Rect2(30, 122, 120, 38), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, INK, true)
 	orders_btn = UI.btn(box, Rect2(190, BUBBLE.y - 44, 340, 88), TextCatalog.source("ui.duelpopup.245ede446986"), "green", _go_orders, 34)
 	orders_btn.name = "moon_go_orders"
+	if bool(Replay.meta.get("allow_gm", false)):
+		var gm := UI.btn(box, Rect2(24, 1352, 218, 60), TextCatalog.source("ui.mergeeventpopup.a5419d291d0d"), "teal", func():
+			var result: Dictionary = Replay.perform("gm", {"action": "event_points", "points": 10})
+			if result.has("error"): G.main.toast(str(result["error"]))
+			_refresh(), 24)
+		gm.name = "gm_event_points"
 
 func _go_orders() -> void:
 	if _closing: return
 	G.main.show_screen("board", true)
 	close()
 
+## 气泡：订单奖励、推进时收起来的物品都在里面排队，点一下发射下一件；空了就换成「去帮族人」。
 func _refresh_action() -> void:
 	var s := MergeEvent.state(cfg)
-	var cost := maxi(1, int(cfg["points"]["spawn_cost"]))
-	var can_place := int(s["points"]) >= cost and MergeEvent.active(cfg) and not bool(s["claimed"])
-	points.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.db27bec7405f"), (int(s["points"]) / cost)))
+	var n := MergeEvent.supply(cfg, s)
+	var can_place := n > 0 and MergeEvent.active(cfg) and not bool(s["claimed"])
+	points.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.mergeeventpopup.db27bec7405f"), n))
 	spawn_btn.visible = can_place
 	spawn_btn.enabled = can_place
 	orders_btn.visible = not can_place
 
 func _paint_spawn(ci: CanvasItem, sz: Vector2) -> void:
 	var s := MergeEvent.state(cfg)
-	var can := int(s["points"]) >= int(cfg["points"]["spawn_cost"]) and spawn_btn.enabled
+	var can := MergeEvent.supply(cfg, s) > 0 and spawn_btn.enabled
 	var c := Vector2(sz.x / 2, 72)
 	if can:
 		ci.draw_circle(c, 70 + 4 * sin(_t * 3.0), Color(_c("glow", "bff3f0"), 0.18))
 	MoonArt.panel(ci, "spawn_on" if can else "spawn_off", sz)
 	var bob := sin(_t * 2.5) * 3.0 if can else 0.0
-	MergeEventArt.draw_item(ci, cfg, str(cfg["chain"][int(cfg["points"]["spawn_tier"]) - 1]["id"]), c + Vector2(0, bob - 2), 78, Color.WHITE if can else Color(0.7, 0.75, 0.78, 0.8))
+	MergeEventArt.draw_item(ci, cfg, MergeEvent.next_supply(cfg, s), c + Vector2(0, bob - 2), 78, Color.WHITE if can else Color(0.7, 0.75, 0.78, 0.8))
 
 ## 底部陈列的那条线：有壁画就陈列壁画（收集目标），否则陈列灯光 / 遗物。
 func _shelf() -> Array:
@@ -244,7 +258,7 @@ func _refresh() -> void:
 			if k > 0 and is_instance_valid(fx):
 				fx.add("banner", Vector2(360, 520), {"id": str(id), "text": TextCatalog.source("ui.mergeeventpopup.3b9afd98b0cb") + str(row.get("name", ""))})
 				Sfx.play("fanfare")
-	for d in [spawn_btn, collection, track]: d.queue_redraw()
+	for d in [spawn_btn, collection, track, codex_btn]: d.queue_redraw()
 	_tick()
 
 func _process(delta: float) -> void:
@@ -298,6 +312,69 @@ func _preview_rewards(k: int) -> void:
 		UI.lbl(p.box, "×%d" % int(reward[1]), Rect2(x, 770, gap, 50), 32, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, INK, true)
 	UI.btn(p.box, Rect2(210, 880, 300, 86), TextCatalog.source("ui.mergeeventpopup.de32e20193ad"), "teal", p.close, 30)
 	G.main._attach_popup(p)
+
+# ---------------------------------------------------------------- 图鉴：和主游戏图鉴一样，每条线一节、每行四格；新解锁的是礼包，点开领 1 体力
+
+func _open_codex() -> void:
+	if _closing: return
+	var p := PopupBase.new()
+	var r := Rect2(24, 240, 672, 1040)
+	Popups.frame(p, r, TextCatalog.source("ui.homescreen.06169ded8b7b"), _c("banner", "2f6377"))
+	var sc := Scroller.new()
+	sc.position = Vector2(0, r.position.y + 58)
+	sc.size = Vector2(630, r.end.y - 20 - sc.position.y)
+	p.box.add_child(sc)
+	var y := 16.0
+	var s := MergeEvent.state(cfg)
+	var focus := -1.0
+	for line in MergeEvent.codex_lines(cfg):
+		var ids: Array = line["ids"]
+		var n := 0
+		for id in ids:
+			if MergeEvent.codex_unlocked(cfg, s, str(id)): n += 1
+		Popups.section(sc.content, "%s  %d/%d" % [str(line["title"]), n, ids.size()], y, Color("8a5a30"), _codex_x(r, 0) + 126.0 * 1.5)
+		y += 52
+		for k in ids.size():
+			var cell := Rect2(_codex_x(r, k % 4) - 52, y, 104, 104)
+			if focus < 0 and MergeEvent.codex_ready(cfg, s, str(ids[k])): focus = y
+			_codex_slot(sc.content, cell, str(ids[k]))
+			if k % 4 == 3 and k < ids.size() - 1: y += 136
+		y += 156.0
+	sc.set_length(y + 8.0)
+	if focus >= 0: sc.jump_to(focus - (sc.size.y - 104) * 0.5)
+	var x := UI.hit(p.box, Rect2(r.end.x - 52, r.position.y - 24, 70, 70), p.close)
+	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
+	G.main._attach_popup(p)
+
+static func _codex_x(r: Rect2, col: int) -> float:
+	return r.position.x + 122.0 + float(col) * 126.0
+
+func _codex_slot(page: Control, cell: Rect2, id: String) -> void:
+	var entry := MergeEvent.codex_entry(cfg, id)
+	var box := UI.box(page, cell, func(ci, sz):
+		var s := MergeEvent.state(cfg)
+		ShopPopups._slot(ci, Rect2(Vector2.ZERO, sz), Color("ecd9b3"))
+		if not MergeEvent.codex_unlocked(cfg, s, id):
+			ci.draw_string(G.font_title, Vector2(sz.x * 0.5 - 18, sz.y * 0.5 + 20), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 60, Color(0.7, 0.55, 0.35, 0.6))
+		elif MergeEvent.codex_ready(cfg, s, id):
+			Paint.gift(ci, sz * 0.5, 86)
+		else:
+			var tex := MergeEventArt.texture(str(entry.get("icon", "")))
+			if tex != null: ci.draw_texture_rect(tex, Rect2(sz * 0.5 - Vector2(43, 43), Vector2(86, 86)), false))
+	UI.lbl(page, str(entry.get("name", "")) if MergeEvent.codex_unlocked(cfg, MergeEvent.state(cfg), id) else "", Rect2(cell.position.x - 10, cell.end.y + 2, cell.size.x + 20, 28), 18, Color("8a5a30"))
+	UI.hit(page, cell, func():
+		var s := MergeEvent.state(cfg)
+		if not MergeEvent.codex_unlocked(cfg, s, id): return
+		if not MergeEvent.codex_ready(cfg, s, id):
+			G.main.toast(str(entry.get("name", "")))
+			return
+		var result: Dictionary = await MergeEvent.act(cfg, "codex", {"id": id})
+		if result.has("error"): return
+		box.queue_redraw()
+		Sfx.play("coin")
+		var from := box.get_global_rect().get_center() if is_instance_valid(box) else Vector2(360, 700)
+		RewardPresenter.present(result.get("rewards", []), func(_k): return from)
+		_refresh())
 
 # ---------------------------------------------------------------- 特效层（面板坐标）
 

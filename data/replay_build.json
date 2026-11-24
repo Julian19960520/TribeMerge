@@ -1,7 +1,7 @@
 {
   "protocol": 1,
   "godot": "4.6.3",
-  "code_sha256": "8fa7ccd9e57a2bfe75209df3fce219e790abe1b4bec309b4c90f18e939293a1b",
+  "code_sha256": "2fe3754e2e6c64c506a3ec866717a32a30a87c1dd0c3514e1032c821911c037c",
   "sources": [
     "scripts/Data.gd",
     "scripts/Game.gd",
@@ -23,7 +23,9 @@
     "scripts/domain/StarterGeneratorRules.gd",
     "scripts/domain/StateCodec.gd",
     "scripts/domain/StateValues.gd",
+    "scripts/events/ActivityPoints.gd",
     "scripts/events/ActivityRules.gd",
+    "scripts/events/ActivitySchedule.gd",
     "scripts/events/CardPacks.gd",
     "scripts/events/ChoiceChest.gd",
     "scripts/events/DailyShop.gd",

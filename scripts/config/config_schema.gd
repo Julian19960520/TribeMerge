@@ -488,14 +488,26 @@ func _events() -> void:
 		for row in season.get("mural", []):
 			if _fields(row, at + ".mural", {"id": TYPE_STRING, "name": TYPE_STRING, "rewards": TYPE_ARRAY}): _id(row.id, at + ".mural.id", event_ids)
 		for row in season.get("paints", []):
-			if _fields(row, at + ".paints", {"id": TYPE_STRING, "name": TYPE_STRING, "charges": TYPE_INT}):
+			if _fields(row, at + ".paints", {"id": TYPE_STRING, "name": TYPE_STRING}):
 				_id(row.id, at + ".paints.id", event_ids)
-				_positive(row.charges, at + ".paints.charges")
+		for row in season.get("shards", []):
+			if _fields(row, at + ".shards", {"id": TYPE_STRING, "name": TYPE_STRING}): _id(row.id, at + ".shards.id", event_ids)
+		if season.has("shards"): _item(str(season.get("shard_result", "")), at + ".shard_result")
+		for rw in season.get("codex_reward", []): _reward(rw, at + ".codex_reward")
 		if season.has("brush"):
 			_id(str(season.brush.get("id", "")), at + ".brush.id", event_ids)
-			_positive(season.brush.get("max_charges"), at + ".brush.max_charges")
+			if season.brush.get("levels", []).is_empty(): _error(at + ".brush.levels", "generator needs at least one level")
 			for level in season.brush.get("levels", []):
-				for w in level.get("tiers", []): _number(w[0], at + ".brush.tiers", 1, season.get("mural", []).size(), true)
+				if not _fields(level, at + ".brush.levels", {"name": TYPE_STRING, "icon": TYPE_STRING, "batch": TYPE_ARRAY}): continue
+				for rw in level.batch:
+					_positive(rw[1], at + ".brush.batch.count")
+					if not event_ids.has(str(rw[0])): _item(str(rw[0]), at + ".brush.batch")
+		for stage in board.get("advance_on_merge", []):
+			_number(stage.get("tier"), at + ".board.advance_on_merge.tier", 1, season.chain.size(), true)
+			_positive(stage.get("rows"), at + ".board.advance_on_merge.rows")
+		var advance := 0
+		for stage in board.get("advance_on_merge", []): advance += int(stage.get("rows", 0))
+		if board.has("advance_on_merge") and advance != int(board.total_rows) - int(board.visible_rows): _error(at + ".board.advance_on_merge", "rows must add up to total_rows - visible_rows")
 		for row in season.chain:
 			for drop in row.get("drops", []):
 				if not event_ids.has(str(drop[0])): _error(at + ".chain.drops", "unknown event item " + str(drop[0]))
@@ -505,6 +517,13 @@ func _events() -> void:
 		_positive(season.points.get("spawn_cost"), at + ".points.spawn_cost")
 		_number(season.points.get("spawn_tier"), at + ".points.spawn_tier", 1, season.chain.size(), true)
 		if season.points.get("order_thresholds", []).size() + 1 != season.points.get("order_rewards", []).size(): _error(at + ".points", "one reward required per threshold interval")
+		var last_score := 0
+		for row in season.points.get("order_bundles", []):
+			if not _fields(row, at + ".points.order_bundles", {"score": TYPE_INT, "tier": TYPE_INT, "count": TYPE_INT}): continue
+			if int(row.score) <= last_score: _error(at + ".points.order_bundles", "scores must rise")
+			last_score = int(row.score)
+			_number(row.tier, at + ".points.order_bundles.tier", 1, season.chain.size(), true)
+			_positive(row.count, at + ".points.order_bundles.count")
 	var duel: Dictionary = docs.duel_race
 	if duel.get("order_thresholds", []).size() + 1 != duel.get("order_points", []).size(): _error("duel_race.order_points", "one score required per threshold interval")
 	for pair in [["target", duel], ["attack_interval_sec", docs.tiger_escape], ["points_per_order", docs.tiger_escape], ["duration_sec", docs.race], ["target", docs.race], ["group_size", docs.race]]: _positive(pair[1].get(pair[0]), "events." + str(pair[0]))
