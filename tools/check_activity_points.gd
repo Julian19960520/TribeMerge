@@ -77,6 +77,19 @@ func run() -> void:
 		in_range = in_range and table[k] >= 200 and table[k] <= 600 and (k == 6 or table[k] >= table[k - 1])
 	check(in_range, "merge points 200~600 and rising with level")
 
+	# 双人竞速：高概率主产物 / 小概率副产物合成分表 & 订单预计体力积分
+	var main_scores := []
+	for l in range(1, 14): main_scores.append(Duel.merge_score("fruit_%d" % l))
+	check(main_scores == [0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 3, 4], "duel main merge scores lv1..13: %s" % [main_scores])
+	var sub_scores := []
+	for l in range(1, 10): sub_scores.append(Duel.merge_score("seed_%d" % l))
+	check(sub_scores == [0, 1, 2, 2, 2, 3, 3, 3, 4], "duel sub merge scores lv1..9: %s" % [sub_scores])
+	check(AP.merge_score_by_rule("fruit_5", {"table": [0, 0, 0, 0, 9]}) == 9, "custom table merge rule works")
+	var s3: int = Duel.order_score({"items": ["fruit_3"]})
+	var s10: int = Duel.order_score({"items": ["fruit_10"]})
+	var s11: int = Duel.order_score({"items": ["fruit_11"]})
+	check(s3 == 2 and s10 > 45 and s11 == 140, "duel order energy score uncapped: lv3=%d, lv10=%d, lv11=%d" % [s3, s10, s11])
+
 	# 订单分：200~600、整十，难单平均高于简单单
 	g.level = 25
 	var rng := RandomNumberGenerator.new(); rng.seed = 3
@@ -109,7 +122,7 @@ func run() -> void:
 	var bs = main.board_screen
 	bs._activity_row.refresh(false)
 
-	# 合成两个 7 级 → 8 级：三个活动各 +300
+	# 合成两个 7 级 → 8 级：篝火/剑齿虎各 +300，双人竞速高概率 7→8 +2
 	_clear_board()
 	g.board[30] = {"id": "%s_7" % ch, "lock": 0}
 	g.board[31] = {"id": "%s_7" % ch, "lock": 0}
@@ -118,7 +131,7 @@ func run() -> void:
 	var r: Dictionary = await replay.perform("drop", {"from": 30, "to": 31})
 	var after := _scores()
 	check(str(r.get("kind", "")) == "merge", "merged to %s_8" % ch)
-	check(after[0] - before[0] == 300 and after[1] - before[1] == 8 and after[2] - before[2] == 300, "lv8 merge: race/tiger +300, duel +8 (%s → %s)" % [before, after])
+	check(after[0] - before[0] == 300 and after[1] - before[1] == 2 and after[2] - before[2] == 300, "lv8 merge: race/tiger +300, duel +2 (%s → %s)" % [before, after])
 	var fx_count := 0
 	for c in main.fx_layer.get_children():
 		if c.get_script() == bs._activity_row.ActivityPointsFx: fx_count += 1
@@ -129,20 +142,28 @@ func run() -> void:
 	await _shot("merge_fly")
 	await create_timer(0.8).timeout
 
-	# 合低级（6 级）不给分
+	# 合低级（3→4 级主产物）不给分；5→6 级主产物仅双人竞速 +1
+	_clear_board()
+	g.board[30] = {"id": "%s_3" % ch, "lock": 0}
+	g.board[31] = {"id": "%s_3" % ch, "lock": 0}
+	before = _scores()
+	r = await replay.perform("drop", {"from": 30, "to": 31})
+	check(_scores() == before, "lv4 main merge gives no points")
 	_clear_board()
 	g.board[30] = {"id": "%s_5" % ch, "lock": 0}
 	g.board[31] = {"id": "%s_5" % ch, "lock": 0}
 	before = _scores()
 	r = await replay.perform("drop", {"from": 30, "to": 31})
-	check(_scores() == before, "lv6 merge gives no points")
+	after = _scores()
+	check(after[0] == before[0] and after[1] - before[1] == 1 and after[2] == before[2], "lv6 main merge: race/tiger +0, duel +1 (%s → %s)" % [before, after])
 
-	# 交单：三个活动各加同一个 200~600 的分
+	# 交单：篝火/剑齿虎 200~600，双人竞速按预计体力得分（不超过目标分）
 	_clear_board()
 	var want: Array = g.orders[0]["items"] if g.orders.size() > 0 and str(g.orders[0].get("kind", "")) != "craft" else []
 	if want.is_empty():
 		g.orders.insert(0, g.rules.orders._make_order())
 		want = g.orders[0]["items"]
+	var expected_duel_pts: int = Duel.order_score(g.orders[0])
 	for k in want.size(): g.board[10 + k] = {"id": str(want[k]), "lock": 0}
 	g.orders_changed.emit(); g.board_changed.emit()
 	await create_timer(0.3).timeout
@@ -151,7 +172,8 @@ func run() -> void:
 	after = _scores()
 	var d_race: int = after[0] - before[0]
 	var d_duel: int = after[1] - before[1]
-	check(d_race >= 200 and d_race <= 600 and d_duel >= 10 and d_duel <= 45, "order: race +%d, duel +%d (%s → %s, duel %s, tiger %s)" % [d_race, d_duel, before, after, Duel.state()["match"]["status"], Tiger.round_state()["status"]])
+	var duel_cap: int = int(Duel.state()["match"]["target"]) - before[1]
+	check(d_race >= 200 and d_race <= 600 and d_duel == mini(expected_duel_pts, duel_cap), "order: race +%d, duel +%d expected %d (%s → %s, duel %s, tiger %s)" % [d_race, d_duel, expected_duel_pts, before, after, Duel.state()["match"]["status"], Tiger.round_state()["status"]])
 	check(after[3] > before[3] or after[2] - before[2] == d_race, "order: tiger +%d (%s → %s)" % [d_race, before, after])
 	main.close_all()
 	if main.get("_guide") != null and is_instance_valid(main._guide): main._guide.visible = false

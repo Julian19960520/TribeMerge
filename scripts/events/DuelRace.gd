@@ -75,16 +75,22 @@ static func opponent_seconds_for(target: int) -> Array:
 		u = clampf((float(target) - lo) / maxf(1.0, hi - lo), 0.0, 1.0)
 	return [lerpf(float(base[0]), float(top[0]), u), lerpf(float(base[1]), float(top[1]), u)]
 
-## 新版（pv=3）订单奖励积分：按订单难度确定性计算（10~45 分），与订单卡显示一致。
+## 新版（pv=3）订单奖励积分：按订单预计消耗体力（理论火苗）计算，走 order_points_rule 配置，与订单卡显示一致。
 static func order_score(order: Dictionary) -> int:
+	var rule: Dictionary = config().get("order_points_rule", {})
+	if not rule.is_empty():
+		return ActivityPoints.order_energy_score(order, rule)
 	var r: Array = config().get("order_point_range", [10, 45])
 	var lo := float(r[0])
 	var hi := float(r[1])
 	var d := ActivityPoints.difficulty(order, G.level)
 	return clampi(int(round(lerpf(lo, hi, d))), int(lo), int(hi))
 
-## 新版（pv=3）合成高级物品积分：7 级起给 5 分，每高 1 级 +3，封顶 20 分。
+## 新版（pv=3）合成物品积分：按 merge_points_rule（高概率主产物 / 小概率副产物）可配置计算。
 static func merge_score(id: String) -> int:
+	var rule: Dictionary = config().get("merge_points_rule", {})
+	if not rule.is_empty():
+		return ActivityPoints.merge_score_by_rule(id, rule)
 	if not Data.is_board_item(id) or Data.is_dish(id) or Data.type_of(id) != "item":
 		return 0
 	var from_lv := int(config().get("merge_from", 7))

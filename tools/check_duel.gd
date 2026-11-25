@@ -15,10 +15,17 @@ func run() -> void:
 	check(duel.local_action("join").has("error"),"locked player cannot join")
 	g.level=int(JSON.parse_string(FileAccess.get_file_as_string("res://data/duel_race.json"))["unlock_level"])
 	check(duel.order_points({"items":["fruit_1"]})==1 and duel.order_points({"items":["fruit_8"]})==4,"legacy rounds: difficulty uses configured order points")
-	# 新版订单按难度给分（10~45）
-	var easy_pts: int = duel.order_score({"items":["fruit_1"]})
+	# 新版订单按预计消耗体力给分（不限 10~45）
+	var easy_pts: int = duel.order_score({"items":["fruit_3"]})
 	var hard_pts: int = duel.order_score({"items":["fruit_10"]})
-	check(easy_pts>=10 and hard_pts<=45 and hard_pts>easy_pts,"order_score scales with difficulty (%d < %d)" % [easy_pts, hard_pts])
+	var top_pts: int = duel.order_score({"items":["fruit_11"]})
+	check(easy_pts==2 and hard_pts>45 and top_pts==140 and hard_pts>easy_pts,"order_score scales with expected energy (%d < %d < %d)" % [easy_pts, hard_pts, top_pts])
+	# 主棋盘合成按高/小概率物品阶梯规则计分
+	var main_merge := []
+	for l in range(4, 11): main_merge.append(duel.merge_score("fruit_%d" % l))
+	var sub_merge := []
+	for l in range(1, 8): sub_merge.append(duel.merge_score("seed_%d" % l))
+	check(main_merge==[0,1,1,2,2,2,3] and sub_merge==[0,1,2,2,2,3,3],"merge_score matches main/sub tier rules (%s / %s)" % [main_merge, sub_merge])
 	check(duel.local_action("milestone",2).has("error"),"cannot claim wins in advance")
 	var expected_targets := [30, 60, 100, 150, 210, 280, 360, 400, 400, 400, 400, 400]
 	var first_opp_end := 0.0

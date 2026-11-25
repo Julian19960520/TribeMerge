@@ -45,6 +45,8 @@ static var ORDER_TIERS: Dictionary = {}
 static var HARD_SHARE: Array = []
 ## 订单给的不那那（random_orders.json coins）；空表示沿用按难度算的旧规则
 static var ORDER_COINS: Dictionary = {}
+## 订单给的通行证积分（random_orders.json pass_points）；空表示每单固定 1 分
+static var ORDER_PASS_POINTS: Dictionary = {}
 ## 常驻随机单里至少保留几张简单单。
 static var MIN_EASY: int = 1
 ## 链 id -> 每一级是否可进订单。下标 0 是主角 1 级。
@@ -158,6 +160,7 @@ static func _load() -> void:
 	if ORDER_TIERS.size() < 2: ORDER_TIERS = {}
 	HARD_SHARE = random.get("hard_share", {}).get("points", []) if random.get("hard_share") is Dictionary else []
 	ORDER_COINS = random.get("coins", {}) if random.get("coins") is Dictionary else {}
+	ORDER_PASS_POINTS = random.get("pass_points", {}) if random.get("pass_points") is Dictionary else {}
 	MIN_EASY = int(random.get("min_easy", 1))
 	var low := []
 	var high := []
@@ -235,11 +238,32 @@ static func hard_share(level: int) -> float:
 		prev = point
 	return float(prev[1])
 
+## 一张订单按理论火苗给多少不那那（random_orders.json coins 的幂律公式 round(base + k * flames^exp)）；未配 k 时返回 -1
+static func order_coins_by_flames(flames: float) -> int:
+	if ORDER_COINS.is_empty() or not ORDER_COINS.has("k") or flames <= 0.0: return -1
+	var base := float(ORDER_COINS.get("base", 0.0))
+	var k := float(ORDER_COINS["k"])
+	var exp := float(ORDER_COINS.get("exp", 1.0))
+	var lo := maxi(1, int(ORDER_COINS.get("min", 1)))
+	return maxi(lo, int(round(base + k * pow(flames, exp))))
+
 ## 一张订单给多少不那那：kind 是 easy / hard / craft；没配 coins 时返回 -1（调用方沿用旧算法）
 static func order_coins(level: int, kind: String, rng: RandomNumberGenerator) -> int:
 	if ORDER_COINS.is_empty() or not ORDER_COINS.has(kind): return -1
 	var grow := 1.0 + float(ORDER_COINS.get("per_level", 0.0)) * maxf(0.0, float(level - int(ORDER_COINS.get("from_level", 1))))
 	return maxi(1, int(round(float(ORDER_COINS[kind]) * grow)) + rng.randi_range(0, int(ORDER_COINS.get("jitter", 0))))
+
+## 一张订单给多少基础通行证积分（超级会员在交单处 ×2）：按订单金币折算 max(min, round(coins / coins_per_point))
+static func order_pass_points(order: Dictionary) -> int:
+	if ORDER_PASS_POINTS.is_empty(): return 1
+	var items = order.get("mats", []) if str(order.get("kind", "")) == "craft" else order.get("items", [])
+	var flames := OrderRoll.total(items) if items is Array else 0.0
+	var coins := order_coins_by_flames(flames)
+	if coins <= 0:
+		coins = int(order.get("rw", {}).get("shell", 0))
+	var per := maxf(1.0, float(ORDER_PASS_POINTS.get("coins_per_point", 22.0)))
+	var lo := maxi(1, int(ORDER_PASS_POINTS.get("min", 1)))
+	return maxi(lo, int(round(float(coins) / per)))
 
 static func tier_xp(tier: String) -> int:
 	return maxi(1, int(ORDER_TIERS.get(tier, {}).get("xp", 2 if tier == "hard" else 1)))

@@ -82,7 +82,7 @@ func _ready() -> void:
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * PASS_K)
 		_paint_pass(ci, sz / PASS_K)
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	UI.lbl(ev, TextCatalog.source("developer.host.2f0a2b5a01ff"), Rect2(0, 74, 100, 24), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
+	UI.lbl(ev, TextCatalog.source("developer.host.2f0a2b5a01ff"), Rect2(-2, 74, 104, 24), 17, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 	_event_lbl = UI.lbl(ev, "", Rect2(24, 98, 72, 20), 13, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK)
 	_gated.append([ev, "pass"])
 
@@ -144,11 +144,12 @@ func _paint_pass(ci: CanvasItem, sz: Vector2) -> void:
 	var tp := Vector2(mc.x - tw * 0.5, mc.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5)
 	ci.draw_string_outline(f, tp, TextCatalog.resolve(lv), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Art.INK)
 	ci.draw_string(f, tp, TextCatalog.resolve(lv), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
-	# 到下一级的进度
+	# 到下一级的进度（左端嵌一枚笑脸货币）
 	var bar := Rect2(card.position.x + 12, card.end.y - 20, card.size.x - 24, 11)
 	var fr := G.rules.progression.pass_frac()
 	if fr > 0.0:
 		Sprites.draw(ci, "tribe_pass_fill", Rect2(bar.position, Vector2(maxf(11.0, bar.size.x * fr), bar.size.y)))
+	PassPopup.draw_smile(ci, Vector2(bar.position.x + 4, bar.get_center().y), 10.0, 2)
 	# 剩余时间小牌
 	Paint.glyph(ci, "clock", Vector2(24, 134), 0.55, Color("ffe7a8"))
 	if G.rules.progression.pass_claimable():

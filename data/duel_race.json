@@ -1,13 +1,18 @@
 {
   "unlock_level": 9,
-  "_target": "本期渐进目标分按自己的胜场取档：0胜30分，每再赢1场升一档 30→60→100→150→210→280→360→400，最高400分；输了不升档。订单按难度给 order_point_range(10~45)分，合成7级以上给 merge_base~merge_max(5~20)分。order_thresholds / order_points 只给老存档里没打完的那局用",
+  "_target": "本期渐进目标分按自己的胜场取档：0胜30分，每再赢1场升一档 30→60→100→150→210→280→360→400，最高400分；输了不升档。订单按预计消耗体力（order_points_rule）计分不封顶，合成按高/小概率物品阶梯规则（merge_points_rule）计分。order_thresholds / order_points 只给老存档里没打完的那局用",
   "target": 400,
   "round_targets": [30, 60, 100, 150, 210, 280, 360, 400],
-  "order_point_range": [10, 45],
-  "merge_from": 7,
-  "merge_base": 5,
-  "merge_step": 3,
-  "merge_max": 20,
+  "order_points_rule": {
+    "base": 1,
+    "per_flame": 0.136,
+    "min": 1,
+    "max": 0
+  },
+  "merge_points_rule": {
+    "main": {"from": 5, "first_span": 2, "step_span": 3, "base": 1, "step": 1, "max": 0},
+    "sub": {"from": 2, "first_span": 1, "step_span": 3, "base": 1, "step": 1, "max": 0}
+  },
   "order_thresholds": [3, 5, 7],
   "order_points": [1, 2, 3, 4],
   "_opponent": "对手完赛时间随目标分从 opponent_seconds(第1局 7~12分钟) 线性递增到 opponent_seconds_max(400分 45~70分钟)",

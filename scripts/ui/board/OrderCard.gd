@@ -48,7 +48,7 @@ static func missing(o: Dictionary) -> int:
 func refresh(index: int, value: Dictionary) -> void:
 	order_index = index
 	order = value
-	var shape := JSON.stringify([order.get("who", 0), order.get("items", []), order.get("mats", []), order.get("rw", {}), order.get("kind", ""), FossilDig.earning()])
+	var shape := JSON.stringify([order.get("who", 0), order.get("items", []), order.get("mats", []), order.get("rw", {}), order.get("kind", ""), FossilDig.earning(), DuelRace.active_v3(), G.pass_tier, G.rules.progression.feature_unlocked(Data.feature_level("pass"))])
 	if shape != _shape_signature:
 		_shape_signature = shape
 		_build_content()
@@ -189,6 +189,9 @@ static func _chips(o: Dictionary) -> Array:
 	if rw.has("token") and int(rw["token"]) > 0:
 		out.append([CHIP_ICON["token"], int(rw["token"])])
 	if int(rw.get("sand", 0)) > 0: out.append(["sand_2", int(rw["sand"])])
+	if G.rules.progression.feature_unlocked(Data.feature_level("pass")):
+		var pass_gain := Data.order_pass_points(o) * (2 if G.pass_tier >= 2 else 1)
+		out.append(["pass_smile", pass_gain])
 	if FossilDig.earning(): out.append(["fossil_shovel", FossilDig.order_shovels(o)])
 	if DuelRace.active_v3(): out.append(["duel_points", DuelRace.order_score(o)])
 	return out
@@ -306,6 +309,7 @@ func _paint_rewards(ci: CanvasItem, sz: Vector2) -> void:
 		var ic := Vector2(x + 15.0, chip_y - 3.0)
 		if id == "fossil_shovel": FossilArt.shovel(ci, ic, 26)
 		elif id == "duel_points": Sprites.at(ci, "ev_entry_duel", ic, 0.3)
+		elif id == "pass_smile": PassPopup.draw_smile(ci, ic, 12.0, 2)
 		else: Art.item(ci, id, ic, 30, false)
 		var pos := Vector2(x + 20.0, chip_y + 11.0)
 		ci.draw_string_outline(G.font_body, pos, TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Art.INK)

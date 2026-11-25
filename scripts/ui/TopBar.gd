@@ -21,8 +21,8 @@ const PILLS := {
 	"amber": Rect2(470, 52, PILL_W, 50),
 	"sand": Rect2(470, 52, PILL_W, 50),
 }
-const LEVEL_C := Vector2(60, 80)
-const LEVEL_SIZE := 96.0
+const LEVEL_C := Vector2(56, 78)
+const LEVEL_SIZE := 76.0
 
 ## 第三格当前显示什么
 var _gem_mode := "amber"
@@ -87,12 +87,12 @@ func _icon(ci: CanvasItem, id: String, pill: Rect2) -> void:
 	Art.item(ci, id, pill.position + ICON_AT + fit[1], fit[0])
 
 func _add_level() -> void:
-	var r := Rect2(LEVEL_C - Vector2(LEVEL_SIZE, 104) * 0.5, Vector2(LEVEL_SIZE, 104))
+	var r := Rect2(LEVEL_C - Vector2(80, 84) * 0.5, Vector2(80, 84))
 	var c := _make_chip("level", r)
 	var o := r.position
 	UI.box(c, Rect2(Vector2.ZERO, r.size), func(ci, _sz):
 		Paint.level_badge(ci, LEVEL_C - o, LEVEL_SIZE))
-	_lv = UI.lbl(c, "1", Rect2(LEVEL_C + Vector2(-42, -28) - o, Vector2(84, 60)), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 9, Art.INK, true)
+	_lv = UI.lbl(c, "1", Rect2(LEVEL_C + Vector2(-36, -26) - o, Vector2(72, 46)), 29, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
 	UI.hit(c, Rect2(Vector2.ZERO, r.size), func(): _open_from("level", "level"))
 
 func _add_energy() -> void:

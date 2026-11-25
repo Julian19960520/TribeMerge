@@ -51,24 +51,24 @@ func run() -> void:
 	var third: Dictionary = ev.local_action(c,s,"spawn",{"view":10})
 	r = ev.local_action(c,s,"drop",{"from":third["to"],"to":90,"view":10})
 	check(r.get("kind")=="merge" and cells[90]["id"]=="glow_2" and cells[90]["lock"]==0 and cells[84]["lock"]==1, "matching revealed item unlocks and uncovers next neighbors")
-	# ---- 推进：首次合出 7/9/11/12 级时推进，移出视野的物品收进气泡
+	# ---- 推进：首次合出 7/9/10/11/12 级时各推进 2 行，移出视野的物品收进气泡
 	var stages: Dictionary=ev.fresh(c)
 	for cell in stages["cells"]: cell["lock"]=0; cell["id"]=""
 	stages["cells"][98]["id"]="brush"
 	stages["cells"][97]["id"]="glow_3"
-	stages["cells"][86]={"id":"glow_2","lock":1}
+	stages["cells"][92]={"id":"glow_2","lock":1}
 	stages["queue"]=["glow_1"]
 	stages["made"]=6
 	ev._advance(c,stages)
 	check(stages["view"]==10,"tier 6 does not advance the board")
 	stages["made"]=7
 	ev._advance(c,stages)
-	check(stages["view"]==7 and stages["cells"][97]["id"]=="" and stages["cells"][86]["id"]=="" and stages["cells"][86]["lock"]==0, "tier 7 advances 3 rows and clears the rows left behind")
+	check(stages["view"]==8 and stages["cells"][97]["id"]=="" and stages["cells"][92]["id"]=="" and stages["cells"][92]["lock"]==0, "tier 7 advances 2 rows and clears the rows left behind")
 	check(stages["queue"]==["glow_2","glow_3","glow_1"], "items left behind (locked ones too) go into the bubble ahead of waiting items")
-	check(stages["cells"].slice(42,84).count({"id":"brush","lock":0})==1, "the generator moves into the new view instead of the bubble")
+	check(stages["cells"].slice(48,90).count({"id":"brush","lock":0})==1, "the generator moves into the new view instead of the bubble")
 	ev._advance(c,stages)
-	check(stages["view"]==7,"same tier cannot advance twice")
-	for pair in [[9,4],[11,2],[12,0]]:
+	check(stages["view"]==8,"same tier cannot advance twice")
+	for pair in [[9,6],[10,4],[11,2],[12,0]]:
 		stages["made"]=pair[0]
 		ev._advance(c,stages)
 		check(stages["view"]==pair[1],"tier %d advances to view %d"%pair)
@@ -77,7 +77,7 @@ func run() -> void:
 	first_merge["cells"][96]["id"]="glow_6"
 	first_merge["cells"][97]["id"]="glow_6"
 	r=ev.local_action(c,first_merge,"drop",{"from":96,"to":97,"view":10})
-	check(r.get("first_tier")==7 and first_merge["made"]==7 and r["advance_rows"]==3 and first_merge["view"]==7, "first merge into tier 7 advances the board in the same action")
+	check(r.get("first_tier")==7 and first_merge["made"]==7 and r["advance_rows"]==2 and first_merge["view"]==8, "first merge into tier 7 advances the board in the same action")
 	var discovered_only: Dictionary=ev.fresh(c)
 	discovered_only["discovered"]["glow_9"]=true
 	ev._advance(c,discovered_only)

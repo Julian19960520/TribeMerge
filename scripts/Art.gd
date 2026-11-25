@@ -258,6 +258,9 @@ static func _vector_item(ci: CanvasItem, id: String, c: Vector2, size: float, ro
 static func item(ci: CanvasItem, id: String, c: Vector2, size: float, rim: bool = true, rot: float = 0.0) -> void:
 	if id == "":
 		return
+	if id == "xp_1":
+		draw_item(ci, id, c, size, rim, rot)
+		return
 	if _vector_item(ci, id, c, size, rot): return
 	if Items.blit_ai(ci, id, c, size, rot): return
 	Items.blit(ci, id, c, size, rim, rot)
@@ -317,15 +320,56 @@ static func _token(ci: CanvasItem, s: int, rim: bool) -> void:
 		ci.draw_colored_polygon(poly([Vector2(-16 + k * 16, 12), Vector2(-10 + k * 16, 12), Vector2(-13 + k * 16, 20)], s + k), TEAL)
 	ci.draw_colored_polygon(ell(Vector2(-8, -19), Vector2(10, 3), s + 9, 0.0, 10), Color(1, 1, 1, 0.5))
 
-## 声望星：主角经验
+## 灵感灯泡轮廓（100×100 局部坐标，圆顶中心在 (0, -10)）
+static func _bulb_glass_poly() -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var c := Vector2(0, -10)
+	var r := 27.0
+	# 上半圆到两侧收口（从左下 142° 顺时针绕过顶部到右下 38°）
+	for i in 19:
+		var a := lerpf(deg_to_rad(142.0), deg_to_rad(398.0), float(i) / 18.0)
+		pts.append(c + Vector2(cos(a), sin(a)) * r)
+	pts.append(Vector2(14.5, 13.0))
+	pts.append(Vector2(12.5, 21.0))
+	pts.append(Vector2(-12.5, 21.0))
+	pts.append(Vector2(-14.5, 13.0))
+	return pts
+
+## 灵感灯泡：主角经验（发明/灵感的象征）；show_filament=false 给等级大徽章用，给中间数字腾出干净底色
+static func draw_bulb(ci: CanvasItem, s: int, rim: bool, show_filament: bool = true) -> void:
+	# 顶部 5 道灵感小光芒（用闭合圆头胶囊绘制，四周与两端都有完整描边）
+	var ray_c := Vector2(0, -10)
+	var ray_ol := 2.0 if rim else 1.7
+	for k in 5:
+		var ang := deg_to_rad(-152.0 + float(k) * 31.0)
+		var d := Vector2(cos(ang), sin(ang))
+		var p0 := ray_c + d * 34.5
+		var p1 := ray_c + d * (42.5 if k == 2 else 40.5)
+		var cap := capsule(p0, p1, 2.0, s + 20 + k)
+		fill(ci, cap, Color("ffe268"), ray_ol)
+	var glass := _bulb_glass_poly()
+	var base := poly([Vector2(-12.5, 20), Vector2(12.5, 20), Vector2(10.5, 34), Vector2(5.5, 40), Vector2(-5.5, 40), Vector2(-10.5, 34)], s + 1, 0.2)
+	if rim:
+		sil(ci, [P(base, Color("7b7268"), 0), P(glass, Color("ffd046"), 1)], true)
+	else:
+		fill(ci, base, Color("7b7268"), 2.4)
+		fill(ci, glass, Color("ffd046"), 2.4)
+	# 玻璃泡内层柔光与左上高光
+	ci.draw_circle(Vector2(0, -11), 19.5, Color("fff09e"))
+	ci.draw_colored_polygon(ell(Vector2(-10, -21), Vector2(7.5, 4.2), s + 2, 0.0, 10, -0.65), Color(1, 1, 1, 0.72))
+	# 灯丝（仅小图标画，等级大徽章留给等级数字）
+	if show_filament:
+		var fil := PackedVector2Array([Vector2(-5.5, 19), Vector2(-6.5, -2), Vector2(-2.0, -7), Vector2(0.0, -2), Vector2(2.0, -7), Vector2(6.5, -2), Vector2(5.5, 19)])
+		ci.draw_polyline(fil, Color("c96816"), 2.6, true)
+		ci.draw_circle(Vector2(0, -7), 5.5, Color(1, 1, 0.85, 0.55))
+	# 螺旋灯头纹路
+	for yy in [24.5, 29.5]:
+		ci.draw_line(Vector2(-10.0, yy), Vector2(10.0, yy), INK, 2.0, true)
+		ci.draw_line(Vector2(-8.5, yy - 1.1), Vector2(8.5, yy - 1.1), Color("c4bcb0"), 1.4, true)
+
+## 灵感灯泡：主角经验
 static func _xp(ci: CanvasItem, s: int, rim: bool) -> void:
-	var st := star_pts(Vector2(0, 2), 40, 19, 5, s)
-	sil(ci, [P(st, OCHRE, 1)], rim)
-	ci.draw_colored_polygon(star_pts(Vector2(0, 2), 22, 11, 5, s + 1), Color("ffe27a"))
-	ci.draw_circle(Vector2(-7, -6), 3.0, INK)
-	ci.draw_circle(Vector2(7, -6), 3.0, INK)
-	ci.draw_arc(Vector2(0, 2), 6.0, 0.3, PI - 0.3, 8, INK, 2.4, true)
-	ci.draw_colored_polygon(ell(Vector2(-14, -16), Vector2(6, 3), s + 2, 0.0, 8, -0.6), Color(1, 1, 1, 0.6))
+	draw_bulb(ci, s, rim, true)
 
 static func _weave(ci: CanvasItem, r: Rect2, s: int) -> void:
 	var col := Color(0.35, 0.18, 0.05, 0.55)

@@ -70,6 +70,9 @@ static func fmt(v: float) -> String:
 const PAY_PER_FLAME := 3.0
 
 static func shell_of(items: Array) -> int:
+	var by_flames := Data.order_coins_by_flames(total(items))
+	if by_flames > 0:
+		return by_flames
 	return maxi(int(round(total(items) * PriceBook.order_shell_per_value())), 1)
 
 ## 按目标火苗随一单。avoid 里的物品会尽量不再出现，同一单里也尽量不重复。

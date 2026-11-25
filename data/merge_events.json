@@ -109,11 +109,6 @@
 						"id": "mural_1"
 					},
 					{
-						"depth": 4,
-						"col": 3,
-						"id": "paint_1"
-					},
-					{
 						"depth": 5,
 						"col": 3,
 						"id": "mural_1"
@@ -126,12 +121,17 @@
 					{
 						"depth": 7,
 						"col": 2,
-						"id": "paint_2"
+						"id": "paint_1"
 					},
 					{
 						"depth": 8,
 						"col": 5,
 						"id": "mural_1"
+					},
+					{
+						"depth": 9,
+						"col": 3,
+						"id": "paint_2"
 					},
 					{
 						"depth": 10,
@@ -149,19 +149,33 @@
 						"id": "mural_2"
 					},
 					{
+						"depth": 13,
+						"col": 2,
+						"id": "paint_2"
+					},
+					{
 						"depth": 14,
 						"col": 0,
 						"id": "mural_2"
+					},
+					{
+						"depth": 15,
+						"col": 3,
+						"id": "paint_2"
 					}
 				],
 				"advance_on_merge": [
 					{
 						"tier": 7,
-						"rows": 3
+						"rows": 2
 					},
 					{
 						"tier": 9,
-						"rows": 3
+						"rows": 2
+					},
+					{
+						"tier": 10,
+						"rows": 2
 					},
 					{
 						"tier": 11,

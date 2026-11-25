@@ -514,25 +514,19 @@ static func level_info() -> PopupBase:
 	UI.box(clip, Rect2(-art.position, Vector2(720, 1480)), func(ci, _sz):
 		_level_scene(ci, art)
 		Paint.heroine(ci, art.position + Vector2(art.size.x * 0.56, art.size.y * 0.62), 165), false)
-	# 插画四边一圈压暗的内描边，横幅、等级星、说明卡、奖励栏
+	# 插画四边一圈压暗的内描边，横幅、说明卡、奖励栏
 	UI.box(p.box, Rect2(0, 0, 720, 1480), func(ci, _sz):
 		ci.draw_rect(art, Color(0.3, 0.18, 0.08, 0.6), false, 4.0)
 		Paint.banner(ci, Rect2(cx - 230, r.position.y - 30, 460, 84), Art.TEAL)
-		Paint.level_badge(ci, Vector2(cx, r.position.y - 70), 112)
 		var bar := _li_bar()
 		Paint.bar(ci, bar, float(G.xp) / float(G.rules.progression.xp_need()), Art.MOSS)
 		Art.item(ci, "xp_1", Vector2(bar.position.x - 4, bar.get_center().y), LI_XP_STAR)
-		var next_c := Vector2(bar.end.x + 12, bar.get_center().y)
-		Paint.level_badge(ci, next_c, LI_NEXT_BADGE)
-		Sprites.draw(ci, "pop_li_arrow", Rect2(next_c + Vector2(10, 2), Vector2(36, 36)))
 		ShopPopups._slot(ci, strip, Color("ecd9b3"), Color(0.6, 0.4, 0.2, 0.4), true), false)
 	UI.title(p.box, TextCatalog.source("developer.story_editor.34243df4d613"), Rect2(cx - 200, r.position.y - 20, 400, 60), 36, Color.WHITE)
-	UI.lbl(p.box, str(G.level), Rect2(cx - 60, r.position.y - 112, 120, 80), 42, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
 	var tip := UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.818a128bfe58"), Rect2(card.position.x + 24, card.position.y + 6, card.size.x - 48, 44), 25, Color("6b4a2a"))
 	tip.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 	var bar := _li_bar()
 	UI.lbl(p.box, "%d/%d" % [G.xp, G.rules.progression.xp_need()], bar, 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(p.box, str(G.level + 1), Rect2(bar.end.x + 12 - 40, bar.get_center().y - 22, 80, 46), 28, Color("fff1c4"), HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
 	p.set_meta("level_progress", card)
 	p.set_meta("level_rewards", strip)
 	p.set_meta("onboarding_close", Rect2(r.end.x - 52, r.position.y - 24, 70, 70))
@@ -550,10 +544,10 @@ static func level_info() -> PopupBase:
 	x.extra = func(ci, sz): Paint.close_btn(ci, sz * 0.5, 28)
 	return p
 
-## 说明卡里的进度条：左右各让出经验星和下一级星的位置
+## 说明卡里的进度条：左边让出灵感灯泡位置，右侧拉通
 static func _li_bar() -> Rect2:
 	var card := _li_card()
-	return Rect2(card.position.x + 84, card.position.y + 64, card.size.x - 178, 44)
+	return Rect2(card.position.x + 84, card.position.y + 64, card.size.x - 116, 44)
 
 # ---------------------------------------------------------------- 丰收祭活动
 

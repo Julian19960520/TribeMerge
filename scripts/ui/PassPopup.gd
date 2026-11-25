@@ -1,6 +1,7 @@
 class_name PassPopup
 extends RefCounted
 const Payments := preload("res://scripts/net/Payments.gd")
+const Meme := preload("res://scripts/Meme.gd")
 ## 丰收通行证。头图固定，奖励轨道单独滚动。
 ## 轨道从下往上走：最下面是起点篝火，第 1 级在底部，越往上级别越高，最顶上是循环宝箱。
 ## 一根图腾木柱，火光从底部沿柱子往上爬到当前进度；每级一个节点。
@@ -11,7 +12,7 @@ const TRACK_TOP := 480.0
 const VIEW_H := 1480.0 - TRACK_TOP
 const ROW := 178.0
 const PAD_TOP := 30.0
-const BASE_H := 200.0
+const BASE_H := 48.0
 const LEFT_X := 14.0
 const VIP_X := 292.0
 const SUPER_X := 504.0
@@ -32,6 +33,91 @@ const PREM_D := Color("e2a94e")
 const SUPER := Color("cfe8df")
 const SUPER_D := Color("86c7bb")
 const DIM_TXT := Color("8a6a48")
+const SMILE_GOLD := Color("ffd24c")
+const SMILE_SHADE := Color("f2a827")
+const SMILE_CHEEK := Color("ef7e5d")
+
+## 当前酋长整体满意度比例 [0.0, 1.0]，用于驱动顶部笑脸从平静无极插值到开怀大笑
+static func satisfaction_ratio() -> float:
+	var n := maxf(1.0, float(Data.PASS_LEVELS.size()))
+	return clampf((float(G.rules.progression.pass_reached()) + G.rules.progression.pass_frac()) / n, 0.0, 1.0)
+
+## 无极插值笑脸绘制函数：t ∈ [0.0, 1.0]
+## t = 0.0：平嘴、平静圆眼、几乎无腮红；
+## t ≈ 0.5：温柔微笑、温暖腮红；
+## t = 1.0：张开嘴哈哈大笑（露小舌头）、弯弯笑眼、饱满腮红。
+static func draw_smile_lerp(ci: CanvasItem, c: Vector2, r: float, t: float) -> void:
+	var k := clampf(t, 0.0, 1.0)
+	var outline := maxf(2.0, r * 0.14)
+	var face_col := Color("f4d786").lerp(SMILE_GOLD, k)
+	var shade_col := Color("d9b252").lerp(SMILE_SHADE, k)
+	ci.draw_circle(c + Vector2(0, r * 0.12), r + outline * 0.6, Color(0, 0, 0, 0.22))
+	ci.draw_circle(c, r + outline, Art.INK)
+	ci.draw_circle(c, r, shade_col)
+	ci.draw_circle(c + Vector2(0, -r * 0.06), r * 0.92, face_col)
+	ci.draw_circle(c + Vector2(-r * 0.30, -r * 0.34), r * 0.24, Color(1, 1, 1, lerpf(0.28, 0.48, k)))
+	# 腮红：随 t 渐显渐大
+	var cheek_a := lerpf(0.06, 0.76, k)
+	var cheek_r := maxf(1.8, r * lerpf(0.10, 0.20, k))
+	for sx in [-1.0, 1.0]:
+		ci.draw_circle(c + Vector2(sx * r * 0.48, r * 0.14), cheek_r, Color(SMILE_CHEEK, cheek_a))
+	# 眼睛：t <= 0.65 为圆眼，0.55~0.80 平滑过渡到开心弯眼
+	var stroke := maxf(1.8, r * 0.11)
+	var dot_blend := 1.0 - clampf((k - 0.55) / 0.22, 0.0, 1.0)
+	var arc_blend := clampf((k - 0.55) / 0.25, 0.0, 1.0)
+	if dot_blend > 0.01:
+		var eye_r := maxf(1.4, r * 0.13) * dot_blend
+		for sx in [-1.0, 1.0]:
+			var ec := c + Vector2(sx * r * 0.32, -r * lerpf(0.12, 0.16, k))
+			ci.draw_circle(ec, eye_r, Art.INK)
+			if r >= 14.0 and dot_blend > 0.4:
+				ci.draw_circle(ec + Vector2(-eye_r * 0.28, -eye_r * 0.28), eye_r * 0.34, Color(1, 1, 1, dot_blend))
+	if arc_blend > 0.01 and r >= 12.0:
+		var arch_h := r * lerpf(0.06, 0.19, clampf((k - 0.55) / 0.45, 0.0, 1.0))
+		var arch_w := r * 0.18
+		for sx in [-1.0, 1.0]:
+			var ec := c + Vector2(sx * r * 0.33, -r * 0.11)
+			var pts := PackedVector2Array()
+			for i in 9:
+				var u := float(i) / 8.0
+				var x := lerpf(-arch_w, arch_w, u)
+				var y := -sin(u * PI) * arch_h
+				pts.append(ec + Vector2(x, y))
+			ci.draw_polyline(pts, Color(Art.INK, arc_blend), stroke, true)
+	# 嘴巴：0.0 平直 -> 0.55 弯曲微笑 -> 1.0 张开嘴大笑（带口腔与小舌头）
+	var half_w := r * lerpf(0.28, 0.44, k)
+	var corner_y := c.y + r * lerpf(0.24, 0.10, k)
+	var ml := Vector2(c.x - half_w, corner_y)
+	var mr := Vector2(c.x + half_w, corner_y)
+	var smile_t := clampf(k / 0.55, 0.0, 1.0)
+	var open_t := clampf((k - 0.55) / 0.45, 0.0, 1.0)
+	var closed_dip := r * 0.36 * smile_t
+	var top_ctrl := Vector2(c.x, corner_y + lerpf(closed_dip, r * 0.06, open_t))
+	var bot_ctrl := Vector2(c.x, corner_y + lerpf(closed_dip, r * 0.64, open_t))
+	var top_pts := PackedVector2Array()
+	var bot_pts := PackedVector2Array()
+	for i in 13:
+		var u := float(i) / 12.0
+		var inv := 1.0 - u
+		top_pts.append(ml * (inv * inv) + top_ctrl * (2.0 * inv * u) + mr * (u * u))
+		bot_pts.append(ml * (inv * inv) + bot_ctrl * (2.0 * inv * u) + mr * (u * u))
+	if open_t > 0.02:
+		var poly := PackedVector2Array()
+		for pt in top_pts: poly.append(pt)
+		for i in range(bot_pts.size() - 1, -1, -1): poly.append(bot_pts[i])
+		ci.draw_colored_polygon(poly, Color("7a261e"))
+		if open_t > 0.22 and r >= 12.0:
+			var t_scale := clampf((open_t - 0.22) / 0.78, 0.0, 1.0)
+			var tc := Vector2(c.x, corner_y + r * lerpf(0.26, 0.34, t_scale))
+			ci.draw_colored_polygon(Art.ell(tc, Vector2(half_w * 0.46 * t_scale, r * 0.12 * t_scale), 11, 0.0, 12), Color("ef6f6c"))
+		ci.draw_polyline(top_pts, Art.INK, stroke * 0.9, true)
+		ci.draw_polyline(bot_pts, Art.INK, stroke, true)
+	else:
+		ci.draw_polyline(top_pts, Art.INK, stroke, true)
+
+## 兼容固定表情入口（订单卡、主页入口等处）：mood 2 = 微笑，3 = 大笑
+static func draw_smile(ci: CanvasItem, c: Vector2, r: float, mood: int = 2) -> void:
+	draw_smile_lerp(ci, c, r, 0.52 if mood <= 2 else 0.92)
 
 static func screen() -> PopupBase:
 	var p := PopupBase.new()
@@ -62,8 +148,8 @@ static func screen() -> PopupBase:
 	UI.title(p.box, TextCatalog.source("ui.passpopup.d8d93e607627"), Rect2(150, HEAD_Y + 30, 420, 76), 38)
 	var time_lbl := UI.lbl(p.box, "", Rect2(292, HEAD_Y + 116, 176, 40), 22, Art.INK)
 	var lv_lbl := UI.lbl(p.box, "", Rect2(24, HEAD_Y + 216, 100, 52), 36, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 7, Art.INK, true)
-	var goal_lbl := UI.lbl(p.box, "", Rect2(138, HEAD_Y + 190, 260, 32), 20, Art.ROPE, HORIZONTAL_ALIGNMENT_LEFT)
-	var prog_lbl := UI.lbl(p.box, "", Rect2(134, HEAD_Y + 226, 264, 36), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+	var goal_lbl := UI.lbl(p.box, "", Rect2(138, HEAD_Y + 190, 276, 32), 20, Art.ROPE, HORIZONTAL_ALIGNMENT_LEFT)
+	var prog_lbl := UI.lbl(p.box, "", Rect2(154, HEAD_Y + 226, 244, 36), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
 	var act := UI.btn(p.box, Rect2(428, HEAD_Y + 200, 266, 78), "", "green", func(): G.main.open("pass_buy"), 30)
 	act.extra = _price_tag
 	UI.lbl(p.box, TextCatalog.source("developer.pass_editor.649a0fc7237e"), Rect2(LEFT_X, HEAD_Y + 306, CARD_W, 40), 24, Art.INK, HORIZONTAL_ALIGNMENT_CENTER, 0, Art.INK, true)
@@ -102,11 +188,11 @@ static func screen() -> PopupBase:
 static func _list_h() -> float:
 	return PAD_TOP + float(Data.PASS_LEVELS.size() + 1) * ROW + BASE_H
 
-## 节点中心 y。lv = 0 是底部起点篝火，1..n 是各级，n+1 是顶上的循环宝箱。
+## 节点中心 y。lv = 0 是底部柱脚端点，1..n 是各级，n+1 是顶上的循环宝箱。
 static func _node_y(lv: int) -> float:
 	var n := Data.PASS_LEVELS.size()
 	if lv <= 0:
-		return PAD_TOP + float(n + 1) * ROW + 62.0
+		return PAD_TOP + float(n + 1) * ROW + 12.0
 	var k := n + 1 - mini(lv, n + 1)
 	return PAD_TOP + float(k) * ROW + ROW * 0.5
 
@@ -414,7 +500,7 @@ static func _ticket(p: PopupBase, r: Rect2, super_vip: bool) -> void:
 		UI.icon(p.box, "chest_1", Vector2(x2, iy), 86)
 		UI.lbl(p.box, TextCatalog.source("ui.passpopup.4e3e80e36d77"), Rect2(x2 - 72, iy + 48, 150, 32), 16, Color("6b4a2a"))
 		var y2 := iy + 146.0
-		UI.icon(p.box, "token_1", Vector2(x1, y2), 80)
+		UI.box(p.box, Rect2(x1 - 44, y2 - 44, 88, 88), func(ci, sz): draw_smile(ci, sz * 0.5, 32.0, 3), false)
 		UI.lbl(p.box, "×10", Rect2(x1 - 50, y2 + 42, 100, 32), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK, true)
 		UI.lbl(p.box, TextCatalog.source("ui.passpopup.86c69f176f11"), Rect2(x2 - 78, y2 - 8, 156, 64), 18, Color("6b4a2a"))
 		_stamp(p, r)
@@ -477,20 +563,67 @@ static func _purchase(p: PopupBase, product: String) -> bool:
 # ---------------------------------------------------------------- 背景、头部
 
 static func _paint_bg(ci: CanvasItem, sz: Vector2) -> void:
-	Paint.vgrad(ci, Rect2(0, 0, sz.x, 330), Color("8fd0d4"), Color("f0deb0"))
-	Paint.vgrad(ci, Rect2(0, 330, sz.x, sz.y - 330), BG_TOP, BG_BOT)
+	Paint.vgrad(ci, Rect2(0, 0, sz.x, 310), Color("efb558"), Color("fbe4ac"))
+	Paint.vgrad(ci, Rect2(0, 310, sz.x, sz.y - 310), BG_TOP, BG_BOT)
 
 static func _paint_head(ci: CanvasItem, sz: Vector2) -> void:
-	# 天空和远景（头部局部坐标，0 = 顶栏下沿）
-	Paint.hills(ci, 120, sz.x, 22, Color("7fb48a"), 2, 190)
-	Paint.hills(ci, 150, sz.x, 12, Color("5c9a68"), 6, 190)
-	Paint.palm(ci, Vector2(30, 176), 110, 3, Color("3f7a40"))
-	Paint.palm(ci, Vector2(694, 180), 96, 8, Color("4a8a4a"))
-	Paint.heroine(ci, Vector2(88, 118), 76)
-	Paint.mascot(ci, Vector2(636, 108), 82)
-	Paint.banner(ci, Rect2(150, 26, 420, 84), Art.CLAY)
-	Paint.pill(ci, Rect2(252, 116, 216, 40), 11)
-	Paint.glyph(ci, "clock", Vector2(278, 136), 1.15)
+	# 酋长恩典庆典头图（局部坐标，0 = 顶栏下沿，172 = 兽皮条上沿）
+	var sun := Vector2(sz.x * 0.5, 112.0)
+	for k in 9:
+		var a0 := -PI + float(k) * (PI / 9.0) + 0.04
+		var a1 := a0 + (PI / 18.0)
+		var p1 := sun + Vector2(cos(a0), sin(a0)) * 420.0
+		var p2 := sun + Vector2(cos(a1), sin(a1)) * 420.0
+		var ray := PackedVector2Array([sun, Vector2(p1.x, clampf(p1.y, -20.0, 172.0)), Vector2(p2.x, clampf(p2.y, -20.0, 172.0))])
+		ci.draw_colored_polygon(ray, Color(1.0, 0.96, 0.82, 0.24))
+	# 暖金部落远山
+	Paint.hills(ci, 126, sz.x, 20, Color("c68446"), 2, 174)
+	Paint.hills(ci, 150, sz.x, 11, Color("9e5e32"), 6, 174)
+	# 顶部两侧庆典彩旗绳
+	var bunting_cols := [Art.TEAL, Art.CLAY, SMILE_GOLD]
+	for side in [-1.0, 1.0]:
+		var p0 := Vector2(0.0 if side < 0.0 else sz.x, 8.0)
+		var p1 := Vector2(184.0 if side < 0.0 else sz.x - 184.0, 24.0)
+		ci.draw_line(p0, p1, Art.INK, 3.0)
+		for f_i in 5:
+			var t0 := (float(f_i) + 0.1) / 5.2
+			var t1 := (float(f_i) + 0.9) / 5.2
+			var a := p0.lerp(p1, t0)
+			var b := p0.lerp(p1, t1)
+			var tip := a.lerp(b, 0.5) + Vector2(0, 22.0)
+			var flag := PackedVector2Array([a, b, tip])
+			Art.fill(ci, flag, bunting_cols[f_i % bunting_cols.size()], 2.0)
+	# 左侧主角：大酋长（roles[0] = chief）+ 暖金光晕 + 随满意度无极变化的心情气泡
+	var sat := satisfaction_ratio()
+	ci.draw_circle(Vector2(90, 116), 60.0, Color(1.0, 0.95, 0.76, 0.42))
+	Meme.draw_portrait(ci, 0, Rect2(14, 6, 148, 166))
+	var bub := Vector2(150, 52)
+	ci.draw_circle(bub + Vector2(-14, 14), 5.0, Art.INK)
+	ci.draw_circle(bub + Vector2(-14, 14), 3.2, Color.WHITE)
+	ci.draw_circle(bub, 20.0, Art.INK)
+	ci.draw_circle(bub, 17.5, Color("fff7e0"))
+	draw_smile_lerp(ci, bub, 13.5, sat)
+	# 右侧：酋长恩典宝藏堆（宝箱 + 琥珀 + 星芒）
+	ci.draw_colored_polygon(Art.ell(Vector2(624, 154), Vector2(68, 15), 21, 0.0, 18), Color(0.28, 0.14, 0.05, 0.32))
+	Art.item(ci, "chest_1", Vector2(636, 118), 86)
+	Art.item(ci, "amber_4", Vector2(586, 138), 42, true, -0.15)
+	ci.draw_colored_polygon(Art.star_pts(Vector2(674, 76), 13, 4.5, 4, 3), Color("fff6cf"))
+	ci.draw_colored_polygon(Art.star_pts(Vector2(576, 94), 9, 3.2, 4, 5), Color("fff6cf"))
+	# 标题横幅顶部羽冠装饰 + 横幅主体
+	var crest_c := Vector2(sz.x * 0.5, 32.0)
+	var feather_cols := [Art.BONE, Art.TEAL, Art.CLAY, Art.TEAL, Art.BONE]
+	for k in 5:
+		var ang := -PI * 0.5 + float(k - 2) * 0.34
+		var flen := 30.0 if k == 2 else (26.0 if absi(k - 2) == 1 else 22.0)
+		var dir := Vector2(cos(ang), sin(ang))
+		var perp := Vector2(-dir.y, dir.x) * 7.5
+		var fpoly := PackedVector2Array([crest_c - perp * 0.5, crest_c + dir * flen * 0.65 - perp, crest_c + dir * flen, crest_c + dir * flen * 0.65 + perp, crest_c + perp * 0.5])
+		Art.fill(ci, fpoly, feather_cols[k], 2.2)
+	Paint.banner(ci, Rect2(168, 28, 384, 82), Art.CLAY)
+	ci.draw_circle(Vector2(sz.x * 0.5, 28.0), 8.5, Art.INK)
+	ci.draw_circle(Vector2(sz.x * 0.5, 28.0), 6.0, SMILE_GOLD)
+	Paint.pill(ci, Rect2(252, 118, 216, 38), 11)
+	Paint.glyph(ci, "clock", Vector2(278, 137), 1.15)
 	# 兽皮状态条
 	var band := Rect2(0, 172, sz.x, 128)
 	ci.draw_rect(band, Art.LEATHER)
@@ -501,8 +634,9 @@ static func _paint_head(ci: CanvasItem, sz: Vector2) -> void:
 	# 等级徽章：一块嵌在兽皮上的赭石圆章
 	var mc := Vector2(74, band.position.y + 70)
 	Sprites.draw(ci, "ev_pass_medal", Rect2(mc - Vector2(48, 48), Vector2(96, 96)))
-	# 进度条
-	Paint.bar(ci, Rect2(134, band.position.y + 54, 264, 36), G.rules.progression.pass_frac(), Art.FIRE, 14)
+	# 满意度进度条（左侧嵌一枚随满意度无极变化的笑脸）
+	Paint.bar(ci, Rect2(148, band.position.y + 54, 250, 36), G.rules.progression.pass_frac(), SMILE_SHADE, 14)
+	draw_smile_lerp(ci, Vector2(146, band.position.y + 72), 20.0, sat)
 	# 列标题：左边布、右边赭石
 	var strip := Rect2(0, 300, sz.x, sz.y - 300)
 	ci.draw_rect(strip, BG_TOP)
@@ -517,8 +651,8 @@ static func _paint_head(ci: CanvasItem, sz: Vector2) -> void:
 			Paint.glyph(ci, "lock", Vector2(x + 26, 328), 1.15)
 		else:
 			Paint.check_mark(ci, Vector2(x + 24, 327), 0.95)
-	# 图腾柱顶：一张刻出来的脸
-	Sprites.draw(ci, "ev_pass_totem", Rect2(MID_X - 34, 326 - 28, 68, 60))
+	# 图腾柱顶：随当前满意度从平静→微笑→大笑无极插值的笑脸徽章
+	draw_smile_lerp(ci, Vector2(MID_X, 326), 27.0, sat)
 
 ## 购买按钮右上角的价签：人民币价格（贵宾 ¥30，超级贵宾 ¥68）
 static func _price_tag(ci: CanvasItem, sz: Vector2) -> void:
@@ -559,24 +693,23 @@ static func _paint_track(ci: CanvasItem, sz: Vector2) -> void:
 	var ch := Rect2(MID_X - 8, top_y, 16, base_y - top_y)
 	ci.draw_rect(ch.grow(2), Art.INK)
 	ci.draw_rect(ch, Color("2a1a10"))
-	# 火光从底部往上爬
+	# 满意度金光从底部往上爬
 	if fill_y < base_y:
 		var fr := Rect2(ch.position.x, fill_y, ch.size.x, base_y - fill_y)
-		ci.draw_rect(fr, Art.FIRE)
-		ci.draw_rect(Rect2(fr.position.x + 3, fr.position.y, 5, fr.size.y), Art.FIRE2)
+		ci.draw_rect(fr, SMILE_SHADE)
+		ci.draw_rect(Rect2(fr.position.x + 3, fr.position.y, 5, fr.size.y), SMILE_GOLD)
 	# 绳结：每两级之间缠一道
 	for lv in range(0, n + 1):
 		var y := (_node_y(lv) + _node_y(lv + 1)) * 0.5
 		_lash(ci, y, fill_y <= y)
-	# 火光顶端的小火苗
+	# 进度顶端的笑脸（随满意度无极变化）
 	if reached < n:
-		Sprites.draw(ci, "ev_pass_flame", Rect2(MID_X - 28, fill_y - 6 - 18, 56, 36))
+		draw_smile_lerp(ci, Vector2(MID_X, fill_y), 18.0, satisfaction_ratio())
 	# 节点
 	for lv in range(1, n + 1):
 		_node(ci, lv, reached)
 	_endless_node(ci, reached >= n)
 	_endless_note(ci)
-	_base(ci, base_y)
 
 static func _rope(ci: CanvasItem, x0: float, x1: float, y: float, lit: bool, seed: int) -> void:
 	var a := Vector2(x0, y)
@@ -631,15 +764,6 @@ static func _endless_note(ci: CanvasItem) -> void:
 		var fs := 22 if i == 0 else 18
 		var w := f.get_string_size(TextCatalog.resolve(lines[i]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		_outlined(ci, Vector2(r.get_center().x - w * 0.5, r.position.y + 42 + i * 34), lines[i], fs, Art.FIRE2 if i == 0 else Art.BONE, f)
-
-## 柱脚：石堆上一团篝火，写着「起点」
-static func _base(ci: CanvasItem, y: float) -> void:
-	var c := Vector2(MID_X, y)
-	Sprites.draw(ci, "ev_pass_base", Rect2(c + Vector2(-136, 6), Vector2(272, 70)))
-	Art.item(ci, "fire_3", c + Vector2(0, -4), 92)
-	var f := G.font_title
-	var w := f.get_string_size(TextCatalog.resolve(TextCatalog.source("ui.passpopup.5491701e1c3a")), HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-	_outlined(ci, Vector2(c.x - w * 0.5, c.y + 84), TextCatalog.source("ui.passpopup.5491701e1c3a"), 24, Art.ROPE, f)
 
 # ---------------------------------------------------------------- 购买页画面
 

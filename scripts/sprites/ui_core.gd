@@ -208,29 +208,12 @@ static func live_badge_num(ci: CanvasItem, c: Vector2, seed: int = 7, radius: fl
 	Art.dilate(ci, b, 2.5, Art.INK)
 	ci.draw_colored_polygon(b, Art.CLAY)
 
-## 等级：一颗胖胖的金星，等级数字由调用处写在中心。c 是星星中心，s 是整体宽度。
-static func live_level_badge(ci: CanvasItem, c: Vector2, s: float, _seed: int = 8) -> void:
-	var outer := s * 0.5
-	var inner := s * 0.3
-	var raw := PackedVector2Array()
-	for k in 10:
-		var a := -PI * 0.5 + TAU * float(k) / 10.0
-		raw.append(c + Vector2(cos(a), sin(a)) * (outer if k % 2 == 0 else inner))
-	# 角磨圆：先往里缩再往外扩
-	var star := raw
-	for o in Geometry2D.offset_polygon(raw, -s * 0.05, Geometry2D.JOIN_ROUND):
-		for o2 in Geometry2D.offset_polygon(o, s * 0.05, Geometry2D.JOIN_ROUND):
-			star = o2
-	# 线宽按顶栏 s=96 时和集市图标一样粗（外扩 ≈2.1px + 描边 ≈1.7px）
-	Art.dilate(ci, star, s * 0.022, Art.INK)
-	ci.draw_colored_polygon(star, Color("e79a1e"))
-	for o in Geometry2D.offset_polygon(star, -s * 0.045, Geometry2D.JOIN_ROUND):
-		var lifted := PackedVector2Array()
-		for p in o:
-			lifted.append(p + Vector2(0, -s * 0.015))
-		ci.draw_colored_polygon(lifted, Color("ffc93c"))
-	ci.draw_colored_polygon(Art.ell(c + Vector2(-s * 0.13, -s * 0.17), Vector2(s * 0.07, s * 0.03), 3, 0.0, 12, -0.7, 0.0), Color(1, 1, 1, 0.55))
-	Art.outline(ci, star, s * 0.018, Art.INK)
+## 等级：一颗发光的灵感灯泡，等级数字由调用处写在玻璃泡中心。
+static func live_level_badge(ci: CanvasItem, c: Vector2, s: float, seed: int = 8) -> void:
+	var k := s / 92.0
+	ci.draw_set_transform(c + Vector2(0, s * 0.06), 0.0, Vector2.ONE * k)
+	Art.draw_bulb(ci, seed, false, false)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 static func live_bar(ci: CanvasItem, r: Rect2, t: float, col: Color = Art.MOSS, seed: int = 9) -> void:
 	var b := Art.rrect(r, r.size.y * 0.5, seed, 0.5)

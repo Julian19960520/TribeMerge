@@ -163,7 +163,7 @@ func _add_random_batch(at: int = -1) -> void:
 		if tier != "":
 			made["tier"] = tier
 			made["xp_value"] = Data.tier_xp(tier)
-			var coins := Data.order_coins(state.level, tier, context.random_for("orders"))
+			var coins: int = int(context.roll.shell_of(made.get("items", []))) if Data.ORDER_COINS.has("k") else Data.order_coins(state.level, tier, context.random_for("orders"))
 			if coins > 0 and made.get("rw") is Dictionary: made["rw"]["shell"] = coins
 		made["slot"] = slot
 		if made.get("items") is Array:
@@ -286,6 +286,8 @@ func _make_order_free(avoid: Array = []) -> Dictionary:
 			break
 		if not placed:
 			break
+	if Data.ORDER_COINS.has("k") and not items.is_empty():
+		shell = context.roll.shell_of(items)
 	var rw = {"shell": shell}
 	var plan := vine_plan()
 	for id in items:
@@ -349,7 +351,7 @@ func _craft_order(d: Dictionary) -> Dictionary:
 	var shell = 4
 	for id in mats:
 		shell += 4 * int(pow(2.0, float(Data.lv(str(id)) - 1)))
-	var coins := Data.order_coins(state.level, "craft", context.random_for("orders"))
+	var coins: int = int(context.roll.shell_of(mats)) if Data.ORDER_COINS.has("k") else Data.order_coins(state.level, "craft", context.random_for("orders"))
 	if coins > 0: shell = coins
 	var rw = {"shell": shell}
 	if context.random_for("orders").randf() < 0.4:
@@ -895,7 +897,8 @@ func complete_order(oi: int, refill_after: bool = true) -> Array:
 	context.on_order(o)
 	if not state.tutorial_on and refill_after: refill_orders()
 	context.clock.check_pass_season()
-	state.pass_pts += 2 if state.pass_tier >= 2 else 1
+	var pass_gain := Data.order_pass_points(o)
+	state.pass_pts += pass_gain * (2 if state.pass_tier >= 2 else 1)
 	state.dirty()
 	state.board_changed.emit()
 	state.orders_changed.emit()

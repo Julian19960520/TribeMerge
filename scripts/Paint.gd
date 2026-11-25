@@ -49,8 +49,11 @@ static func plus_badge(ci: CanvasItem, c: Vector2, _seed: int = 6) -> void:
 static func badge_num(ci: CanvasItem, c: Vector2, _seed: int = 7, radius: float = 16.0) -> void:
 	Sprites.at(ci, "badge_num", c, radius / 16.0)
 
-static func level_badge(ci: CanvasItem, c: Vector2, s: float, _seed: int = 8) -> void:
-	Sprites.at(ci, "level_badge", c, s / 220.0)
+static func level_badge(ci: CanvasItem, c: Vector2, s: float, seed: int = 8) -> void:
+	var k := s / 92.0
+	ci.draw_set_transform(c + Vector2(0, s * 0.06), 0.0, Vector2.ONE * k)
+	Art.draw_bulb(ci, seed, false, false)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 static func bar(ci: CanvasItem, r: Rect2, t: float, col: Color = Art.MOSS, _seed: int = 9) -> void:
 	var thin := r.size.y < 20.0
