@@ -34,14 +34,12 @@ static func _hint_op(ci: CanvasItem, c: Vector2, op: String) -> void:
 
 static func _hint_text(ci: CanvasItem, pos: Vector2, text: String, fs: int, col: Color = HINT_INK, outline := false) -> float:
 	var f: Font = G.font_title if outline else G.font_body
-	if outline:
-		ci.draw_string_outline(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 6, Art.INK)
-	ci.draw_string(f, pos, TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-	return f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	IconText.draw_line(ci, f, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col, 6 if outline else 0, Art.INK)
+	return f.get_string_size(TextCatalog.resolve(IconText.plain(text)), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 
 static func _text_w(text: String, fs: int, title := false) -> float:
 	var f: Font = G.font_title if title else G.font_body
-	return f.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return f.get_string_size(TextCatalog.resolve(IconText.plain(text)), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 
 ## 文字基线：让 fs 号字在 y 处垂直居中
 static func _mid_base(y: float, fs: int, title := false) -> float:

@@ -17,10 +17,6 @@ static var AMBER_PACKS: Array = []
 static var BUILDS: Array = []
 static var LEVEL_REWARDS := {}
 static var STORE_HOT: Array = []
-## 集市「不那那小摊」（data/store_shell.json）：每项 {"id", "price", "stock"}，每 STORE_SHELL_HOURS 小时刷新
-static var STORE_SHELL: Array = []
-static var STORE_SHELL_HOURS := 8
-static var STORE_SHELL_REFRESH := 5
 static var PASS_LEVELS: Array = []
 ## 通行证赛季：{"days": 35, "start": "2026-11-02"}（北京时间零点起算）
 static var PASS_SEASON: Dictionary = {}
@@ -55,8 +51,9 @@ static var UNLOCK_ROWS: Dictionary = {}
 const CARD_LEVEL := 8
 ## 活动和入口按等级一个个开放：竞品开局什么活动都没有，玩熟了合成再陆续出现。
 ## 带自己配置文件的活动（剑齿虎、化石、双人竞速、篝火竞速、月石遗迹）用各自的 unlock_level。
-const FEATURE_LEVELS := {"seven": 3, "gift": 4, "pass": 5, "rank": 6, "ufo": 7}
-static var FEATURE_NAMES := {"seven": TextCatalog.source("notice.data.f205a3d7f611"), "gift": TextCatalog.source("notice.data.70541fc12efb"), "pass": TextCatalog.source("developer.host.2f0a2b5a01ff"), "rank": TextCatalog.source("notice.data.1ee95aa94712"), "ufo": TextCatalog.source("notice.data.c086e8b44aa2")}
+## 1~13 级照竞品：7 集市、8 卡册、9 七日任务、10 七日签到、11 化石、12 双人竞速；其余活动 14 级以后再陆续开。
+const FEATURE_LEVELS := {"shop": 7, "seven": 9, "login": 10, "gift": 15, "pass": 16, "ufo": 18, "rank": 20}
+static var FEATURE_NAMES := {"shop": TextCatalog.source("notice.data.ff85708f222b"), "login": TextCatalog.source("notice.data.61616c7afbe5"), "seven": TextCatalog.source("notice.data.f205a3d7f611"), "gift": TextCatalog.source("notice.data.70541fc12efb"), "pass": TextCatalog.source("developer.host.2f0a2b5a01ff"), "rank": TextCatalog.source("notice.data.1ee95aa94712"), "ufo": TextCatalog.source("notice.data.c086e8b44aa2")}
 static func feature_level(id: String) -> int:
 	return int(FEATURE_LEVELS.get(id, 1))
 
@@ -131,10 +128,6 @@ static func _load() -> void:
 	LEVEL_REWARDS = {}
 	for row in ConfigFiles.shared(ConfigFiles.LEVELS)["levels"]: LEVEL_REWARDS[row["level"]] = row["rewards"]
 	STORE_HOT = ConfigFiles.shared(ConfigFiles.STORE)
-	var shell: Dictionary = ConfigFiles.shared(ConfigFiles.STORE_SHELL)
-	STORE_SHELL = shell["items"]
-	STORE_SHELL_REFRESH = shell["refresh_amber"]
-	STORE_SHELL_HOURS = shell["refresh_hours"]
 	var pass_data: Dictionary = ConfigFiles.shared(ConfigFiles.PASS)
 	PASS_LEVELS = pass_data["levels"]
 	PASS_SEASON = pass_data["season"]
@@ -426,6 +419,11 @@ static func dishes_for(level: int) -> Array:
 
 static func chain(id: String) -> String:
 	return id.get_slice("_", 0)
+
+static func album_reward(album: int) -> Array:
+	var rows: Array = ConfigFiles.shared("res://data/replay_economy.json").get("album_reward", [])
+	if album < 0 or album >= rows.size() or not rows[album] is Array: return []
+	return rows[album]
 
 static func lv(id: String) -> int:
 	if DISHES.has(id):

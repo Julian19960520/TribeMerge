@@ -12,6 +12,8 @@ static func initial_state() -> Dictionary:
 	return {"id": config()["id"], "stats": {}, "claimed": {}, "stages": {}, "days": {}}
 
 static func login(day := "") -> void:
+	# 七日任务开放（Data.FEATURE_LEVELS.seven）之后才开始记登录天数，7 天从开放那天起算（按真实等级，GM 全开不算）
+	if G.level < Data.feature_level("seven"): return
 	if day == "": day = G.rules.clock.today()
 	var s := state()
 	if not s["days"].has(day):

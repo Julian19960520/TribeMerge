@@ -82,7 +82,7 @@ static func album(a: int) -> PopupBase:
 	cover.name = "album_cover"
 	var reward_state := UI.lbl(p.box, "", Rect2(254, r.position.y + 54, 396, 32), 24, Color("7a5a3a"))
 	reward_state.name = "album_reward_state"
-	var rewards: Array = Data.ConfigFiles.shared("res://data/replay_economy.json")["album_reward"]
+	var rewards: Array = Data.album_reward(a)
 	var reward_icons: Array[Control] = []
 	for k in rewards.size():
 		var x := 290.0 + float(k) * 380.0 / float(rewards.size())

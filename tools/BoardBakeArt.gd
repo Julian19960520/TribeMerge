@@ -216,8 +216,8 @@ static func rock(ci: CanvasItem, r: Rect2, i: int) -> void:
 
 # ---------------------------------------------------------------- 密林锁格（现用）
 ## 和部落界面 Paint.forest_tree 一个画法：不描墨线，树干 + 三层深浅树冠。
-## 每格先铺一块草地（往外多铺几像素，相邻锁格连成一片），再种三四棵树；
-## 按格子序号挑棵数、位置、大小，63 个变体互不相同。格子按行画，下一行的树冠自然压住上一行的树干。
+## 每格先铺一块草地（往外多铺几像素，相邻锁格连成一片），树是单棵的图块，
+## 由棋盘按整块棋盘的错位网格撒上去（和格子边界无关），按树根高低排序，前面的树冠压住后面的树干。
 
 const FOREST_FLOOR := Color("81a656")
 ## 比部落界面的树灰一些，锁格退到后面，不抢棋盘上物品的眼
@@ -240,34 +240,22 @@ static func forest_ground(ci: CanvasItem, r: Rect2, i: int) -> void:
 	ci.draw_colored_polygon(Art.rrect(r.grow(5.0), 14, s, 0.6), FOREST_FLOOR)
 	# 林地上几簇浅色草点
 	for k in 4:
-		var p := r.position + Vector2(10 + r01(s, 80 + k) * 76.0, 60 + r01(s, 84 + k) * 30.0)
+		var p := r.position + Vector2(10 + r01(s, 80 + k) * 76.0, 10 + r01(s, 84 + k) * 78.0)
 		ci.draw_colored_polygon(Art.ell(p, Vector2(12, 4.5), s + k, 0.1, 10), Color(0.77, 0.85, 0.55, 0.42))
 
-## 上层：树（rocks_0..3.png，透明底）
+## 上层：树（rocks_0..3.png，透明底）。每个图块只有一棵树，树根在图块 (64, 112)，按 FOREST_TILE_SCALE 画；
+## 棋盘（scripts/ui/board/ForestLayout.gd）按整块棋盘的错位网格把这些单棵树撒到锁格上，不再按格子成团。
+## 63 个变体：树冠形状、三层树冠的偏移各不相同，约八分之一带一颗红果。
+const FOREST_TILE_SCALE := 0.84
 static func forest(ci: CanvasItem, r: Rect2, i: int) -> void:
 	var s := i * 7 + 3
-	# 后排两棵（矮、偏上），前排一两棵（偏下、大一点）
-	# 树冠不能超出 128 图块（四边各留 16）：后排树根 y≈56–64、s≤0.64，前排树根 y≈92–98、s≤0.74
-	var trees: Array = []
-	var flip := r01(s, 9) > 0.5
-	var bx := 28.0 + r01(s, 10) * 40.0
-	trees.append([r.position + Vector2(bx, 56.0 + r01(s, 20) * 8.0), 0.56 + r01(s, 30) * 0.08])
-	if r01(s, 11) > 0.15:
-		var bx2 := bx + (34.0 + r01(s, 12) * 10.0) * (-1.0 if bx > 48.0 else 1.0)
-		trees.append([r.position + Vector2(clampf(bx2, 18.0, 78.0), 50.0 + r01(s, 21) * 10.0), 0.5 + r01(s, 31) * 0.08])
-	var fx := 28.0 + r01(s, 40) * 10.0
-	trees.append([r.position + Vector2(fx if flip else 96.0 - fx, 94.0 + r01(s, 50) * 4.0), 0.66 + r01(s, 60) * 0.08])
-	if r01(s, 41) > 0.15:
-		var fx2 := 58.0 + r01(s, 42) * 10.0
-		trees.append([r.position + Vector2(fx2 if flip else 96.0 - fx2, 90.0 + r01(s, 51) * 6.0), 0.6 + r01(s, 61) * 0.1])
-	trees.sort_custom(func(a, b): return float(a[0].y) < float(b[0].y))
-	for k in trees.size():
-		forest_tree(ci, trees[k][0], s + 100 + k * 7, float(trees[k][1]))
-	# 偶尔一颗红果 / 一朵小花点缀
-	if r01(s, 70) > 0.6:
-		var p := r.position + Vector2(18 + r01(s, 71) * 60.0, 30 + r01(s, 72) * 30.0)
-		ci.draw_circle(p, 3.2, Color("c95062"))
-		ci.draw_circle(p + Vector2(-1, -1), 1.1, Color(1, 1, 1, 0.6))
+	var root := r.position + Vector2(48, 96)
+	forest_tree(ci, root, s + 100, FOREST_TILE_SCALE)
+	if r01(s, 70) > 0.88:
+		var k := FOREST_TILE_SCALE
+		var p := root + Vector2((r01(s, 71) - 0.5) * 50.0, -60.0 - r01(s, 72) * 30.0) * k
+		ci.draw_circle(p, 3.6, Color("c95062"))
+		ci.draw_circle(p + Vector2(-1.2, -1.2), 1.2, Color(1, 1, 1, 0.6))
 
 ## 砍开那一下：树冠上冒出一圈浅色叶子、两侧几道摇晃的弧线
 static func rustle(ci: CanvasItem, r: Rect2, i: int, u: float) -> void:

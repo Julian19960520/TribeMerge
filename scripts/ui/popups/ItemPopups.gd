@@ -556,27 +556,7 @@ static func _shop_offer(id: String) -> Dictionary:
 		var left := int(row["stock"]) - int(book.get(row["key"], 0))
 		if left > 0:
 			return {"price": int(row["price"]), "left": left, "key": str(row["key"]), "deal": deal}
-	# 琥珀栏没有（或卖完）才看不那那小摊
-	var stall: Array = G.rules.shop.shell_stall()
-	for k in stall.size():
-		if str(stall[k].get("id", "")) == id:
-			var o := _shell_offer("shell_%d" % k)
-			if not o.is_empty():
-				return o
 	return {}
-
-## 不那那小摊这一格本轮还剩的，卖完返回 {}
-
-static func _shell_offer(key: String) -> Dictionary:
-	var k := int(key.trim_prefix("shell_"))
-	var stall: Array = G.rules.shop.shell_stall()
-	if k < 0 or k >= stall.size():
-		return {}
-	var d: Dictionary = stall[k]
-	var left := int(d.get("stock", 0)) - int(G.shell_bought.get(key, 0))
-	if left <= 0:
-		return {}
-	return {"price": int(d.get("price", 0)), "left": left, "key": key, "deal": false, "res": "shell_2"}
 
 static func _buy_from_shop(id: String, origin: Vector2) -> bool:
 	return await _buy_offer(id, _shop_offer(id), origin)

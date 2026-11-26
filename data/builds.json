@@ -3,7 +3,7 @@
 		{"id": "campfire", "name": "§names.builds.a283c4cbf1ba§", "cost": 0, "rewards": []},
 		{"id": "logpile", "name": "§names.builds.d518f764c290§", "cost": 46, "rewards": [["fire_2", 10]], "steps": 1},
 		{"id": "stumps", "name": "§names.builds.626f131d8f83§", "cost": 67, "rewards": [["fire_2", 10], ["basket_3", 1]], "steps": 1},
-		{"id": "drum", "name": "§names.builds.243e45e4330a§", "cost": 121, "rewards": [["amber_3", 10]], "steps": 1},
+		{"id": "drum", "name": "§names.builds.243e45e4330a§", "cost": 121, "rewards": [["amber_3", 10], ["carve_4", 1]], "steps": 1},
 		{"id": "totem", "name": "§names.builds.e7c0875dacc8§", "cost": 150, "rewards": [["fire_2", 15], ["amber_3", 3]], "steps": 3},
 		{"id": "chiefhut", "name": "§names.builds.164d1af7f77e§", "cost": 194, "rewards": [["fire_2", 20], ["amber_3", 5], ["chest_1", 1]], "steps": 3},
 		{"id": "spears", "name": "§names.builds.6ff2abc4f32c§", "cost": 239, "rewards": [["fire_2", 15]], "steps": 3},

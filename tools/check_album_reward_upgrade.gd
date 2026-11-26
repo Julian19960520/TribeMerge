@@ -44,8 +44,9 @@ func run() -> void:
 		valid = valid and game.amber == 107 and game.stash.count("chest_1") == 2 and replay.meta.get("album:0", false) and not replay.meta.get("album:1", false)
 		var paid: Dictionary = replay.perform("album_claim", {"album": 0}, replay.clock)
 		valid = valid and paid.has("error") and game.amber == 107
+		var energy_before: int = game.energy
 		var unclaimed: Dictionary = replay.perform("album_claim", {"album": 1}, replay.clock)
-		valid = valid and not unclaimed.has("error") and game.amber == 137 and game.stash.count("chest_1") == 4
+		valid = valid and not unclaimed.has("error") and game.amber == 107 and game.energy == energy_before + 100 and game.stash.count("chest_1") == 2 and game.stash.count("chest_3") == 1
 		print("ALBUM_UPGRADE ", "PASS" if valid else "FAIL")
 		quit(0 if valid else 1)
 	else: quit(2)

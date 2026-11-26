@@ -1,7 +1,7 @@
 {
   "protocol": 1,
   "godot": "4.6.3",
-  "code_sha256": "fc46148fc22737bd5d87f6b6636e1c71d89cab6dcc70b75729e4323fc4686657",
+  "code_sha256": "67f7dc1a302dc523f4d8501976e1bbd919e9886f82e8ed0b9b12302e96c75de6",
   "sources": [
     "scripts/Data.gd",
     "scripts/Game.gd",
@@ -32,6 +32,7 @@
     "scripts/events/DuelRace.gd",
     "scripts/events/FossilDig.gd",
     "scripts/events/LocalRace.gd",
+    "scripts/events/LoginGift.gd",
     "scripts/events/MergeEvent.gd",
     "scripts/events/Offers.gd",
     "scripts/events/SevenDay.gd",

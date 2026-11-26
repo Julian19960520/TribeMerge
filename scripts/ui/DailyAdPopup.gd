@@ -2,7 +2,7 @@ extends PopupBase
 ## 看广告领体力：中间一堆体力在转动的光芒里上下浮，下面写清楚能领多少、按钮去看广告。
 ## 广告接口不可用时按钮置灰并说明原因，绝不假装看完发奖。
 const R := Rect2(60, 400, 600, 700)
-const REWARD := 30
+const REWARD := 15  # 和 data/daily_deals.json 里 deal_ad 的奖励保持一致
 var label: Label
 var claim_btn: TButton
 var stage: DrawBox
@@ -21,7 +21,7 @@ func _ready() -> void:
 	claim_btn.text = TextCatalog.resolve(TextCatalog.source("ui.dailyadpopup.f36cac96220b"))
 	label.text = TextCatalog.resolve(TextCatalog.source("ui.dailyadpopup.f4d7524d454d"))
 
-## 光芒 + 浮动的体力堆 + 大号「+30」
+## 光芒 + 浮动的体力堆 + 大号「+15」
 func _paint_stage(ci: CanvasItem, sz: Vector2) -> void:
 	var c := Vector2(sz.x * 0.5, sz.y * 0.48)
 	var plate := Art.rrect(Rect2(Vector2.ZERO, sz), 26, 930, 0.4)

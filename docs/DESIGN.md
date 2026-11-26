@@ -506,7 +506,7 @@ server/
 | 每日重置 | **服务器** | `deals_day`、`hot_bought`、`deals_bought`、`energy_buys` 按服务器的北京日期换日 |
 | 宝箱开箱 | **服务器** | `POST /v1/chest/open`：服务器抽；只能开服务器发出去的宝箱（额度：集市、奖励、新局棋盘） |
 | 卡包开卡、卡册收藏 | **服务器** | `POST /v1/pack/open`：服务器抽；卡片只存在服务器上；只能开服务器发出的卡包（祭典鼓攒满、订单奖励、集市） |
-| 集齐卡册奖励 | **共享 reducer / 服务端重放校验** | 集齐后手动执行 `album_claim`，校验集合进度与已领取标记，再发 `replay_economy.json` 的 `album_reward`（琥珀 30 + 宝箱 2） |
+| 集齐卡册奖励 | **共享 reducer / 服务端重放校验** | 集齐后手动执行 `album_claim`，校验集合进度与已领取标记，再发 `replay_economy.json` 里该册对应的 `album_reward` |
 | 升级（声望 → 等级） | **服务器** | 交单事件里的声望由服务器累加、判定升级 |
 | 升级奖励 | **服务器** | `POST /v1/level/claim`：等级到了才能领，每级一次，奖励按 `levels.json` |
 | 剧情单 | **服务器校验** | 交单事件：按 `story.json` 当前等级第 `si` 张核对物品和奖励，每张只能交一次；新手单（tutorial 1/2、松子单）各一次 |

@@ -340,7 +340,7 @@ func toast(text: String) -> void:
 	t.size = Vector2(620, 70)
 	t.position = Vector2(50, 640)
 	fx_layer.add_child(t)
-	var w: float = min(600.0, G.font_body.get_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x + 70.0)
+	var w: float = min(600.0, G.font_body.get_string_size(TextCatalog.resolve(IconText.plain(text)), HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x + 70.0)
 	UI.box(t, Rect2((620 - w) * 0.5, 0, w, 70), func(ci, sz): Sprites.draw(ci, "toast", Rect2(Vector2.ZERO, sz)))
 	UI.lbl(t, text, Rect2(0, 0, 620, 70), 26, Color("fff1c4"))
 	t.modulate.a = 0.0

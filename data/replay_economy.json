@@ -1,3 +1,20 @@
 {
-  "album_reward": [["amber_3", 30], ["chest_1", 2]]
+  "_说明": "每本卡册一条集齐奖励，顺序与 data/albums.json 一致。体力、沙漏、琥珀的数量是直接入账的资源，不按图标等级再乘。多出来的条目留给尚未加入的卡册。",
+  "album_reward": [
+    [["fire_2", 100], ["sand_2", 80]],
+    [["fire_2", 100], ["chest_3", 1]],
+    [["fire_2", 150], ["sand_2", 120]],
+    [["fire_2", 200], ["scissors_1", 1]],
+    [["fire_2", 200], ["orderbox_3", 1]],
+    [["fire_2", 200], ["chest_3", 1]],
+    [["fire_2", 200], ["premiumbox_3", 1]],
+    [["fire_2", 250], ["chest_3", 1]],
+    [["fire_2", 250], ["orderbox_4", 1]],
+    [["fire_2", 300], ["sand_2", 150]],
+    [["fire_2", 300], ["orderbox_4", 1]],
+    [["fire_2", 350], ["premiumbox_4", 1]],
+    [["fire_2", 350], ["amber_2", 15], ["orderbox_4", 1]],
+    [["fire_2", 450], ["amber_2", 15], ["orderbox_4", 1]],
+    [["fire_2", 500], ["amber_2", 15], ["premiumbox_4", 1]]
+  ]
 }

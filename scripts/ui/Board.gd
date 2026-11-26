@@ -5,6 +5,7 @@ extends Control
 const Layout := preload("res://scripts/config/board_layout.gd")
 const DropRing := preload("res://scripts/ui/board/BoardDropRing.gd")
 const ProducerSparkle := preload("res://scripts/ui/board/ProducerSparkleFx.gd")
+const ForestLayout := preload("res://scripts/ui/board/ForestLayout.gd")
 
 signal selected_changed(i: int)
 signal activated(i: int)
@@ -647,9 +648,17 @@ func _draw_base(ci: CanvasItem) -> void:
 	for i in G.board.size():
 		if int(G.board[i]["lock"]) == 2:
 			_paint_forest_ground(ci, cell_rect(i), i)
+	# 树按整块棋盘撒（ForestLayout），所有锁格的树一起按树根高低排序再画，前面的树冠压住后面的树干
+	var trees: Array = []
 	for i in G.board.size():
 		if int(G.board[i]["lock"]) == 2:
-			_paint_forest_trees(ci, cell_rect(i), i)
+			var pos := cell_rect(i).position
+			for t in _forest_trees(i):
+				trees.append([pos, t[0], t[1], t[2]])
+	trees.sort_custom(func(a, b): return float(a[0].y + a[1].y) < float(b[0].y + b[1].y))
+	var tex: Texture2D = ROCK_FRAMES[Art.boil % 4]
+	for t in trees:
+		ForestLayout.draw_tree(ci, tex, t[0], t[1], t[2], t[3])
 
 func _sync_base() -> void:
 	for phase in _base_layers.size():
@@ -918,7 +927,23 @@ func _paint_forest_ground(ci: CanvasItem, r: Rect2, i: int) -> void:
 	ci.draw_texture_rect_region(FOREST_GROUND, Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i))
 
 func _paint_forest_trees(ci: CanvasItem, r: Rect2, i: int) -> void:
-	ci.draw_texture_rect_region(ROCK_FRAMES[Art.boil % 4], Rect2(r.position - Vector2(16, 16), Vector2(128, 128)), _rock_region(i))
+	var tex: Texture2D = ROCK_FRAMES[Art.boil % 4]
+	for t in _forest_trees(i):
+		ForestLayout.draw_tree(ci, tex, r.position, t[0], t[1], t[2])
+
+## 这一格的树：[格内树根, 图块序号, 缩放]，按树根从上到下。挨着空格 / 棋盘边的树往格子里收。
+func _forest_trees(i: int) -> Array:
+	var x := i % G.COLS
+	var y := i / G.COLS
+	var out: Array = []
+	for t in ForestLayout.trees(G.COLS, G.ROWS)[i]:
+		var pk: Array = ForestLayout.place(t, not _forest_at(x - 1, y), not _forest_at(x + 1, y), not _forest_at(x, y - 1), not _forest_at(x, y + 1))
+		out.append([pk[0], t[1], pk[1]])
+	return out
+
+func _forest_at(x: int, y: int) -> bool:
+	if x < 0 or y < 0 or x >= G.COLS or y >= G.ROWS: return false
+	return int(G.board[y * G.COLS + x]["lock"]) == 2
 
 ## floor.png 一行 4 块地砖，按格子错开取，避免整齐重复
 static func _floor_region(i: int) -> Rect2:

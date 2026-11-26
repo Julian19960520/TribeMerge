@@ -898,7 +898,7 @@ func complete_order(oi: int, refill_after: bool = true) -> Array:
 	if not state.tutorial_on and refill_after: refill_orders()
 	context.clock.check_pass_season()
 	var pass_gain := Data.order_pass_points(o)
-	state.pass_pts += pass_gain * (2 if state.pass_tier >= 2 else 1)
+	state.pass_pts += pass_gain + (1 if state.pass_tier >= 2 else 0)  # 大长老：每单额外 +1 笑脸
 	state.dirty()
 	state.board_changed.emit()
 	state.orders_changed.emit()

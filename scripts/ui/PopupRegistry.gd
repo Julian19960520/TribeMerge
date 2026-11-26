@@ -19,6 +19,7 @@ static func create(name: String, arg = null) -> PopupBase:
 		"tiger": p = preload("res://scripts/ui/TigerEscapePopup.gd").new()
 		"fossil": p = preload("res://scripts/ui/FossilDigPopup.gd").new()
 		"duel": p = preload("res://scripts/ui/DuelPopup.gd").new()
+		"login_gift": p = preload("res://scripts/ui/LoginGiftPopup.gd").new()
 		"seven_day":
 			p = preload("res://scripts/ui/SevenDayPopup.gd").new()
 		"merge_event":

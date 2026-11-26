@@ -10,6 +10,7 @@ static func registry() -> Array:
 		_registry = [
 			{"id": "seven", "field": "seven_day", "initial": SevenDay.initial_state,
 				"order": func(_o): SevenDay.record("orders", 1), "visible": func(): return G.rules.progression.feature_unlocked(Data.feature_level("seven")), "entry_order": 2},
+			{"id": "login", "field": "login_gift", "initial": LoginGift.initial_state, "visible": LoginGift.visible, "entry_order": 6},
 			{"id": "merge", "initialize": _initialize_merge, "order": MergeEvent.on_order,
 				"visible": func(): return MergeEvent.available(MergeEvent.current()), "entry_order": 1},
 			{"id": "duel", "initialize": DuelRace.initialize,

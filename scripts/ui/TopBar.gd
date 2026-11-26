@@ -163,6 +163,7 @@ func _sync_gem() -> void:
 	_gem_tw.tween_property(c, "scale:y", 1.0, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _process(_d: float) -> void:
+	_shop.visible = shop_open() and _closers.is_empty()
 	if _festival.visible and Time.get_ticks_msec() >= _festival_until:
 		_festival.hide()
 	if _flash_kind != "" and Time.get_ticks_msec() >= _flash_until:
@@ -179,6 +180,13 @@ func _add_festival_progress() -> void:
 		if G.rules.progression.feature_unlocked(Data.CARD_LEVEL): G.main.open("event")
 		else: G.main.toast(TextCatalog.fill(TextCatalog.source("ui.topbar.ed9bbdbbe892"), Data.CARD_LEVEL)))
 	_festival.hide()
+
+## 集市按钮 7 级才出现（竞品 7 级才开商店），开放时由 Tips 带玩家点一次。
+func shop_open() -> bool:
+	return not G.tutorial_on and G.rules.progression.feature_unlocked(Data.feature_level("shop"))
+
+func shop_rect() -> Rect2:
+	return _shop.get_global_rect() if _shop != null and _shop.visible else Rect2()
 
 func _add_shop() -> void:
 	var r := Rect2(624, 34, 80, 84)
@@ -259,7 +267,7 @@ func pop_close(cb: Callable) -> void:
 func _sync() -> void:
 	var up := not _closers.is_empty()
 	_close.visible = up
-	_shop.visible = not up
+	_shop.visible = not up and shop_open()
 	if up:
 		_front_close()
 	else:

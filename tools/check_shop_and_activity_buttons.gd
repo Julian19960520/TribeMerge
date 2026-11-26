@@ -109,6 +109,8 @@ func run() -> void:
 	await create_timer(0.2).timeout
 	var ev = load("res://scripts/events/MergeEvent.gd")
 	var cfg: Dictionary = ev.current()
+	# 合成活动 17 级开放（1~13 级照竞品只开集市/卡册/七日/签到/化石/双人竞速）
+	g.level = maxi(g.level, int(cfg.get("unlock_level", 1)))
 	g.merge_events = {}
 	load("res://scripts/events/ActivityRules.gd").initialize()
 	var state: Dictionary = ev.state(cfg)

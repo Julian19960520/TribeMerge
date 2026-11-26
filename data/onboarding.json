@@ -1,5 +1,5 @@
 {
-	"version": 8,
+	"version": 9,
 	"initial_amber": 30,
 	"build_area": "fire",
 	"generator": "basket_4",
@@ -324,6 +324,36 @@
 			"target": "basket_5"
 		},
 		{
+			"key": "nut_merge",
+			"mode": "merge",
+			"text": "§dialogue.hero_voice.fad6736e5a07§",
+			"wait": {
+				"ready": "seed_second"
+			},
+			"pairs": [
+				[
+					"seed_1",
+					"seed_1"
+				],
+				[
+					"seed_2",
+					"seed_2"
+				],
+				[
+					"seed_3",
+					"seed_3"
+				]
+			]
+		},
+		{
+			"key": "nut_submit",
+			"mode": "submit",
+			"text": "§dialogue.hero_voice.6535c309b245§",
+			"wait": {
+				"delivered": "seed_second"
+			}
+		},
+		{
 			"key": "free_level2",
 			"mode": "free",
 			"text": "",
@@ -585,14 +615,15 @@
 		{
 			"tag": "seed_second",
 			"items": [
-				"seed_2"
+				"seed_1"
 			],
 			"coin": 29,
 			"xp": 1,
 			"build": 3,
 			"level": 2,
 			"gate": "gen_tap",
-			"prefer_vine_output": true
+			"prefer_vine_output": true,
+			"max_item_level": 4
 		},
 		{
 			"tag": "fruit_again",

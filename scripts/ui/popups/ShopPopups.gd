@@ -132,11 +132,13 @@ static func store() -> PopupBase:
 	var root: Control = fs[1]
 	UI.title(root, TextCatalog.source("ui.shoppopups.25b1bf6c720e"), Rect2(0, 140, 720, 80), 46)
 	UI.box(root, Rect2(0, 0, 720, 520), _paint_store)
-	UI.title(root, TextCatalog.source("ui.shoppopups.f89e9f68862f"), Rect2(50, 400, 360, 60), 34, Color.WHITE)
-	UI.lbl(root, "×10", Rect2(440, 300, 80, 30), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(root, TextCatalog.source("ui.shoppopups.7b06ab4307f3"), Rect2(500, 304, 200, 30), 18, Color("ffe7a8"), HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(root, PriceBook.product_text("pass:vip"), Rect2(470, 344, 160, 44), 28, Color("5a3d24"), HORIZONTAL_ALIGNMENT_CENTER)
-	UI.btn(root, Rect2(430, 396, 240, 80), TextCatalog.source("ui.shoppopups.dd1286c29e9b"), "green", func(): G.main.open("pass_buy"), 38)
+	# 酋长恩典氛围卡：夕阳部落背景 + 宝藏堆，右边一句卖点、价签、激活按钮
+	UI.title(root, TextCatalog.source("ui.shoppopups.f89e9f68862f"), Rect2(66, 420, 300, 58), 34, Color.WHITE)
+	UI.lbl(root, "×150", Rect2(240, 360, 90, 36), 26, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK, true)
+	UI.lbl(root, TextCatalog.source("ui.passpopup.d5f15b62c0dd"), Rect2(424, 270, 70, 28), 16, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 4, Art.INK, true)
+	UI.lbl(root, TextCatalog.source("ui.passpopup.86c69f176f11"), Rect2(500, 262, 176, 44), 19, Color("5a3d24"), HORIZONTAL_ALIGNMENT_LEFT)
+	UI.lbl(root, PriceBook.product_text("pass:upgrade" if G.pass_tier == 1 else "pass:vip"), Rect2(470, 322, 160, 48), 28, Color("5a3d24"), HORIZONTAL_ALIGNMENT_CENTER)
+	UI.btn(root, Rect2(430, 392, 240, 80), TextCatalog.source("ui.shoppopups.dd1286c29e9b"), "green", func(): G.main.open("pass_buy"), 38)
 	Popups.section(root, TextCatalog.source("ui.shoppopups.017438d13b79"), 516, Color("ffd23f"))
 	G.rules.clock._check_day()
 	# 每日特惠一排 5 张（顺序固定：广告 → 不那那买体力宝箱 → 贵宾琥珀 → 超级贵宾琥珀 → 免费体力）
@@ -148,41 +150,6 @@ static func store() -> PopupBase:
 	var clocks: Array = []
 	clocks.append(_refresh_bar(root, Rect2(30, 818, 660, 66), Color("6c492e"), TextCatalog.source("ui.shoppopups.b9fe87109e54"), func(): return [G.rules.clock.secs_to_midnight(), 86400], "", 0, Callable()))
 	var y := 904.0
-	# 不那那小摊：用不那那买低一级的普通货，库存少，每 8 小时按服务器时间补货；花少量琥珀可立即补货
-	# 货是按已解锁产线随机摆的，补货（换周期或花琥珀）后要整排重画
-	Popups.section(root, TextCatalog.source("ui.shoppopups.96b405779fa2"), y, Color("bfe3ff"))
-	var stall_root := Control.new()
-	stall_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(stall_root)
-	var stall_state := {"sig": ""}
-	var stall_y := y + 44.0
-	var draw_stall := func():
-		var stall: Array = G.rules.shop.shell_stall()
-		var sig := str(G.shell_period) + JSON.stringify(stall)
-		if sig == str(stall_state["sig"]): return
-		stall_state["sig"] = sig
-		for child in stall_root.get_children():
-			stall_root.remove_child(child)
-			child.queue_free()
-		for k in stall.size():
-			_shell_card(stall_root, Rect2(30.0 + (k % 3) * 226.0, stall_y + (k / 3) * 270.0, 208, 250), stall[k], "shell_%d" % k)
-	draw_stall.call()
-	Popups.live(p, G.changed, func(): draw_stall.call())
-	var sy := stall_y + (ceilf(Data.STORE_SHELL.size() / 3.0) - 1.0) * 270.0
-	if not Data.STORE_SHELL.is_empty():
-		sy += 264.0
-		var shell_bar: Array = []
-		shell_bar.append(_refresh_bar(root, Rect2(30, sy, 660, 86), Color("405f70"), TextCatalog.source("ui.shoppopups.dc7c0fe1c67a"), func(): return [G.rules.clock.shell_secs_left(), Data.STORE_SHELL_HOURS * 3600], TextCatalog.source("ui.shoppopups.b40b8d6870e8"), Data.STORE_SHELL_REFRESH, func():
-			var rb: TButton = shell_bar[0]["btn"]
-			rb.enabled = false
-			var result: Dictionary = await G.refresh_shell()
-			if not is_instance_valid(rb): return
-			rb.enabled = true
-			rb.queue_redraw()
-			if result.get("ok", false): Sfx.play("pop")
-			else: G.main.toast(str(result.get("message", TextCatalog.source("ui.shoppopups.1f8919285eb9"))))))
-		clocks.append(shell_bar[0])
-		y = sy + 108.0
 	Popups.section(root, TextCatalog.source("ui.shoppopups.03bb13313881"), y, Color("ffd23f"))
 	var hot_root := Control.new()
 	hot_root.name = "HotGoods"
@@ -398,19 +365,81 @@ static func _slot(ci: CanvasItem, r: Rect2, fill: Color, line: Color = Color(0.6
 
 static func _paint_store(ci: CanvasItem, _sz: Vector2) -> void:
 	var r := PS.STORE_HERO
-	Sprites.draw(ci, "pop_store_hero", r)
-	var ir := Rect2(r.position + Vector2(12, 12), Vector2(r.size.x - 24, 150))
-	Paint.vgrad(ci, ir, Color("2c3b78"), Color("6a4d9a"))
-	for i in 20:
-		ci.draw_circle(ir.position + Vector2(Art.srnd(i) * ir.size.x, Art.srnd(i + 40) * ir.size.y), 1.5 + Art.srnd(i + 9) * 1.5, Color(1, 1, 0.8, 0.7))
-	Art.item(ci, "chest_1", Vector2(150, 316), 180)
-	for k in 6:
-		Art.item(ci, Art.AMBER_ICON, Vector2(70 + k * 34, 380 - (k % 2) * 10), 54)
-	Art.item(ci, "fire_4", Vector2(270, 330), 80)
-	var tag := Rect2(470, 344, 160, 44)
+	# 木框
+	ci.draw_colored_polygon(Art.rrect(Rect2(r.position + Vector2(0, 10), r.size), 24, 121, 0.0), Color(0, 0, 0, 0.35))
+	var frame := Art.rrect(r, 24, 121, 1.0)
+	Art.dilate(ci, frame, 3.0, Art.INK)
+	ci.draw_colored_polygon(frame, Art.WOOD)
+	for k in 3:
+		ci.draw_line(Vector2(r.position.x + 40 + k * 50, r.position.y + 4 + k * 2.5), Vector2(r.end.x - 60 - k * 40, r.position.y + 4 + k * 2.5), Color(Art.WOOD_D, 0.35), 1.5)
+		ci.draw_line(Vector2(r.position.x + 60 + k * 40, r.end.y - 4 - k * 2.5), Vector2(r.end.x - 40 - k * 50, r.end.y - 4 - k * 2.5), Color(Art.WOOD_D, 0.35), 1.5)
+	# 夕阳天空 + 太阳光芒 + 远山（画在框内，四角用兽皮色圆角收边）
+	var ir := r.grow(-12)
+	Paint.vgrad(ci, Rect2(ir.position, Vector2(ir.size.x, ir.size.y * 0.62)), Color("7a3f6b"), Color("f0a24a"))
+	Paint.vgrad(ci, Rect2(ir.position + Vector2(0, ir.size.y * 0.62), Vector2(ir.size.x, ir.size.y * 0.38)), Color("f0a24a"), Color("f6d58a"))
+	var sun := Vector2(170, 330)
+	for k in 12:
+		var a0 := float(k) * TAU / 12.0 + 0.1
+		var a1 := a0 + TAU / 26.0
+		ci.draw_colored_polygon(PackedVector2Array([sun, _clamp_in(sun + Vector2(cos(a0), sin(a0)) * 220.0, ir), _clamp_in(sun + Vector2(cos(a1), sin(a1)) * 220.0, ir)]), Color(1.0, 0.95, 0.75, 0.18))
+	# hills 从 x=0 画起，先平移到框内
+	ci.draw_set_transform(Vector2(ir.position.x, 0))
+	Paint.hills(ci, ir.position.y + 150, ir.size.x, 16, Color("c0703c"), 2, ir.end.y)
+	Paint.hills(ci, ir.position.y + 178, ir.size.x, 10, Color("9a5530"), 6, ir.end.y)
+	ci.draw_set_transform(Vector2.ZERO)
+	# 把直角天空的四角盖回木框颜色，再描一圈墨线
+	for c in [ir.position, Vector2(ir.end.x, ir.position.y), Vector2(ir.position.x, ir.end.y), ir.end]:
+		var sx := 1.0 if c.x < r.get_center().x else -1.0
+		var sy := 1.0 if c.y < r.get_center().y else -1.0
+		var pts := PackedVector2Array([c])
+		for j in 7:
+			var t := float(j) / 6.0 * PI * 0.5
+			pts.append(c + Vector2(sx * (14.0 - 14.0 * cos(t)), sy * (14.0 - 14.0 * sin(t))))
+		ci.draw_colored_polygon(pts, Art.WOOD)
+	Art.outline(ci, Art.rrect(ir, 14, 122, 0.3), 2.5, Color(Art.INK, 0.8))
+	# 庆典彩旗绳
+	var cols := [Art.TEAL, Art.CLAY, Art.FIRE2, Art.BONE]
+	var p0 := Vector2(ir.position.x + 4, ir.position.y + 8)
+	var p1 := Vector2(ir.end.x - 4, ir.position.y + 8)
+	var mid := (p0 + p1) * 0.5 + Vector2(0, 26)
+	ci.draw_polyline(PackedVector2Array([p0, mid, p1]), Art.INK, 2.5)
+	for f in 14:
+		var t0 := (float(f) + 0.15) / 14.0
+		var t1 := (float(f) + 0.85) / 14.0
+		var a := _rope_at(p0, mid, p1, t0)
+		var b := _rope_at(p0, mid, p1, t1)
+		Art.fill(ci, PackedVector2Array([a, b, (a + b) * 0.5 + Vector2(0, 18)]), cols[f % cols.size()], 2.0)
+	# 宝藏堆：光晕 + 宝箱 + 琥珀 + 火
+	ci.draw_circle(Vector2(160, 330), 80.0, Color(1.0, 0.93, 0.6, 0.30))
+	ci.draw_circle(Vector2(160, 330), 54.0, Color(1.0, 0.96, 0.75, 0.30))
+	ci.draw_colored_polygon(Art.ell(Vector2(165, 404), Vector2(120, 18), 21, 0.0, 18), Color(0.28, 0.14, 0.05, 0.30))
+	Art.item(ci, "chest_1", Vector2(160, 326), 170)
+	var spots := [Vector2(62, 392), Vector2(98, 404), Vector2(232, 402), Vector2(262, 390), Vector2(80, 360)]
+	for k in spots.size():
+		Art.item(ci, Art.AMBER_ICON, spots[k], 46.0 + (k % 2) * 8.0, true, -0.3 + k * 0.15)
+	Art.item(ci, "fire_4", Vector2(285, 334), 74)
+	for k in 5:
+		ci.draw_colored_polygon(Art.star_pts(Vector2(70 + Art.srnd(k) * 260, 270 + Art.srnd(k + 9) * 60), 9, 3.2, 4, k), Color("fff6cf"))
+	# 标题横幅
+	Paint.banner(ci, Rect2(50, 414, 332, 70), Art.CLAY)
+	# 右侧：卖点兽皮条（青色「大长老」小牌）+ 价签
+	var line := Rect2(414, 262, 264, 44)
+	ci.draw_colored_polygon(Art.rrect(line, 16, 125, 0.4), Color(Art.HIDE, 0.95))
+	Art.outline(ci, Art.rrect(line, 16, 125, 0.4), 2.5, Art.INK)
+	Sprites.draw(ci, "ev_pass_tab_2", Rect2(424, 270, 70, 28))
+	var tag := Rect2(470, 322, 160, 48)
 	Sprites.draw(ci, "pop_tag_base", tag)
-	Sprites.draw(ci, "pop_tag_fill", tag, Color("e9d8ff"))
-	Art.item(ci, "pack_1", Vector2(480, 286), 60)
+	Sprites.draw(ci, "pop_tag_fill", tag, Art.HIDE)
+	ci.draw_circle(Vector2(tag.position.x + 14, tag.get_center().y), 5.0, Art.INK)
+	ci.draw_circle(Vector2(tag.position.x + 14, tag.get_center().y), 3.0, Art.ROPE)
+
+## 光芒端点收进框内（夹到矩形里，三角形就不会伸出框）
+static func _clamp_in(v: Vector2, r: Rect2) -> Vector2:
+	return Vector2(clampf(v.x, r.position.x, r.end.x), clampf(v.y, r.position.y, r.end.y))
+
+## 彩旗绳上的点：两段直线 p0→mid→p1，t 从 0 到 1
+static func _rope_at(p0: Vector2, mid: Vector2, p1: Vector2, t: float) -> Vector2:
+	return p0.lerp(mid, t * 2.0) if t < 0.5 else mid.lerp(p1, t * 2.0 - 1.0)
 
 static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, hot: bool) -> void:
 	UI.box(parent, r, func(ci, sz):
@@ -442,32 +471,6 @@ static func _store_card(parent: Control, r: Rect2, d: Dictionary, key: String, h
 	b.pressed.connect(func():
 		var origin: Vector2 = b.get_global_rect().get_center() + Vector2(0, -110)
 		if await ItemPopups._buy_offer(str(d["id"]), {"price": int(d["price"]), "key": key, "deal": hot}, origin):
-			refresh.call())
-
-## 不那那小摊的一格：样子同热卖卡片，换成浅蓝底、价格按钮用不那那图标
-
-static func _shell_card(parent: Control, r: Rect2, d: Dictionary, key: String) -> void:
-	UI.box(parent, r, func(ci, sz):
-		_card20(ci, sz, Color("6f9fb8"))
-		Sprites.draw(ci, "pop_inner14", Rect2(10, 10, sz.x - 20, sz.y - 86), Color("eef6f2"))
-		Art.item(ci, d["id"], Vector2(sz.x * 0.5, 82), 112))
-	UI.hit(parent, Rect2(r.position + Vector2(8, 8), Vector2(r.size.x - 16, 114)), func(): G.main.open("item_info", str(d["id"])))
-	var left_lbl := UI.lbl(parent, "", Rect2(r.position.x, r.position.y + 128, r.size.x, 34), 22, Color("2f4f60"))
-	var b := UI.btn(parent, Rect2(r.position.x + 22, r.position.y + 178, r.size.x - 44, 64), "", "green", Callable(), 30)
-	var refresh := func():
-		G.rules.clock.check_shell_period()
-		var left: int = int(d["stock"]) - int(G.shell_bought.get(key, 0))
-		left_lbl.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.shoppopups.c11a6c09ae8a"), left))
-		b.text = TextCatalog.resolve(str(int(d["price"])) if left > 0 else TextCatalog.source("ui.shoppopups.0f3d8755dbc5"))
-		b.res = "shell_2" if left > 0 else ""
-		b.style = "green" if left > 0 and PriceBook.ready() else "grey"
-		b.enabled = left > 0 and PriceBook.ready()
-		b.queue_redraw()
-	refresh.call()
-	Popups.live(b, G.changed, refresh)
-	b.pressed.connect(func():
-		var origin: Vector2 = b.get_global_rect().get_center() + Vector2(0, -110)
-		if await ItemPopups._buy_offer(str(d["id"]), ItemPopups._shell_offer(key), origin):
 			refresh.call())
 
 ## 集市里直接摆出来的两档补给（服务器目录里的商品号）

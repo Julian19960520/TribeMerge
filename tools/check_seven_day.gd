@@ -12,6 +12,9 @@ func run() -> void:
 	g.seen_tutorial = true
 	g.tutorial_on = false
 	load("res://scripts/events/ActivityRules.gd").initialize()
+	tasks.login("2026-10-31")
+	check(not tasks.state()["stats"].has("login_days"),"login days are not counted before seven-day tasks unlock")
+	g.level = Data.feature_level("seven")
 	tasks.login("2026-11-01")
 	tasks.login("2026-11-01")
 	check(tasks.state()["stats"]["login_days"] == 1,"same login day counts once")
@@ -91,14 +94,9 @@ func run() -> void:
 	g.seven_day = {}
 	g.load_game()
 	check(g.seven_day == saved,"all progress and claims survive reload")
-	g.shell_bought = {"shell_0":3,"shell_1":3,"shell_5":2}
-	g.rules.clock.check_shell_period()
-	var amber: int = g.amber
-	check((await g.refresh_shell()).get("ok",false) and g.amber == amber - 5 and g.shell_bought.is_empty(),"5 amber refresh replenishes every shell shop slot")
-	g.amber = 0
-	g.shell_bought = {"shell_0":3}
-	check(not (await g.refresh_shell()).get("ok",false) and not g.shell_bought.is_empty(),"failed refresh preserves stock")
 	# Force probability branches through configuration; no random test flakiness.
+	# 合成掉落按 1 级算（高等级会多出沙漏等掉落，占掉最近的空格）；后面再恢复到七日任务开放等级
+	g.level = 1
 	for k in g.board.size(): g.board[k] = {"id":"","lock":0}
 	g.board[0]["id"] = "fruit_1"
 	g.board[1]["id"] = "fruit_1"
@@ -120,6 +118,7 @@ func run() -> void:
 	g.try_drop(4,5)
 	check(g.board[4]["id"] == "","zero configured probability yields no bonus")
 	data.RULES = original_rules
+	g.level = data.feature_level("seven")
 	var main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	main.show_screen("board",true)

@@ -44,6 +44,8 @@ var _poll := 0.0
 var _armed_at := 0
 var _hole_press := false
 var _over_popup := false
+## 下一次 show_once 显示在弹窗上面（新活动开放时，先弹活动面板再在面板上讲）
+var _force_over := false
 
 func _ready() -> void:
 	size = Vector2(720, 1480)
@@ -98,12 +100,13 @@ func show_once(key: String, text: String, target: Callable = Callable(), then: C
 		return false
 	G.tips_seen[key] = true
 	_key = key
-	_over_popup = key == "energy_free"
+	_over_popup = key == "energy_free" or _force_over
+	_force_over = false
 	_target = target
 	_then = then
 	_until = until
 	_drag = drag
-	_label.text = UI.resource_rich(Voice.text("tips", key, text))
+	IconText.set_rich(_label, UI.resource_rich(Voice.text("tips", key, text)))
 	_t = 0.0
 	_armed_at = Time.get_ticks_msec() + 350
 	var host := get_parent()
@@ -316,6 +319,111 @@ func _auto() -> void:
 	if bs._hammer_btn != null and bs._hammer_btn.visible and show_once("build", TextCatalog.source("ui.tips.801dfe512415"),
 			func(): return bs._hammer_btn.get_global_rect()):
 		return
+	if _gen_steps(6, "carve", TextCatalog.source("names.chains.cba4a159fc2b"), TextCatalog.source("names.chains.e327de5aac1f"), TextCatalog.source("names.chains.c13396e297b0")):
+		return
+	if _gen_steps(11, "anvil", TextCatalog.source("names.chains.a1f3622ce7b9"), TextCatalog.source("names.chains.c2706b8deb1f"), TextCatalog.source("names.chains.1a4e1d4d4469")):
+		return
+	if _bubble_tip():
+		return
+	if _feature_intros():
+		return
+
+# ---------------------------------------------------------------- 6~12 级：竞品逐级教的内容
+
+## 生产器合到 5 级出副产物（竞品 6 级的饮料机、11 级的渔具）：
+## 奖励的 3 级 + 藤蔓里的 3 级 → 4 级，再和已有的 4 级 → 5 级，点一下出新东西。
+func _gen_steps(min_level: int, gen: String, gen_name: String, main_name: String, sub_name: String) -> bool:
+	if G.level < min_level:
+		return false
+	var p3 := _gen_pair(gen + "_3")
+	if p3.x >= 0 and show_once("%s_merge3" % gen, TextCatalog.fill(TextCatalog.source("ui.tips.b598283fb668"), [gen_name, main_name, sub_name]),
+			func(): var p := _gen_pair(gen + "_3"); return [_cell_rect(p.x), _cell_rect(p.y)],
+			Callable(), func(): return _gen_pair(gen + "_3").x >= 0, true):
+		return true
+	var p4 := _gen_pair(gen + "_4")
+	if p4.x >= 0 and seen("%s_merge3" % gen) and show_once("%s_merge5" % gen, TextCatalog.source("ui.tips.c3a657c0748c"),
+			func(): var p := _gen_pair(gen + "_4"); return [_cell_rect(p.x), _cell_rect(p.y)],
+			Callable(), func(): return _gen_pair(gen + "_4").x >= 0, true):
+		return true
+	var g5 := _find_id(gen + "_5")
+	if g5 >= 0 and seen("%s_merge5" % gen) and show_once("%s_tap5" % gen, TextCatalog.fill(TextCatalog.source("ui.tips.cdead436e45f"), [gen_name, main_name, sub_name]),
+			func(): return _cell_rect(g5)):
+		return true
+	return false
+
+## 同一种生产器：一个摆开的 + 藤蔓里的一个优先，否则两个摆开的
+func _gen_pair(id: String) -> Vector2i:
+	var free: Array[int] = []
+	var vine := -1
+	for i in G.board.size():
+		if str(G.board[i]["id"]) != id: continue
+		var lock := int(G.board[i]["lock"])
+		if lock == 0: free.append(i)
+		elif lock == 1 and vine < 0: vine = i
+	if not free.is_empty() and vine >= 0:
+		return Vector2i(free[0], vine)
+	return Vector2i(free[0], free[1]) if free.size() >= 2 else Vector2i(-1, -1)
+
+## 第一个合成泡泡（免费，见 BoardRules._maybe_spawn_bubble）：圈出来让玩家点开
+func _bubble_tip() -> bool:
+	for i in G.board.size():
+		if G.rules.board.is_merge_bubble(i) and int(G.board[i]["bubble"].get("price", 1)) <= 0:
+			var at := i
+			return show_once("bubble_free", TextCatalog.source("ui.tips.d02e0f576b40"), func(): return _cell_rect(at))
+	return false
+
+## 新内容开放（7 集市、8 卡册、9 七日任务、10 七日签到、11 化石、12 双人竞速）：
+## 先弹出它的面板，再在面板上一句一句讲，点任意处继续。
+func _feature_intros() -> bool:
+	# 按真实等级：GM 全开活动时不一个个弹
+	if G.level >= Data.feature_level("shop") and _intro("intro_shop", "store", [
+			TextCatalog.source("ui.tips.8a150aa4be15"),
+			TextCatalog.source("ui.tips.7f51eb882472")]):
+		return true
+	if G.level >= Data.CARD_LEVEL and _intro("intro_cards", "event", [
+			TextCatalog.source("ui.tips.2d4811b5fc2e"),
+			TextCatalog.source("ui.tips.b68560f542e3")]):
+		return true
+	if G.level >= Data.feature_level("seven") and _intro("intro_seven", "seven_day", [
+			TextCatalog.source("ui.tips.4f9a53a9364c"),
+			TextCatalog.source("ui.tips.7d5aad110ead")]):
+		return true
+	if G.level >= Data.feature_level("login") and LoginGift.visible() and _intro("intro_login", "login_gift", [
+			TextCatalog.source("ui.tips.bd9d4b635eb0"),
+			TextCatalog.source("ui.tips.3645567dc56d")]):
+		G.tips_seen["login_day"] = str(G.rules.clock.today())
+		return true
+	# 开放以后每天第一次回到棋盘、今天还没签到：自动弹签到面板
+	if G.level >= Data.feature_level("login") and LoginGift.can_claim() and str(G.tips_seen.get("login_day", "")) != str(G.rules.clock.today()):
+		G.tips_seen["login_day"] = str(G.rules.clock.today())
+		G.main.open("login_gift")
+		return true
+	if G.level >= int(FossilDig.config()["unlock_level"]) and FossilDig.visible() and _intro("intro_fossil", "fossil", [
+			TextCatalog.source("ui.tips.b6532ca45ac8"),
+			TextCatalog.source("ui.tips.1f6f9627cf15")]):
+		return true
+	if G.level >= int(DuelRace.config()["unlock_level"]) and DuelRace.visible() and _intro("intro_duel", "duel", [
+			TextCatalog.source("ui.tips.1c093997cbc0"),
+			TextCatalog.source("ui.tips.f3e7b4c278f4"),
+			TextCatalog.source("ui.tips.c36240bb0816")]):
+		return true
+	return false
+
+func _intro(key: String, popup: String, lines: Array) -> bool:
+	if seen(key):
+		return false
+	G.tips_seen[key] = true
+	if G.main.open(popup) == null:
+		return true
+	_intro_line(key, lines, 0)
+	return true
+
+func _intro_line(key: String, lines: Array, k: int) -> void:
+	if k >= lines.size() or not is_instance_valid(G.main) or G.main.popup_layer.get_child_count() == 0:
+		return
+	_force_over = true
+	if not show_once("%s_%d" % [key, k], str(lines[k]), Callable(), func(): _intro_line(key, lines, k + 1)):
+		_force_over = false
 
 ## 拿出来的半编草篓和藤蔓上那只；藤蔓那只不在了就找两只摆开的
 func _merge3_pair() -> Vector2i:

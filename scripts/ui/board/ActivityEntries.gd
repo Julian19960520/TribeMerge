@@ -5,6 +5,7 @@ const VIEWS := {
 	"race": preload("res://scripts/ui/RaceEntry.gd"),
 	"merge": preload("res://scripts/ui/MergeEventEntry.gd"),
 	"seven": preload("res://scripts/ui/SevenDayEntry.gd"),
+	"login": preload("res://scripts/ui/LoginGiftEntry.gd"),
 	"duel": preload("res://scripts/ui/DuelEntry.gd"),
 	"tiger": preload("res://scripts/ui/TigerEscapeEntry.gd"),
 	"fossil": preload("res://scripts/ui/FossilDigEntry.gd"),

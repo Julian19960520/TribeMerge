@@ -27,11 +27,11 @@ func _validate() -> void:
 		"unlocks": {"levels": TYPE_INT, "rows": TYPE_ARRAY},
 		"card_packs": {"cards_per_pack": TYPE_INT, "card_stars_by_slot": TYPE_ARRAY, "packs": TYPE_ARRAY, "duplicate_stars_by_rarity": TYPE_ARRAY, "star_exchange": TYPE_ARRAY},
 		"seven_day": {"id": TYPE_STRING, "days": TYPE_ARRAY, "milestones": TYPE_ARRAY},
+		"login_gift": {"days": TYPE_ARRAY},
 		"merge_events": {"version": TYPE_INT, "seasons": TYPE_ARRAY},
 		"duel_race": {"order_thresholds": TYPE_ARRAY, "order_points": TYPE_ARRAY, "opponent_seconds": TYPE_ARRAY, "milestones": TYPE_ARRAY},
 		"tiger_escape": {"stages": TYPE_ARRAY, "bots": TYPE_DICTIONARY},
 		"fossil_dig": {"shapes": TYPE_ARRAY, "milestones": TYPE_ARRAY},
-		"store_shell": {"items": TYPE_ARRAY, "refresh_hours": TYPE_INT, "refresh_amber": TYPE_INT},
 		"special_chests": {"orderbox": TYPE_DICTIONARY, "premiumbox": TYPE_DICTIONARY, "energybox": TYPE_DICTIONARY, "amberbox": TYPE_DICTIONARY, "chest": TYPE_DICTIONARY},
 		"offers": {"spree": TYPE_DICTIONARY, "energy": TYPE_DICTIONARY},
 		"gift_chain": {"cycle_days": TYPE_INT, "anchor_weekday": TYPE_INT, "visible": TYPE_INT, "steps": TYPE_ARRAY},
@@ -294,14 +294,6 @@ func _progression() -> void:
 			_number(row.price, name + ".price", 0, INF, true)
 			_positive(row.stock, name + ".stock")
 			if name == "daily_deals": _id(row.get("key"), name + ".key", deal_keys)
-	if _fields(docs.store_shell, "store_shell", {"items": TYPE_ARRAY, "refresh_hours": TYPE_INT, "refresh_amber": TYPE_INT}):
-		_positive(docs.store_shell.refresh_hours, "store_shell.refresh_hours")
-		_positive(docs.store_shell.refresh_amber, "store_shell.refresh_amber")
-		for row in docs.store_shell["items"]:
-			if _fields(row, "store_shell.items", {"id": TYPE_STRING, "price": TYPE_INT, "stock": TYPE_INT}):
-				_item(row.id, "store_shell.items.id")
-				_number(row.price, "store_shell.items.price", 0, INF, true)
-				_positive(row.stock, "store_shell.items.stock")
 	var previous := 0
 	for row in docs.levels.get("levels", []):
 		if not _fields(row, "levels.levels", {"level": TYPE_INT, "rewards": TYPE_ARRAY}): continue
@@ -332,6 +324,11 @@ func _progression() -> void:
 				for value in row[field]:
 					if not value is String or str(value) == "": _error("albums." + field, "entries must be nonempty strings")
 					elif field == "art" and not str(value).begins_with("res://assets/cards/"): _error("albums.art", "expected a card asset resource path")
+	var album_rewards: Array = docs.replay_economy.get("album_reward", [])
+	if album_rewards.size() < docs.albums.size(): _error("replay_economy.album_reward", "one reward list required per album")
+	for index in album_rewards.size():
+		var row: Variant = album_rewards[index]
+		if not row is Array or row.is_empty() or not row[0] is Array: _error("replay_economy.album_reward[%d]" % index, "expected a reward list")
 	var packs: Dictionary = docs.card_packs
 	if _fields(packs, "card_packs", {"cards_per_pack": TYPE_INT, "card_stars_by_slot": TYPE_ARRAY, "packs": TYPE_ARRAY, "duplicate_stars_by_rarity": TYPE_ARRAY, "star_exchange": TYPE_ARRAY}):
 		_positive(packs.cards_per_pack, "card_packs.cards_per_pack")
@@ -465,6 +462,9 @@ func _events() -> void:
 					_id(task.id, "seven_day.tasks.id", task_ids)
 					_positive(task.target, "seven_day.tasks.target")
 					_positive(task.points, "seven_day.tasks.points")
+	var login: Array = docs.login_gift.get("days", [])
+	if login.size() != 7: _error("login_gift.days", "expected seven days")
+	for index in login.size(): _rewards(login[index], "login_gift.days[%d]" % index)
 	for row in docs.fossil_dig.get("shapes", []):
 		if _fields(row, "fossil_dig.shapes", {"w": TYPE_INT, "h": TYPE_INT, "kind": TYPE_STRING, "name": TYPE_STRING}):
 			_number(row.w, "fossil_dig.shapes.w", 1, 12, true)

@@ -33,7 +33,7 @@ const BEFORE_TUTORIAL_FIX_RULES := "1bbaf673be6810105f7e3a4fa0b15c5d3b9abd57b231
 const BEFORE_TUTORIAL_SITE_RULES := "fe667ea176bc41986b36eebe4ff6187becd564e8e62c8608434a345ec6cffbd8"
 const BEFORE_ONBOARDING_RULES := "0db23ef076a26fd053b2606408cef60d84fcac0a74c017095eabb493e306eee9"
 const BEFORE_STORAGE_ROW_RULES := "b40bce3652724254881454ff4f1e64944a2b5184fa3062481df01afffe1622a3"
-const HUD_FIELDS := ["level", "xp", "energy", "shells", "amber", "rush", "energy_stamp", "boost", "boost_gm", "inv", "inv_chests", "inv_cap", "discovered", "book_claimed", "builds", "cards", "card_stars", "stash", "tokens", "token_claimed", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season", "hot_bought", "hot_revision", "deals_bought", "deals_day", "shell_bought", "shell_period", "energy_buys", "offers", "ufo_offer", "gm_activities", "local_race", "duel_race", "tiger_escape", "fossil_dig"]
+const HUD_FIELDS := ["level", "xp", "energy", "shells", "amber", "rush", "energy_stamp", "boost", "boost_gm", "inv", "inv_chests", "inv_cap", "discovered", "book_claimed", "builds", "cards", "card_stars", "stash", "tokens", "token_claimed", "pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season", "hot_bought", "hot_revision", "deals_bought", "deals_day", "energy_buys", "offers", "ufo_offer", "gm_activities", "local_race", "duel_race", "tiger_escape", "fossil_dig"]
 var active := false
 var executing := false
 var worker := false
@@ -438,6 +438,7 @@ func _notify(before: Dictionary, after: Dictionary) -> void:
 			break
 	if before.get("merge_events") != after.get("merge_events"): G.merge_event_changed.emit()
 	if before.get("seven_day") != after.get("seven_day"): G.seven_day_changed.emit()
+	if before.get("login_gift") != after.get("login_gift"): G.login_gift_changed.emit()
 
 func notify_restored() -> void:
 	G.board_changed.emit()
@@ -445,6 +446,7 @@ func notify_restored() -> void:
 	G.changed.emit()
 	G.merge_event_changed.emit()
 	G.seven_day_changed.emit()
+	G.login_gift_changed.emit()
 
 func advance() -> void:
 	_reducer.advance()

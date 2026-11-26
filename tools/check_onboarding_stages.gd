@@ -201,14 +201,16 @@ func run() -> void:
 	var Rewards = load("res://scripts/Rewards.gd")
 	var seven_def: Dictionary = {}
 	for d in ActivityRules.registry(): if str(d["id"]) == "seven": seven_def = d
-	for lv in [1, 2, 3]:
+	# 竞品 1~13 级：9 级七日任务、10 级七日签到、11 级化石、12 级双人竞速，之前棋盘上没有活动入口
+	var seven_at := Data.feature_level("seven")
+	for lv in [1, 3, seven_at - 1, seven_at]:
 		_fresh(replay, game, lv)
 		var shown: Array = []
 		for d in ActivityRules.board_entries():
 			if d["visible"].call(): shown.append(str(d["id"]))
-		if lv < 3: check(shown.is_empty(), "%d 级棋盘上没有任何活动入口（%s）" % [lv, shown])
-		else: check(seven_def["visible"].call(), "3 级开放七日任务")
-	check(Data.level_unlocks(3).has("新活动：七日任务") and Data.level_unlocks(7).has("新活动：恐龙化石"), "升级面板写出这一级新开的活动")
+		if lv < seven_at: check(shown.is_empty(), "%d 级棋盘上没有任何活动入口（%s）" % [lv, shown])
+		else: check(seven_def["visible"].call(), "%d 级开放七日任务" % seven_at)
+	check(Data.level_unlocks(seven_at).has("新活动：七日任务") and Data.level_unlocks(11).has("新活动：恐龙化石") and Data.level_unlocks(10).has("新活动：七日签到"), "升级面板写出这一级新开的活动")
 	_fresh(replay, game, 2)
 	game.ufo_offer = {}
 	ActivityRules.initialize()

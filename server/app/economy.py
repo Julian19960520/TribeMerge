@@ -185,12 +185,9 @@ def build(market: str = "CN", data_dir: str | Path | None = None) -> dict:
     docs["amber_packs"] = [{"n": amount, "price": money(minor, regional), "price_minor": minor, "currency": regional["currency"]} for minor, amount in regional["packs"]]
     docs["rules"].update(energy_prices=p["energy"]["prices"], energy_amount=p["energy"]["amount"], energy_price=p["energy"]["prices"][0], energy_price_max=p["energy"]["prices"][-1], energy_price_step=0, rush_sec=p["sand"]["seconds_per_unit"])
     docs["rules"].update(storage_expand_price=p["storage"]["initial_price"], storage_expand_step=p["storage"]["row_step"], hot_refresh_price=p["refresh"]["hot"])
-    docs["store_shell"]["refresh_amber"] = p["refresh"]["shell"]
     for deal in docs["daily_deals"]:
-        if deal["key"] == "deal_energybox": deal["price"] = p["daily_energy_box_shell_price"]
-        if deal["key"] in ("deal_member_1", "deal_member_2"): deal["rewards"] = [["amber_4", p["member_daily_amber"]]]
+        if deal["key"] == "deal_energybox": deal["price"] = p["daily_energy_box_amber_price"]
     docs["store"] = [dict(row, price=item_values[row["id"]]["amber"]) for row in docs["store"]]
-    docs["store_shell"]["items"] = [dict(row, price=math.ceil(item_values[row["id"]]["difficulty"] * 4)) for row in docs["store_shell"]["items"]]
     for row in docs["pass"]["purchase"].values():
         cash_fields(row)
     for kind, offer in docs["offers"].items():
@@ -267,7 +264,7 @@ def build(market: str = "CN", data_dir: str | Path | None = None) -> dict:
     difference = docs["pass"]["purchase"]["super_vip"]["price_minor"] - docs["pass"]["purchase"]["vip"]["price_minor"]
     products["pass:upgrade"] = {"price_minor": difference, "price_str": money(difference, regional)}
     products["ufo"] = {"price_minor": docs["ufo_offer"]["price_minor"], "price_str": docs["ufo_offer"]["price_str"]}
-    selected = ["builds", "card_packs", "daily_deals", "random_orders", "dishes", "rules", "store", "store_shell", "amber_packs", "pass", "offers", "gift_chain", "ufo_offer", *p["reward_budgets"]]
+    selected = ["builds", "card_packs", "daily_deals", "random_orders", "dishes", "rules", "store", "amber_packs", "pass", "offers", "gift_chain", "ufo_offer", *p["reward_budgets"]]
     result = {"schema": 1, "market": market, "currency": regional["currency"], "symbol": regional["symbol"], "items": item_values, "units": p["units"], "energy": p["energy"], "sand": p["sand"], "shell": p["shell"], "orders": p["orders"], "products": products, "reward_audit": audits, "documents": {key: docs[key] for key in selected}}
     result["resource_products"] = [{"product":"shell", "kind":"shell", "id":"shell_2", "amount":p["shell"]["amount"], "price":p["shell"]["price"], "rewards":[["shell_2",p["shell"]["amount"]]]}]
     for i, (seconds, price) in enumerate(p["sand"]["packs"]):

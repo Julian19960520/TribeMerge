@@ -30,13 +30,19 @@ func bubble_left(i: int) -> int:
 func _maybe_spawn_bubble(id: String, near: int) -> void:
 	# 新手阶段（引导和之后几级）不出气泡，到 merge_bubble.min_level 级才开始；只有高级普通物品才有（Data.bubble_ok）。
 	var rule = Data.bubble_rule()
-	if state.tutorial_on or state.level < int(rule.get("min_level", 5)) or not Data.bubble_ok(id) or find_empty_near(near) < 0:
+	if state.tutorial_on or state.level < int(rule.get("min_level", 5)) or find_empty_near(near) < 0:
+		return
+	# 竞品 6 级：订单要的东西难合，第一次冒出泡泡，正好是订单那条链上的，免费送一次。
+	# 第一个泡泡不看稀有度和概率：合出的物品所在链有订单要更高级的就出，价格 0。
+	var first: bool = not state.firsts.has("bubble") and _order_wants_above(id)
+	if not first and not Data.bubble_ok(id):
 		return
 	var offer: Dictionary
-	if context.random_for("bubbles").randf() >= float(rule.get("chance", 0.1)):
+	if not first and context.random_for("bubbles").randf() >= float(rule.get("chance", 0.1)):
 		return
 	offer = {"uid": "%s-%s" % [int(context.now()), context.random_for("bubbles").randi()], "item": id,
-		"expires": context.now() + float(rule.get("seconds", 60)), "price": Data.bubble_price(id)}
+		"expires": context.now() + float(rule.get("seconds", 60)) * (3.0 if first else 1.0), "price": 0 if first else Data.bubble_price(id)}
+	if first: state.firsts["bubble"] = true
 	if state.tutorial_on or offer.is_empty() or float(offer.get("expires", 0)) <= context.now():
 		return
 	var at = find_empty_near(near)
@@ -46,6 +52,17 @@ func _maybe_spawn_bubble(id: String, near: int) -> void:
 	state.dirty()
 	state.board_changed.emit()
 	state.present("board_spawn", {"origin": near, "to": at, "id": id})
+
+## 有订单要这条链上比 id 更高级的物品（第一个免费泡泡只在这时出，送的那件拿去合正好够用）
+func _order_wants_above(id: String) -> bool:
+	if Data.type_of(id) != "item" or Data.is_dish(id) or Data.lv(id) < 2:
+		return false
+	var ch := Data.chain(id)
+	for o in state.orders:
+		for want in o.get("items", []):
+			if Data.chain(str(want)) == ch and Data.lv(str(want)) > Data.lv(id):
+				return true
+	return false
 
 func _tick_bubbles() -> void:
 	var expired = false

@@ -29,20 +29,6 @@ func secs_to_midnight() -> int:
 func today() -> String:
 	return Time.get_date_string_from_unix_time(int(context.now()) + 28800)
 
-func shell_period_now() -> String:
-	return str(int((context.now() + 8 * 3600) / float(Data.STORE_SHELL_HOURS * 3600)))
-
-func shell_secs_left() -> int:
-	var span = Data.STORE_SHELL_HOURS * 3600
-	return span - int(context.now() + 8 * 3600) % span
-
-## shell_period 形如「周期号」或「周期号:补货次数」：花琥珀补货时只加后缀，跨周期才清零
-func check_shell_period() -> void:
-	var p = shell_period_now()
-	if str(state.shell_period).get_slice(":", 0) != p:
-		state.shell_period = p
-		state.shell_bought = {}
-
 func _pass_season_span() -> int:
 	return maxi(1, int(Data.PASS_SEASON.get("days", 35))) * 86400
 

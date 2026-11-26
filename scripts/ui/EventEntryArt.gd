@@ -17,6 +17,7 @@ const Banana := preload("res://scripts/ui/Banana.gd")
 
 const BAR_W := 88.0
 const BAR_H := 20.0
+const PILL_FILL := Color("5c3a1e")
 
 static func paint(ci: CanvasItem, sz: Vector2, kind: String, info := {}, locked := false, dot := false, bump := 0.0) -> void:
 	var c := Vector2(sz.x * 0.5, ground(sz))
@@ -63,6 +64,10 @@ static func footer(ci: CanvasItem, sz: Vector2, info: Dictionary) -> void:
 	var w := f.get_string_size(TextCatalog.resolve(line), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var gw := 22.0 if clock else 0.0
 	var x0 := sz.x * 0.5 - (w + gw) * 0.5
+	# 时间 / 解锁等级垫一块深棕胶囊，和进度条、主角经验条一个样式；底边压在格子底线上
+	var pill := Rect2(x0 - 9.0, sz.y - 26.0, w + gw + 18.0, 24.0)
+	Sprites.draw(ci, "board_epill_ink", pill)
+	Sprites.draw(ci, "board_epill_fill", pill, PILL_FILL)
 	if clock: Paint.glyph(ci, "clock", Vector2(x0 + 8, sz.y - 12), 0.8)
 	text(ci, line, Vector2(x0 + gw + w * 0.5, sz.y - 6), fs, Color("fff0c5"), 5)
 

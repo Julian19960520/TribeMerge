@@ -224,11 +224,9 @@
     "row_step": 10
   },
   "refresh": {
-    "hot": 10,
-    "shell": 5
+    "hot": 10
   },
-  "daily_energy_box_shell_price": 300,
-  "member_daily_amber": 100,
+  "daily_energy_box_amber_price": 10,
   "bubble": {
     "price_k": 0.6,
     "price_exp": 0.8,

@@ -28,8 +28,8 @@ static func box(parent: Node, r: Rect2, painter: Callable, boil: bool = true) ->
 
 static func lbl(parent: Node, text: String, r: Rect2, fs: int = 26, col: Color = Art.INK, align: int = HORIZONTAL_ALIGNMENT_CENTER,
 		outline: int = 0, ocol: Color = Art.INK, title: bool = false) -> Label:
-	var l := Label.new()
-	l.text = resource_text(text)
+	var l := IconLabel.new()
+	l.set_icon_text(resource_text(text))
 	l.position = r.position
 	l.size = r.size
 	l.horizontal_alignment = align

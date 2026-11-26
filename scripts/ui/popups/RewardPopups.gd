@@ -551,32 +551,115 @@ static func _li_bar() -> Rect2:
 
 # ---------------------------------------------------------------- 丰收祭活动
 
-## 新手引导里升完级：一张小木牌告诉玩家现在几级、声望攒到哪了，点任意处继续。
+## 新手引导里升完级：不盖面板。棋盘压暗，只露出左上角主角；主角冒气泡说「完成差事，攒经验升级！」，
+## 下面的经验条一闪一闪。点任意处继续，气泡化成几颗星星飞到带经验的差事上。
 static func orders_start() -> PopupBase:
 	var p := PopupBase.new()
-	p.dim_alpha = 0.72
+	p.dim_alpha = 0.0
 	p.set_meta("reward_screen", true)
-	var need: int = maxi(1, G.rules.progression.xp_need())
-	var r := Rect2(90, 560, 540, 330)
-	var br := Rect2(160, r.position.y - 48, 400, 96)
-	var badge := Vector2(r.position.x + 116, r.position.y + 156)
-	var bar := Rect2(r.position.x + 210, r.position.y + 150, 290, 44)
-	UI.box(p.box, FULL, func(ci, _sz):
-		Paint.panel(ci, r)
-		Paint.banner(ci, br, RED_CLOTH)
-		Paint.level_badge(ci, badge, 150)
-		Paint.bar(ci, bar, float(G.xp) / float(need), Art.MOSS))
-	UI.title(p.box, TextCatalog.source("ui.rewardpopups.14435c01c92c"), Rect2(br.position.x + 30, br.position.y + 4, br.size.x - 60, br.size.y - 10), 44, CREAM)
-	UI.lbl(p.box, str(G.level), Rect2(badge.x - 60, badge.y - 40, 120, 80), 52, CREAM, HORIZONTAL_ALIGNMENT_CENTER, 10, Art.INK, true)
-	UI.lbl(p.box, TextCatalog.fill(TextCatalog.source("ui.rewardpopups.cfd127110aa7"), G.level), Rect2(bar.position.x, bar.position.y - 50, bar.size.x, 44), 26, Color("6b4a2a"), HORIZONTAL_ALIGNMENT_LEFT)
-	UI.lbl(p.box, "%d/%d" % [G.xp, need], bar, 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
-	UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.807d2fcf1529"), Rect2(r.position.x + 30, r.position.y + 222, r.size.x - 60, 44), 24, Color("7a5a3a"))
-	var hint := UI.lbl(p.box, TextCatalog.source("ui.guide.b0daab78b94a"), Rect2(0, r.end.y + 34, 720, 50), 28, GOLD, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
+	var st := {"hero": Rect2(0, 230, 142, 226), "bubble": Rect2(), "bar": Rect2()}
+	# 压暗层：四块拼成，中间挖出主角那一块；放在 p 上不跟着 box 缩放弹出，自己淡入淡出
+	var shade := UI.box(p, FULL, func(ci, _sz):
+		var h: Rect2 = (st["hero"] as Rect2).grow(8)
+		var dark := Color(0.1, 0.05, 0.02, 0.62)
+		ci.draw_rect(Rect2(0, 0, 720, h.position.y), dark)
+		ci.draw_rect(Rect2(0, h.end.y, 720, 1480 - h.end.y), dark)
+		ci.draw_rect(Rect2(0, h.position.y, h.position.x, h.size.y), dark)
+		ci.draw_rect(Rect2(h.end.x, h.position.y, 720 - h.end.x, h.size.y), dark), false)
+	p.move_child(shade, 1)
+	shade.modulate.a = 0.0
+	shade.create_tween().tween_property(shade, "modulate:a", 1.0, 0.2)
+	# 经验条外圈的金色描边，呼吸闪烁
+	var ring := UI.box(p.box, FULL, func(ci, _sz):
+		var b: Rect2 = st["bar"]
+		ci.draw_rect(b.grow(6), Color(1, 0.86, 0.35, 0.9), false, 5.0)
+		ci.draw_rect(b.grow(12), Color(1, 0.86, 0.35, 0.35), false, 4.0), false)
+	var rtw := ring.create_tween().set_loops()
+	rtw.tween_property(ring, "modulate:a", 0.25, 0.55)
+	rtw.tween_property(ring, "modulate:a", 1.0, 0.55)
+	var bubble := UI.box(p.box, Rect2(), func(ci, sz): Paint.speech(ci, Rect2(Vector2.ZERO, sz), true), false)
+	var title := UI.lbl(bubble, TextCatalog.source("ui.rewardpopups.14435c01c92c"), Rect2(28, 16, 400, 44), 30, Art.INK, HORIZONTAL_ALIGNMENT_LEFT, 0, Art.INK, true)
+	var sub := UI.lbl(bubble, TextCatalog.source("ui.rewardpopups.807d2fcf1529"), Rect2(28, 64, 400, 34), 21, Color("7a5a3a"), HORIZONTAL_ALIGNMENT_LEFT)
+	var hint := UI.lbl(p.box, TextCatalog.source("ui.guide.b0daab78b94a"), Rect2(0, 0, 400, 44), 28, GOLD, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK)
 	var tw := hint.create_tween().set_loops()
 	tw.tween_property(hint, "modulate:a", 0.35, 0.7)
 	tw.tween_property(hint, "modulate:a", 1.0, 0.7)
-	p.on_tap = p.close
+	# 进树以后才知道主角在屏幕上的位置：按它摆气泡、描边和提示
+	p.ready.connect(func():
+		var inv := p.get_global_transform().affine_inverse()
+		var bs = G.main.board_screen if G.main != null else null
+		if bs != null and is_instance_valid(bs) and is_instance_valid(bs._base_btn) and bs._base_btn.is_visible_in_tree():
+			var g: Rect2 = bs._base_btn.get_global_rect()
+			var a: Vector2 = inv * g.position
+			var b: Vector2 = inv * g.end
+			st["hero"] = Rect2(a, b - a).abs()
+		var h: Rect2 = st["hero"]
+		var k := h.size.y / 226.0
+		st["bar"] = Rect2(h.position + Vector2(12, 176) * k, Vector2(h.size.x - 24 * k, 24 * k))
+		var bw := minf(470.0, 720.0 - 16.0 - (h.end.x + 26.0))
+		var br := Rect2(h.end.x + 26.0, h.position.y + h.size.y * 0.5 - 70.0, bw, 112)
+		st["bubble"] = br
+		bubble.position = br.position
+		bubble.size = br.size
+		title.size.x = bw - 50.0
+		sub.size.x = bw - 50.0
+		hint.position = Vector2(br.get_center().x - 200.0, br.end.y + 18.0)
+		# 从主角那里弹出来
+		p.box.pivot_offset = h.get_center())
+	p.on_tap = func():
+		_xp_stars_to_orders(p, st["bubble"])
+		shade.create_tween().tween_property(shade, "modulate:a", 0.0, 0.18)
+		p.close()
 	return p
+
+## 关掉升级提示时：气泡里飞出几颗经验星，各自落到一张带经验的差事卡右上角的经验牌上
+static func _xp_stars_to_orders(p: PopupBase, from: Rect2) -> void:
+	if G.main == null or not is_instance_valid(G.main.board_screen) or not p.is_inside_tree():
+		return
+	var bs = G.main.board_screen
+	var layer: Node = p.get_parent()
+	if layer == null or not (layer is CanvasItem):
+		return
+	var inv := (layer as CanvasItem).get_global_transform().affine_inverse()
+	var p_xf := p.get_global_transform()
+	var origin: Vector2 = inv * (p_xf * (from.get_center() if from.size.x > 1.0 else Vector2(200, 340)))
+	var targets: Array[Vector2] = []
+	for oi in G.orders.size():
+		var rw = G.orders[oi].get("rw", {})
+		if not (rw is Dictionary) or int(rw.get("xp", 0)) <= 0:
+			continue
+		var r: Rect2 = bs.order_card_rect(oi)
+		if r.size.x < 2.0:
+			continue
+		targets.append(inv * Vector2(r.end.x - 24.0, r.position.y + 22.0))
+	if targets.is_empty():
+		return
+	var count := clampi(targets.size(), 3, 6)
+	for n in count:
+		var to: Vector2 = targets[n % targets.size()]
+		var star := Control.new()
+		star.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		star.size = Vector2.ZERO
+		star.position = origin + Vector2((Art.srnd(n * 7 + 1) - 0.5) * 120.0, (Art.srnd(n * 7 + 2) - 0.5) * 50.0)
+		star.scale = Vector2(0.2, 0.2)
+		star.draw.connect(func():
+			star.draw_circle(Vector2.ZERO, 26.0, Color(1, 0.86, 0.4, 0.28))
+			Art.item(star, "xp_1", Vector2.ZERO, 44))
+		layer.add_child(star)
+		var start := star.position
+		var mid := (start + to) * 0.5 + Vector2(0, -140.0 - 40.0 * float(n % 2))
+		var delay := 0.06 * float(n)
+		var tw := star.create_tween()
+		tw.tween_interval(delay)
+		tw.tween_property(star, "scale", Vector2(1.15, 1.15), 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_method(func(t: float):
+			var u := 1.0 - t
+			star.position = u * u * start + 2.0 * u * t * mid + t * t * to
+			star.rotation = t * TAU * 0.5, 0.0, 1.0, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tw.tween_callback(func(): Sfx.play("pop", 1.0 + 0.08 * float(n)))
+		tw.tween_property(star, "scale", Vector2(1.6, 1.6), 0.08)
+		tw.parallel().tween_property(star, "modulate:a", 0.0, 0.22)
+		tw.tween_callback(star.queue_free)
 
 static func onboarding_rescue() -> PopupBase:
 	var p := PopupBase.new()

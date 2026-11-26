@@ -4,6 +4,7 @@ extends RefCounted
 var runtime: Node
 ## Only used while recovering the previous local version's verified journal.
 var legacy_album_rewards := false
+const LEGACY_ALBUM_REWARD := [["amber_3", 30], ["chest_1", 2]]
 var meta: Dictionary:
 	get: return runtime.meta
 	set(value): runtime.meta = value
@@ -132,7 +133,6 @@ func _dispatch(name: String, a: Dictionary):
 				return {"ok": true, "rewards": row["rewards"]}
 			return {"error": "unknown_product"}
 		"hot_refresh": return G.refresh_hot()
-		"shell_refresh": return G.refresh_shell()
 		"bubble_buy":
 			if not G.rules.board.is_merge_bubble(i): return {"error": TextCatalog.source("notice.boardrules.9d09918e4686")}
 			return G.buy_bubble(i)
@@ -152,6 +152,7 @@ func _dispatch(name: String, a: Dictionary):
 		"daily":
 			if str(a.get("key", "")) == "deal_ad": return {"error": TextCatalog.source("notice.dailyshop.b5b1db41e829")}
 			return DailyShop.claim(str(a.get("key", "")))
+		"login_gift": return LoginGift.claim()
 		"seven": return SevenDay.claim(str(a.get("id", "")), bool(a.get("stage", false)))
 		"choice_offer": return ChoiceChest.offer(i)
 		"choice": return ChoiceChest.choose(i, G.rules.board.cell_id(i) if valid_cell(i) else "", int(a.get("option", -1)))
@@ -328,18 +329,18 @@ func claim_album(album: int) -> Dictionary:
 	var key := "album:%d" % album
 	if bool(meta.get(key, false)): return {"error": TextCatalog.source("notice.reducer.583d60e4570b")}
 	if G.rules.progression.album_count(album) != Data.ALBUMS[album]["cards"].size(): return {"error": TextCatalog.source("notice.reducer.943f4ff65b4c")}
-	var rewards: Array = Data.ConfigFiles.shared("res://data/replay_economy.json")["album_reward"]
+	var rewards: Array = Data.album_reward(album)
+	if rewards.is_empty(): return {"error": TextCatalog.source("notice.reducer.131c409c2fcd")}
 	meta[key] = true
 	grant(rewards)
 	return {"rewards": rewards}
 
 func grant_album_rewards(complete_before: Array) -> void:
-	var economy: Dictionary = Data.ConfigFiles.shared("res://data/replay_economy.json")
 	for album in Data.ALBUMS.size():
 		var key := "album:%d" % album
 		if G.rules.progression.album_count(album) == 9 and not album in complete_before and not meta.get(key, false):
 			meta[key] = true
-			grant(economy["album_reward"])
+			grant(LEGACY_ALBUM_REWARD)
 
 func gm(args: Dictionary) -> Dictionary:
 	if not meta.get("allow_gm", false): return {"error": TextCatalog.source("notice.reducer.9fb5160ef90e")}

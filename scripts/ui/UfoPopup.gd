@@ -135,7 +135,7 @@ func _items() -> void:
 		# 下面一行小字：订单物品写名字，加赠的货币写到账多少
 		var cap := Data.name_of(id)
 		if Rewards.is_resource(id) and Data.value_of(id) > 0:
-			cap = "%d%s" % [Data.value_of(id), {"energy": TextCatalog.source("ui.choicechestpopup.d6d2aa99fd69"), "amber": TextCatalog.source("developer.amber_editor.089f621992ac"), "shell": TextCatalog.source("ui.choicechestpopup.2580a668b381"), "sand": TextCatalog.source("ui.choicechestpopup.d713a4862483")}.get(Rewards.kind(id), "")]
+			cap = "%d%s" % [Data.value_of(id), {"energy": TextCatalog.source("ui.choicechestpopup.d6d2aa99fd69"), "amber": TextCatalog.source("developer.amber_editor.089f621992ac"), "shell": "{banana}", "sand": TextCatalog.source("ui.choicechestpopup.d713a4862483")}.get(Rewards.kind(id), "")]
 		UI.lbl(box, cap, Rect2(cx - cell * 0.5, cy + tile * 0.5 + 4, cell, 28), 18, Color("6b3d1a") if is_bonus else Color("6b4a2a"))
 		if is_bonus:
 			var tg := UI.box(box, Rect2(cx - 30, cy - tile * 0.5 - 16, 60, 28), func(ci, sz):

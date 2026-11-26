@@ -94,6 +94,8 @@ func _satisfied(w: Dictionary) -> bool:
 	if w.has("produced_since"): return int(progress()["produced"]) - int(progress()["baseline"]) >= int(w["produced_since"])
 	if w.has("collected"): return int(progress()["collected"].get(str(w["collected"]), 0)) > 0
 	if w.has("ready"):
+		# An order handed in already counts as made; older saves can land here late.
+		if progress()["delivered"].has(str(w["ready"])): return true
 		var o := order(str(w["ready"]))
 		return not o.is_empty() and context.orders.order_ready(o)
 	if w.has("craft_ready"):

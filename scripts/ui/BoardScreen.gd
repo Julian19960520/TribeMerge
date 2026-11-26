@@ -10,6 +10,8 @@ const ORDER_X := 272.0
 const STASH_RECT := Rect2(6, 38, 118, 226)
 const BASE_RECT := Rect2(126, 38, 142, 226)
 const HAMMER_W := 130.0
+## 主角比基地格子往下坐一点：经验条底边和「建造」按钮、差事石板、活动入口落在同一条底线上
+const HERO_DROP := 20.0
 
 var _bubble_offer: Control
 var _bubble_title: Label
@@ -74,7 +76,7 @@ func _ready() -> void:
 	_orders.content.add_child(_stash_wrap)
 	_stash_btn = UI.hit(_stash_wrap, Rect2(Vector2.ZERO, STASH_RECT.size), _on_stash)
 	_stash_btn.extra = _paint_stash
-	_base_btn = UI.hit(_orders.content, BASE_RECT, func(): G.main.open("level"))
+	_base_btn = UI.hit(_orders.content, Rect2(BASE_RECT.position + Vector2(0, HERO_DROP), BASE_RECT.size), func(): G.main.open("level"))
 	_base_btn.extra = _paint_hero
 	_xp_lbl = UI.lbl(_base_btn, "", Rect2(26, 174, BASE_RECT.size.x - 34, 28), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	_hammer_btn = UI.hit(_orders.content, Rect2(ORDER_X, BASE_RECT.position.y, HAMMER_W, BASE_RECT.size.y), _on_hammer)
@@ -880,7 +882,10 @@ func _refresh_bubble_offer() -> void:
 	_bubble_offer.position = Vector2(clampf(p.x - OFFER_W * 0.5, 8, 720 - OFFER_W - 8), p.y - 48 - _bubble_offer.size.y)
 	_bubble_title.text = UI.resource_text(TextCatalog.fill(TextCatalog.source("ui.boardscreen.89a087698f45"), [Data.name_of(str(c["id"])), Data.lv(str(c["id"]))]))
 	_bubble_tick()
-	_bubble_buy.text = TextCatalog.resolve(TextCatalog.fill(TextCatalog.source("ui.boardscreen.d104bbd5c679"), int(c["bubble"]["price"])))
+	var price := int(c["bubble"]["price"])
+	# 第一个泡泡免费（BoardRules._maybe_spawn_bubble）：按钮写「免费领取」，不画琥珀
+	_bubble_buy.res = "" if price <= 0 else Art.AMBER_ICON
+	_bubble_buy.text = TextCatalog.resolve(TextCatalog.source("ui.giftchainpopup.e6bc71b83c80") if price <= 0 else TextCatalog.fill(TextCatalog.source("ui.boardscreen.d104bbd5c679"), price))
 	_bubble_buy.enabled = not G._bubble_busy.has(str(c["bubble"]["uid"]))
 	_bubble_buy.queue_redraw()
 	for child in _bubble_offer.get_children():
@@ -940,9 +945,9 @@ func _set_desc(text: String) -> void:
 		var fits := true
 		if manual:
 			for line in text.split("\n"):
-				fits = fits and f.get_string_size(TextCatalog.resolve(line), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= _info_desc.size.x - 4
+				fits = fits and f.get_string_size(TextCatalog.resolve(IconText.plain(line)), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= _info_desc.size.x - 4
 		else:
-			fits = f.get_multiline_string_size(TextCatalog.resolve(text), HORIZONTAL_ALIGNMENT_CENTER, _info_desc.size.x, fs).y <= _info_desc.size.y
+			fits = f.get_multiline_string_size(TextCatalog.resolve(IconText.plain(text)), HORIZONTAL_ALIGNMENT_CENTER, _info_desc.size.x, fs).y <= _info_desc.size.y
 		if fits:
 			break
 		fs -= 1

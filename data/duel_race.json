@@ -1,5 +1,5 @@
 {
-  "unlock_level": 9,
+  "unlock_level": 12,
   "_target": "本期渐进目标分按自己的胜场取档：0胜30分，每再赢1场升一档 30→60→100→150→210→280→360→400，最高400分；输了不升档。订单按预计消耗体力（order_points_rule）计分不封顶，合成按高/小概率物品阶梯规则（merge_points_rule）计分。order_thresholds / order_points 只给老存档里没打完的那局用",
   "target": 400,
   "round_targets": [30, 60, 100, 150, 210, 280, 360, 400],

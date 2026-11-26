@@ -20,12 +20,14 @@ func run() -> void:
 	g.seen_tutorial = true
 	g.set_process(false)
 	var c: Dictionary = ev.current()
-	g.level = 9
-	check(not ev.available(c) and ev.on_order({"items":["fruit_8"]}) == 0, "event locked below 10 and earns no points")
-	g.level = 10
+	# 合成活动 17 级开放（1~13 级照竞品，只开集市/卡册/七日/签到/化石/双人竞速）
+	var open_at := int(c.get("unlock_level", 17))
+	g.level = open_at - 1
+	check(not ev.available(c) and ev.on_order({"items":["fruit_8"]}) == 0, "event locked below %d and earns no points" % open_at)
+	g.level = open_at
 	load("res://scripts/events/ActivityRules.gd").initialize()
 	var s: Dictionary = ev.state(c)
-	check(ev.available(c) and s["points"] == 0, "event opens at level 10 with zero points")
+	check(ev.available(c) and s["points"] == 0, "event opens at level %d with zero points" % open_at)
 	var cells: Array = s["cells"]
 	check(cells.size() == 102 and ev.remaining(s) == 96, "initial 17x6 board locks everything except bottom row")
 	check(ev.local_action(c,s,"spawn",{"view":10}).has("error") and s["spent"] == 0, "zero-point spawn cannot produce items")

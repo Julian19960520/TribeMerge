@@ -1,7 +1,7 @@
 [
 	{
 		"key": "deal_ad",
-		"_说明": "每日特惠，固定顺序（需求 #36）：广告 → 不那那买体力宝箱 → 两个会员琥珀 → 所有人免费。客户端 Popups.store / DailyShop.gd 与服务器 daily_shop.py 读同一份。",
+		"_说明": "每日特惠，固定顺序（需求 #36）：广告 → 琥珀买体力宝箱 → 所有人免费普通物品宝箱（勇士/大长老的每日琥珀已去掉）。客户端 Popups.store / DailyShop.gd 与服务器 daily_shop.py 读同一份。",
 		"id": "fire_2",
 		"title": "§content.daily_deals.58bd834894ca§",
 		"price": 0,
@@ -16,11 +16,11 @@
 	},
 	{
 		"key": "deal_energybox",
-		"_说明": "300 不那那购买低级体力宝箱。开出的是低级体力，要在棋盘上合成。内容在 special_chests.json。",
+		"_说明": "10 琥珀购买低级体力宝箱（原 300 不那那）。开出的是低级体力，要在棋盘上合成。内容在 special_chests.json。价格以 server/config/economy.json 的 daily_energy_box_amber_price 为准。",
 		"id": "energybox_1",
 		"title": "§names.chains.7c5a559c6379§",
-		"price": 300,
-		"currency": "shell",
+		"price": 10,
+		"currency": "amber",
 		"stock": 1,
 		"rewards": [
 			[
@@ -30,48 +30,16 @@
 		]
 	},
 	{
-		"key": "deal_member_1",
-		"_说明": "贵宾（pass_tier ≥ 1）每日 100 琥珀",
-		"id": "amber_4",
-		"title": "§content.daily_deals.4496326c5029§",
-		"badge": "§ui.passpopup.3c95d9cf581a§",
-		"price": 0,
-		"stock": 1,
-		"min_tier": 1,
-		"rewards": [
-			[
-				"amber_4",
-				100
-			]
-		]
-	},
-	{
-		"key": "deal_member_2",
-		"_说明": "超级贵宾（pass_tier ≥ 2）再领 100 琥珀；两份分开展示（需求 #36），档位不同就不再是两张一模一样的卡",
-		"id": "amber_5",
-		"title": "§content.daily_deals.4496326c5029§",
-		"badge": "§ui.passpopup.d5f15b62c0dd§",
-		"price": 0,
-		"stock": 1,
-		"min_tier": 2,
-		"rewards": [
-			[
-				"amber_5",
-				100
-			]
-		]
-	},
-	{
 		"key": "deal_2",
-		"_说明": "所有玩家每日免费 15 体力（直接到账）；沿用旧 key deal_2，旧存档当天已领不能再领",
-		"id": "fire_4",
-		"title": "§content.daily_deals.fdf0e03ad49a§",
+		"_说明": "所有玩家每日免费领 1 个普通物品宝箱（原 15 体力）；沿用旧 key deal_2，旧存档当天已领不能再领",
+		"id": "chest_2",
+		"title": "§names.chains.482d2ef6fa86§",
 		"price": 0,
 		"stock": 1,
 		"rewards": [
 			[
-				"fire_4",
-				15
+				"chest_2",
+				1
 			]
 		]
 	}

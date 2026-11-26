@@ -22,13 +22,13 @@
 		"craft_1",
 		"tool_2",
 		"fruit_4",
-		"seed_2",
+		"seed_1",
 		"basket_1",
 		"fruit_4",
+		"seed_2",
+		"craft_2",
+		"craft_2",
 		"seed_3",
-		"craft_2",
-		"craft_2",
-		"seed_4",
 		"fruit_3",
 		"basket_1",
 		"basket_2",
@@ -36,7 +36,7 @@
 		"shell_3",
 		"fruit_5",
 		"fruit_7",
-		"tool_1",
+		"anvil_3",
 		"fruit_2",
 		"fruit_6",
 		"fruit_7",
@@ -45,7 +45,7 @@
 		"craft_2",
 		"basket_1",
 		"bird_1",
-		"carve_2",
+		"carve_3",
 		"beast_3",
 		"bird_3",
 		"gem_1",
@@ -134,14 +134,6 @@
 			"fire_2",
 			20
 		],
-		"3": [
-			"chest_1",
-			1
-		],
-		"6": [
-			"fire_2",
-			30
-		],
 		"14": [
 			"fire_2",
 			15
@@ -150,6 +142,10 @@
 			"amber_3",
 			10
 		],
+		"3": [
+			"chest_1",
+			1
+		],
 		"52": [
 			"sand_2",
 			180
@@ -157,6 +153,10 @@
 		"57": [
 			"chest_1",
 			1
+		],
+		"6": [
+			"fire_2",
+			30
 		],
 		"61": [
 			"amber_3",

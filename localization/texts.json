@@ -5,9 +5,9 @@
     "zh_CN"
   ],
   "stats": {
-    "unique_texts": 2415,
+    "unique_texts": 2438,
     "translated": {
-      "zh_CN": 2415
+      "zh_CN": 2438
     }
   },
   "files": [
@@ -66,6 +66,7 @@
     "texts/notice/itemanim.json",
     "texts/notice/journal.json",
     "texts/notice/localrace.json",
+    "texts/notice/logingift.json",
     "texts/notice/mergeevent.json",
     "texts/notice/offers.json",
     "texts/notice/onboardingrules.json",
@@ -112,6 +113,8 @@
     "texts/ui/inventorypopup.json",
     "texts/ui/itemactionpanel.json",
     "texts/ui/itempopups.json",
+    "texts/ui/logingiftentry.json",
+    "texts/ui/logingiftpopup.json",
     "texts/ui/main.json",
     "texts/ui/mergeeventboard.json",
     "texts/ui/mergeevententry.json",

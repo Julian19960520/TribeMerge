@@ -39,20 +39,14 @@ func run() -> void:
 		if not member["me"]: member["points"] = [[1.0, float(g.local_race["current"]["group"]["target"])]]
 	g.simulation_time += 10; replay.perform("tick")
 	check(g.local_race["results"][0]["me"]["place"] == 5 and g.local_race["results"][0]["me"]["reward"].is_empty(), "banana race awards only the top three")
-	g.pass_tier = 0; g.amber = 0; g.shells = 300; g.stash = []
-	check(replay.perform("daily", {"key": "deal_member_1"}).has("error"), "non-member cannot claim member assets")
+	g.pass_tier = 0; g.amber = 10; g.shells = 0; g.stash = []
+	check(replay.perform("daily", {"key": "deal_member_1"}).has("error"), "removed member amber deals cannot be claimed")
 	var energy: int = g.energy
 	check(not daily.start_ad() and replay.perform("daily", {"key": "deal_ad"}).has("error") and g.energy == energy, "unverified ad completion never grants local energy")
 	daily.cancel_ad()
 	check(replay.perform("daily", {"key": "deal_ad"}).has("error") and g.energy == energy, "cancelled ad cannot grant assets")
-	check(replay.perform("daily", {"key": "deal_energybox"}).get("ok", false) and g.shells == 0 and g.stash == ["energybox_1"], "daily purchase spends three hundred currency for its physical chest")
-	g.pass_tier = 1
-	check(replay.perform("daily", {"key": "deal_member_1"}).get("ok", false) and g.amber == 100, "first member item grants its configured amount")
-	check(replay.perform("daily", {"key": "deal_member_2"}).has("error") and g.amber == 100, "second member item requires the higher membership tier")
-	g.pass_tier = 2
-	check(replay.perform("daily", {"key": "deal_member_2"}).get("ok", false) and g.amber == 200, "second member item is independent and grants once")
-	check(replay.perform("daily", {"key": "deal_member_1"}).has("error") and g.amber == 200, "member claim cannot be repeated")
-	check(replay.perform("daily", {"key": "deal_2"}).get("ok", false) and not g.rules.progression.has_free_daily(), "free daily claims clear the indicator")
+	check(replay.perform("daily", {"key": "deal_energybox"}).get("ok", false) and g.amber == 0 and g.stash == ["energybox_1"], "daily purchase spends ten amber for its physical chest")
+	check(replay.perform("daily", {"key": "deal_2"}).get("ok", false) and g.stash == ["energybox_1", "chest_2"] and not g.rules.progression.has_free_daily(), "free daily chest lands in the stash and clears the indicator")
 	g.deals_day = "2000-01-01"
 	check(g.rules.progression.has_free_daily(), "a new day restores the free indicator")
 	g.board = []

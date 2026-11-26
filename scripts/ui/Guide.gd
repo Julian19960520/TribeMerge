@@ -238,7 +238,7 @@ func _refresh() -> void:
 	if _holes.size() > 0:
 		_target = _holes[0]
 		for hole in _holes: _target = _target.merge(hole)
-	_label.text = UI.resource_rich(Voice.text("onboarding", _step, str(s.get("text", "")))).replace(TextCatalog.source("ui.guide.384323c39a6b"), TextCatalog.source("ui.guide.78768adaa164")).replace(TextCatalog.source("ui.guide.16742e9df6c7"), TextCatalog.source("ui.guide.bf9ce4952017"))
+	IconText.set_rich(_label, UI.resource_rich(Voice.text("onboarding", _step, str(s.get("text", "")))).replace(TextCatalog.source("ui.guide.384323c39a6b"), TextCatalog.source("ui.guide.78768adaa164")).replace(TextCatalog.source("ui.guide.16742e9df6c7"), TextCatalog.source("ui.guide.bf9ce4952017")))
 	_formula_ids = s.get("formula", [])
 	_place()
 	var packed := PackedVector4Array(); packed.resize(8)
@@ -267,7 +267,12 @@ func _text_height(width: float) -> float:
 "):
 		var w := font.get_string_size(TextCatalog.resolve(para), HORIZONTAL_ALIGNMENT_LEFT, -1, 25).x
 		lines += maxi(1, int(ceil(w / maxf(1.0, width - 4.0))))
-	return font.get_height(25) * lines + 4.0 * (lines - 1)
+	var estimate := font.get_height(25) * lines + 4.0 * (lines - 1)
+	# 估算没算上图标、行距和真实折行，可能偏矮，导致第二行被配方条盖住/被裁掉。
+	# 先按真实宽度让 RichTextLabel 自己排一次版，取两者中较大的那个。
+	_label.size = Vector2(width, maxf(_label.size.y, 1.0))
+	var measured := float(_label.get_content_height())
+	return maxf(estimate, measured)
 
 const FORMULA_ICON := 84.0
 const FORMULA_STEP := 150.0
@@ -340,6 +345,11 @@ func _cell_target() -> int:
 	return -1
 
 func _order_index() -> int:
+	# 交单这步先指向它等的那张差事（比如坚果单），别被旁边先凑齐的单抢走
+	var tag := str(_rules().stage().get("wait", {}).get("delivered", ""))
+	if _mode == "submit" and tag != "":
+		for i in G.orders.size():
+			if str(G.orders[i].get("onboarding", "")) == tag and G.rules.orders.order_ready(G.orders[i]): return i
 	for i in G.orders.size():
 		var o: Dictionary = G.orders[i]
 		if _mode == "recipe_open" and str(o.get("kind", "")) == "craft": return i

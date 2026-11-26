@@ -9,10 +9,10 @@ const FIELDS := [
 	"boost", "boost_gm", "board", "inv", "inv_chests", "inv_cap", "stash",
 	"discovered", "book_claimed", "orders", "order_serial", "story_done", "pending_orders", "builds", "cards", "card_stars",
 	"tokens", "token_claimed", "hot_bought", "hot_revision", "deals_bought", "deals_day",
-	"shell_bought", "shell_period", "energy_buys",
+	"energy_buys",
 	"pass_pts", "pass_tier", "pass_free", "pass_prem", "pass_super", "pass_endless", "pass_super_bonus", "pass_season",
 	"fossil_dig", "ufo_offer", "offers", "local_race", "duel_race", "tiger_escape",
-	"gm_activities", "seven_day", "merge_events",
+	"gm_activities", "seven_day", "merge_events", "login_gift", "firsts",
 ]
 
 static func capture(game: Node, include_local: bool = true) -> Dictionary:
@@ -71,6 +71,9 @@ static func validate(game: Node, state: Dictionary) -> bool:
 	migrate_ids(state)
 	migrate_card_stars(state)
 	migrate_boost(state)
+	# 七日签到、一次性优待是后加的字段：旧存档补空表
+	for added in ["login_gift", "firsts"]:
+		if not state.has(added): state[added] = {}
 	var random_state: Dictionary = state["replay_rng"]
 	if not random_state.get("seed") is String or not random_state.get("streams") is Dictionary:
 		return false

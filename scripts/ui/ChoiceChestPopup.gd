@@ -75,7 +75,7 @@ static func _tag(id: String) -> String:
 	return TextCatalog.source("ui.choicechestpopup.48a55a007e34")
 
 static func _amount(id: String) -> String:
-	var unit := {"energy": TextCatalog.source("ui.choicechestpopup.d6d2aa99fd69"), "amber": TextCatalog.source("developer.amber_editor.089f621992ac"), "shell": TextCatalog.source("ui.choicechestpopup.2580a668b381"), "sand": TextCatalog.source("ui.choicechestpopup.d713a4862483")}
+	var unit := {"energy": TextCatalog.source("ui.choicechestpopup.d6d2aa99fd69"), "amber": TextCatalog.source("developer.amber_editor.089f621992ac"), "shell": "{banana}", "sand": TextCatalog.source("ui.choicechestpopup.d713a4862483")}
 	var kind := Rewards.kind(id)
 	if unit.has(kind) and Data.value_of(id) > 0:
 		return "%d %s" % [Data.value_of(id), unit[kind]]

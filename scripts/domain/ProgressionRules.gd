@@ -103,7 +103,6 @@ func shop_buy(key: String, id: String) -> Dictionary:
 	if not PriceBook.ready(): return {"ok": false, "message": TextCatalog.source("notice.progressionrules.419ce98e5750")}
 	if key.begins_with("deal_"): return {"ok":false,"message":TextCatalog.source("notice.progressionrules.88340e76cf90")}
 	context.clock._check_day()
-	context.clock.check_shell_period()
 	var offer: Dictionary = {}
 	var rows: Array = Data.daily_deals(state.level).duplicate()
 	var hot: Array = context.shop.today()
@@ -111,23 +110,17 @@ func shop_buy(key: String, id: String) -> Dictionary:
 		var d: Dictionary = hot[k].duplicate()
 		d["key"] = "hot_%d" % k
 		rows.append(d)
-	var stall: Array = context.shop.shell_stall()
-	for k in stall.size():
-		var d: Dictionary = stall[k].duplicate()
-		d["key"] = "shell_%d" % k
-		rows.append(d)
 	for d in rows:
 		if str(d["key"]) == key and str(d["id"]) == id:
 			offer = d
 			break
 	if offer.is_empty():
 		return {"ok": false, "message": TextCatalog.source("notice.progressionrules.1474fe39f598")}
-	var book: Dictionary = state.shell_bought if key.begins_with("shell_") else (state.deals_bought if key.begins_with("deal_") else state.hot_bought)
+	var book: Dictionary = state.deals_bought if key.begins_with("deal_") else state.hot_bought
 	if int(book.get(key, 0)) >= int(offer["stock"]):
 		return {"ok": false, "message": TextCatalog.source("notice.progressionrules.146d4fadcda9") if int(offer["price"]) == 0 else TextCatalog.source("notice.progressionrules.3e04d1952337")}
-	var currency = "shell" if key.begins_with("shell_") else "amber"
-	if not spend(currency, int(offer["price"])):
-		return {"ok": false, "error": "not_enough_" + currency}
+	if not spend("amber", int(offer["price"])):
+		return {"ok": false, "error": "not_enough_amber"}
 	book[key] = int(book.get(key, 0)) + 1
 	state.dirty()
 	state.changed.emit()
@@ -613,22 +606,4 @@ func cards_total() -> int:
 	for a in Data.ALBUMS.size():
 		n += album_count(a)
 	return n
-
-func refresh_shell() -> Dictionary:
-	if state._shell_refresh_busy: return {"ok": false, "message": TextCatalog.source("notice.progressionrules.30fa38552623")}
-	state._shell_refresh_busy = true
-	var result: Dictionary
-	if spend("amber", Data.STORE_SHELL_REFRESH):
-		context.clock.check_shell_period()
-		# 补货：周期号后面的补货次数 +1，小摊按新的种子重新摆货
-		var sp := str(state.shell_period)
-		state.shell_period = sp.get_slice(":", 0) + ":" + str(int(sp.get_slice(":", 1)) + 1 if sp.contains(":") else 1)
-		state.shell_bought = {}
-		result = {"ok": true}
-	else: result = {"ok": false, "message": TextCatalog.source("notice.boardrules.b874b509cd26")}
-	state._shell_refresh_busy = false
-	if result.get("ok", false):
-		state.dirty()
-		state.changed.emit()
-	return result
 

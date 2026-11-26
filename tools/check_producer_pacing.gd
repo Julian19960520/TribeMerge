@@ -37,7 +37,7 @@ func run() -> void:
 		compact = compact and rw.size() <= 4
 		var gens := 0
 		for reward in rw:
-			if str(reward[0]) == "chest_1":
+			if str(reward[0]) == "chest_1" and lv >= 15:
 				boxes += int(reward[1])
 				restrained = restrained and lv % 5 == 0
 			if Data.type_of(str(reward[0])) == "gen":
@@ -46,24 +46,34 @@ func run() -> void:
 				var line: Dictionary = Data.line_of(str(reward[0]))
 				restrained = restrained and (tier <= 4 or tier == 5 and lv == int(line["unlock"]))
 		single = single and gens <= 1
-	check(boxes == 7 and compact and restrained, "6～40级仅7个节点宝箱，每级不超过4项，5级生产器只在新产线解锁时发")
+	# 6～14 级照竞品逐级配（珍品/琥珀/及时雨宝箱），物品宝箱节点从 15 级起
+	check(boxes == 6 and compact and restrained, "15～40级仅6个节点宝箱，每级不超过4项，5级生产器只在新产线解锁时发")
 	check(single, "每个等级最多奖励一个生产器，各产线共用")
 	var first_six := 99; var first_line := ""
+	# 竞品前期不直接送 5 级：林木 5 级建造送 4 级、6 级送 3 级 + 藤蔓里一个 3 级，6 级合出 5 级；
+	# 采石场 8 级送 4 级、11 级送 3 级 + 藤蔓里一个 3 级，11 级合出 5 级（Tips 逐步带着合）。
+	const MERGE_UP := {"carve": 6, "anvil": 11}
 	for line in Data.LINES:
 		var unlock := int(line["unlock"])
-		if unlock > 1:
+		var gen := str(line["gen"])
+		if MERGE_UP.has(gen):
+			var direct := false
+			for reward in Data.level_rewards(unlock): direct = direct or str(reward[0]) == gen + "_5"
+			check(not direct and int(fixed_budget(int(MERGE_UP[gen])).get(gen, 0)) >= 16, "%s不直接送5级，%d级前固定份数够合出一个5级" % [line["name"], int(MERGE_UP[gen])])
+		elif unlock > 1:
 			var starter := 0
 			for reward in Data.level_rewards(unlock):
 				if str(reward[0]) == str(line["gen"]) + "_5": starter += int(reward[1])
 			check(starter == 1 and not Data.gen_stats(str(line["gen"]) + "_5").is_empty(), "%s解锁给一个可生产主副产物的5级" % line["name"])
-		check(int(fixed_budget(unlock).get(str(line["gen"]), 0)) >= 16, "%s解锁当级固定份数够一个5级" % line["name"])
+		if not MERGE_UP.has(gen): check(int(fixed_budget(unlock).get(gen, 0)) >= 16, "%s解锁当级固定份数够一个5级" % line["name"])
 		for lv in range(unlock, 41):
 			if int(fixed_budget(lv).get(str(line["gen"]), 0)) >= 32:
 				if lv < first_six: first_six = lv; first_line = str(line["name"])
 				break
 		check(int(fixed_budget(27).get(str(line["gen"]), 0)) < 32, "%s到27级固定奖励凑不出6级" % line["name"])
-	check(first_six >= 30 and first_six <= 36, "不靠宝箱碎片时最早%d级凑出6级（%s）兜底，28级前后靠宝箱碎片补齐" % [first_six, first_line])
-	check(int(fixed_budget(28)["basket"]) == 30, "食物线28级固定30份，差2份一级碎片即可合出第一个6级")
+	# 竞品 3/4/7/10/13 级各送一个 1 级果树，食物线比原来早两级凑出 6 级
+	check(first_six >= 28 and first_six <= 36, "不靠宝箱碎片时最早%d级凑出6级（%s）兜底，28级前后靠宝箱碎片补齐" % [first_six, first_line])
+	check(int(fixed_budget(28)["basket"]) >= 32, "食物线28级固定%d份，够合出第一个6级" % int(fixed_budget(28)["basket"]))
 	g.level = 29
 	for tier in range(1, 5):
 		g.random_seed = "producer-pacing:%d" % tier; g.random_streams = {}

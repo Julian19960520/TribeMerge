@@ -117,7 +117,7 @@
 	"merge_bubble": {
 		"chance": 0.1,
 		"min_flames": 32,
-		"min_level": 5,
+		"min_level": 6,
 		"price_exp": 0.8,
 		"price_k": 0.6,
 		"price_max": 300,

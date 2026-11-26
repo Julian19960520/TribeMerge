@@ -104,10 +104,11 @@ func _build_content() -> void:
 	_recipe_button.visible = str(order.get("kind", "")) == "craft"
 	_status = UI.lbl(self, "", Rect2(8, SLAB_Y + 8, size.x - 16, 26), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
 	# 加速键骑在卡片下沿正中：沙漏在左，份数贴在图标右下角，文字在右
-	_skip_button = UI.btn(self, Rect2(size.x * 0.5 - 64, SLAB_Y + SLAB_H + 4, 128, 50), "", "teal", func(): G.main.board_screen._on_rush(int(order.get("cell", -1))), 22)
-	UI.icon(_skip_button, "sand_2", Vector2(28, 24), 40, false)
-	_skip_cost = UI.lbl(_skip_button, "", Rect2(32, 24, 30, 24), 20, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
-	UI.lbl(_skip_button, TextCatalog.source("ui.ordercard.fc50a99caae0"), Rect2(52, 0, 70, 46), 24, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	# 卡片整体下移后石板下面只剩 44px，加速键压扁到 42 高，免得被订单条裁掉
+	_skip_button = UI.btn(self, Rect2(size.x * 0.5 - 64, SLAB_Y + SLAB_H + 2, 128, 42), "", "teal", func(): G.main.board_screen._on_rush(int(order.get("cell", -1))), 22)
+	UI.icon(_skip_button, "sand_2", Vector2(28, 20), 34, false)
+	_skip_cost = UI.lbl(_skip_button, "", Rect2(32, 19, 30, 22), 18, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 5, Art.INK)
+	UI.lbl(_skip_button, TextCatalog.source("ui.ordercard.fc50a99caae0"), Rect2(52, 0, 70, 40), 22, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
 	_rewards_layer = UI.box(self, Rect2(0, POINTS_Y - 20, size.x, 40), _paint_rewards, false)
 	_time_bar = UI.box(self, Rect2(10, POINTS_Y - 17, size.x - 20, 34), _paint_cook_time, false)
 	# 对勾和制作键压在石板台面上：盖住材料和木桩下半截，侧面的奖励露出来。
@@ -190,7 +191,7 @@ static func _chips(o: Dictionary) -> Array:
 		out.append([CHIP_ICON["token"], int(rw["token"])])
 	if int(rw.get("sand", 0)) > 0: out.append(["sand_2", int(rw["sand"])])
 	if G.rules.progression.feature_unlocked(Data.feature_level("pass")):
-		var pass_gain := Data.order_pass_points(o) * (2 if G.pass_tier >= 2 else 1)
+		var pass_gain := Data.order_pass_points(o) + (1 if G.pass_tier >= 2 else 0)
 		out.append(["pass_smile", pass_gain])
 	if FossilDig.earning(): out.append(["fossil_shovel", FossilDig.order_shovels(o)])
 	if DuelRace.active_v3(): out.append(["duel_points", DuelRace.order_score(o)])
@@ -278,6 +279,17 @@ func _paint_order(ci: CanvasItem, sz: Vector2) -> void:
 			if not G.rules.orders.claim_supply(id, boards, slots).is_empty():
 				_ready_mark(ci, c, s, 0.9)
 	_paint_badges(ci, sz)
+
+## 经验小牌在屏幕上的范围（没有经验时返回空 Rect2），给往经验牌上飞星星之类的特效用。和 _paint_badges 的摆法一致。
+func xp_badge_global_rect() -> Rect2:
+	if order.is_empty(): return Rect2()
+	var badges := _badges(order)
+	if badges.is_empty() or str(badges[0][0]) != "xp_1": return Rect2()
+	var right := size.x - 6.0
+	if str(order.get("kind", "")) == "craft":
+		right = minf(right, size.x * 0.5 + DISH_ICON_SIDE * 0.5 - 10.0 + _badges_w(order))
+	var w := _badge_w(str(badges[0][1]))
+	return get_global_transform() * Rect2(right - w, 50.0 - 14.0, w, 28.0)
 
 ## 经验 / 贝壳小牌：墨边圆角牌，图标压在左端，白字带墨边
 func _paint_badges(ci: CanvasItem, sz: Vector2) -> void:

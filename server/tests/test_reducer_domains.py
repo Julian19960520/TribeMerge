@@ -67,11 +67,11 @@ def test_producers_and_chest_preserve_random_streams(game):
 
 def test_shop_stock_daily_currency_and_refresh(game):
     state=confirm(game,[('daily',{'key':'deal_2'}),('daily',{'key':'deal_energybox'}),
-                              ('shop',{'key':'shell_0','id':'fruit_2'}),('shell_refresh',{}),('hot_refresh',{})])
+                              ('hot_refresh',{})])
     assert state['energy']==game['energy']+15
-    assert state['shells']==game['shells']-300-8
-    assert 'energybox_1' in state['stash'] and 'fruit_2' in state['stash']
-    assert state['shell_bought']=={} and state['hot_revision']==1
+    assert state['shells']==game['shells']-300
+    assert 'energybox_1' in state['stash']
+    assert state['hot_revision']==1
     rejects(state,'daily',{'key':'deal_2'})
     rejects(state,'daily',{'key':'deal_ad'})
 

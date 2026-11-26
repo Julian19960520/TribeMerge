@@ -4,6 +4,8 @@ extends Control
 signal craft_requested(index: int)
 signal delivery_requested(index: int)
 var cards_by_index: Array[Control] = []
+## 卡片顶边：石板底边（OrderCard.SLAB_Y + SLAB_H）落在 258，和「建造」按钮、主角经验条底边对齐
+const CARD_Y := 66.0
 var right_edge := 274.0
 var refresh_count := 0
 var created_count := 0
@@ -49,7 +51,7 @@ func refresh() -> void:
 	var x := 272.0
 	for index in sorted:
 		var card := cards_by_index[index]
-		card.position = Vector2(x, 44)
+		card.position = Vector2(x, CARD_Y)
 		x += card.size.x + 4.0
 	right_edge = x + 2.0
 

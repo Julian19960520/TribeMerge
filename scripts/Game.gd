@@ -42,6 +42,11 @@ var tips_seen: Dictionary = {}
 var gm_activities := false
 var seven_day: Dictionary = {}
 signal seven_day_changed
+## 七日签到（scripts/events/LoginGift.gd）
+var login_gift: Dictionary = {}
+signal login_gift_changed
+## 一次性的玩法优待记录，例如第一个合成泡泡免费（键 → true）
+var firsts: Dictionary = {}
 var merge_events: Dictionary = {}
 signal merge_event_changed
 signal presentation_event(kind: String, payload: Dictionary)
@@ -103,7 +108,6 @@ var _bubble_busy := {}
 var _chest_busy := {}
 var _pack_busy := false
 var _storage_busy := false
-var _shell_refresh_busy := false
 ## 通行证价格（元），来自 data/pass.json 的 purchase；服务器按同一份开单。
 var PASS_CNY: Dictionary:
 	get: return {"vip": float(Data.PASS_PURCHASE.get("vip", {}).get("price_cny", 0)), "super": float(Data.PASS_PURCHASE.get("super_vip", {}).get("price_cny", 0))}
@@ -111,8 +115,6 @@ var PASS_CNY: Dictionary:
 var energy_buys := 0
 var deals_bought := {}
 var deals_day := ""
-var shell_bought := {}
-var shell_period := ""
 var player_id := ""
 var seen_tutorial := false
 var tutorial_on := false
@@ -283,6 +285,8 @@ func new_game() -> void:
 	tips_seen = {}
 	gm_activities = false
 	seven_day = {}
+	login_gift = {}
+	firsts = {}
 	merge_events = {}
 	tokens = 0
 	token_claimed = 0
@@ -305,8 +309,6 @@ func new_game() -> void:
 	hot_revision = 0
 	_bubble_busy.clear()
 	_chest_busy.clear()
-	shell_bought = {}
-	shell_period = ""
 	energy_buys = 0
 	deals_day = rules.clock.today()
 	rules.board._init_board()
@@ -442,10 +444,6 @@ func open_pack_result(pack_id: String = "", cell: int = -1, stash_index: int = -
 	if replay_input(): return Replay.perform("pack", {"id": pack_id, "cell": cell, "stash": stash_index})
 	return rules.progression.open_pack_result(pack_id, cell, stash_index)
 
-func refresh_shell() -> Dictionary:
-	if replay_input(): return Replay.perform("shell_refresh")
-	return rules.progression.refresh_shell()
-
 func business_snapshot() -> Dictionary:
 	return StateCodec.capture(self, false)
 
@@ -471,7 +469,6 @@ func clear_transient() -> void:
 	_chest_busy.clear()
 	_hot_refresh_busy = false
 	_storage_busy = false
-	_shell_refresh_busy = false
 	_pack_busy = false
 	clear_presentations()
 
