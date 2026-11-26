@@ -46,6 +46,48 @@ static var boil: int = 0
 static var wobble := 1.0
 ## 烘焙时把偏小的物品放大：形状（顶点）跟着放大，描边按这个倍数缩回去，线条粗细不变
 static var stroke_k := 1.0
+## 只画奶白外边、不画本体：整幅场景先走一遍只描外边，再不带外边画一遍，前后叠着的东西就共用一圈白边
+static var rim_only := false
+## 换色表：画某条产线时把旧图里的某些颜色换成这条线的主色（键是不带透明度的 html 色值）。空表就是不换
+static var remap := {}
+
+static func rc(c: Color) -> Color:
+	if remap.is_empty():
+		return c
+	var k := c.to_html(false)
+	if remap.has(k):
+		return Color(remap[k], c.a)
+	## 旧图常用 col.darkened(t) / col.lightened(t) 做深浅面，按同样的比例换过去
+	for key in remap:
+		var src := Color(key)
+		var dst := Color(remap[key])
+		var td := _ratio(c, src, true)
+		if td >= 0.0:
+			return Color(dst.darkened(td), c.a)
+		var tl := _ratio(c, src, false)
+		if tl >= 0.0:
+			return Color(dst.lightened(tl), c.a)
+	return c
+
+## c 是不是 src 变暗（dark）或变亮 t 得来的；是就返回 t，不是返回 -1
+static func _ratio(c: Color, src: Color, dark: bool) -> float:
+	var ts := []
+	for i in 3:
+		var a: float = src[i]
+		var b: float = c[i]
+		var den := a if dark else 1.0 - a
+		if den < 0.05:
+			continue
+		ts.append((a - b) / den if dark else (b - a) / den)
+	if ts.is_empty():
+		return -1.0
+	var t0: float = ts[0]
+	if t0 < 0.02 or t0 > 0.6:
+		return -1.0
+	for x in ts:
+		if absf(float(x) - t0) > 0.02:
+			return -1.0
+	return t0
 
 # ---------------------------------------------------------------- 随机与抖动
 
@@ -199,20 +241,25 @@ static func P(pts: PackedVector2Array, col: Color, mode: int = 0) -> Array:
 
 ## 贴纸剪影：奶白外边 → 墨线外轮廓 → 双色填充 → 细内线
 static func sil(ci: CanvasItem, parts: Array, rim: bool = true, w: float = 3.0) -> void:
+	if rim_only:
+		if rim:
+			for p in parts:
+				dilate(ci, p[0], (w + 6.0) / stroke_k, Color(1, 0.98, 0.92, 0.96))
+		return
 	if rim:
 		for p in parts:
 			dilate(ci, p[0], (w + 6.0) / stroke_k, Color(1, 0.98, 0.92, 0.96))
 	for p in parts:
 		dilate(ci, p[0], w / stroke_k, INK)
 	for p in parts:
-		shade(ci, p[0], p[1], p[2])
+		shade(ci, p[0], rc(p[1]), p[2])
 		outline(ci, p[0], 2.2, INK)
 
 static func ln(ci: CanvasItem, a: Vector2, b: Vector2, w: float = 2.5, col: Color = INK, seed: int = 0) -> void:
-	ci.draw_line(a + jv(seed, 0.6), b + jv(seed + 5, 0.6), col, w / stroke_k, true)
+	ci.draw_line(a + jv(seed, 0.6), b + jv(seed + 5, 0.6), rc(col), w / stroke_k, true)
 
 static func pl(ci: CanvasItem, arr: Array, w: float = 2.5, col: Color = INK, seed: int = 0) -> void:
-	ci.draw_polyline(poly(arr, seed, 0.6), col, w / stroke_k, true)
+	ci.draw_polyline(poly(arr, seed, 0.6), rc(col), w / stroke_k, true)
 
 static func dot(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
 	ci.draw_circle(c, r, col)

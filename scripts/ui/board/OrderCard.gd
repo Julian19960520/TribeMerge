@@ -29,6 +29,8 @@ var _clock := 0.0
 var _was_ready := false
 var _breath: Tween
 var _mat_hits: Array = []
+## 刚送来的差事：挂「新」角标，能交了就摘掉
+var fresh := false
 
 func _ready() -> void:
 	painter = _paint_order
@@ -75,7 +77,18 @@ func refresh(index: int, value: Dictionary) -> void:
 		_breath.tween_callback(_start_breath.bind(action))
 	elif not enabled and _breath != null and _breath.is_valid(): _breath.kill()
 	_was_ready = enabled
+	if ready or can_make: fresh = false
 	queue_redraw()
+
+## 新差事登场：从石板中心弹出来，落地轻轻一晃
+func enter(delay: float) -> void:
+	pivot_offset = Vector2(size.x * 0.5, SLAB_Y + SLAB_H * 0.5)
+	scale = Vector2.ZERO
+	var tw := create_tween()
+	tw.tween_interval(delay)
+	tw.tween_callback(func(): Sfx.play("pop", 1.15))
+	tw.tween_property(self, "scale", Vector2(1.08, 1.08), 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(self, "scale", Vector2.ONE, 0.12)
 
 func _build_content() -> void:
 	for child in get_children():
@@ -279,6 +292,22 @@ func _paint_order(ci: CanvasItem, sz: Vector2) -> void:
 			if not G.rules.orders.claim_supply(id, boards, slots).is_empty():
 				_ready_mark(ci, c, s, 0.9)
 	_paint_badges(ci, sz)
+	if fresh: _paint_new_tag(ci)
+
+## 左上角的「新」小红牌：墨边、略歪
+func _paint_new_tag(ci: CanvasItem) -> void:
+	var r := Rect2(8, 100, 44, 28)
+	ci.draw_set_transform(r.get_center(), -0.14)
+	var box := Rect2(-r.size * 0.5, r.size)
+	ci.draw_rect(box.grow(3), Art.INK)
+	ci.draw_rect(box, Color("e0442e"))
+	ci.draw_rect(Rect2(box.position, Vector2(box.size.x, 8)), Color(1, 1, 1, 0.22))
+	var t := TextCatalog.resolve(TextCatalog.source("ui.rewardpopups.3cc493bc5b3b"))
+	var w := G.font_title.get_string_size(TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
+	var pos := Vector2(-w * 0.5, (G.font_title.get_ascent(22) - G.font_title.get_descent(22)) * 0.5)
+	ci.draw_string_outline(G.font_title, pos, TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 5, Art.INK)
+	ci.draw_string(G.font_title, pos, TextCatalog.resolve(t), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
+	ci.draw_set_transform(Vector2.ZERO, 0.0)
 
 ## 经验小牌在屏幕上的范围（没有经验时返回空 Rect2），给往经验牌上飞星星之类的特效用。和 _paint_badges 的摆法一致。
 func xp_badge_global_rect() -> Rect2:

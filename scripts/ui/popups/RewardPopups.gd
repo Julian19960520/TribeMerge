@@ -6,6 +6,9 @@ const FULL := Rect2(0, 0, 720, 1480)
 const GOLD := Color("ffe7a8")
 const CREAM := Color("fff1c4")
 const RED_CLOTH := Color("c4532e")
+## 升级面板：小牙托着等级牌蹦一下的时长（奖励在这之后才弹）；奖励亮相后再等多久自动领
+const LEVELUP_INTRO := 1.0
+const LEVELUP_AUTO_CLAIM := 1.5
 
 # ---------------------------------------------------------------- 领奖舞台（几张全屏领奖页共用）
 
@@ -54,7 +57,7 @@ static func _paint_plate(ci: CanvasItem, c: Vector2, slot: float, appear: float,
 	Sprites.at(ci, "pop_rw_plate", c + Vector2(0, r * 0.66), r / PS.RW_R, 0.0, Color(1, 1, 1, appear))
 
 ## 奖励物品：依次弹到台座上，落地后轻轻浮动；右下角是数量签，名字在台座下方淡入。
-static func _pop_reward(parent: Control, id: String, count: int, at: Vector2, slot: float, k: int, n: int, name_w: float, show_name: bool) -> void:
+static func _pop_reward(parent: Control, id: String, count: int, at: Vector2, slot: float, k: int, n: int, name_w: float, show_name: bool, delay: float = 0.0) -> void:
 	var holder := Control.new()
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.position = at - Vector2(slot, slot) * 0.5
@@ -82,7 +85,7 @@ static func _pop_reward(parent: Control, id: String, count: int, at: Vector2, sl
 		name_lbl = UI.lbl(parent, Data.name_of(id), Rect2(at.x - name_w * 0.5, at.y + slot * 0.5 + 8, name_w, nfs + 14), nfs, CREAM, HORIZONTAL_ALIGNMENT_CENTER, 8, Art.INK, true)
 		name_lbl.modulate.a = 0.0
 	var pop := holder.create_tween()
-	pop.tween_interval(0.18 + 0.09 * float(k))
+	pop.tween_interval(delay + 0.18 + 0.09 * float(k))
 	pop.tween_callback(func(): Sfx.play("pop", 1.0 + 0.08 * float(k)))
 	pop.tween_property(holder, "scale", Vector2.ONE, 0.38).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	if name_lbl != null:
@@ -150,6 +153,30 @@ static func levelup() -> PopupBase:
 	var stage := UI.box(p.box, FULL, func(ci, _sz):
 		_paint_stage(ci, float(Time.get_ticks_msec() - t0) / 1000.0, star, spots, slot, br, RED_CLOTH))
 	UI.title(p.box, TextCatalog.source("ui.rewardpopups.d1561ba802e8"), Rect2(br.position.x + 40, br.position.y + 4, br.size.x - 80, br.size.y - 10), 46, CREAM)
+	# 竞品式出场：小牙从底下蹦上来托着等级牌，蹦完退场；随后阿焰抱着小牙从左下角升上来，陪着领奖
+	var intro := LEVELUP_INTRO
+	var jumper := UI.box(p.box, Rect2(star.x - 150, star.y + 100, 300, 400), func(ci, sz):
+		Paint.mascot(ci, Vector2(sz.x * 0.5, sz.y * 0.5), 300.0), false)
+	jumper.pivot_offset = Vector2(150, 400)
+	jumper.position.y = 1500.0
+	var hop := jumper.create_tween()
+	hop.tween_property(jumper, "position:y", star.y + 100, 0.32).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	hop.tween_property(jumper, "scale", Vector2(1.06, 0.94), 0.1)
+	hop.tween_property(jumper, "scale", Vector2.ONE, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	hop.tween_interval(intro - 0.74)
+	hop.tween_property(jumper, "position:y", 1500.0, 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	hop.tween_callback(jumper.queue_free)
+	var pair := UI.box(p.box, Rect2(-40, 1040, 380, 440), func(ci, sz):
+		Paint.heroine(ci, Vector2(sz.x * 0.42, sz.y * 0.5), 150.0), false)
+	var pair_y := pair.position.y
+	pair.position.y = 1500.0
+	var rise := pair.create_tween()
+	rise.tween_interval(intro)
+	rise.tween_property(pair, "position:y", pair_y, 0.36).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	rise.tween_callback(func():
+		var sway := pair.create_tween().set_loops()
+		sway.tween_property(pair, "position:y", pair_y - 8.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		sway.tween_property(pair, "position:y", pair_y, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT))
 	# 等级星：弹出，之后轻轻呼吸
 	var badge := Control.new()
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -168,9 +195,10 @@ static func levelup() -> PopupBase:
 		breathe.tween_property(badge, "scale", Vector2.ONE * 1.04, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		breathe.tween_property(badge, "scale", Vector2.ONE, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT))
 	for k in n:
-		_pop_reward(p.box, str(rewards[k][0]), int(rewards[k][1]), spots[k], slot, k, n, gap_x, n <= 4)
+		_pop_reward(p.box, str(rewards[k][0]), int(rewards[k][1]), spots[k], slot, k, n, gap_x, n <= 4, intro)
 	var by := row_y + slot * 0.5 + (120.0 if n <= 4 else 70.0)
-	_footer(p, by, TextCatalog.source("ui.cardrewardpresentation.52251aeea31a"), TextCatalog.source("ui.rewardpopups.4296c369fe48"), 0.35 + 0.09 * float(n))
+	var shown := intro + 0.35 + 0.09 * float(n)
+	_footer(p, by, TextCatalog.source("ui.cardrewardpresentation.52251aeea31a"), TextCatalog.source("ui.rewardpopups.4296c369fe48"), shown)
 	Sfx.play("fanfare")
 	var claiming := {"busy": false}
 	p.on_tap = func():
@@ -187,8 +215,43 @@ static func levelup() -> PopupBase:
 		p.on_tap = Callable()
 		if G.rules.onboarding.active():
 			p.tree_exited.connect(func(): G.main.open("orders_start"))
+		else:
+			p.tree_exited.connect(func(): if is_instance_valid(G.main): G.main.open("orders_go"))
 		p.close()
+	# 奖励亮相后停一会儿自己领（服务器没回就留着，等玩家再点）
+	var auto := p.create_tween()
+	auto.tween_interval(shown + LEVELUP_AUTO_CLAIM)
+	auto.tween_callback(func():
+		if p.on_tap.is_valid() and not claiming["busy"]:
+			p.on_tap.call())
 	_animate(p, stage)
+	return p
+
+## 不在新手引导里时，每次升完级的收尾：阿焰抱着小牙升上来，「开工啦！」闪一下，自己收起。点一下也能跳过。
+static func orders_go() -> PopupBase:
+	var p := PopupBase.new()
+	p.dim_alpha = 0.45
+	p.set_meta("reward_screen", true)
+	var pair := UI.box(p.box, Rect2(170, 520, 380, 440), func(ci, sz):
+		Paint.heroine(ci, Vector2(sz.x * 0.42, sz.y * 0.5), 150.0), false)
+	var pair_y := pair.position.y
+	pair.position.y = 1500.0
+	var title := UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.6b7f5d17e52a"), Rect2(0, 930, 720, 90), 64, GOLD, HORIZONTAL_ALIGNMENT_CENTER, 12, Art.INK, true)
+	title.pivot_offset = title.size * 0.5
+	title.scale = Vector2.ZERO
+	var sub := UI.lbl(p.box, TextCatalog.source("ui.rewardpopups.e15166d41c57"), Rect2(0, 1018, 720, 44), 28, CREAM, HORIZONTAL_ALIGNMENT_CENTER, 6, Art.INK)
+	sub.modulate.a = 0.0
+	var tw := p.create_tween()
+	tw.tween_property(pair, "position:y", pair_y, 0.34).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(func(): Sfx.play("pop", 1.1))
+	tw.tween_property(title, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(sub, "modulate:a", 1.0, 0.25)
+	tw.tween_interval(0.9)
+	tw.tween_callback(func():
+		if is_instance_valid(p) and p.is_inside_tree(): p.close())
+	p.on_tap = func():
+		p.on_tap = Callable()
+		p.close()
 	return p
 
 ## 一批 [[id, 数量]]。和棋盘气泡用同一张全屏领奖。

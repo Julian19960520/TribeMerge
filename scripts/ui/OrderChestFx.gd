@@ -11,7 +11,7 @@ const OPEN := 0.32
 const STEP := 0.26
 const FLY := 0.65
 const OUTRO := 0.35
-const BASKET := "basket_9"
+const BASKET := "basket_10"
 const CENTER := Vector2(360, 700)
 const BASKET_SIZE := 300.0
 

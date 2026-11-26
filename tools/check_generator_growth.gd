@@ -20,7 +20,7 @@ func run() -> void:
 				if Data.secondaries(line).has(Data.chain(id)): secondary += chance
 				equivalent += chance * float(1 << (Data.lv(id) - 1)) / 100.0
 			# 只配了一种产物的产线没有稀有产物
-			var expected_secondary := {4: 0, 5: 10, 6: 10, 7: 12, 8: 14, 9: 15} if not Data.secondaries(line).is_empty() else {4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0}
+			var expected_secondary := {4: 0, 5: 10, 6: 10, 7: 12, 8: 14, 9: 15, 10: 16} if not Data.secondaries(line).is_empty() else {4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0}
 			valid = valid and total == 100 and secondary == float(expected_secondary[level]) and equivalent >= last_yield
 			if level == 5: valid = valid and highest == 1
 			if level == 6: valid = valid and highest == 2

@@ -17,6 +17,8 @@ const CLAYPOT := Color("c8693a")
 const BLACK := Color("2b2430")
 
 static var xf := Transform2D.IDENTITY
+## 借旧图摆进新场景时关掉旧图自带的金光（金光只留给最高级）
+static var glow_off := false
 
 static func set_xf(ci: CanvasItem, t: Transform2D) -> void:
 	ci.draw_set_transform_matrix(xf * t)
@@ -136,10 +138,14 @@ static func spark(ci: CanvasItem, c: Vector2, r: float, col: Color = Color(1, 1,
 	ci.draw_colored_polygon(star_pts(c, r, r * 0.28, 4, 3), col)
 
 static func sparks(ci: CanvasItem, pts: Array, r: float = 6.0) -> void:
+	if glow_off:
+		return
 	for p in pts:
 		spark(ci, p, r)
 
 static func glow(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
+	if rim_only or glow_off:
+		return
 	for k in 5:
 		ci.draw_circle(c, r * (1.0 - 0.16 * float(k)), Color(col, 0.07 + 0.03 * float(k)))
 

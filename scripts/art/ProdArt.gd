@@ -34,7 +34,11 @@ static func draw_xf(ci: CanvasItem, line: String, kind: String, lv: int, t: Tran
 		ci.draw_colored_polygon(Art.ell(Vector2(0, 40), Vector2(30, 6), 1, 0.0, 14, 0.0, 0.0), Color(0.2, 0.1, 0.0, 0.18))
 	var s: int = abs((line + kind).hash()) % 97 + lv * 7
 	var done := true
+	## 生产器统一走新的 10 级画法；旧画法还在各线文件的 gen() 里
+	if kind == "G" and PAGen.draw(ci, line, lv, s, rim):
+		line = ""
 	match line:
+		"": pass
 		"food": _route(PAFood, ci, kind, lv, s, rim)
 		"tool": _route(PATool, ci, kind, lv, s, rim)
 		"cloth": _route(PACloth, ci, kind, lv, s, rim)

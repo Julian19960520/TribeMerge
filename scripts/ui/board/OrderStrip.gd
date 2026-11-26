@@ -10,12 +10,25 @@ var right_edge := 274.0
 var refresh_count := 0
 var created_count := 0
 var _cards: Dictionary = {}
+## 新来的差事：先藏着，等升级面板、领奖这些都收起了再一张张弹进来，挂上「新」角标
+var _entering: Array[OrderCard] = []
 
 func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_IGNORE
 
+func _process(_dt: float) -> void:
+	if _entering.is_empty() or not is_visible_in_tree() or not is_instance_valid(G.main): return
+	if G.main.popup_layer.get_child_count() > 0 or G.main._rw_showing or G.main.level_pending: return
+	var k := 0
+	for card in _entering:
+		if is_instance_valid(card):
+			card.enter(0.12 * float(k))
+			k += 1
+	_entering.clear()
+
 func refresh() -> void:
 	refresh_count += 1
+	var had_cards := not _cards.is_empty()
 	var wanted := {}
 	var sorted: Array[int] = []
 	var gaps: Array[int] = []
@@ -32,6 +45,11 @@ func refresh() -> void:
 			_cards[key] = card
 			add_child(card)
 			created_count += 1
+			# 订单条原本是空的（进游戏、读档后第一次铺）就不算新来的
+			if had_cards:
+				card.fresh = true
+				card.scale = Vector2.ZERO
+				_entering.append(card)
 		card.refresh(index, order)
 		cards_by_index[index] = card
 		sorted.append(index)

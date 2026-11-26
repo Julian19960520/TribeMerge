@@ -47,6 +47,7 @@ static func create(name: String, arg = null) -> PopupBase:
 		"levelup": p = RewardPopups.levelup()
 		"onboarding_rescue": p = RewardPopups.onboarding_rescue()
 		"orders_start": p = RewardPopups.orders_start()
+		"orders_go": p = RewardPopups.orders_go()
 		"board_reward": p = RewardPopups.board_reward(arg if arg is Array else [])
 		"event": p = CollectionPopups.event()
 		"pass": p = PassPopupScript.screen()
