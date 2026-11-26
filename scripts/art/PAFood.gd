@@ -144,7 +144,7 @@ static func gen(ci: CanvasItem, lv: int, s: int, rim: bool) -> void:
 			var parts := [_mound(Vector2(0, 35), 30, 6, s), stk(Vector2(0, 35), Vector2(0, 2), 5.6, s + 1, WOOD_D, 2),
 				stk(Vector2(0, 6), Vector2(-16, -14), 3.4, s + 2, WOOD_D, 2), stk(Vector2(0, 2), Vector2(14, -16), 3.4, s + 3, WOOD_D, 2)]
 			parts.append_array(_canopy([Vector3(-28, -16, 16), Vector3(28, -18, 16), Vector3(0, -40, 16)],
-				[Vector3(-18, -8, 18), Vector3(18, -8, 18), Vector3(-12, -30, 18), Vector3(14, -32, 18)], s + 4))
+				[Vector3(-18, -8, 18), Vector3(18, -8, 18), Vector3(-12, -30, 18), Vector3(14, -32, 18), Vector3(0, -20, 18)], s + 4))
 			sil(ci, parts, rim)
 			_cherries(ci, [Vector2(-20, -16), Vector2(16, -34)], s + 40)
 			_blue(ci, [Vector2(14, -10)], s + 60)
